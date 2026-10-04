@@ -1,0 +1,513 @@
+{
+    "unityVersion": "6000.6.4f1",
+    "utcTime": "2026-10-04T23:06:37.5390620Z",
+    "checks": [
+        {
+            "name": "Authored actor and room IDs",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Physics configuration",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration Down",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed Down",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing Down",
+            "passed": true,
+            "detail": "hero_sprites_bottom_frame_02"
+        },
+        {
+            "name": "Deceleration Down",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing Down",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration DownRight",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed DownRight",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing DownRight",
+            "passed": true,
+            "detail": "hero_sprites_right_bottom_frame_02"
+        },
+        {
+            "name": "Deceleration DownRight",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing DownRight",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration Right",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed Right",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing Right",
+            "passed": true,
+            "detail": "hero_sprites_right_frame_02"
+        },
+        {
+            "name": "Deceleration Right",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing Right",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration UpRight",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed UpRight",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing UpRight",
+            "passed": true,
+            "detail": "hero_sprites_right_top_frame_03"
+        },
+        {
+            "name": "Deceleration UpRight",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing UpRight",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration Up",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed Up",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing Up",
+            "passed": true,
+            "detail": "hero_sprites_top_frame_03"
+        },
+        {
+            "name": "Deceleration Up",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing Up",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration UpLeft",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed UpLeft",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing UpLeft",
+            "passed": true,
+            "detail": "hero_sprites_right_top_frame_03"
+        },
+        {
+            "name": "Deceleration UpLeft",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing UpLeft",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration Left",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed Left",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing Left",
+            "passed": true,
+            "detail": "hero_sprites_left_frame_03"
+        },
+        {
+            "name": "Deceleration Left",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing Left",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Acceleration DownLeft",
+            "passed": true,
+            "detail": "0.880"
+        },
+        {
+            "name": "Normalized speed DownLeft",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Walk facing DownLeft",
+            "passed": true,
+            "detail": "hero_sprites_right_bottom_frame_03"
+        },
+        {
+            "name": "Deceleration DownLeft",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Idle facing DownLeft",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Keyboard action Down",
+            "passed": true,
+            "detail": "velocity=(0.00, -2.60), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Keyboard action DownRight",
+            "passed": true,
+            "detail": "velocity=(1.84, -1.84), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Keyboard action Right",
+            "passed": true,
+            "detail": "velocity=(2.60, 0.00), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Keyboard action UpRight",
+            "passed": true,
+            "detail": "velocity=(1.84, 1.84), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Keyboard action Up",
+            "passed": true,
+            "detail": "velocity=(0.00, 2.60), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Keyboard action UpLeft",
+            "passed": true,
+            "detail": "velocity=(-1.84, 1.84), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Keyboard action Left",
+            "passed": true,
+            "detail": "velocity=(-2.60, 0.00), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Keyboard action DownLeft",
+            "passed": true,
+            "detail": "velocity=(-1.84, -1.84), input=(0.00, 0.00), focused=True"
+        },
+        {
+            "name": "Wall segment 00",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 01",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 02",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.150"
+        },
+        {
+            "name": "Wall segment 03",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.145"
+        },
+        {
+            "name": "Wall segment 04",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 05",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.150"
+        },
+        {
+            "name": "Wall segment 06",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 07",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.147"
+        },
+        {
+            "name": "Wall segment 08",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.155"
+        },
+        {
+            "name": "Wall segment 09",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.236"
+        },
+        {
+            "name": "Wall segment 10",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 11",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 12",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 13",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.133"
+        },
+        {
+            "name": "Wall segment 14",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.152"
+        },
+        {
+            "name": "Wall segment 15",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 16",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.152"
+        },
+        {
+            "name": "Wall segment 17",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 18",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.141"
+        },
+        {
+            "name": "Wall segment 19",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.126"
+        },
+        {
+            "name": "Wall segment 20",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 21",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 22",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 23",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.132"
+        },
+        {
+            "name": "Wall segment 24",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.141"
+        },
+        {
+            "name": "Wall segment 25",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 26",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.151"
+        },
+        {
+            "name": "Wall segment 27",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 28",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.153"
+        },
+        {
+            "name": "Wall segment 29",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.135"
+        },
+        {
+            "name": "Wall segment 30",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 31",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Wall segment 32",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 33",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.271"
+        },
+        {
+            "name": "Wall segment 34",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.134"
+        },
+        {
+            "name": "Wall segment 35",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.135"
+        },
+        {
+            "name": "Wall segment 36",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.170"
+        },
+        {
+            "name": "Wall segment 37",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.154"
+        },
+        {
+            "name": "Wall segment 38",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.095"
+        },
+        {
+            "name": "Wall segment 39",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.147"
+        },
+        {
+            "name": "Wall segment 40",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.147"
+        },
+        {
+            "name": "Wall segment 41",
+            "passed": true,
+            "detail": "Signed distance to floor boundary: -0.175"
+        },
+        {
+            "name": "Crystal collision (0.00, 1.00)",
+            "passed": true,
+            "detail": "plane=0.260, separation=-0.0050"
+        },
+        {
+            "name": "Crystal collision (0.00, -1.00)",
+            "passed": true,
+            "detail": "plane=0.260, separation=-0.0050"
+        },
+        {
+            "name": "Crystal collision (-1.00, 0.00)",
+            "passed": true,
+            "detail": "plane=0.640, separation=-0.0050"
+        },
+        {
+            "name": "Crystal collision (1.00, 0.00)",
+            "passed": true,
+            "detail": "plane=0.640, separation=-0.0050"
+        },
+        {
+            "name": "Corridor wall slide -1",
+            "passed": true,
+            "detail": "(-0.25, 4.54)"
+        },
+        {
+            "name": "Corridor wall slide 1",
+            "passed": true,
+            "detail": "(0.24, 4.55)"
+        },
+        {
+            "name": "Camera follows and clamps",
+            "passed": true,
+            "detail": "(0.00, 2.17, -10.00)"
+        },
+        {
+            "name": "Global and crystal 2D lights",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "No runtime errors or warnings",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "errors": [],
+    "warnings": []
+}
