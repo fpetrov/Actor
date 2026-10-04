@@ -1,0 +1,37 @@
+# Unity generated files, at any project depth
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Bb]uild/
+**/[Bb]uilds/
+**/[Uu]ser[Ss]ettings/
+**/[Mm]emoryCaptures/
+**/[Rr]ecordings/
+**/.vs/
+**/.idea/
+**/.vscode/
+**/ExportedObj/
+**/sysinfo.txt
+**/crashlytics-build.properties
+*.csproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.apk
+*.aab
+*.app
+*.unitypackage
+.DS_Store
+Thumbs.db
+# Local verification requests and results
+/Agents Arena/Verification/
