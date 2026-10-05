@@ -2903,6 +2903,26 @@ PrefabInstance:
       propertyPath: initialRoomId
       value: main-hall
       objectReference: {fileID: 0}
+    - target: {fileID: 4655985673797684978, guid: 4a0836443ff7e481697ae8095e727d4b, type: 3}
+      propertyPath: m_Size.x
+      value: 0.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 4655985673797684978, guid: 4a0836443ff7e481697ae8095e727d4b, type: 3}
+      propertyPath: m_Size.y
+      value: 0.81
+      objectReference: {fileID: 0}
+    - target: {fileID: 4655985673797684978, guid: 4a0836443ff7e481697ae8095e727d4b, type: 3}
+      propertyPath: m_Offset.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4655985673797684978, guid: 4a0836443ff7e481697ae8095e727d4b, type: 3}
+      propertyPath: m_Offset.y
+      value: 0.46
+      objectReference: {fileID: 0}
+    - target: {fileID: 4655985673797684978, guid: 4a0836443ff7e481697ae8095e727d4b, type: 3}
+      propertyPath: m_Direction
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7312348108452801154, guid: 4a0836443ff7e481697ae8095e727d4b, type: 3}
       propertyPath: m_Name
       value: Local Character
@@ -3318,6 +3338,38 @@ PrefabInstance:
     - target: {fileID: 3256749445366532824, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
       propertyPath: m_Name
       value: Crystal
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: m_LightVolumeEnabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: m_LightVolumeIntensity
+      value: 1.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: m_LocalBounds.m_Center.y
+      value: -0.00000011920929
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: m_LocalBounds.m_Extent.x
+      value: 0.9985302
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: m_LocalBounds.m_Extent.y
+      value: 0.99853027
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: 'managedReferences[2803668999629439063]'
+      value: 'Unity.RenderPipelines.Universal.2D.Runtime UnityEngine.Rendering.Universal.Provider2DCache`1[[UnityEngine.Rendering.Universal.Light2DProvider, Unity.RenderPipelines.Universal.2D.Runtime]]'
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: managedReferences[2803668999629439061].m_Provider2DCache
+      value: 2803668999629439063
+      objectReference: {fileID: 0}
+    - target: {fileID: 3948287939769620323, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
+      propertyPath: managedReferences[2803668999629439063].m_Cache.Array.size
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5028152298265593013, guid: d506fa479e6664e26847dc11cfe2b862, type: 3}
       propertyPath: roomId
