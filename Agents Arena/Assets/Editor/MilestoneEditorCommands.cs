@@ -27,6 +27,9 @@ namespace Actor.Editor
                 {
                     case "build": PlayableMilestoneBuilder.Build(); break;
                     case "verify": PlayableMilestoneVerification.Start(); break;
+                    case "prepare-multiplayer": MultiplayerBuild.Prepare(); break;
+                    case "build-client": MultiplayerBuild.BuildMacClient(); break;
+                    case "build-server": MultiplayerBuild.BuildLinuxDedicatedServer(); break;
                     case "status":
                         File.WriteAllText(Path.Combine(Folder, "status.txt"), PlayableMilestoneVerification.Status);
                         break;

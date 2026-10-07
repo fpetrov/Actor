@@ -1,0 +1,139 @@
+{
+  "baseUrl": "http://5.181.134.236",
+  "limit": 5,
+  "created": [
+    {
+      "lobbyId": "18af383e18f349db93801287f1cd6a49",
+      "roomCode": "9G2ZEZ",
+      "displayName": "Capacity validation 1",
+      "status": "Starting",
+      "createdAt": "2026-10-07T17:05:39.3623149+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7778,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    },
+    {
+      "lobbyId": "8bc8d4e929e9452ebbd2a4a796b5c36c",
+      "roomCode": "6H2TT4",
+      "displayName": "Capacity validation 2",
+      "status": "Starting",
+      "createdAt": "2026-10-07T17:05:39.7779034+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7779,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    },
+    {
+      "lobbyId": "fb803023d80b400dbc977d21e499d50c",
+      "roomCode": "SXPQJJ",
+      "displayName": "Capacity validation 3",
+      "status": "Starting",
+      "createdAt": "2026-10-07T17:05:40.449979+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7780,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    },
+    {
+      "lobbyId": "8ba4dfac99484b3c902432cd560d4780",
+      "roomCode": "YT4UNL",
+      "displayName": "Capacity validation 4",
+      "status": "Starting",
+      "createdAt": "2026-10-07T17:05:40.8682748+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7781,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    }
+  ],
+  "active": [
+    {
+      "lobbyId": "c8e7d01448f44e259569cd92b7807e1a",
+      "roomCode": "C2LDVF",
+      "displayName": "Remote Main Hall",
+      "status": "Running",
+      "createdAt": "2026-10-07T16:49:01.925626+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7777,
+      "currentPlayers": 2,
+      "maxPlayers": 8
+    },
+    {
+      "lobbyId": "18af383e18f349db93801287f1cd6a49",
+      "roomCode": "9G2ZEZ",
+      "displayName": "Capacity validation 1",
+      "status": "Ready",
+      "createdAt": "2026-10-07T17:05:39.3623149+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7778,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    },
+    {
+      "lobbyId": "8bc8d4e929e9452ebbd2a4a796b5c36c",
+      "roomCode": "6H2TT4",
+      "displayName": "Capacity validation 2",
+      "status": "Ready",
+      "createdAt": "2026-10-07T17:05:39.7779034+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7779,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    },
+    {
+      "lobbyId": "fb803023d80b400dbc977d21e499d50c",
+      "roomCode": "SXPQJJ",
+      "displayName": "Capacity validation 3",
+      "status": "Ready",
+      "createdAt": "2026-10-07T17:05:40.449979+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7780,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    },
+    {
+      "lobbyId": "8ba4dfac99484b3c902432cd560d4780",
+      "roomCode": "YT4UNL",
+      "displayName": "Capacity validation 4",
+      "status": "Ready",
+      "createdAt": "2026-10-07T17:05:40.8682748+00:00",
+      "gameVersion": "0.2.0",
+      "protocolVersion": "1",
+      "publicHost": "5.181.134.236",
+      "gamePort": 7781,
+      "currentPlayers": 0,
+      "maxPlayers": 8
+    }
+  ],
+  "ports": [
+    7777,
+    7778,
+    7779,
+    7780,
+    7781
+  ],
+  "sixthHttpStatus": 409,
+  "sixthErrorCode": "server_capacity_reached",
+  "healthHttpStatus": 200,
+  "health": {
+    "status": "healthy"
+  },
+  "passed": true
+}

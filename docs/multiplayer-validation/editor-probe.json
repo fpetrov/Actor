@@ -1,0 +1,92 @@
+{
+    "role": "A",
+    "playerName": "Editor Pilot",
+    "connected": false,
+    "completed": true,
+    "maxSpeed": 2.5999999046325684,
+    "peers": [],
+    "checks": [
+        {
+            "name": "Two clients spawned",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Unique player identities and replicated names",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Client physics is non-authoritative",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Owned input moves an independent character",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Authoritative wall blocks continued intent",
+            "passed": true,
+            "detail": "(3.02, -1.40, 0.00)"
+        },
+        {
+            "name": "Release stops the character",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Network speed stays normalized",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Client transform manipulation is corrected",
+            "passed": true,
+            "detail": "(3.02, -1.40, 0.00)"
+        },
+        {
+            "name": "No runtime errors",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "errors": [
+        "FMOD failed to initialize the output device.: \"A call to a standard soundcard driver failed, which could possibly mean a bug in the driver or resources were missing or exhausted. \" (57)"
+    ],
+    "warnings": [
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Forced to initialize FMOD to to the device driver's system output rate 48000, this may impact performance and/or give inconsistent experiences compared to selected sample rate 48000",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system.",
+        "Default audio device was changed, but the audio system failed to initialize it. Attempting to reset sound system."
+    ]
+}

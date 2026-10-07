@@ -13,6 +13,7 @@ namespace Actor.Characters
         [SerializeField] private MonoBehaviour inputSource;
         private IMovementInputSource commands;
         private CharacterMotor2D motor;
+        private ICharacterMotionState motionState;
 
         public string ActorId => actorId;
         public string RoomId { get; private set; }
@@ -29,8 +30,18 @@ namespace Actor.Characters
         private void Update() => motor.SetDesiredMovement(commands?.ReadMovement() ?? Vector2.zero);
 
         public void SetInputSource(IMovementInputSource source) => commands = source;
+        public void SetMotionState(ICharacterMotionState state) => motionState = state;
+        public void SetIdentity(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("Actor ID cannot be empty.", nameof(id));
+            actorId = id;
+        }
         public void SetCurrentRoom(string roomId) => RoomId = roomId;
-        public CharacterState CaptureState() => new CharacterState(actorId, motor.Position, motor.Velocity,
-            RoomId, motor.Facing, motor.IsMoving, role, InteractionState.None);
+        public CharacterState CaptureState()
+        {
+            ICharacterMotionState state = motionState ?? motor;
+            return new CharacterState(actorId, motor.Position, state.Velocity,
+                RoomId, state.Facing, state.IsMoving, role, InteractionState.None);
+        }
     }
 }

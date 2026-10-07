@@ -12,6 +12,12 @@ namespace Actor.Presentation
         private Vector3 velocity;
         private Camera view;
 
+        public void Follow(Transform character)
+        {
+            target = character;
+            velocity = Vector3.zero;
+        }
+
         private void Awake() => view = GetComponent<Camera>();
 
         private void LateUpdate()

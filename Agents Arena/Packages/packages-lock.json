@@ -1,5 +1,11 @@
 {
   "dependencies": {
+    "com.actor.contracts": {
+      "version": "file:../../shared/com.actor.contracts",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
     "com.unity.2d.animation": {
       "version": "16.0.1",
       "depth": 0,
@@ -99,7 +105,7 @@
     },
     "com.unity.burst": {
       "version": "2.0.0",
-      "depth": 2,
+      "depth": 1,
       "source": "builtin",
       "dependencies": {}
     },
@@ -181,6 +187,16 @@
       "depth": 1,
       "source": "builtin",
       "dependencies": {}
+    },
+    "com.unity.netcode.gameobjects": {
+      "version": "2.13.3",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.transport": "2.6.0",
+        "com.unity.nuget.mono-cecil": "1.11.4"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
@@ -298,6 +314,16 @@
         "com.unity.modules.animation": "1.0.0",
         "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.particlesystem": "1.0.0"
+      }
+    },
+    "com.unity.transport": {
+      "version": "6.6.0",
+      "depth": 0,
+      "source": "builtin",
+      "dependencies": {
+        "com.unity.collections": "6.5.0",
+        "com.unity.burst": "1.8.24",
+        "com.unity.mathematics": "1.4.0"
       }
     },
     "com.unity.ugui": {

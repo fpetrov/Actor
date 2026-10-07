@@ -1,50 +1,59 @@
 # ACTOR
 
-ACTOR will connect interchangeable autonomous agent brains to real-time games. `Agents Arena/` is its Unity reference game. The current milestone is a local, playable Main Hall; networking, agent runtimes and social-deduction systems are future work.
+ACTOR will connect interchangeable autonomous agent brains to real-time games. The current milestone is a deployed, server-authoritative human multiplayer reference game.
 
-## Run
+- **Agents Arena** — Unity 6000.6.4f1 game, Lobby menu and Main Hall; NGO 2.13.3 / Unity Transport 6.6.0.
+- **Actor.ControlPlane** — .NET 10 ASP.NET Core Minimal APIs, SQLite lobby metadata, signed admission and process/port lifecycle.
+- **Static frontend** — HTML/CSS/vanilla JavaScript served exclusively by nginx.
+- **Future Agent Runtime** — engine-neutral observations/actions, memory, local gRPC bridge and interchangeable brains; not implemented yet.
 
-Open `Agents Arena/` in **Unity 6000.6.4f1** and open `Assets/Scenes/MainHall.unity`. Press Play and focus the Game view. Move with **WASD**, **arrow keys**, or a gamepad left stick. The build scene list already points to Main Hall.
+**Website:** http://5.181.134.236/
 
-Git is rooted here, not inside the Unity project. Install Git LFS before cloning/pulling art; run `git lfs pull` if a checkout contains pointer files. Assets, Packages and ProjectSettings are versioned; Unity caches and local verification output are ignored.
+**Source:** https://github.com/fpetrov/Actor (private)
 
-## Character architecture
+## Play
 
-`PlayerInputSource` implements `IMovementInputSource` using the existing Input System `Player/Move` action. `ActorCharacter` passes commands to `CharacterMotor2D`; the motor clamps input magnitude and accelerates/decelerates `Rigidbody2D.linearVelocity` in `FixedUpdate`. It owns facing, independent of the visual. `CharacterAnimationView` observes motor facing and actual velocity and controls the child Animator and sprite reflection. `CameraFollow2D` follows the interpolated visual position in LateUpdate with room bounds.
+Open `Agents Arena/` in Unity and `Assets/Scenes/Lobby.unity`, then press Play. Enter a player name and join a room from the list, enter a six-character RoomCode, or create a room. The macOS client is built at ignored `build/agents-arena-client/AgentsArena.app`. Move with WASD/arrow keys or a gamepad; use Leave room to return to the lobby.
 
-Use `ActorCharacter.SetInputSource(IMovementInputSource)` to substitute agent, network or replay commands. No motor/animation changes are needed. Passing null stops movement. The interface preserves analog magnitude, normalizes excessive input, and rejects non-finite values at the motor boundary.
+The website creates/lists rooms and copies their codes; gameplay runs in the Unity client. Central client URL/version configuration lives in `Assets/Settings/LobbyClient.asset`. The original offline `MainHall.unity` scene and character prefab remain available, including the user's subsequent scene edits.
 
-`CaptureState()` returns a data-only snapshot containing ActorId, position, velocity, room, facing, moving, role and interaction state. Scene instances have authored IDs; freshly instantiated prefabs obtain unique runtime IDs. A future save/network spawning system can supply persisted IDs before Awake. The only current role is Unassigned and interaction is None. Room tracking is explicit through `SetCurrentRoom`; the single room needs no room detector yet. `WorldEntity` supplies a separate ID and room for the crystal.
+## Build and deploy
 
-## Art and animation
+Git is rooted in `Actor/`; there is no nested Unity repository. Install Git LFS before pulling binary art. Unity Assets, Packages and ProjectSettings are versioned. Build/cache output, SQLite runtime files, logs, environment files and private keys are ignored.
 
-The six character sheets are **1774 × 887**, with **4 × 2** complete poses each. Their existing alpha-based automatic slicing split body fragments and noise into separate sprites. Eight **240 × 350** rectangles per sheet now capture complete poses; each rectangle is aligned to the head centre and foot baseline, using the same pivot `(0.5, 8/350)` and **320 PPU**. `Assets/Editor/CharacterSliceLayout.json` records the measured source rectangles. No original PNG has been modified or generated.
+Requirements: Unity 6000.6.4f1 with matching Linux Mono/Dedicated Server modules, .NET 10 SDK, SSH and rsync. Close Unity before CLI builds of the same checkout.
 
-The art is antialiased illustration, so textures use bilinear filtering, no compression, no mipmaps, clamped wrapping and full-rectangle meshes. Main Hall uses 100 PPU (12.54 world units); the separate crystal uses 700 PPU to match room/character scale. The full station map is retained as reference art.
+```bash
+scripts/build-server.sh
+scripts/build-client.sh
+scripts/publish-control-plane.sh
+scripts/build-web.sh
+scripts/deploy-vps.sh <host> <ssh-user> <private-key-path>
+```
 
-There are **12 looping clips**: Idle and Walk for Down, Up, Left, Right, UpRight and DownRight. Walk clips use all eight supplied poses at **10 fps**, with playback rate following physical speed. Idle holds pose 1 because the source has no separate idle sheets. A flat Animator controller has no transitions or blend-tree ambiguity; the view selects a state only when facing or movement changes and preserves walk phase on direction changes. UpLeft and DownLeft reflect the right diagonal clips with `flipX`. Left uses its own supplied sheet.
+Backend source/test projects are in `src/` and `tests/`; `Actor.sln` and `global.json` select .NET 10. Scripts use the system SDK, `DOTNET` override, or the locally installed ignored `build/tools/dotnet/dotnet`. The VPS uses self-contained Linux x64 output and does not need .NET SDK/runtime or Unity Editor.
 
-## Physics, scene and lighting
+## Architecture
 
-The reusable character prefab has a dynamic Rigidbody2D, zero gravity, frozen rotation, continuous collision detection and interpolation. A horizontal **0.34 × 0.18** feet capsule uses a frictionless, non-bouncing material. Defaults: **2.6 units/s**, **22 units/s² acceleration**, **30 units/s² deceleration**. These settings are editable in the Inspector.
+```text
+nginx → Minimal API → LobbyManager → IGameServerAllocator → Unity Dedicated Server
+                                                 Unity clients ↔ NGO + Transport
+```
 
-Main Hall has 42 separate wall segments under `EnvironmentCollision`, tracing the actual walkable floor seam and four corridors. The corridor endpoints are closed boundaries until other rooms exist. Collision geometry is separate from the sprite. The crystal is a reusable entity prefab with a **0.95 × 0.35** base capsule, independent of its tall visual.
+Client input sends only movement intent. Server `ActorCharacter → CharacterMotor2D → Rigidbody2D` owns acceleration, movement and collisions. Clients interpolate server transforms; animation observes compact replicated motion through `ICharacterMotionState`. Owner-only input and camera remain separate from simulation/presentation. A future agent or replay can replace the input source without rewriting those layers.
 
-The existing **URP 2D renderer** is retained. A 0.95 Global Light keeps the room readable; the unlit crystal and a restrained blue additive Point Light (radius 2.3) provide the glow. The hall renders behind actors; character/crystal sorting uses their foot/base pivots and the camera's Y sort axis. Camera smoothing is 0.12 seconds at orthographic size 4.1.
+`ActorCharacter.CaptureState()` exposes ActorId, position, velocity, room, facing, moving, role and interaction state. Roles/interactions remain placeholders. `shared/com.actor.contracts` supplies engine-independent admission claims/HMAC; it references neither Unity nor NGO. **NGO belongs to Agents Arena, not the future ACTOR SDK contract.**
 
-## Editor tooling and verification
+The six original sheets provide 48 complete character poses. Twelve idle/walk clips preserve the previous directional setup; UpLeft/DownLeft mirror right diagonals, while Left has its own art. All original PNGs remain unchanged. The multiplayer scene preserves Main Hall walls, crystal, camera and the user's light/collider adjustments.
 
-`ACTOR > Verify playable in Play Mode` opens Main Hall, enters actual Play Mode and runs movement, Input System, directional animation, mirroring, idle facing, wall, crystal and camera checks using real physics updates. It restores local input and leaves the scene playable. The report and screenshots are written to ignored `Agents Arena/Verification/`. Keep the Game view focused during the keyboard checks. The accepted milestone passed **101 checks**, with no errors or warnings; see [validation evidence](Docs/VALIDATION.md).
+## Verification and limits
 
-`ACTOR > Build first playable Main Hall` regenerates imports, clips, controller, prefabs and scene from measured source data. **It replaces the authored Main Hall scene and prefab setup**; use it deliberately when rebuilding this milestone, not after making custom scene edits. The fixed file commands in `Verification/editor-command.txt` (`build`, `verify`, `status`, `stop`) support the same workflow in an already open Editor; the tooling is editor-only.
+18 backend tests passed. Both Unity builds succeeded. Actual remote Editor + Standalone probes passed 9 and 8 checks with no runtime errors/warnings; names, motion, collisions, disconnect/reconnect and local-transform correction were checked. Five real servers used unique UDP ports 7777–7781 and the sixth room received 409. Empty-room cleanup, process crash handling and stale persisted state are covered.
 
-Removed unused template content: `Assets/Welcome/`, `Assets/Settings/Scenes/URP2DSceneTemplate.unity`, `Assets/Settings/Lit2DSceneTemplate.scenetemplate` and the empty `Assets/Scenes/SampleScene.unity`, including their metadata. References were checked before removal; the original Git snapshot preserves them. Pipeline settings, Input System bindings and all nine user PNGs remain.
+The limit and timeouts are configurable, with production MaxConcurrentGameServers=5. Control Plane serves API only on 127.0.0.1:5080; nginx exposes HTTP 80, and gameplay uses direct UDP. There is no prediction/reconciliation, TLS/domain, account system or durable recovery of active matches. Restarting/deploying the Control Plane ends active matches; metadata persists in SQLite.
+
+See [networking](docs/networking.md), [deployment](docs/deployment.md), [remote validation evidence](docs/multiplayer-validation/README.md), and [previous playable milestone](docs/VALIDATION.md).
 
 ## Next milestone
 
-Add one adjacent room with explicit room volumes and a minimal interactable contract for the crystal. Then feed a deterministic scripted/replay command source into the same character facade to validate the future agent-control boundary before introducing networking or an agent runtime.
-
-## Unity API references
-
-- [Rigidbody2D.linearVelocity](https://docs.unity.com/en-us/engine/6000.0/script-reference/unityengine/rigidbody2d/linearvelocity) for physics velocity.
-- [Sprite Editor data provider API](https://docs.unity.cn/Packages/com.unity.2d.sprite%401.0/manual/DataProvider.html) for stable sprite IDs and import metadata.
+Define engine-neutral Protobuf observation/action contracts, add a local gRPC Game Adapter bridge, then implement ACTOR Runtime and AgentInputSource before connecting Codex SDK or other brains. Keep the game-specific NGO transport behind the adapter boundary.

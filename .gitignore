@@ -14,9 +14,9 @@
 **/ExportedObj/
 **/sysinfo.txt
 **/crashlytics-build.properties
-*.csproj
-*.sln
-*.slnx
+/Agents Arena/*.csproj
+/Agents Arena/*.sln
+/Agents Arena/*.slnx
 *.suo
 *.user
 *.userprefs
@@ -35,3 +35,17 @@
 Thumbs.db
 # Local verification requests and results
 /Agents Arena/Verification/
+**/[Bb]in/
+/artifacts/
+/publish/
+**/.env
+**/.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.log
+*.pem
+*.key
+/runtime/

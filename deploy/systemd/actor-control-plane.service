@@ -1,0 +1,27 @@
+[Unit]
+Description=ACTOR lobby and match control plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=actor
+Group=actor
+WorkingDirectory=/opt/actor/control-plane/current
+ExecStart=/opt/actor/control-plane/current/Actor.ControlPlane
+EnvironmentFile=/etc/actor/control-plane.env
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=20
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/actor /var/log/actor
+LimitNOFILE=65536
+TasksMax=1024
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

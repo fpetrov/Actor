@@ -3,7 +3,7 @@ using UnityEngine;
 namespace Actor.Characters
 {
     [RequireComponent(typeof(Rigidbody2D))]
-    public sealed class CharacterMotor2D : MonoBehaviour
+    public sealed class CharacterMotor2D : MonoBehaviour, ICharacterMotionState
     {
         [SerializeField, Min(0.1f)] private float maxSpeed = 2.6f;
         [SerializeField, Min(0.1f)] private float acceleration = 22f;

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10121c">
+  <meta name="description" content="Create a room, share its code, and meet in the Agents Arena Main Hall.">
+  <title>Agents Arena — Rooms</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar shell">
+    <a class="brand" href="/" aria-label="Agents Arena home"><span class="brand-mark" aria-hidden="true">◇</span><span>Agents Arena<small>ACTOR REFERENCE WORLD</small></span></a>
+    <div id="connection" class="connection"><span class="dot"></span><span>Connecting</span></div>
+  </header>
+  <main class="shell">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">THE MAIN HALL IS OPEN</p>
+        <h1 id="page-title">One world.<br><span>Your next room.</span></h1>
+        <p class="lede">Gather your crew, share a room code, and step into the arena together.</p>
+      </div>
+      <div class="crystal-art" aria-hidden="true"><div class="halo"></div><img src="/assets/crystal.png" alt=""></div>
+    </section>
+    <div class="workspace">
+      <section class="rooms-card card" aria-labelledby="rooms-title">
+        <div class="card-heading"><div><p class="eyebrow">FIND YOUR CREW</p><h2 id="rooms-title">Available rooms <span id="room-count" class="count">0</span></h2></div><button id="refresh" class="button secondary" type="button"><span aria-hidden="true">↻</span> Refresh</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Room</th><th>Players</th><th>Status</th><th><span class="sr-only">Copy room code</span></th></tr></thead><tbody id="room-list"></tbody></table></div>
+        <div id="empty" class="empty"><span class="empty-icon" aria-hidden="true">◇</span><h3>Room for a new beginning</h3><p>No rooms are online yet. Create one and invite your crew.</p></div>
+        <p class="table-note">Rooms refresh automatically. Empty rooms close after a few minutes.</p>
+      </section>
+      <aside>
+        <section class="create-card card" aria-labelledby="create-title"><p class="eyebrow">MAKE IT YOURS</p><h2 id="create-title">Create a room</h2><p>A fresh Main Hall for you and your crew.</p>
+          <form id="create-form"><label for="room-name">Room name</label><input id="room-name" name="roomName" type="text" minlength="2" maxlength="48" value="Main Hall" required autocomplete="off"><button id="create" class="button primary" type="submit">Create room <span aria-hidden="true">↗</span></button></form>
+          <div id="created" class="created" hidden><small>YOUR ROOM CODE</small><strong id="created-code"></strong><button id="copy-created" class="button secondary" type="button">Copy code</button></div>
+        </section>
+        <section class="join-guide" aria-labelledby="join-title"><span class="step-icon" aria-hidden="true">01</span><div><h3 id="join-title">Take the code into the game</h3><p>Open Agents Arena, choose your player name, then paste the room code in the lobby to join.</p></div></section>
+      </aside>
+    </div>
+    <p id="feedback" class="feedback" role="status" aria-live="polite"></p>
+  </main>
+  <footer class="shell"><span>ACTOR / AGENTS ARENA</span><span id="limits">A shared Main Hall · Keyboard movement</span></footer>
+</body>
+</html>

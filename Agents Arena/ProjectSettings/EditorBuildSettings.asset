@@ -6,7 +6,10 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/MainHall.unity
-    guid: 1ed6c8699377244d382913677442c154
+    path: Assets/Scenes/Lobby.unity
+    guid: bcfc44af6cc68437ba6b5d1212635e77
+  - enabled: 1
+    path: Assets/Scenes/MainHallMultiplayer.unity
+    guid: 09570e4302dbe472e8205f8734c836d8
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
