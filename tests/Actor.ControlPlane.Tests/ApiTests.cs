@@ -46,7 +46,7 @@ public sealed class ApiTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);
-        var create = await client.PostAsJsonAsync("/api/v1/lobbies", new CreateLobbyRequest("API Hall", null, "0.2.0", "1"));
+        var create = await client.PostAsJsonAsync("/api/v1/lobbies", new CreateLobbyRequest("API Hall", null, "0.2.1", "2"));
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);
         string body = await create.Content.ReadAsStringAsync();
         Assert.DoesNotContain("serverPid", body);
@@ -55,7 +55,7 @@ public sealed class ApiTests
         using var ready = new HttpRequestMessage(HttpMethod.Post, $"/internal/game-servers/{lobby.LobbyId}/ready");
         ready.Headers.Add("X-Actor-Match-Secret", Convert.ToBase64String(factory.Allocator.Keys[Guid.Parse(lobby.LobbyId)]));
         Assert.Equal(HttpStatusCode.NoContent, (await client.SendAsync(ready)).StatusCode);
-        var join = await client.PostAsJsonAsync($"/api/v1/lobbies/{lobby.RoomCode}/join", new JoinLobbyRequest("Player A", "0.2.0", "1"));
+        var join = await client.PostAsJsonAsync($"/api/v1/lobbies/{lobby.RoomCode}/join", new JoinLobbyRequest("Player A", "0.2.1", "2"));
         Assert.Equal(HttpStatusCode.OK, join.StatusCode);
         var ticket = await join.Content.ReadFromJsonAsync<JoinLobbyResult>();
         Assert.NotNull(ticket);
@@ -73,8 +73,8 @@ public sealed class ApiTests
         using var factory = new ApiFactory();
         using var client = factory.CreateClient();
         for (int i = 0; i < 5; i++)
-            Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/v1/lobbies", new CreateLobbyRequest("Capacity Hall", null, "0.2.0", "1"))).StatusCode);
-        var sixth = await client.PostAsJsonAsync("/api/v1/lobbies", new CreateLobbyRequest("Sixth Hall", null, "0.2.0", "1"));
+            Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/v1/lobbies", new CreateLobbyRequest("Capacity Hall", null, "0.2.1", "2"))).StatusCode);
+        var sixth = await client.PostAsJsonAsync("/api/v1/lobbies", new CreateLobbyRequest("Sixth Hall", null, "0.2.1", "2"));
         Assert.Equal(HttpStatusCode.Conflict, sixth.StatusCode);
         Assert.Contains("server_capacity_reached", await sixth.Content.ReadAsStringAsync());
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/health")).StatusCode);

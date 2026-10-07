@@ -18,7 +18,7 @@ namespace Actor.Networking
             public Vector2 ReadMovement() => Time.unscaledTime - ReceivedAt <= Timeout ? Value : Vector2.zero;
         }
 
-        [SerializeField, Range(10, 60)] private float inputSendRate = 20f;
+        [SerializeField, Range(10, 60)] private float inputSendRate = 30f;
         [SerializeField, Range(0.1f, 1f)] private float staleInputTimeout = 0.25f;
         private readonly NetworkVariable<Vector2> velocity = new();
         private readonly NetworkVariable<byte> facing = new((byte)FacingDirection.Down);
@@ -34,18 +34,25 @@ namespace Actor.Networking
         private uint lastSequence;
         private bool hasSequence;
         private float lastAcceptedAt = -100;
+        private Vector2 lastSentInput;
+        private uint appliedSequence, snapshotSequence;
+        private float appliedSeconds, nextSnapshot;
+        private OwnerMovementPrediction prediction;
+        private Transform visual;
 
         public string PlayerName => playerName.Value.ToString();
-        public Vector2 Velocity => IsServer ? motor.Velocity : velocity.Value;
-        public FacingDirection Facing => IsServer ? motor.Facing : (FacingDirection)facing.Value;
+        public Vector2 Velocity => prediction != null ? prediction.Velocity : IsServer ? motor.Velocity : velocity.Value;
+        public FacingDirection Facing => prediction != null ? prediction.Facing : IsServer ? motor.Facing : (FacingDirection)facing.Value;
         public bool IsMoving => Velocity.sqrMagnitude > 0.0025f;
         public float MaxSpeed => motor.MaxSpeed;
+        public Vector3 PresentationPosition => visual != null ? visual.position : transform.position;
 
         private void Awake()
         {
             actor = GetComponent<ActorCharacter>();
             motor = GetComponent<CharacterMotor2D>();
             keyboard = GetComponent<PlayerInputSource>();
+            visual = transform.Find("Visual");
         }
 
         public override void OnNetworkSpawn()
@@ -66,6 +73,8 @@ namespace Actor.Networking
             }
             else
             {
+                if (IsOwner)
+                    prediction = new OwnerMovementPrediction(motor, GetComponent<CapsuleCollider2D>(), transform.position);
                 actor.SetMotionState(this);
                 foreach (var view in GetComponentsInChildren<CharacterAnimationView>()) view.SetMotionState(this);
                 actorId.OnValueChanged += OnIdentityChanged;
@@ -76,7 +85,7 @@ namespace Actor.Networking
             foreach (var renderer in GetComponentsInChildren<Renderer>()) renderer.enabled = false;
             foreach (var animator in GetComponentsInChildren<Animator>()) animator.enabled = false;
 #else
-            if (IsOwner && Camera.main != null) Camera.main.GetComponent<CameraFollow2D>()?.Follow(transform);
+            if (IsOwner && Camera.main != null) Camera.main.GetComponent<CameraFollow2D>()?.Follow(visual != null ? visual : transform);
 #endif
         }
 
@@ -89,11 +98,21 @@ namespace Actor.Networking
 
         private void Update()
         {
-            if (!IsSpawned || !IsClient || !IsOwner || Time.unscaledTime < nextSend) return;
-            nextSend = Time.unscaledTime + 1f / inputSendRate;
+            if (!IsSpawned || !IsClient || !IsOwner) return;
             Vector2 intent = localCommands?.ReadMovement() ?? Vector2.zero;
             if (!float.IsFinite(intent.x) || !float.IsFinite(intent.y)) intent = Vector2.zero;
-            SubmitMovementRpc(Vector2.ClampMagnitude(intent, 1f), ++sequence);
+            intent = Vector2.ClampMagnitude(intent, 1f);
+            float now = Time.unscaledTime;
+            // Press/release/direction changes bypass the periodic send interval.
+            if (now >= nextSend || (intent - lastSentInput).sqrMagnitude > 0.0001f)
+            {
+                nextSend = now + 1f / inputSendRate;
+                lastSentInput = intent;
+                ++sequence;
+                prediction?.Record(sequence, intent, now);
+                SubmitMovementRpc(intent, sequence);
+            }
+            prediction?.Advance(intent, now);
         }
 
         [Rpc(SendTo.Server, Delivery = RpcDelivery.Unreliable, InvokePermission = RpcInvokePermission.Owner)]
@@ -102,7 +121,7 @@ namespace Actor.Networking
             if (!IsServer || !float.IsFinite(input.x) || !float.IsFinite(input.y)) return;
             if (hasSequence && unchecked((int)(inputSequence - lastSequence)) <= 0) return;
             // Discard excess commands instead of accumulating a reliable movement queue.
-            if (Time.unscaledTime - lastAcceptedAt < 1f / 60f) return;
+            if (Time.unscaledTime - lastAcceptedAt < 1f / 120f) return;
             hasSequence = true;
             lastSequence = inputSequence;
             lastAcceptedAt = Time.unscaledTime;
@@ -110,11 +129,42 @@ namespace Actor.Networking
             remoteCommands.ReceivedAt = lastAcceptedAt;
         }
 
-        private void LateUpdate()
+        private void FixedUpdate()
         {
             if (!IsSpawned || !IsServer) return;
+            // Tag the intent actually used by the upcoming physics step, not a newly arrived RPC.
+            if (appliedSequence != lastSequence) { appliedSequence = lastSequence; appliedSeconds = 0; }
+            appliedSeconds += Time.fixedDeltaTime;
+            motor.SetDesiredMovement(remoteCommands.ReadMovement());
+        }
+
+        private void LateUpdate()
+        {
+            if (!IsSpawned) return;
+            if (!IsServer)
+            {
+                if (prediction != null && visual != null)
+                {
+                    Vector2 position = prediction.RenderedPosition;
+                    visual.position = new Vector3(position.x, position.y, transform.position.z);
+                }
+                return;
+            }
             velocity.Value = motor.Velocity;
             facing.Value = (byte)motor.Facing;
+            if (Time.unscaledTime >= nextSnapshot)
+            {
+                nextSnapshot = Time.unscaledTime + 1f / 30f;
+                ReconcileOwnerRpc(++snapshotSequence, appliedSequence, appliedSeconds, motor.Position, motor.Velocity, (byte)motor.Facing);
+            }
+        }
+
+        [Rpc(SendTo.Owner, Delivery = RpcDelivery.Unreliable, InvokePermission = RpcInvokePermission.Server)]
+        private void ReconcileOwnerRpc(uint snapshot, uint acknowledgedInput, float seconds,
+            Vector2 position, Vector2 authoritativeVelocity, byte direction)
+        {
+            prediction?.Reconcile(snapshot, acknowledgedInput, seconds, position, authoritativeVelocity,
+                (FacingDirection)direction, Time.unscaledTime);
         }
 
         public override void OnNetworkDespawn()
@@ -122,6 +172,7 @@ namespace Actor.Networking
             actorId.OnValueChanged -= OnIdentityChanged;
             keyboard.enabled = false;
             actor.SetInputSource(null);
+            prediction = null;
         }
     }
 }

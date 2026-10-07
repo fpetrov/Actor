@@ -30,11 +30,17 @@ The Control Plane orchestrates rooms and processes. Unity alone simulates game p
 
 ## Input, simulation and presentation
 
-`PlayerInputSource` implements the existing `IMovementInputSource`. The owner-only `NetworkCharacter` reads that source and sends normalized movement intent at **20 Hz**, using an unreliable ownership-restricted RPC. Sequence numbers reject late packets; non-finite input is rejected and input magnitude is clamped. The server discards excessive submissions and clears stale intent after **0.25 seconds**.
+`PlayerInputSource` implements the existing `IMovementInputSource`. The owner-only `NetworkCharacter` reads it every rendered frame. Press, release and direction changes send immediately; unchanged intent refreshes at up to **30 Hz**, using an unreliable ownership-restricted RPC. Sequence numbers reject late packets; non-finite input is rejected and magnitude is clamped. The server discards excessive submissions (120/s ceiling) and clears stale intent after **0.25 seconds**.
 
-On the server, a network command adapter feeds the unchanged `ActorCharacter → CharacterMotor2D → Rigidbody2D` path. Motor acceleration, deceleration and collisions remain in physics FixedUpdate. `NetworkTransform` explicitly uses server authority, position interpolation and unreliable deltas. `NetworkRigidbody2D` makes client bodies kinematic; the client motor and facade command loop are disabled. Client transforms cannot become simulation state.
+The server runs `CharacterMotor2D → Rigidbody2D` in FixedUpdate, with the existing speed, acceleration, deceleration and colliders. `NetworkTransform` retains server authority and interpolation for replicated roots. `NetworkRigidbody2D` keeps client bodies kinematic; client motors remain disabled. No client position or velocity is accepted as simulation input.
 
-The server replicates authoritative velocity, facing, ActorId and PlayerName. `ICharacterMotionState` lets the existing animation view observe either the local motor or replicated motion. It selects the original directional clips and mirroring without transmitting animation frames. Only the owned character enables keyboard input and camera follow. Nameplates are a separate presentation component. `SetLocalInputSource` can later accept agent/replay commands without changing motor, physics, replication or animation logic.
+The owned player's **Visual child** uses `OwnerMovementPrediction`, so input moves the sprite immediately without waiting for a round trip. Animation, nameplate and camera observe this presentation. The network root stays server controlled. Prediction shares the motor velocity calculation and sweeps the authored capsule against static room geometry, including wall sliding. Other players use normal NGO interpolation; player-to-player physics remains authoritative and can require correction.
+
+At up to 30 Hz the server sends only the owner a post-physics snapshot: position, velocity, facing, monotonic snapshot ID, the actually simulated input sequence and its simulated duration. The client discards older snapshots, starts from the authoritative pose and replays the remaining input history. Small visual corrections decay over roughly 0.1 seconds and are swept against walls; corrections over 0.75 units snap. Replay is capped at 0.35 seconds with 128 history entries. After 0.5 seconds without snapshots prediction stops, and recovery resets to authoritative state. This is scoped movement prediction, not rollback of all world physics.
+
+The server also replicates velocity, facing, ActorId and PlayerName. `ICharacterMotionState` lets animation observe the motor, predicted owner motion or replicated remote motion. It selects the original clips/mirroring without transmitting animation frames. Only the owner enables keyboard input and camera follow. `SetLocalInputSource` can later accept agent/replay commands without changing physics or presentation. `ActorCharacter.CaptureState()` retains the server-replicated root position.
+
+Movement snapshots introduce **protocol 2 / game 0.2.1**. Old clients fail version validation before connecting to the incompatible game server.
 
 The multiplayer scene is copied from the current Main Hall, preserving the user's collider/light changes. The original offline scene and character prefab remain available.
 
@@ -76,7 +82,7 @@ Default timeouts: startup 45s, never-joined empty room 300s, empty grace after p
 
 ## Current limits and next seam
 
-This is a single-VPS human multiplayer MVP. There is no local prediction/reconciliation, so control latency includes the remote round trip. HTTP without a domain/TLS is the current deployment mode. No accounts, durable match recovery, matchmaking, chat or agent brains are implemented.
+This is a single-VPS human multiplayer MVP. Owner movement is predicted locally; remote players and authoritative interactions still depend on network latency. HTTP without a domain/TLS is the current deployment mode. No accounts, durable match recovery, matchmaking, chat or agent brains are implemented.
 
 Next: define engine-neutral Protobuf observations/actions, add a local gRPC Game Adapter bridge, then build ACTOR Runtime and an `AgentInputSource`. NGO remains inside this reference game; runtime/brain implementations should consume the neutral adapter contract.
 

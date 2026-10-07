@@ -382,7 +382,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkCharacter
   ShowTopMostFoldoutHeaderGroup: 1
-  inputSendRate: 20
+  inputSendRate: 30
   staleInputTimeout: 0.25
 --- !u!114 &3532790401615482897
 MonoBehaviour:

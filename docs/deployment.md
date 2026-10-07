@@ -47,7 +47,7 @@ Build outputs stay under ignored `build/`. Server build uses `StandaloneLinux64`
 
 ## Configuration
 
-See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight players, startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.2.0, ProtocolVersion=1.
+See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight players, startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.2.1, ProtocolVersion=2.
 
 The deployment script preserves an existing `/etc/actor/control-plane.env`; edit it deliberately before redeploying if the host or versions change. There is no persistent signing secret to configure: every allocated match gets a random environment-only key. Never print `/proc/.../environ`, full join tickets or private-key contents.
 
@@ -81,3 +81,16 @@ Accepted evidence is in [multiplayer validation](multiplayer-validation/README.m
 ## HTTPS later
 
 Point a real domain to this VPS and add nginx TLS termination and HTTP→HTTPS redirection, then update the client API URL. No domain or self-signed certificate was invented. Gameplay remains directly on the configured UDP range.
+
+## Responsive movement validation
+
+The development-only probe role `P` measures first visual movement versus the replicated root and checks release, reversals, convergence, wall holding/sliding, speed and server authority. Test a real room normally, then optionally add a loopback relay:
+
+```bash
+python3 scripts/latency-relay.py <server-host> <room-udp-port> --delay-ms 100 --jitter-ms 10 --loss-percent 3
+# Launch the development client with:
+# --auto-room ROOMCODE --player-name "Prediction Pilot" --probe-role P
+# --probe-output /absolute/path/report.json --probe-relay-port 17777
+```
+
+The relay adds 100±10 ms in each direction (about 200 ms additional round trip) and drops 3% of UDP datagrams. It binds only loopback, accesses no tickets, and handles one client per run. The probe uses the real admission API and changes only that diagnostic connection's UDP endpoint. Dedicated builds exclude the probe.

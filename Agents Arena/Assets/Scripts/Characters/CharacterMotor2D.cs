@@ -25,16 +25,26 @@ namespace Actor.Characters
             desiredMovement = Vector2.ClampMagnitude(movement, 1f);
             if (desiredMovement.sqrMagnitude > 0.01f)
             {
-                float angle = Mathf.Atan2(desiredMovement.x, -desiredMovement.y) * Mathf.Rad2Deg;
-                Facing = (FacingDirection)((Mathf.RoundToInt(angle / 45f) + 8) % 8);
+                Facing = FacingFor(desiredMovement);
             }
         }
 
         private void FixedUpdate()
         {
-            Vector2 target = desiredMovement * maxSpeed;
-            float rate = desiredMovement.sqrMagnitude > 0.0001f ? acceleration : deceleration;
-            body.linearVelocity = Vector2.MoveTowards(body.linearVelocity, target, rate * Time.fixedDeltaTime);
+            body.linearVelocity = StepVelocity(body.linearVelocity, desiredMovement, Time.fixedDeltaTime);
+        }
+
+        // Shared by authoritative physics and the owner's presentation prediction.
+        public Vector2 StepVelocity(Vector2 current, Vector2 input, float deltaTime)
+        {
+            float rate = input.sqrMagnitude > 0.0001f ? acceleration : deceleration;
+            return Vector2.MoveTowards(current, input * maxSpeed, rate * deltaTime);
+        }
+
+        public static FacingDirection FacingFor(Vector2 input)
+        {
+            float angle = Mathf.Atan2(input.x, -input.y) * Mathf.Rad2Deg;
+            return (FacingDirection)((Mathf.RoundToInt(angle / 45f) + 8) % 8);
         }
 
         private void OnDisable()

@@ -12,7 +12,7 @@ namespace Actor.Networking
         private void OnGUI()
         {
             if (!character.IsSpawned || Camera.main == null || string.IsNullOrEmpty(character.PlayerName)) return;
-            Vector3 screen = Camera.main.WorldToScreenPoint(transform.position + Vector3.up * 1.1f);
+            Vector3 screen = Camera.main.WorldToScreenPoint(character.PresentationPosition + Vector3.up * 1.1f);
             if (screen.z < 0) return;
             if (style == null)
                 style = new GUIStyle(GUI.skin.box) { fontSize = 15, alignment = TextAnchor.MiddleCenter };
