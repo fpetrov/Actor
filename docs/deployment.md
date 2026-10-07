@@ -84,6 +84,8 @@ Point a real domain to this VPS and add nginx TLS termination and HTTP→HTTPS r
 
 ## Responsive movement validation
 
+Run the isolated Unity query checks with `-batchmode -quit -executeMethod Actor.Editor.MovementPredictionVerification.Run` (report: ignored `build/verification/prediction-query-tests.json`). They cover wall sweeps/tangency, non-authoritative bodies, snapshot timeout/recovery/order/wrap, replay and preserving a recent release under a high RTT.
+
 The development-only probe role `P` measures first visual movement versus the replicated root and checks release, reversals, convergence, wall holding/sliding, speed and server authority. Test a real room normally, then optionally add a loopback relay:
 
 ```bash

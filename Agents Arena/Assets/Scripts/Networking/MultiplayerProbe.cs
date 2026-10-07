@@ -29,7 +29,10 @@ namespace Actor.Networking
             public Peer[] peers;
             public Check[] checks;
             public string[] errors, warnings;
+            public MotionSample[] trajectory;
         }
+        [System.Serializable] private sealed class MotionSample
+        { public float time; public string stage; public Vector3 root, visual; public Vector2 velocity; }
         private sealed class Commands : Actor.Characters.IMovementInputSource
         {
             public Vector2 Value;
@@ -41,6 +44,8 @@ namespace Actor.Networking
         private NetworkCharacter own;
         private float nextSample, maxSpeed;
         private float visualResponseMs, authoritativeResponseMs, releaseResponseMs, idleError;
+        private string stage;
+        private readonly System.Collections.Generic.List<MotionSample> trajectory = new();
         private bool completed;
         private Peer[] peers = System.Array.Empty<Peer>();
 
@@ -152,6 +157,7 @@ namespace Actor.Networking
             Vector3 visualStart = own.PresentationPosition;
             Vector3 rootStart = own.transform.position;
             float started = Time.realtimeSinceStartup;
+            stage = "press";
             commands.Value = Vector2.right;
             bool visualMoved = false, rootMoved = false;
             while (Time.realtimeSinceStartup - started < 1.2f)
@@ -167,6 +173,7 @@ namespace Actor.Networking
             if (config.relayPort > 0)
                 Add("Prediction hides the injected network delay", authoritativeResponseMs > visualResponseMs + 100);
             commands.Value = Vector2.zero;
+            stage = "release";
             started = Time.realtimeSinceStartup;
             while (own.Velocity.magnitude > 0.05f && Time.realtimeSinceStartup - started < 1)
                 yield return null;
@@ -177,6 +184,7 @@ namespace Actor.Networking
             Add("Idle reconciles to the server", idleError < 0.1f, idleError.ToString("F4"));
             for (int i = 0; i < 8; i++)
             {
+                stage = "reversal-" + i;
                 commands.Value = i % 2 == 0 ? Vector2.left : Vector2.right;
                 yield return new WaitForSecondsRealtime(0.18f);
             }
@@ -184,6 +192,7 @@ namespace Actor.Networking
             yield return new WaitForSecondsRealtime(0.8f);
             Add("Rapid reversals converge without accumulated drift", Vector3.Distance(own.PresentationPosition, own.transform.position) < 0.1f);
             commands.Value = Vector2.right;
+            stage = "wall";
             yield return new WaitForSecondsRealtime(5.5f);
             Vector3 wallPosition = own.PresentationPosition;
             yield return new WaitForSecondsRealtime(1);
@@ -191,11 +200,13 @@ namespace Actor.Networking
                 && own.PresentationPosition.x < 6.3f && own.transform.position.x < 6.3f);
             Add("Holding into a wall does not drift or jitter", Vector3.Distance(wallPosition, own.PresentationPosition) < 0.04f);
             commands.Value = new Vector2(1, -1);
+            stage = "slide";
             Vector3 slideStart = own.PresentationPosition;
             yield return new WaitForSecondsRealtime(0.6f);
             Add("Diagonal wall contact slides instead of sticking", own.PresentationPosition.y < slideStart.y - 0.3f
-                && own.PresentationPosition.x < 6.3f);
+                && own.PresentationPosition.x < 6.3f, "start=" + slideStart + " end=" + own.PresentationPosition);
             commands.Value = Vector2.left;
+            stage = "escape";
             yield return new WaitForSecondsRealtime(0.4f);
             Add("Can move away from a wall immediately", own.Velocity.x < -1);
             commands.Value = Vector2.zero;
@@ -213,6 +224,9 @@ namespace Actor.Networking
         {
             if (config == null || string.IsNullOrEmpty(config.outputPath) || Time.realtimeSinceStartup < nextSample) return;
             nextSample = Time.realtimeSinceStartup + 0.25f;
+            if (!completed && config.role == "P" && own != null)
+                trajectory.Add(new MotionSample { time = Time.realtimeSinceStartup, stage = stage,
+                    root = own.transform.position, visual = own.PresentationPosition, velocity = own.Velocity });
             Sample(); Save();
         }
         private void Sample()
@@ -235,7 +249,8 @@ namespace Actor.Networking
             var report = new Report { role = config.role, playerName = config.playerName, connected = GetComponent<MatchSession>().IsConnected,
                 completed = completed, peers = peers, checks = checks.ToArray(), maxSpeed = maxSpeed,
                 visualResponseMs = visualResponseMs, authoritativeResponseMs = authoritativeResponseMs,
-                releaseResponseMs = releaseResponseMs, idleError = idleError, errors = errors.ToArray(), warnings = warnings.ToArray() };
+                releaseResponseMs = releaseResponseMs, idleError = idleError, errors = errors.ToArray(), warnings = warnings.ToArray(),
+                trajectory = trajectory.ToArray() };
             System.IO.File.WriteAllText(config.outputPath, JsonUtility.ToJson(report, true));
         }
         private void Add(string name, bool passed, string detail = "") => checks.Add(new Check { name = name, passed = passed, detail = detail });

@@ -9,7 +9,7 @@ namespace Actor.Networking
     public sealed class OwnerMovementPrediction
     {
         private struct InputSample { public uint Sequence; public float Time; public Vector2 Input; }
-        private const float MaxReplaySeconds = 0.35f;
+        private const float MaxReplaySeconds = 0.5f;
         private const float SnapshotTimeout = 0.5f;
         private const float Skin = 0.003f;
         private readonly List<InputSample> history = new(64);
@@ -87,7 +87,9 @@ namespace Actor.Networking
                 {
                     float start = acknowledged >= 0 ? history[0].Time + appliedSeconds : history[0].Time;
                     // Bound work and visual lead during stalls or packet loss.
-                    float end = Mathf.Min(now, start + MaxReplaySeconds);
+                    // Retain the newest changes (especially release) when bounding replay.
+                    start = Mathf.Max(start, now - MaxReplaySeconds);
+                    float end = now;
                     Vector2 input = history[0].Input;
                     foreach (var sample in history)
                     {
@@ -136,6 +138,9 @@ namespace Actor.Networking
                     // Static room geometry is predictable. Other players remain server simulated.
                     var hit = hits[i];
                     if (hit.collider == capsule || (hit.rigidbody != null && hit.rigidbody.bodyType != RigidbodyType2D.Static)) continue;
+                    // A capsule cast can report a nearby wall while travelling parallel to it.
+                    // Such a contact must not consume all sweep iterations without moving.
+                    if (Vector2.Dot(direction, hit.normal) >= -0.0001f) continue;
                     if (hit.distance < hitDistance) { nearest = i; hitDistance = hit.distance; }
                 }
                 if (nearest < 0) { from += delta; break; }

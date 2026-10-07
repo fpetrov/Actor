@@ -30,6 +30,8 @@ namespace Actor.Editor
                     case "prepare-multiplayer": MultiplayerBuild.Prepare(); break;
                     case "build-client": MultiplayerBuild.BuildMacClient(); break;
                     case "build-server": MultiplayerBuild.BuildLinuxDedicatedServer(); break;
+                    case "verify-prediction": MovementPredictionVerification.Run(); break;
+                    case "play-multiplayer": MovementPredictionVerification.PlayMultiplayer(); break;
                     case "status":
                         File.WriteAllText(Path.Combine(Folder, "status.txt"), PlayableMilestoneVerification.Status);
                         break;
