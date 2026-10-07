@@ -1,0 +1,98 @@
+{
+    "role": "B",
+    "playerName": "Standalone Pilot",
+    "connected": true,
+    "completed": true,
+    "maxSpeed": 2.5999999046325684,
+    "visualResponseMs": 0.0,
+    "authoritativeResponseMs": 0.0,
+    "releaseResponseMs": 0.0,
+    "idleError": 0.0,
+    "peers": [
+        {
+            "actorId": "97a49a5d7728469b8a3ebec5c5f296e0",
+            "playerName": "Standalone Pilot",
+            "facing": "DownRight",
+            "clientId": 3,
+            "owner": true,
+            "position": {
+                "x": 0.40434128046035767,
+                "y": -2.654340982437134
+            },
+            "velocity": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "presentationPosition": {
+                "x": 0.4086493253707886,
+                "y": -2.658649206161499,
+                "z": 0.0
+            }
+        },
+        {
+            "actorId": "6b3e8fb2a53a4f1e8179328c59098cbc",
+            "playerName": "Editor Pilot",
+            "facing": "Right",
+            "clientId": 2,
+            "owner": false,
+            "position": {
+                "x": 3.0189168453216553,
+                "y": -1.399999976158142
+            },
+            "velocity": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "presentationPosition": {
+                "x": 3.0189168453216553,
+                "y": -1.399999976158142,
+                "z": 0.0
+            }
+        }
+    ],
+    "checks": [
+        {
+            "name": "Two clients spawned",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Unique player identities and replicated names",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Client physics is non-authoritative",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Owned input moves an independent character",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Release stops the character",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Network speed stays normalized",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Remote authoritative movement is visible",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "No runtime errors",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "errors": [],
+    "warnings": [],
+    "trajectory": []
+}

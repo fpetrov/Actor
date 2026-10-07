@@ -1,0 +1,103 @@
+{
+    "role": "A",
+    "playerName": "Editor Pilot",
+    "connected": true,
+    "completed": true,
+    "maxSpeed": 2.5999999046325684,
+    "visualResponseMs": 0.0,
+    "authoritativeResponseMs": 0.0,
+    "releaseResponseMs": 0.0,
+    "idleError": 0.0,
+    "peers": [
+        {
+            "actorId": "6b3e8fb2a53a4f1e8179328c59098cbc",
+            "playerName": "Editor Pilot",
+            "facing": "Right",
+            "clientId": 2,
+            "owner": true,
+            "position": {
+                "x": 3.0182738304138184,
+                "y": -1.3999998569488525
+            },
+            "velocity": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "presentationPosition": {
+                "x": 3.023076057434082,
+                "y": -1.399999976158142,
+                "z": 0.0
+            }
+        },
+        {
+            "actorId": "97a49a5d7728469b8a3ebec5c5f296e0",
+            "playerName": "Standalone Pilot",
+            "facing": "DownRight",
+            "clientId": 3,
+            "owner": false,
+            "position": {
+                "x": 0.40373319387435913,
+                "y": -2.653733968734741
+            },
+            "velocity": {
+                "x": 0.0,
+                "y": 0.0
+            },
+            "presentationPosition": {
+                "x": 0.40373319387435913,
+                "y": -2.653733968734741,
+                "z": 0.0
+            }
+        }
+    ],
+    "checks": [
+        {
+            "name": "Two clients spawned",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Unique player identities and replicated names",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Client physics is non-authoritative",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Owned input moves an independent character",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Authoritative wall blocks continued intent",
+            "passed": true,
+            "detail": "(3.02, -1.40, 0.00)"
+        },
+        {
+            "name": "Release stops the character",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Network speed stays normalized",
+            "passed": true,
+            "detail": "2.600"
+        },
+        {
+            "name": "Client transform manipulation is corrected",
+            "passed": true,
+            "detail": "(3.02, -1.40, 0.00)"
+        },
+        {
+            "name": "No runtime errors",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "errors": [],
+    "warnings": [],
+    "trajectory": []
+}

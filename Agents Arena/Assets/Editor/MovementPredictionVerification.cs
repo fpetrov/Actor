@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Actor.Characters;
 using Actor.Networking;
-using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace Actor.Editor
@@ -90,10 +88,5 @@ namespace Actor.Editor
             void CheckResult(string name, bool passed, string detail = "") => checks.Add(new Check { name = name, passed = passed, detail = detail });
         }
 
-        public static void PlayMultiplayer()
-        {
-            EditorSceneManager.OpenScene(MultiplayerBuild.LobbyScene);
-            EditorApplication.isPlaying = true;
-        }
     }
 }
