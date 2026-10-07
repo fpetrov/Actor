@@ -19,3 +19,7 @@ The JSON probe files contain check results and their final observer state; peer 
 See [capacity.json](capacity.json), [editor-probe.json](editor-probe.json), [standalone-probe.json](standalone-probe.json). The first Standalone attempt timed out waiting for the Editor to enter Play Mode; the archived repeated probe is the passing result.
 
 ![Deployed nginx website](website.png)
+
+On 8 October, the final Standalone UI also created room `PFJZDP` from the game, showed Starting feedback, automatically joined when Ready, and moved through ordinary keyboard input against the remote server. Empty room-name validation was visible in the menu.
+
+![Create and join from the final Unity client](unity-create-join.png)
