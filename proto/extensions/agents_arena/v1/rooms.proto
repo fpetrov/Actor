@@ -1,0 +1,12 @@
+syntax = "proto3";
+package actor.extensions.agents_arena.v1;
+option csharp_namespace = "AgentsArena.ActorProtocol.V1";
+
+message RoomMembershipObservation {
+  string room_id = 1;
+}
+
+message RoomChangedEvent {
+  string previous_room_id = 1;
+  string current_room_id = 2;
+}

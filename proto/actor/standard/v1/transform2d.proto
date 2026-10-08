@@ -1,0 +1,11 @@
+syntax = "proto3";
+package actor.standard.v1;
+option csharp_namespace = "Actor.Protocol.Standard.V1";
+
+// World coordinates and a unit facing vector; no engine-specific objects.
+message Transform2DObservation {
+  float x = 1;
+  float y = 2;
+  float facing_x = 3;
+  float facing_y = 4;
+}

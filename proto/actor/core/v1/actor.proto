@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package actor.core.v1;
+option csharp_namespace = "Actor.Protocol.Core.V1";
+
+import "google/protobuf/any.proto";
+
+// Core describes exchange infrastructure, never a game's world model.
+message ProtocolVersion {
+  uint32 major = 1;
+  uint32 minor = 2;
+}
+
+enum CapabilityKind {
+  CAPABILITY_KIND_UNSPECIFIED = 0;
+  CAPABILITY_KIND_OBSERVATION = 1;
+  CAPABILITY_KIND_COMMAND = 2;
+  CAPABILITY_KIND_EVENT = 3;
+  CAPABILITY_KIND_SKILL = 4;
+}
+
+enum CommandDelivery {
+  COMMAND_DELIVERY_UNSPECIFIED = 0;
+  COMMAND_DELIVERY_ORDERED = 1;
+  COMMAND_DELIVERY_LATEST = 2;
+}
+
+message ExtensionManifest {
+  string extension_id = 1;
+  string extension_version = 2;
+  uint32 supported_protocol_major = 3;
+  string schema_hash = 4;
+  bool required = 5;
+}
+
+message CapabilityDefinition {
+  string capability_id = 1;
+  string version = 2;
+  CapabilityKind kind = 3;
+  string description = 4;
+  string input_type_url = 5;
+  string output_type_url = 6;
+  string extension_id = 7;
+  CommandDelivery command_delivery = 8;
+}
+
+message CapabilityManifest {
+  string game_id = 1;
+  string game_version = 2;
+  ProtocolVersion protocol_version = 3;
+  string self_actor_id = 4;
+  repeated ExtensionManifest extensions = 5;
+  repeated CapabilityDefinition capabilities = 6;
+}
+
+message GameHello {
+  string game_id = 1;
+  string game_version = 2;
+  ProtocolVersion protocol_version = 3;
+  string self_actor_id = 4;
+}
+
+// Accepted is sent only after the manifest and extensions have been validated.
+message RuntimeHello {
+  ProtocolVersion protocol_version = 1;
+  bool accepted = 2;
+}
+
+message ObservationEnvelope {
+  string capability_id = 1;
+  string extension_id = 2;
+  string extension_version = 3;
+  string entity_id = 4;
+  google.protobuf.Any payload = 5;
+}
+
+message ObservationFrame {
+  uint64 revision = 1;
+  repeated ObservationEnvelope observations = 2;
+}
+
+message GameEventEnvelope {
+  uint64 revision = 1;
+  string capability_id = 2;
+  string extension_id = 3;
+  string extension_version = 4;
+  string entity_id = 5;
+  google.protobuf.Any payload = 6;
+}
+
+message CommandEnvelope {
+  uint64 command_id = 1;
+  string capability_id = 2;
+  string extension_id = 3;
+  string extension_version = 4;
+  string target_actor_id = 5;
+  uint32 ttl_ms = 6;
+  google.protobuf.Any payload = 7;
+  // Both peers are on the same host; checked on dispatch, not only on receipt.
+  int64 issued_at_unix_ms = 8;
+}
+
+enum CommandStatus {
+  COMMAND_STATUS_UNSPECIFIED = 0;
+  // Adapter accepted intent; this does not assert authoritative execution.
+  COMMAND_STATUS_ACCEPTED = 1;
+  COMMAND_STATUS_REJECTED = 2;
+  COMMAND_STATUS_TIMED_OUT = 3;
+}
+
+message CommandResult {
+  uint64 command_id = 1;
+  CommandStatus status = 2;
+  ProtocolError error = 3;
+  google.protobuf.Any payload = 4;
+}
+
+message Heartbeat {
+  uint64 last_received_sequence = 1;
+}
+
+message ProtocolError {
+  string code = 1;
+  string message = 2;
+  string extension_id = 3;
+  string required_version = 4;
+  string schema_hash = 5;
+  uint64 command_id = 6;
+}
+
+message Disconnect {
+  string reason = 1;
+}

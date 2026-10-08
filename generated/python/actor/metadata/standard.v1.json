@@ -1,0 +1,37 @@
+{
+  "capabilities": [
+    {
+      "capability_id": "actor.standard.transform2d",
+      "description": "Position and facing in a two-dimensional world.",
+      "extension_id": "actor.standard",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.standard.v1.Transform2DObservation",
+      "version": "0.1.0"
+    },
+    {
+      "capability_id": "actor.standard.motion2d",
+      "description": "Velocity and moving state in a two-dimensional world.",
+      "extension_id": "actor.standard",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.standard.v1.Motion2DObservation",
+      "version": "0.1.0"
+    },
+    {
+      "capability_id": "actor.standard.locomotion2d",
+      "command_delivery": "latest",
+      "description": "Desired two-dimensional movement intent.",
+      "extension_id": "actor.standard",
+      "input_type_url": "type.googleapis.com/actor.standard.v1.Locomotion2DCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.1.0"
+    }
+  ],
+  "descriptor_set": "standard.v1.pb",
+  "extension_id": "actor.standard",
+  "extension_version": "0.1.0",
+  "schema_hash": "5188081ff451868991d0ba8cda56dc18d0a422794251c43216586996f7d9fb21",
+  "supported_protocol_major": 1
+}

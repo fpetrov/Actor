@@ -1,0 +1,9 @@
+syntax = "proto3";
+package actor.standard.v1;
+option csharp_namespace = "Actor.Protocol.Standard.V1";
+
+message Motion2DObservation {
+  float velocity_x = 1;
+  float velocity_y = 2;
+  bool is_moving = 3;
+}

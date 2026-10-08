@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package actor.core.v1;
+option csharp_namespace = "Actor.Protocol.Core.V1";
+
+import "actor/core/v1/actor.proto";
+
+service ActorBridge {
+  rpc Connect(stream GameToRuntime) returns (stream RuntimeToGame);
+}
+
+message GameToRuntime {
+  string session_id = 1;
+  uint64 sequence = 2;
+  oneof body {
+    GameHello hello = 3;
+    CapabilityManifest manifest = 4;
+    ObservationFrame observation = 5;
+    GameEventEnvelope event = 6;
+    CommandResult command_result = 7;
+    Heartbeat heartbeat = 8;
+    ProtocolError error = 9;
+  }
+}
+
+message RuntimeToGame {
+  string session_id = 1;
+  uint64 sequence = 2;
+  oneof body {
+    RuntimeHello hello = 3;
+    CommandEnvelope command = 4;
+    Heartbeat heartbeat = 5;
+    Disconnect disconnect = 6;
+    ProtocolError error = 7;
+  }
+}

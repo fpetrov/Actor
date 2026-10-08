@@ -1,0 +1,9 @@
+syntax = "proto3";
+package actor.standard.v1;
+option csharp_namespace = "Actor.Protocol.Standard.V1";
+
+// Desired intent, independently validated/clamped by the game adapter.
+message Locomotion2DCommand {
+  float desired_move_x = 1;
+  float desired_move_y = 2;
+}

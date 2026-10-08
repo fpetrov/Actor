@@ -1,0 +1,27 @@
+{
+  "capabilities": [
+    {
+      "capability_id": "agents-arena.room-membership",
+      "description": "Authoritative room containing the actor.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomMembershipObservation",
+      "version": "0.1.0"
+    },
+    {
+      "capability_id": "agents-arena.room-changed",
+      "description": "Authoritative room membership changed.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomChangedEvent",
+      "version": "0.1.0"
+    }
+  ],
+  "descriptor_set": "agents_arena.v1.pb",
+  "extension_id": "agents-arena",
+  "extension_version": "0.1.0",
+  "schema_hash": "d235c0b75f4dd226d249c97e21fa9d337b3040c04f2ec1d881f0a2bf13abdc38",
+  "supported_protocol_major": 1
+}

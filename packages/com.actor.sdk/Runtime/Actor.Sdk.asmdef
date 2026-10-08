@@ -1,0 +1,14 @@
+{
+  "name": "Actor.Sdk",
+  "rootNamespace": "Actor.Sdk",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": true,
+  "precompiledReferences": ["Google.Protobuf.dll"],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": true
+}

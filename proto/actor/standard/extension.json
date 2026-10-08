@@ -1,0 +1,10 @@
+{
+  "extension_id": "actor.standard",
+  "extension_version": "0.1.0",
+  "supported_protocol_major": 1,
+  "capabilities": [
+    { "capability_id": "actor.standard.transform2d", "kind": "observation", "message_type": "actor.standard.v1.Transform2DObservation", "description": "Position and facing in a two-dimensional world." },
+    { "capability_id": "actor.standard.motion2d", "kind": "observation", "message_type": "actor.standard.v1.Motion2DObservation", "description": "Velocity and moving state in a two-dimensional world." },
+    { "capability_id": "actor.standard.locomotion2d", "kind": "command", "message_type": "actor.standard.v1.Locomotion2DCommand", "command_delivery": "latest", "description": "Desired two-dimensional movement intent." }
+  ]
+}
