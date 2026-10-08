@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "actor-runtime"
+version = "0.1.0"
+description = "Local typed ACTOR game runtime with discoverable extension packages"
+requires-python = ">=3.12"
+dependencies = ["grpcio==1.82.2", "protobuf==7.36.2"]
+
+[project.optional-dependencies]
+dev = ["grpcio-tools==1.82.2", "pytest==9.0.2", "pytest-asyncio==1.3.0"]
+
+[project.scripts]
+actor-runtime = "actor_runtime.cli:main"
+
+[project.entry-points."actor.extensions"]
+standard = "actor_standard:extension_package"
+agents-arena = "actor_agents_arena:extension_package"
+
+[project.entry-points."actor.examples"]
+agents-arena = "actor_agents_arena.scripted:run"
+
+[tool.setuptools]
+package-dir = {actor_runtime = "actor_runtime", actor_standard = "actor_standard", actor_agents_arena = "actor_agents_arena", actor = "../generated/python/actor", extensions = "../generated/python/extensions"}
+packages = ["actor_runtime", "actor_standard", "actor_agents_arena", "actor", "actor.core", "actor.core.v1", "actor.standard", "actor.standard.v1", "actor.metadata", "extensions", "extensions.agents_arena", "extensions.agents_arena.v1", "extensions.agents_arena.metadata"]
+
+[tool.setuptools.package-data]
+"actor.metadata" = ["*.pb", "*.json"]
+"extensions.agents_arena.metadata" = ["*.pb", "*.json"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
