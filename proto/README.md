@@ -9,6 +9,7 @@ Core protocol **1.0** is independent of both Agents Arena's game version and its
 ```bash
 scripts/generate-proto.sh
 scripts/generate-proto.sh --check
+scripts/generate-proto.sh --self-test
 ```
 
 Generation supports macOS/Linux on x64/arm64 and bootstraps its ignored tools under `build/proto-tools/`. Python 3.12+ and network access are required on the first run. Downloads come from official Protobuf GitHub releases and NuGet, with SHA-256 checksums pinned in the script.
@@ -27,7 +28,9 @@ Generated C#, Python, descriptor sets and metadata are version-controlled. Ordin
 - `generated/descriptors`: one canonical `FileDescriptorSet` per schema package.
 - `generated/manifests`: generated package metadata. Matching descriptor/metadata resources are copied into Python packages so installed plugins can load them through `importlib.resources`.
 
-Source extension metadata resides beside its schemas in `extension.json`. This JSON describes a local package, not the IPC format. Capability type names are checked against descriptor sets during generation. The SDK derives wire manifests and `Any` envelopes automatically from typed registrations.
+Source extension metadata resides beside its schemas in `extension.json`. Each discovered `proto/**/extension.json` declares its generation sources, C# output/helper and Python resource/artifact names. `--extension-manifest` adds a local metadata file outside that tree. Game packages require no Core or generator edits. The generation section is omitted from Runtime metadata; this JSON describes a local package, not the IPC format. Capability type names are checked against descriptor sets during generation. The SDK derives wire manifests and `Any` envelopes automatically from typed registrations.
+
+Output paths must stay relative to the repository (Python resources relative to `generated/python`), without parent traversal or escaping symlinks. C# uses dedicated `Generated` folders; collisions/duplicate ownership fail rather than silently overwrite bindings. The isolated `--self-test` generates a fictitious Mana extension and verifies typed bindings/Any, descriptors/package helper and path guards. See [extension tutorial](../docs/extensions.md).
 
 ## Fingerprint and compatibility
 

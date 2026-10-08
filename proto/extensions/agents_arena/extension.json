@@ -2,6 +2,14 @@
   "extension_id": "agents-arena",
   "extension_version": "0.1.0",
   "supported_protocol_major": 1,
+  "generation": {
+    "sources": ["extensions/agents_arena/v1/rooms.proto"],
+    "csharp_output": "Agents Arena/Assets/Scripts/Actor/Generated",
+    "helper_namespace": "AgentsArena.ActorProtocol.V1",
+    "helper_name": "AgentsArenaExtensionPackage",
+    "python_resource": "extensions/agents_arena/metadata/agents_arena.v1",
+    "artifact_name": "agents-arena"
+  },
   "capabilities": [
     { "capability_id": "agents-arena.room-membership", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.RoomMembershipObservation", "description": "Authoritative room containing the actor." },
     { "capability_id": "agents-arena.room-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.RoomChangedEvent", "description": "Authoritative room membership changed." }

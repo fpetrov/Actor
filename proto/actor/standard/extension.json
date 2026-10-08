@@ -2,6 +2,14 @@
   "extension_id": "actor.standard",
   "extension_version": "0.1.0",
   "supported_protocol_major": 1,
+  "generation": {
+    "sources": ["actor/standard/v1/transform2d.proto", "actor/standard/v1/motion2d.proto", "actor/standard/v1/locomotion2d.proto"],
+    "csharp_output": "packages/com.actor.sdk/Runtime/Protocol/Generated",
+    "helper_namespace": "Actor.Protocol.Standard.V1",
+    "helper_name": "ActorStandardExtensionPackage",
+    "python_resource": "actor/metadata/standard.v1",
+    "artifact_name": "actor-standard"
+  },
   "capabilities": [
     { "capability_id": "actor.standard.transform2d", "kind": "observation", "message_type": "actor.standard.v1.Transform2DObservation", "description": "Position and facing in a two-dimensional world." },
     { "capability_id": "actor.standard.motion2d", "kind": "observation", "message_type": "actor.standard.v1.Motion2DObservation", "description": "Velocity and moving state in a two-dimensional world." },
