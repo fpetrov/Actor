@@ -1,0 +1,46 @@
+{
+    "platform": "OSXPlayer",
+    "backend": "Mono",
+    "completed": true,
+    "checks": [
+        {
+            "name": "Server sends independently before client payload",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "True bidirectional binary stream",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Cancellation terminates receive task",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Reconnect receives a fresh server stream",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Reconnect exchanges messages",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Half-close gracefully completes both directions",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "Incorrect token is rejected",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "medianRttMs": 0.8974,
+    "p95RttMs": 3.5872,
+    "frames": 106,
+    "error": ""
+}

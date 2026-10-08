@@ -1,0 +1,5 @@
+grpcio==1.82.2
+grpcio-tools==1.82.2
+protobuf==7.36.2
+pytest==9.0.2
+pytest-asyncio==1.3.0

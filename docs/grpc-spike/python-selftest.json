@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "endpoint": "127.0.0.1:50061",
+  "method": "/actor.spike.Echo/Connect",
+  "checks": [
+    "server writes before any client payload",
+    "client binary stream and tagged replies",
+    "client cancellation",
+    "reconnect and 30 streamed messages",
+    "half-close drains and completes gracefully",
+    "invalid token rejected"
+  ],
+  "rtt_ms": {
+    "samples": 30,
+    "median": 0.2933329960796982,
+    "p95": 0.413708999985829,
+    "max": 1.7119169933721423
+  }
+}

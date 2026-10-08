@@ -48,4 +48,9 @@ Thumbs.db
 *.log
 *.pem
 *.key
-/runtime/
+**/__pycache__/
+**/.pytest_cache/
+**/.ruff_cache/
+**/.venv/
+**/*.egg-info/
+*.pyc
