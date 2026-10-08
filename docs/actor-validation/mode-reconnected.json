@@ -1,0 +1,31 @@
+{
+  "mode": "Runtime",
+  "state": "Connected",
+  "actorId": "ccf9dbfe71d14b1693002b20dc5ad159",
+  "roomId": "main-hall",
+  "sessionId": "7c5da8fae1e0410aa51ea9bb4cb0facb",
+  "errorCode": "",
+  "error": "",
+  "errors": [],
+  "warnings": [],
+  "keyboardEnabled": false,
+  "position": {
+    "x": 0.9999997019767761,
+    "y": -1.429652452468872
+  },
+  "velocity": {
+    "x": 0.0,
+    "y": 0.0
+  },
+  "observations": 112,
+  "messagesSent": 122,
+  "messagesReceived": 8,
+  "commands": 0,
+  "bytesSent": 62551,
+  "bytesReceived": 324,
+  "meanFps": 119.27336289083873,
+  "maxPumpMs": 0.2235,
+  "elapsedSeconds": 421.35979720800003,
+  "managedHeapStart": 1785856,
+  "managedHeapCurrent": 5652480
+}

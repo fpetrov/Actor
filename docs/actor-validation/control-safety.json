@@ -1,0 +1,220 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "Hello and CapabilityManifest negotiate the controlled actor",
+      "passed": true
+    },
+    {
+      "name": "Typed Standard observations and game RoomMembership are present",
+      "passed": true,
+      "state": {
+        "actor_id": "990ee998926c469e88e701351ee896ba",
+        "position": {
+          "x": -1.7999999523162842,
+          "y": -1.399999976158142
+        },
+        "velocity": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "is_moving": false,
+        "room_id": "main-hall",
+        "transform_sequence": 4,
+        "motion_sequence": 4,
+        "room_sequence": 4
+      }
+    },
+    {
+      "name": "Unknown capability is structurally rejected",
+      "passed": true,
+      "result": {
+        "command_id": 1,
+        "status": "COMMAND_STATUS_REJECTED",
+        "code": "UnknownCapability",
+        "message": "Command capability is not registered."
+      }
+    },
+    {
+      "name": "Malformed typed Protobuf command is rejected",
+      "passed": true,
+      "result": {
+        "command_id": 2,
+        "status": "COMMAND_STATUS_REJECTED",
+        "code": "MalformedCommand",
+        "message": "Command payload is not valid Protobuf."
+      }
+    },
+    {
+      "name": "Non-finite movement is rejected by the game adapter",
+      "passed": true,
+      "result": {
+        "command_id": 3,
+        "status": "COMMAND_STATUS_REJECTED",
+        "code": "InvalidMovement",
+        "message": "Movement intent must be finite."
+      }
+    },
+    {
+      "name": "Valid movement commands are accepted",
+      "passed": true,
+      "count": 5
+    },
+    {
+      "name": "Valid intent moves the authoritative multiplayer actor",
+      "passed": true,
+      "displacement": 1.0519989132881165,
+      "state": {
+        "actor_id": "990ee998926c469e88e701351ee896ba",
+        "position": {
+          "x": -0.7480010390281677,
+          "y": -1.399999976158142
+        },
+        "velocity": {
+          "x": 0.0,
+          "y": 0.0
+        },
+        "is_moving": false,
+        "room_id": "main-hall",
+        "transform_sequence": 24,
+        "motion_sequence": 24,
+        "room_sequence": 24
+      }
+    },
+    {
+      "name": "Fresh authoritative motion stops without commands",
+      "passed": true,
+      "no_command_seconds": 0.6020654580061091
+    }
+  ],
+  "command_results": [
+    {
+      "command_id": 1,
+      "status": "COMMAND_STATUS_REJECTED",
+      "code": "UnknownCapability",
+      "message": "Command capability is not registered."
+    },
+    {
+      "command_id": 2,
+      "status": "COMMAND_STATUS_REJECTED",
+      "code": "MalformedCommand",
+      "message": "Command payload is not valid Protobuf."
+    },
+    {
+      "command_id": 3,
+      "status": "COMMAND_STATUS_REJECTED",
+      "code": "InvalidMovement",
+      "message": "Movement intent must be finite."
+    },
+    {
+      "command_id": 4,
+      "status": "COMMAND_STATUS_ACCEPTED",
+      "code": "",
+      "message": ""
+    },
+    {
+      "command_id": 5,
+      "status": "COMMAND_STATUS_ACCEPTED",
+      "code": "",
+      "message": ""
+    },
+    {
+      "command_id": 6,
+      "status": "COMMAND_STATUS_ACCEPTED",
+      "code": "",
+      "message": ""
+    },
+    {
+      "command_id": 7,
+      "status": "COMMAND_STATUS_ACCEPTED",
+      "code": "",
+      "message": ""
+    },
+    {
+      "command_id": 8,
+      "status": "COMMAND_STATUS_ACCEPTED",
+      "code": "",
+      "message": ""
+    }
+  ],
+  "state_before": {
+    "actor_id": "990ee998926c469e88e701351ee896ba",
+    "position": {
+      "x": -1.7999999523162842,
+      "y": -1.399999976158142
+    },
+    "velocity": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "is_moving": false,
+    "room_id": "main-hall",
+    "transform_sequence": 4,
+    "motion_sequence": 4,
+    "room_sequence": 4
+  },
+  "state_after": {
+    "actor_id": "990ee998926c469e88e701351ee896ba",
+    "position": {
+      "x": -0.7480010390281677,
+      "y": -1.399999976158142
+    },
+    "velocity": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "is_moving": false,
+    "room_id": "main-hall",
+    "transform_sequence": 24,
+    "motion_sequence": 24,
+    "room_sequence": 24
+  },
+  "runtime": {
+    "endpoint": "127.0.0.1:50051",
+    "elapsed_seconds": 6.472377625002991,
+    "cpu_seconds": 0.029675000000000007,
+    "cpu_percent_one_core": 0.4584868454733633,
+    "sessions": [
+      {
+        "session_id": "400e2354a2374a0fabb203e92bedfe19",
+        "game_id": "agents-arena",
+        "game_version": "0.3.0",
+        "protocol_version": {
+          "major": 1,
+          "minor": 0
+        },
+        "actor_id": "990ee998926c469e88e701351ee896ba",
+        "loaded_extensions": [
+          "actor.standard",
+          "agents-arena"
+        ],
+        "opaque_extensions": [],
+        "capabilities": [
+          "actor.standard.locomotion2d",
+          "actor.standard.motion2d",
+          "actor.standard.transform2d",
+          "agents-arena.room-changed",
+          "agents-arena.room-membership"
+        ],
+        "commands_sent": 9,
+        "command_values_replaced": 0,
+        "observation_frames": 14,
+        "events_received": 0,
+        "last_received_sequence": 26,
+        "last_sent_sequence": 12,
+        "command_result_rtt_ms": [
+          4.419916003826074,
+          9.2785000015283,
+          4.393957991851494,
+          8.509708000929095,
+          1.2839999981224537,
+          1.7406669940100983,
+          2.1814589999848977,
+          2.933208001195453,
+          1.3237079983809963
+        ],
+        "errors": []
+      }
+    ]
+  }
+}

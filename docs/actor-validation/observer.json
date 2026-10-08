@@ -1,0 +1,2671 @@
+{
+    "role": "O",
+    "playerName": "Human Observer",
+    "observedPlayer": "Agent Pilot",
+    "roomCode": "F3KPVV",
+    "stage": "returned-main-hall",
+    "recordedAtUtc": "2026-10-08T01:13:02.8825540Z",
+    "connected": true,
+    "completed": true,
+    "passed": true,
+    "elapsed": 151.59620666503906,
+    "remoteDisplacement": 5.705574035644531,
+    "observerDisplacement": 0.0,
+    "peakRemoteSpeed": 2.5999999046325684,
+    "peers": [
+        {
+            "actorId": "daa13dc8a0994ff6928675c5becaa4d3",
+            "playerName": "Human Observer",
+            "roomId": "engineering",
+            "clientId": 1,
+            "roomRevision": 1,
+            "owner": true,
+            "keyboardEnabled": true,
+            "motorEnabled": false,
+            "root": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "visual": {
+                "x": 0.20695285499095917,
+                "y": -7.0741753578186035,
+                "z": 0.0
+            },
+            "velocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "actorId": "ccf9dbfe71d14b1693002b20dc5ad159",
+            "playerName": "Agent Pilot",
+            "roomId": "main-hall",
+            "clientId": 2,
+            "roomRevision": 2,
+            "owner": false,
+            "keyboardEnabled": false,
+            "motorEnabled": false,
+            "root": {
+                "x": 0.00009500630403636023,
+                "y": -4.69429349899292,
+                "z": 0.0
+            },
+            "visual": {
+                "x": 0.00009500630403636023,
+                "y": -4.69429349899292,
+                "z": 0.0
+            },
+            "velocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        }
+    ],
+    "trajectory": [
+        {
+            "elapsed": 138.44595336914063,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 138.55369567871094,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 138.66131591796875,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 138.7673797607422,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 138.87503051757813,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 138.9755859375,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 139.07565307617188,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 139.17568969726563,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 139.28407287597656,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8500000238418579,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 139.3841552734375,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8498669862747192,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.8799996376037598,
+                "y": -2.4683323829322035e-8
+            }
+        },
+        {
+            "elapsed": 139.49278259277344,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.8194558024406433,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 2.2100000381469727,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 139.59295654296875,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.6899623870849609,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 2.2100000381469727,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 139.7008514404297,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.47996681928634644,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 1.981200098991394,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 139.8033447265625,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.2794288098812103,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 1.4071202278137207,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 139.90374755859375,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.09199146181344986,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 1.062360405921936,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 140.0120391845703,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.06162054091691971,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 140.1199951171875,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.1505075991153717,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 140.22035217285156,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.179828479886055,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.4139378070831299,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 140.32798767089844,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.1820032149553299,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.5093043446540833,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 140.42892456054688,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.15256762504577637,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.5093043446540833,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 140.52896118164063,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.10854808986186981,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.41824620962142944,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 140.63702392578125,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0573166199028492,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.3123110234737396,
+                "y": -6.19888282926695e-8
+            }
+        },
+        {
+            "elapsed": 140.74549865722656,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.014808997511863708,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 140.84585571289063,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.005377699621021748,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 140.95362854003906,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.011731082573533058,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 141.0613250732422,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.011731082573533058,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 141.16201782226563,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.011731082573533058,
+                "y": -1.399999976158142,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 141.27040100097656,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.012502366676926613,
+                "y": -1.4007718563079834,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.009207549504935741,
+                "y": -1.7599750757217407
+            }
+        },
+        {
+            "elapsed": 141.37051391601563,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.014978712424635887,
+                "y": -1.4511104822158813,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602067716419697,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 141.47874450683594,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.01556644681841135,
+                "y": -1.6402101516723633,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602067716419697,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 141.57952880859375,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.014814973808825016,
+                "y": -1.8720380067825317,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602067716419697,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 141.6798858642578,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.013722913339734077,
+                "y": -2.131098747253418,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602065853774548,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 141.78013610839844,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.012471464462578297,
+                "y": -2.3885905742645264,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602064922451973,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 141.8870086669922,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.011101329699158669,
+                "y": -2.660350799560547,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602063059806824,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 141.99484252929688,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.009667514823377132,
+                "y": -2.9402573108673096,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602064922451973,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 142.0951385498047,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00831881258636713,
+                "y": -3.1974904537200928,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602065853774548,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 142.19541931152344,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00697538536041975,
+                "y": -3.45365571975708,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.01360207051038742,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 142.2954864501953,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.005631247069686651,
+                "y": -3.71040415763855,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602074235677719,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 142.40374755859375,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.004193681292235851,
+                "y": -3.9917523860931396,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.013602078892290592,
+                "y": -2.5999643802642822
+            }
+        },
+        {
+            "elapsed": 142.5120849609375,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0027461533900350332,
+                "y": -4.271133899688721,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.009141226299107075,
+                "y": -1.7472944259643555
+            }
+        },
+        {
+            "elapsed": 142.62049865722656,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0013683245051652193,
+                "y": -4.526359558105469,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.004190073814243078,
+                "y": -0.8009060621261597
+            }
+        },
+        {
+            "elapsed": 142.7288055419922,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00024467194452881813,
+                "y": -4.721555709838867,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.002164279343560338,
+                "y": -0.4136866629123688
+            }
+        },
+        {
+            "elapsed": 142.8289794921875,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00028772823861800134,
+                "y": -4.838895797729492,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 142.93731689453125,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0004807939403690398,
+                "y": -4.899885177612305,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0025648477021604776,
+                "y": 0.49025797843933105
+            }
+        },
+        {
+            "elapsed": 143.04544067382813,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0005342342774383724,
+                "y": -4.9043474197387695,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.003007816383615136,
+                "y": 0.5749272704124451
+            }
+        },
+        {
+            "elapsed": 143.1537628173828,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0005603792378678918,
+                "y": -4.866868495941162,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.003033732296898961,
+                "y": 0.5798801779747009
+            }
+        },
+        {
+            "elapsed": 143.2620391845703,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0005688286037184298,
+                "y": -4.811850070953369,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.002727107610553503,
+                "y": 0.5212697386741638
+            }
+        },
+        {
+            "elapsed": 143.37136840820313,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0005715526058338583,
+                "y": -4.752686977386475,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0016435931902378798,
+                "y": 0.31416383385658264
+            }
+        },
+        {
+            "elapsed": 143.4786376953125,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0005724316579289734,
+                "y": -4.702534198760986,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 143.578857421875,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00021246817777864635,
+                "y": -4.678345203399658,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 143.68417358398438,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00004399280805955641,
+                "y": -4.669767379760742,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 143.78697204589844,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00004399280805955641,
+                "y": -4.669767379760742,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 143.8955535888672,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00004399280805955641,
+                "y": -4.669767379760742,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 143.99559020996094,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00008474176866002381,
+                "y": -4.671948432922363,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00030059361597523093,
+                "y": -2.1999990940093994
+            }
+        },
+        {
+            "elapsed": 144.10362243652344,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00015054832329042256,
+                "y": -4.734716415405273,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0003552471462171525,
+                "y": -2.5999999046325684
+            }
+        },
+        {
+            "elapsed": 144.21218872070313,
+            "stage": "main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 0,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00017221203597728163,
+                "y": -4.936258792877197,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0003552471462171525,
+                "y": -2.5999999046325684
+            }
+        },
+        {
+            "elapsed": 144.32176208496094,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00017910786846186966,
+                "y": -5.188022136688232,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0003534217830747366,
+                "y": -2.586638927459717
+            }
+        },
+        {
+            "elapsed": 144.42893981933594,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.00018132958211936057,
+                "y": -5.464119911193848,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00029800322954542935,
+                "y": -2.1810383796691895
+            }
+        },
+        {
+            "elapsed": 144.5369110107422,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0001482252700952813,
+                "y": -5.738026142120361,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00020563896396197379,
+                "y": -1.5050379037857056
+            }
+        },
+        {
+            "elapsed": 144.6453857421875,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000046934121201047674,
+                "y": -5.976617336273193,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00007670871855225414,
+                "y": -0.5614191889762878
+            }
+        },
+        {
+            "elapsed": 144.7537384033203,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000018834774891729467,
+                "y": -6.115935802459717,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00007670871855225414,
+                "y": -0.5614191889762878
+            }
+        },
+        {
+            "elapsed": 144.86204528808594,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000009794908692128956,
+                "y": -6.20166540145874,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 144.96998596191406,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000006843435130576836,
+                "y": -6.24423885345459,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.000051112026994815096,
+                "y": 0.37407901883125305
+            }
+        },
+        {
+            "elapsed": 145.07078552246094,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000006017771738697775,
+                "y": -6.237843990325928,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.00008754185546422377,
+                "y": 0.6407065987586975
+            }
+        },
+        {
+            "elapsed": 145.17860412597656,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000005623691777145723,
+                "y": -6.191528797149658,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.00009286172280553728,
+                "y": 0.6796430349349976
+            }
+        },
+        {
+            "elapsed": 145.27865600585938,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000005502010480995523,
+                "y": -6.132780075073242,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.00008488826279062778,
+                "y": 0.6212867498397827
+            }
+        },
+        {
+            "elapsed": 145.37867736816406,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000005459347903524758,
+                "y": -6.071418762207031,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.00004953554889652878,
+                "y": 0.3625466227531433
+            }
+        },
+        {
+            "elapsed": 145.47869873046875,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0000054441507018054835,
+                "y": -6.017691135406494,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 145.58714294433594,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000005134150342200883,
+                "y": -5.9823899269104,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 145.68838500976563,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0000049449358812125865,
+                "y": -5.970455169677734,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 145.79855346679688,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000004923294909531251,
+                "y": -5.969090461730957,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 145.9035186767578,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000004923294909531251,
+                "y": -5.969090461730957,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 146.00372314453125,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000004917049409414176,
+                "y": -5.96883487701416,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.000008244262971857097,
+                "y": -1.7599992752075195
+            }
+        },
+        {
+            "elapsed": 146.1124725341797,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.000004871997134614503,
+                "y": -6.020070552825928,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.000012179029909020755,
+                "y": -2.5999999046325684
+            }
+        },
+        {
+            "elapsed": 146.22027587890625,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.003005383303388953,
+                "y": -6.202671527862549,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.000012179028999526054,
+                "y": -2.5999999046325684
+            }
+        },
+        {
+            "elapsed": 146.32882690429688,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.04372642934322357,
+                "y": -6.41194486618042,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00001153962602984393,
+                "y": -2.463498115539551
+            }
+        },
+        {
+            "elapsed": 146.43710327148438,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.06614920496940613,
+                "y": -6.658077716827393,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.14741866290569305,
+                "y": -1.401176929473877
+            }
+        },
+        {
+            "elapsed": 146.54539489746094,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07139024883508682,
+                "y": -6.87650728225708,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.017526477575302124,
+                "y": 0.0022910339757800102
+            }
+        },
+        {
+            "elapsed": 146.64553833007813,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07307379692792892,
+                "y": -6.991000652313232,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0000031082443001650972,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 146.7533721923828,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07189731299877167,
+                "y": -7.0356855392456055,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -3.785615854791542e-19,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 146.8536834716797,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07143444567918777,
+                "y": -7.049256801605225,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -6.543937554417487e-30,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 146.95370483398438,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07134619355201721,
+                "y": -7.051844120025635,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -1.1309599645872734e-40,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.06185913085938,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07134619355201721,
+                "y": -7.051844120025635,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -1.401298464324817e-45,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.1619110107422,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07134619355201721,
+                "y": -7.051844120025635,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.26194763183594,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07134619355201721,
+                "y": -7.051844120025635,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.3704071044922,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07134619355201721,
+                "y": -7.051844120025635,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.4788055419922,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07134619355201721,
+                "y": -7.051844120025635,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.58694458007813,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0713336244225502,
+                "y": -7.05219030380249,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.6895751953125,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0713336244225502,
+                "y": -7.05219030380249,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.79183959960938,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0713336244225502,
+                "y": -7.05219030380249,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.8953399658203,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0713336244225502,
+                "y": -7.05219030380249,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 147.9954376220703,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0713336244225502,
+                "y": -7.05219030380249,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 148.09579467773438,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0713336244225502,
+                "y": -7.05219030380249,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 148.20364379882813,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0713336244225502,
+                "y": -7.05219030380249,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0000575333833694458,
+                "y": 1.315294623374939
+            }
+        },
+        {
+            "elapsed": 148.3037567138672,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0712650939822197,
+                "y": -7.029395580291748,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 1.6391277313232422e-7,
+                "y": 2.5941054821014404
+            }
+        },
+        {
+            "elapsed": 148.41213989257813,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.07122574001550674,
+                "y": -6.8834028244018555,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -1.4901161193847656e-8,
+                "y": 2.5941054821014404
+            }
+        },
+        {
+            "elapsed": 148.52037048339844,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0700618252158165,
+                "y": -6.650965213775635,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.18511836230754852,
+                "y": 2.516853094100952
+            }
+        },
+        {
+            "elapsed": 148.62051391601563,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.06022515892982483,
+                "y": -6.410811901092529,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.18507950007915497,
+                "y": 1.4594922065734863
+            }
+        },
+        {
+            "elapsed": 148.72874450683594,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.04317403957247734,
+                "y": -6.154104709625244,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.16688206791877747,
+                "y": 1.0548105239868164
+            }
+        },
+        {
+            "elapsed": 148.83706665039063,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.02452106960117817,
+                "y": -5.961589813232422,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 148.94515991210938,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0097937798127532,
+                "y": -5.850367069244385,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 149.04531860351563,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0044503710232675076,
+                "y": -5.812443256378174,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0330783948302269,
+                "y": -0.398889422416687
+            }
+        },
+        {
+            "elapsed": 149.15374755859375,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0020455042831599712,
+                "y": -5.808627605438232,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.004049747250974178,
+                "y": -0.5410285592079163
+            }
+        },
+        {
+            "elapsed": 149.2616424560547,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": -0.0004432324494700879,
+                "y": -5.841856956481934,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.004049747250974178,
+                "y": -0.5410285592079163
+            }
+        },
+        {
+            "elapsed": 149.3618927001953,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0001660046837059781,
+                "y": -5.888702869415283,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0013210668694227934,
+                "y": -0.45066747069358826
+            }
+        },
+        {
+            "elapsed": 149.4704132080078,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0009587129461579025,
+                "y": -5.942699432373047,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0019528270931914449,
+                "y": -0.36626842617988586
+            }
+        },
+        {
+            "elapsed": 149.5706024169922,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.001149324350990355,
+                "y": -5.985702037811279,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 149.67803955078125,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0011883489787578583,
+                "y": -6.0058369636535645,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 149.7786865234375,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0011977157555520535,
+                "y": -6.0106706619262695,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 149.87872314453125,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0011977157555520535,
+                "y": -6.0106706619262695,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 149.98703002929688,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0011977157555520535,
+                "y": -6.0106706619262695,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.00040174013702198863,
+                "y": 0.43999966979026794
+            }
+        },
+        {
+            "elapsed": 150.08712768554688,
+            "stage": "engineering",
+            "roomId": "engineering",
+            "roomRevision": 1,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0012004442978650331,
+                "y": -6.009052276611328,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.002373919589444995,
+                "y": 2.599998712539673
+            }
+        },
+        {
+            "elapsed": 150.1950225830078,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0012047974159941077,
+                "y": -5.93121862411499,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.002373919589444995,
+                "y": 2.599998712539673
+            }
+        },
+        {
+            "elapsed": 150.29547119140625,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0012061387533321977,
+                "y": -5.737621307373047,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0023739200551062822,
+                "y": 2.599998712539673
+            }
+        },
+        {
+            "elapsed": 150.39572143554688,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0012066207127645612,
+                "y": -5.508383750915527,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.002373920986428857,
+                "y": 2.599998712539673
+            }
+        },
+        {
+            "elapsed": 150.5006866455078,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0009480394073762,
+                "y": -5.186663627624512,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0019721826538443565,
+                "y": 2.159999132156372
+            }
+        },
+        {
+            "elapsed": 150.6007537841797,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0004944656393490732,
+                "y": -4.9651594161987305,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0013279675040394068,
+                "y": 1.4544310569763184
+            }
+        },
+        {
+            "elapsed": 150.7008819580078,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00029436135082505643,
+                "y": -4.765082836151123,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": -0.0009576360462233424,
+                "y": 1.0488306283950806
+            }
+        },
+        {
+            "elapsed": 150.80368041992188,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.000223873823415488,
+                "y": -4.621671199798584,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 150.91200256347656,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00019783999596256763,
+                "y": -4.539527893066406,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 151.0120086669922,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.000189836006029509,
+                "y": -4.513761520385742,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.000443071621702984,
+                "y": -0.48526889085769653
+            }
+        },
+        {
+            "elapsed": 151.112060546875,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00018745831039268523,
+                "y": -4.5160017013549805,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00047566398279741406,
+                "y": -0.5209645628929138
+            }
+        },
+        {
+            "elapsed": 151.22048950195313,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.0001861197961261496,
+                "y": -4.5493645668029785,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.00047566398279741406,
+                "y": -0.5209645628929138
+            }
+        },
+        {
+            "elapsed": 151.32907104492188,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00018569029634818435,
+                "y": -4.598623275756836,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0003378801920916885,
+                "y": -0.3700564503669739
+            }
+        },
+        {
+            "elapsed": 151.4376678466797,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00018555170390754938,
+                "y": -4.6487650871276855,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        },
+        {
+            "elapsed": 151.54525756835938,
+            "stage": "returned-main-hall",
+            "roomId": "main-hall",
+            "roomRevision": 2,
+            "observerRoot": {
+                "x": 0.20672070980072021,
+                "y": -7.069753646850586,
+                "z": 0.0
+            },
+            "remoteRoot": {
+                "x": 0.00009500630403636023,
+                "y": -4.69429349899292,
+                "z": 0.0
+            },
+            "remoteVelocity": {
+                "x": 0.0,
+                "y": 0.0
+            }
+        }
+    ],
+    "roomEvents": [
+        {
+            "elapsed": 144.32077026367188,
+            "previousRoom": "main-hall",
+            "currentRoom": "engineering",
+            "revision": 1,
+            "remoteRoot": {
+                "x": -0.00017910786846186966,
+                "y": -5.188022136688232,
+                "z": 0.0
+            }
+        },
+        {
+            "elapsed": 150.18624877929688,
+            "previousRoom": "engineering",
+            "currentRoom": "main-hall",
+            "revision": 2,
+            "remoteRoot": {
+                "x": 0.0012046084739267826,
+                "y": -5.9433488845825195,
+                "z": 0.0
+            }
+        }
+    ],
+    "checks": [
+        {
+            "name": "Remote actor initially belongs to Main Hall",
+            "detail": "",
+            "passed": true
+        },
+        {
+            "name": "Two multiplayer actors retain unique stable identities",
+            "detail": "",
+            "passed": true
+        },
+        {
+            "name": "Observed actor is remote and independent of the Human observer",
+            "detail": "",
+            "passed": true
+        },
+        {
+            "name": "Replicated authoritative root movement is visible",
+            "detail": "5.706 units",
+            "passed": true
+        },
+        {
+            "name": "Replicated movement speed remains finite and bounded",
+            "detail": "2.600 units/s",
+            "passed": true
+        },
+        {
+            "name": "Server room state reaches Engineering and returns to Main Hall",
+            "detail": "",
+            "passed": true
+        },
+        {
+            "name": "Server RoomChanged events preserve order and advancing revisions",
+            "detail": "2 events",
+            "passed": true
+        },
+        {
+            "name": "Human keyboard input remains enabled",
+            "detail": "",
+            "passed": true
+        },
+        {
+            "name": "Observer physics remains server authoritative",
+            "detail": "",
+            "passed": true
+        },
+        {
+            "name": "No runtime errors or warnings",
+            "detail": "",
+            "passed": true
+        }
+    ],
+    "errors": [],
+    "warnings": [],
+    "screenshots": [
+        "/Users/fpetrov/PycharmProjects/Actor/build/actor-validation/end-to-end/observer-initial.png",
+        "/Users/fpetrov/PycharmProjects/Actor/build/actor-validation/end-to-end/observer-engineering.png",
+        "/Users/fpetrov/PycharmProjects/Actor/build/actor-validation/end-to-end/observer-return.png",
+        "/Users/fpetrov/PycharmProjects/Actor/build/actor-validation/end-to-end/observer-complete.png"
+    ]
+}

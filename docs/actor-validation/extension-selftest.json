@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "path_guards": 6,
+  "automatic_discovery": true,
+  "explicit_manifest": true,
+  "generated_any_roundtrip": true,
+  "typed_csharp_helper": true,
+  "schema_hash": "efa92d2c7fd622cab71a6c04b70ef70c8c8eb93fda3d0064adc683190521e954"
+}

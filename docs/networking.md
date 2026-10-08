@@ -2,7 +2,7 @@
 
 Agents Arena uses Unity **6000.6.4f1**, Netcode for GameObjects **2.13.3**, and the Editor's built-in Unity Transport **6.6.0**. NGO 3.x requires a newer Unity release and adds Entities dependencies; this project keeps its current GameObject architecture.
 
-**NGO is the networking implementation of the Agents Arena reference game, not part of the engine-independent ACTOR contract.** `shared/com.actor.contracts` contains admission claims and HMAC code with `noEngineReferences`; the same source is compiled by the Control Plane and imported into Unity as a local package. It references neither Unity nor NGO. There is no Agent Runtime or gRPC integration in this milestone.
+**NGO is the networking implementation of the Agents Arena reference game, not part of the engine-independent ACTOR contract.** `shared/com.actor.contracts` contains admission claims and HMAC code with `noEngineReferences`; the same source is compiled by the Control Plane and imported into Unity as a local package. It references neither Unity nor NGO. The generic ACTOR SDK and Python Runtime now connect through a separate local gRPC adapter; NGO remains exclusively the reference game networking implementation.
 
 ## Control flow
 
@@ -40,9 +40,9 @@ At up to 30 Hz the server sends only the owner a post-physics snapshot: position
 
 The server also replicates velocity, facing, ActorId and PlayerName. `ICharacterMotionState` lets animation observe the motor, predicted owner motion or replicated remote motion. It selects the original clips/mirroring without transmitting animation frames. Only the owner enables keyboard input and camera follow. `SetLocalInputSource` can later accept agent/replay commands without changing physics or presentation. `ActorCharacter.CaptureState()` retains the server-replicated root position.
 
-Movement snapshots introduce **protocol 2 / game 0.2.1**. Old clients fail version validation before connecting to the incompatible game server.
+Movement snapshots were introduced in admission protocol 2 / game 0.2.1. The two-room reference world uses **admission protocol 3 / game 0.3.0**, independently of **ACTOR Core protocol 1.0**. Old clients fail version validation before connecting to the incompatible game server.
 
-The multiplayer scene is copied from the current Main Hall, preserving the user's collider/light changes. The original offline scene and character prefab remain available.
+The multiplayer scene is copied from the current Main Hall, preserving the user's collider/light changes. Its southern end cap opens into Engineering, assembled from existing map art and separate floor colliders. Server-written NetworkRoomMembership resolves physical capsule centers against stable RoomVolume2D IDs and replicates transitions. The original offline scene and character prefab remain available.
 
 ## Scene and connection lifecycle
 
@@ -84,6 +84,6 @@ Default timeouts: startup 45s, never-joined empty room 300s, empty grace after p
 
 This is a single-VPS human multiplayer MVP. Owner movement is predicted locally; remote players and authoritative interactions still depend on network latency. HTTP without a domain/TLS is the current deployment mode. No accounts, durable match recovery, matchmaking, chat or agent brains are implemented.
 
-Next: define engine-neutral Protobuf observations/actions, add a local gRPC Game Adapter bridge, then build ACTOR Runtime and an `AgentInputSource`. NGO remains inside this reference game; runtime/brain implementations should consume the neutral adapter contract.
+ACTOR now provides engine-neutral Protobuf envelopes, optional Standard capabilities, extension manifests/descriptors, a typed registry, local gRPC bridge and Python Runtime. AgentsArenaGameAdapter exports coherent raw owner physics snapshots and authoritative room state; AgentInputSource feeds the same normalized movement path. Next layers can add skills/brains above this seam. See [ACTOR protocol](actor-protocol.md) and [milestone evidence](actor-validation/README.md).
 
 References: [NGO changelog](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.13/changelog/CHANGELOG.html), [Unity Dedicated Server builds](https://docs.unity.com/en-us/engine/6000.5/manual/platform-specific/dedicated-server/build), [ASP.NET Core OpenAPI](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/aspnetcore-openapi?view=aspnetcore-10.0).

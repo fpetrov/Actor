@@ -1,0 +1,15 @@
+{
+    "passed": true,
+    "checks": [
+        "Two distinct room volumes",
+        "Main Hall contains the initial route center",
+        "Engineering contains the final route center",
+        "North side of doorway belongs to Main Hall",
+        "South side of doorway belongs to Engineering",
+        "Network player has authoritative room membership",
+        "Authored player capsule can traverse MainHall to Engineering",
+        "Authored player capsule can return to MainHall",
+        "Engineering wall blocks passage out of the floor",
+        "Engineering reactor housing remains a physical obstacle"
+    ]
+}
