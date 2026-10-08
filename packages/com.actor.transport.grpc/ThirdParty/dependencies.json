@@ -1,0 +1,65 @@
+[
+  {
+    "package": "Google.Protobuf",
+    "version": "3.36.2",
+    "asset": "lib/netstandard2.0/Google.Protobuf.dll",
+    "sha256": "47f3d4534309a33fec7241e995151935628e54511142515a647d67d74710d67a",
+    "nuget_sha512": "EmqX4khA/D63NGBn4GYxc6wJjrCeJqx6dbk6rFBudIR987jsq5r1YGRWRrLwyy7qDu4y1/5To/pdDbWwEgekpA=="
+  },
+  {
+    "package": "Grpc.Core.Api",
+    "version": "2.84.0",
+    "asset": "lib/netstandard2.1/Grpc.Core.Api.dll",
+    "sha256": "16b1ff898b9a2c1ffac0e22035c8280728967e7041bfe8a382bcb1f99a9a530b",
+    "nuget_sha512": "si0QbNcAJm8BRBL5EK+owlkUdr0FhCP6T8gZ1D7k8fjZBSc2jKiks6HEtjjpDngXh4bGbQn085T7L+0VbbGjfw=="
+  },
+  {
+    "package": "Grpc.Net.Client",
+    "version": "2.84.0",
+    "asset": "lib/netstandard2.1/Grpc.Net.Client.dll",
+    "sha256": "d6a3a63e19310129b90558a13da358859f3ae112b4e0349f2e09d5f738c0fbc0",
+    "nuget_sha512": "9TzKae17a8qdDKj7/fJenaoSSpe9CHuuNyDe2t9d3KxqAYkE2LQ2kGzVhBDGcHvxaLeNxr6dOWfW2JGvU+dtlw=="
+  },
+  {
+    "package": "Grpc.Net.Common",
+    "version": "2.84.0",
+    "asset": "lib/netstandard2.1/Grpc.Net.Common.dll",
+    "sha256": "f438bc6b3d76ea9741f4486c8d0a67798e799c22be704f857ddf36ec2efdcbac",
+    "nuget_sha512": "8oscwZdDPL6yU/ffrced0PPVQmLfEshoBMtd6xq/QxwszRyeIhkCVuDURzaRz9/j2eDI7BLdClrEcm8qZL6MMA=="
+  },
+  {
+    "package": "Microsoft.Extensions.DependencyInjection.Abstractions",
+    "version": "8.0.1",
+    "asset": "lib/netstandard2.1/Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+    "sha256": "23f9b73220ab127daff8ce4792c1928d4806f17e10b54293ddb76f482bbc667a",
+    "nuget_sha512": "gRjamTLaOCscIjefkWm+qTyrzxf11WwbZhb64jsb8UtKOFObf4QX9j8WGxQCHyY0355Pn6YvX8hGZwGKHZLJZw=="
+  },
+  {
+    "package": "Microsoft.Extensions.Logging.Abstractions",
+    "version": "8.0.1",
+    "asset": "lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.dll",
+    "sha256": "c44a2a8a6051b43e37947e8e05845a4f1f80c79628ffb9197e3d525d0facb2c1",
+    "nuget_sha512": "yOD9sjDgEz8uPi+E8wAlj0NI/DSvI85ZfPEkRuDpFxHLTU0P7zMz3jrCOkngBqnu82uvldK1t0ScPXVabVXARQ=="
+  },
+  {
+    "package": "System.Diagnostics.DiagnosticSource",
+    "version": "8.0.1",
+    "asset": "lib/netstandard2.0/System.Diagnostics.DiagnosticSource.dll",
+    "sha256": "989b1797b5cacdf19e7130eddd8ae51f0d79595d6020cbaf51910c1c3637cec9",
+    "nuget_sha512": "BDcwAoH235qftBQFi+gblTGTxZrDXY8zIeoSML0+MjZXvqS/8XR+aOcdJxte51jI5ZnCXtJG6wnmU34cHjy45A=="
+  },
+  {
+    "package": "System.IO.Pipelines",
+    "version": "8.0.0",
+    "asset": "lib/netstandard2.0/System.IO.Pipelines.dll",
+    "sha256": "3702e2403cf265588d1544a292ea17c01d337cdb91b5bdd64690894331345ad4",
+    "nuget_sha512": "V+tqEehPQKSLV7HcV4agGqmFISK30VNjSQ2KEsmkWL+ZqN30wMAke+mFWcK0LnaaEL2ixamBdzVITZYNxlLrEg=="
+  },
+  {
+    "package": "System.Runtime.CompilerServices.Unsafe",
+    "version": "6.0.0",
+    "asset": "lib/netstandard2.0/System.Runtime.CompilerServices.Unsafe.dll",
+    "sha256": "01748200f2400c742aa689f1f5101bd6298efdfd92c00c18f4fa473847235ba9",
+    "nuget_sha512": "1AVzAb5OxJNvJLnOADtexNmWgattm2XVOT3TjQTN7Dd4SqoSwai1CsN2fth42uQldJSQdz/sAec0+TzxBFgisw=="
+  }
+]

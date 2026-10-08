@@ -1,0 +1,7 @@
+{
+  "name": "Actor.Transport.Grpc",
+  "rootNamespace": "Actor.Transport.Grpc",
+  "references": ["Actor.Sdk", "Cysharp.Net.Http.YetAnotherHttpHandler"],
+  "autoReferenced": true,
+  "noEngineReferences": true
+}

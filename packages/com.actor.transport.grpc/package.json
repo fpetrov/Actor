@@ -1,0 +1,10 @@
+{
+  "name": "com.actor.transport.grpc",
+  "version": "0.1.0",
+  "displayName": "ACTOR gRPC Transport",
+  "description": "Loopback HTTP/2 bidirectional transport for ACTOR. No game mechanics.",
+  "unity": "6000.0",
+  "dependencies": {
+    "com.actor.sdk": "0.1.0"
+  }
+}
