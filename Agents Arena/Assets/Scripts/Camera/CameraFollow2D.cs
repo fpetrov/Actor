@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Actor.Presentation
@@ -16,6 +17,16 @@ namespace Actor.Presentation
         {
             target = character;
             velocity = Vector3.zero;
+        }
+
+        public void SetWorldBounds(Vector2 minimum, Vector2 maximum)
+        {
+            if (!float.IsFinite(minimum.x) || !float.IsFinite(minimum.y)
+                || !float.IsFinite(maximum.x) || !float.IsFinite(maximum.y)
+                || minimum.x >= maximum.x || minimum.y >= maximum.y)
+                throw new ArgumentException("Camera bounds must have finite, increasing coordinates.");
+            roomMin = minimum;
+            roomMax = maximum;
         }
 
         private void Awake() => view = GetComponent<Camera>();

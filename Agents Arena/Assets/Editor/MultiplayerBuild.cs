@@ -53,11 +53,13 @@ namespace Actor.Editor
             player.AddComponent<NetworkRigidbody2D>();
             player.AddComponent<NetworkCharacter>();
             player.AddComponent<NetworkNameplate>();
+            player.AddComponent<NetworkRoomMembership>();
             PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefab);
             UnityEngine.Object.DestroyImmediate(player);
             UnityEngine.Object.DestroyImmediate(source.gameObject);
             var camera = UnityEngine.Object.FindObjectsByType<Camera>().Single();
             camera.GetComponent<CameraFollow2D>().Follow(null);
+            EngineeringRoomBuilder.AddToCurrentMultiplayerScene();
             EditorSceneManager.SaveScene(original, GameplayScene);
 
             string settingsPath = "Assets/Settings/LobbyClient.asset";
@@ -106,6 +108,7 @@ namespace Actor.Editor
             var controller = root.AddComponent<LobbyMenuController>();
             Set(controller, "settings", settings); Set(controller, "view", view); Set(controller, "session", session);
             root.AddComponent<MultiplayerProbe>();
+            root.AddComponent<ActorObserverProbe>();
             EditorSceneManager.SaveScene(lobby, LobbyScene);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(LobbyScene, true), new EditorBuildSettingsScene(GameplayScene, true) };
             PlayerSettings.runInBackground = true;

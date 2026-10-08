@@ -6,6 +6,27 @@
       "source": "local",
       "dependencies": {}
     },
+    "com.actor.sdk": {
+      "version": "file:../../packages/com.actor.sdk",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "com.actor.transport.grpc": {
+      "version": "file:../../packages/com.actor.transport.grpc",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.actor.sdk": "0.1.0"
+      }
+    },
+    "com.cysharp.yetanotherhttphandler": {
+      "version": "https://github.com/Cysharp/YetAnotherHttpHandler.git?path=src/YetAnotherHttpHandler#1.11.6",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "2dfd96caf7123321fe6b55a4f3e4db7965b36f27"
+    },
     "com.unity.2d.animation": {
       "version": "16.0.1",
       "depth": 0,

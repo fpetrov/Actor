@@ -60,6 +60,9 @@
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "com.actor.sdk": "file:../../packages/com.actor.sdk",
+    "com.actor.transport.grpc": "file:../../packages/com.actor.transport.grpc",
+    "com.cysharp.yetanotherhttphandler": "https://github.com/Cysharp/YetAnotherHttpHandler.git?path=src/YetAnotherHttpHandler#1.11.6"
   }
 }

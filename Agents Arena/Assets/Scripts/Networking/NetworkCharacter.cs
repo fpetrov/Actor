@@ -10,6 +10,7 @@ namespace Actor.Networking
     [DefaultExecutionOrder(-50)]
     public sealed class NetworkCharacter : NetworkBehaviour, ICharacterMotionState
     {
+        public static event System.Action<NetworkCharacter> LocalOwnerSpawned;
         private sealed class RemoteCommands : IMovementInputSource
         {
             public Vector2 Value;
@@ -39,6 +40,11 @@ namespace Actor.Networking
         private float appliedSeconds, nextSnapshot;
         private OwnerMovementPrediction prediction;
         private Transform visual;
+        private Vector2 authoritativePosition, authoritativeVelocity;
+        private FacingDirection authoritativeFacing = FacingDirection.Down;
+        private bool hasAuthoritativeSnapshot;
+        private uint authoritativeSnapshotSequence;
+        private float lastAuthoritativeSnapshotAt;
 
         public string PlayerName => playerName.Value.ToString();
         public Vector2 Velocity => prediction != null ? prediction.Velocity : IsServer ? motor.Velocity : velocity.Value;
@@ -46,6 +52,13 @@ namespace Actor.Networking
         public bool IsMoving => Velocity.sqrMagnitude > 0.0025f;
         public float MaxSpeed => motor.MaxSpeed;
         public Vector3 PresentationPosition => visual != null ? visual.position : transform.position;
+        // A coherent post-physics sample for external adapters, independent of interpolation/prediction.
+        public Vector2 AuthoritativePosition => IsServer ? motor.Position : authoritativePosition;
+        public Vector2 AuthoritativeVelocity => IsServer ? motor.Velocity : authoritativeVelocity;
+        public FacingDirection AuthoritativeFacing => IsServer ? motor.Facing : authoritativeFacing;
+        public string AuthoritativeActorId => actorId.Value.ToString();
+        public bool HasAuthoritativeSnapshot => IsServer || hasAuthoritativeSnapshot;
+        public float AuthoritativeSnapshotAge => IsServer ? 0 : Time.unscaledTime - lastAuthoritativeSnapshotAt;
 
         private void Awake()
         {
@@ -57,7 +70,11 @@ namespace Actor.Networking
 
         public override void OnNetworkSpawn()
         {
-            actor.SetCurrentRoom("main-hall");
+            authoritativePosition = transform.position;
+            authoritativeVelocity = Vector2.zero;
+            hasAuthoritativeSnapshot = false;
+            authoritativeSnapshotSequence = 0;
+            lastAuthoritativeSnapshotAt = -100;
             motor.enabled = IsServer;
             actor.enabled = IsServer;
             keyboard.enabled = IsClient && IsOwner;
@@ -86,6 +103,7 @@ namespace Actor.Networking
             foreach (var animator in GetComponentsInChildren<Animator>()) animator.enabled = false;
 #else
             if (IsOwner && Camera.main != null) Camera.main.GetComponent<CameraFollow2D>()?.Follow(visual != null ? visual : transform);
+            if (IsClient && IsOwner) LocalOwnerSpawned?.Invoke(this);
 #endif
         }
 
@@ -163,6 +181,13 @@ namespace Actor.Networking
         private void ReconcileOwnerRpc(uint snapshot, uint acknowledgedInput, float seconds,
             Vector2 position, Vector2 authoritativeVelocity, byte direction)
         {
+            if (hasAuthoritativeSnapshot && unchecked((int)(snapshot - authoritativeSnapshotSequence)) <= 0) return;
+            authoritativeSnapshotSequence = snapshot;
+            lastAuthoritativeSnapshotAt = Time.unscaledTime;
+            authoritativePosition = position;
+            this.authoritativeVelocity = authoritativeVelocity;
+            authoritativeFacing = (FacingDirection)direction;
+            hasAuthoritativeSnapshot = true;
             prediction?.Reconcile(snapshot, acknowledgedInput, seconds, position, authoritativeVelocity,
                 (FacingDirection)direction, Time.unscaledTime);
         }
@@ -173,6 +198,7 @@ namespace Actor.Networking
             keyboard.enabled = false;
             actor.SetInputSource(null);
             prediction = null;
+            hasAuthoritativeSnapshot = false;
         }
     }
 }

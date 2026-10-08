@@ -57,6 +57,8 @@ namespace Actor.Networking
                 int index = System.Array.IndexOf(args, key);
                 return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
             }
+            // The observer keeps ordinary human input. Its independent probe owns diagnostics.
+            if (value("--probe-role") == "O") yield break;
             if (value("--auto-room") != null)
                 config = new ProbeConfig { roomCode = value("--auto-room"), playerName = value("--player-name") ?? "Probe Player",
                     role = value("--probe-role") ?? "B", outputPath = value("--probe-output"),
@@ -69,6 +71,7 @@ namespace Actor.Networking
                 System.IO.File.Delete(file);
             }
 #endif
+            if (config != null && config.role == "O") { config = null; yield break; }
             if (config == null || string.IsNullOrEmpty(config.outputPath)) yield break;
             Application.logMessageReceived += OnLog;
             var view = GetComponent<Actor.Lobby.LobbyMenuView>();
