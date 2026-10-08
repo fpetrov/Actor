@@ -29,7 +29,7 @@ processes = []
 try:
     runtime_log = (args.output / "runtime.log").open("w")
     server = subprocess.Popen([str(runtime), "scripted", "agents-arena", "--port", str(args.port),
-        "--report", str(args.output / "runtime.json"), "--measure-allocations"], cwd=root, env=environment,
+        "--report", str(args.output / "runtime.json"), "--measure-allocations", "--exit-on-complete"], cwd=root, env=environment,
         stdout=runtime_log, stderr=subprocess.STDOUT)
     processes.append(server)
     deadline = time.monotonic() + 10

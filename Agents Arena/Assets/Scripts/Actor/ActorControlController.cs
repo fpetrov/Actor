@@ -191,7 +191,8 @@ namespace Actor.GameAdapter
             string state = mode == ActorControlMode.Human ? "Disconnected" : configurationError != null ? "Error" : bridge?.State.ToString() ?? "Connecting";
             GUILayout.Label("ACTOR Runtime: " + state);
             string detail = mode == ActorControlMode.Runtime ? configurationError ?? bridge?.LastErrorMessage : "WASD / arrow keys";
-            if (!string.IsNullOrEmpty(detail)) GUILayout.Label(detail);
+            // Keep the IMGUI control topology identical during Layout/Repaint when async state changes.
+            GUILayout.Label(detail ?? "");
             GUILayout.EndArea();
         }
         private void OnLog(string message, string stack, LogType type)
