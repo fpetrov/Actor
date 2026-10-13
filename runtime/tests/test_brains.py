@@ -409,3 +409,102 @@ async def test_provider_close_failure_is_controlled_and_does_not_leak_exception_
     assert result.status == ObjectiveStatus.FAILED and result.reason == "cleanup_failed"
     assert runner.report()["cleanup_errors"] == ["brain_close_failed"]
     assert "private provider detail" not in json.dumps(runner.report())
+
+
+async def test_cancellation_suppressing_provider_close_has_bounded_drain(session):
+    class StubbornClose(SequenceBrain):
+        def __init__(self):
+            super().__init__([FinishObjective(status="success")])
+            self.release_close = asyncio.Event()
+            self.cancel_seen = asyncio.Event()
+            self.close_task = None
+
+        async def close(self):
+            self.close_task = asyncio.current_task()
+            while not self.release_close.is_set():
+                try:
+                    await self.release_close.wait()
+                except asyncio.CancelledError:
+                    self.cancel_seen.set()
+            raise RuntimeError("late provider cleanup failure")
+
+    brain = StubbornClose()
+    runner = ObjectiveRunner(session, count_registry(CountSkill()), brain, cleanup_timeout_seconds=0.02)
+    try:
+        result = await asyncio.wait_for(runner.run(Objective(text="Finish.")), timeout=0.4)
+        assert result.status == ObjectiveStatus.FAILED and result.reason == "cleanup_failed"
+        assert brain.cancel_seen.is_set() and runner.report()["pending_cleanup_tasks"] == 1
+        with pytest.raises(Exception, match="cleanup_pending"):
+            await runner.run(Objective(text="Start a fresh episode."))
+    finally:
+        brain.release_close.set()
+        ended, _ = await asyncio.wait((brain.close_task,), timeout=0.5)
+        assert brain.close_task in ended
+        await asyncio.sleep(0)
+        assert not brain.close_task._log_traceback
+        assert isinstance(brain.close_task.exception(), RuntimeError)
+        assert runner.report()["pending_cleanup_tasks"] == 0
+
+
+async def test_cancellation_suppressing_interrupt_cannot_hang_episode(session):
+    class StubbornInterrupt(HangingBrain):
+        def __init__(self):
+            super().__init__()
+            self.release_interrupt = asyncio.Event()
+            self.cancel_seen = asyncio.Event()
+            self.interrupt_task = None
+
+        async def interrupt(self):
+            self.interrupted = True
+            self.interrupt_task = asyncio.current_task()
+            while not self.release_interrupt.is_set():
+                try:
+                    await self.release_interrupt.wait()
+                except asyncio.CancelledError:
+                    self.cancel_seen.set()
+            raise RuntimeError("late interrupt failure")
+
+    brain = StubbornInterrupt()
+    runner = ObjectiveRunner(session, count_registry(CountSkill()), brain,
+                             decision_timeout_seconds=0.01, cleanup_timeout_seconds=0.02)
+    try:
+        result = await asyncio.wait_for(runner.run(Objective(text="Finish.")), timeout=0.4)
+        assert result.status == ObjectiveStatus.FAILED and result.reason == "brain_timeout"
+        assert brain.turn_cancelled and brain.closed and brain.cancel_seen.is_set()
+        assert runner.report()["pending_cleanup_tasks"] == 1
+    finally:
+        brain.release_interrupt.set()
+        ended, _ = await asyncio.wait((brain.interrupt_task,), timeout=0.5)
+        assert brain.interrupt_task in ended
+        await asyncio.sleep(0)
+        assert not brain.interrupt_task._log_traceback
+        assert isinstance(brain.interrupt_task.exception(), RuntimeError)
+
+
+async def test_slow_brain_interrupt_cannot_delay_owned_movement_cleanup(session):
+    class SlowInterrupt(SequenceBrain):
+        def __init__(self):
+            super().__init__([SkillCall(skill_id="test.drive", arguments={"amount": 1})])
+            self.interrupt_started = asyncio.Event()
+            self.release_interrupt = asyncio.Event()
+
+        async def interrupt(self):
+            self.interrupted = True
+            self.interrupt_started.set()
+            await self.release_interrupt.wait()
+
+    skill, brain = OwnedDrive(), SlowInterrupt()
+    runner = ObjectiveRunner(session, owned_drive_registry(skill), brain, cleanup_timeout_seconds=0.2)
+    run_task = asyncio.create_task(runner.run(Objective(text="Drive safely.")))
+    await skill.started.wait()
+    cancel_task = asyncio.create_task(runner.cancel())
+    try:
+        await asyncio.wait_for(brain.interrupt_started.wait(), timeout=0.3)
+        # The provider is still blocked, but actuator cleanup has already finished.
+        assert skill.cleaned and runner.scheduler.report()["active_skill_id"] == ""
+        assert_zero_intent(session)
+        assert not cancel_task.done()
+    finally:
+        brain.release_interrupt.set()
+        await asyncio.wait_for(cancel_task, timeout=0.5)
+        assert (await run_task).status == ObjectiveStatus.CANCELLED

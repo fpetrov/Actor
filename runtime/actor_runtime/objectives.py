@@ -54,9 +54,11 @@ class _Terminal(Exception):
 
 class ObjectiveRunner:
     def __init__(self, session, skill_registry, brain, *, decision_timeout_seconds=120,
-                 objective_timeout_seconds=600, max_decisions=12, repair_limit=1, scheduler=None):
+                 objective_timeout_seconds=600, cleanup_timeout_seconds=5,
+                 max_decisions=12, repair_limit=1, scheduler=None):
         if (not math.isfinite(decision_timeout_seconds) or decision_timeout_seconds <= 0 or
                 not math.isfinite(objective_timeout_seconds) or objective_timeout_seconds <= 0 or
+                not math.isfinite(cleanup_timeout_seconds) or cleanup_timeout_seconds <= 0 or
                 type(max_decisions) is not int or max_decisions < 1 or
                 type(repair_limit) is not int or repair_limit < 0):
             raise ValueError("Objective execution limits must be positive")
@@ -68,6 +70,8 @@ class ObjectiveRunner:
         self.scheduler = scheduler or SkillScheduler(session, skill_registry)
         self.decision_timeout_seconds = decision_timeout_seconds
         self.objective_timeout_seconds = objective_timeout_seconds
+        self.cleanup_timeout_seconds = cleanup_timeout_seconds
+        self.cleanup_drain_seconds = min(0.5, cleanup_timeout_seconds)
         self.max_decisions, self.repair_limit = max_decisions, repair_limit
         self.objective = None
         self.result = None
@@ -77,6 +81,8 @@ class ObjectiveRunner:
         self._finished = asyncio.Event()
         self._abort_lock = asyncio.Lock()
         self._cleanup_errors = []
+        self._pending_cleanup_tasks = set()
+        self._interrupt_requested = False
         self._active_task = None
         self._active_phase = None
         self._event_cursor = 0
@@ -93,23 +99,26 @@ class ObjectiveRunner:
 
     async def _abort_active(self, *, interrupt=False):
         async with self._abort_lock:
-            if interrupt:
-                await self._cleanup_call(self.brain.interrupt(), "brain_interrupt")
+            # Revoke actuator ownership and zero foreground intent before any
+            # potentially slow provider IPC interruption.
             await self._cleanup_call(self.scheduler.cancel(), "skill_cancel")
+            if interrupt and not self._interrupt_requested:
+                self._interrupt_requested = True
+                await self._cleanup_call(self.brain.interrupt(), "brain_interrupt")
             active = self._active_task
             if active and active is not asyncio.current_task():
-                if not active.done():
+                if not active.done() and active not in self._pending_cleanup_tasks:
                     if self._active_phase in ("brain", "start"):
                         active.cancel()
-                    done, _ = await asyncio.wait((active,), timeout=5)
+                    done, _ = await asyncio.wait((active,), timeout=self.cleanup_timeout_seconds)
                     if active not in done:
                         active.cancel()
-                        active.add_done_callback(lambda finished: None if finished.cancelled() else finished.exception())
+                        self._observe_pending(active)
                         self._cleanup_errors.append("active_task_cleanup_timeout")
                 # SDK interrupt may finish the provider task with an exception
                 # before cancellation resumes here. Retrieve that outcome too.
                 if active.done():
-                    await asyncio.gather(active, return_exceptions=True)
+                    self._consume_completed(active)
             if active and self._active_phase == "skill" and active.done():
                 self._record_skill(active)
 
@@ -128,17 +137,43 @@ class ObjectiveRunner:
         task = asyncio.create_task(operation)
         try:
             try:
-                await asyncio.wait_for(asyncio.shield(task), timeout=5)
+                done, _ = await asyncio.wait((task,), timeout=self.cleanup_timeout_seconds)
             except asyncio.CancelledError:
                 self.cancel_requested.set()
-                await asyncio.wait_for(asyncio.shield(task), timeout=5)
+                return
+            if task not in done:
+                raise TimeoutError("Provider lifecycle deadline elapsed")
+            if task.cancelled():
+                self._cleanup_errors.append(name + "_failed")
+            else:
+                task.result()
         except Exception as error:
             self._cleanup_errors.append(name + "_failed")
             LOG.error("Objective cleanup failed operation=%s exception_type=%s", name, type(error).__name__)
         finally:
             if not task.done():
                 task.cancel()
-                await asyncio.gather(task, return_exceptions=True)
+                try:
+                    ended, _ = await asyncio.wait((task,), timeout=self.cleanup_drain_seconds)
+                except asyncio.CancelledError:
+                    self.cancel_requested.set()
+                    ended = set()
+                if task not in ended:
+                    self._observe_pending(task)
+            if task.done():
+                self._consume_completed(task)
+
+    @staticmethod
+    def _consume_completed(task):
+        if not task.cancelled():
+            task.exception()
+
+    def _observe_pending(self, task):
+        self._pending_cleanup_tasks.add(task)
+        def completed(finished):
+            self._consume_completed(finished)
+            self._pending_cleanup_tasks.discard(finished)
+        task.add_done_callback(completed)
 
     async def _wait(self, operation, phase, timeout=None):
         if self.cancel_requested.is_set() or self.session.closed.is_set():
@@ -194,12 +229,15 @@ class ObjectiveRunner:
     async def run(self, objective: Objective) -> ObjectiveResult:
         if self._running:
             raise ActorError("objective_busy", "An Objective is already running")
+        if any(not task.done() for task in self._pending_cleanup_tasks):
+            raise ActorError("cleanup_pending", "Provider cleanup is still pending; use a fresh provider")
         if objective.status != ObjectiveStatus.PENDING:
             raise ActorError("objective_invalid", "An Objective episode must begin Pending")
         self._run_task = asyncio.current_task()
         self._running = True
         self._finished.clear()
         self._cleanup_errors = []
+        self._interrupt_requested = False
         self.objective = objective.model_copy(update={"status": ObjectiveStatus.RUNNING})
         self.cancel_requested.clear()
         self._started_at = time.monotonic()
@@ -317,4 +355,5 @@ class ObjectiveRunner:
                 "result": self.result.model_dump(mode="json") if self.result else None,
                 "decisions": list(self._decisions), "skills": list(self._skill_results),
                 "lifecycle": list(self._lifecycle), "scheduler": self.scheduler.report(),
-                "brain": brain_report, "cleanup_errors": list(self._cleanup_errors)}
+                "brain": brain_report, "cleanup_errors": list(self._cleanup_errors),
+                "pending_cleanup_tasks": sum(not task.done() for task in self._pending_cleanup_tasks)}
