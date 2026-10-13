@@ -4,6 +4,7 @@ import argparse
 import os
 from pathlib import Path
 import secrets
+import signal
 import socket
 import subprocess
 import time
@@ -16,6 +17,8 @@ parser.add_argument("--port", type=int, default=50051)
 parser.add_argument("--output", type=Path, default=root / "build/actor-validation")
 parser.add_argument("--client", type=Path, default=root / "build/agents-arena-client/AgentsArena.app/Contents/MacOS/Agents Arena")
 args = parser.parse_args()
+args.output = args.output.resolve()
+args.client = args.client.resolve()
 if len(args.room) != 6 or not args.room.isalnum() or not (1024 <= args.port <= 65535):
     parser.error("Invalid room code or local bridge port")
 runtime = root / "build/runtime-venv/bin/actor-runtime"
@@ -26,6 +29,9 @@ if not args.client.exists():
 args.output.mkdir(parents=True, exist_ok=True)
 environment = dict(os.environ, ACTOR_BRIDGE_TOKEN=secrets.token_hex(32))
 processes = []
+def interrupted(_signal, _frame):
+    raise KeyboardInterrupt
+signal.signal(signal.SIGTERM, interrupted)
 try:
     runtime_log = (args.output / "runtime.log").open("w")
     server = subprocess.Popen([str(runtime), "scripted", "agents-arena", "--port", str(args.port),

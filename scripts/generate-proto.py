@@ -272,7 +272,8 @@ def output_files(base: Path, extensions: list[ExtensionGeneration]) -> dict[Path
     result = {}
     for directory in managed_outputs(extensions):
         for path in (base / directory).rglob("*"):
-            if path.is_file() and path.suffix not in (".meta", ".pyc") and "__pycache__" not in path.parts:
+            if (path.is_file() and path.suffix not in (".meta", ".pyc")
+                    and path.name not in (".DS_Store", "Thumbs.db") and "__pycache__" not in path.parts):
                 result[path.relative_to(base)] = path.read_bytes()
     return result
 

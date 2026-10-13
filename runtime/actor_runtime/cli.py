@@ -7,6 +7,7 @@ import asyncio
 from importlib import metadata
 import json
 import logging
+import math
 import os
 from pathlib import Path
 import signal
@@ -32,13 +33,25 @@ async def serve(args):
             signal.signal(signum, lambda *_: loop.call_soon_threadsafe(stopping.set))
     outcome = None
     script_task = None
+    objective_runner = None
+    pending_objective = None
+    if args.operation == "agent":
+        from .objectives import Objective
+        pending_objective = Objective(text=args.objective)
+
+    def cancelled_outcome():
+        return {"passed": False, "result": {"objective_id": pending_objective.id,
+            "status": "cancelled", "reason": "runtime_shutdown", "message": None,
+            "duration_seconds": server.report()["elapsed_seconds"], "decision_count": 0, "skill_results": []}}
 
     def save_report():
         if args.report:
             args.report.parent.mkdir(parents=True, exist_ok=True)
             report = {"runtime": server.report()}
             if outcome is not None:
-                report["scripted"] = outcome
+                report["objective" if args.operation == "agent" else "scripted"] = outcome
+            if objective_runner is not None:
+                report["cognitive"] = objective_runner.report()
             temporary = args.report.with_suffix(".tmp")
             temporary.write_text(json.dumps(report, indent=2) + "\n")
             temporary.replace(args.report)
@@ -68,26 +81,70 @@ async def serve(args):
             await asyncio.sleep(2)
             save_report()
 
+    async def agent():
+        nonlocal outcome, objective_runner
+        from .brains import BrainRegistry
+        from .objectives import ObjectiveRunner
+        from .skills import SkillRegistry
+        try:
+            session = await server.next_session(timeout=args.connect_timeout)
+            # Negotiation completes before Unity's first observation frame arrives.
+            from actor.core.v1 import actor_pb2 as core
+            has_observations = any(value.kind == core.CAPABILITY_KIND_OBSERVATION
+                and value.extension_id in session.negotiated.available for value in session.capabilities.values())
+            if has_observations:
+                try:
+                    # Initial warmup is optional: conditional/other-entity capabilities
+                    # must not prevent a capability-free Skill from starting.
+                    await session.world.wait_until(lambda world: world.last_frame_received_at > 0, timeout=1)
+                except TimeoutError:
+                    pass
+            options = {"model": args.model} if args.model else {}
+            brain = BrainRegistry.discover().create(args.brain, **options)
+            objective_runner = ObjectiveRunner(session, SkillRegistry.discover(), brain,
+                decision_timeout_seconds=args.decision_timeout, max_decisions=args.max_decisions,
+                objective_timeout_seconds=args.objective_timeout)
+            result = await objective_runner.run(pending_objective)
+            outcome = {"passed": result.status == "succeeded", "result": result.model_dump(mode="json")}
+            LOG.info("Agent objective completed: %s", json.dumps(outcome))
+        except asyncio.CancelledError:
+            outcome = cancelled_outcome()
+            raise
+        except Exception as error:
+            outcome = {"passed": False, "error": (error.as_dict() if isinstance(error, ActorError)
+                                                   else {"code": type(error).__name__, "message": str(error)})}
+            LOG.error("Agent objective failed: %s", json.dumps(outcome))
+        finally:
+            save_report()
+            if args.exit_on_complete:
+                stopping.set()
+
     await server.start()
     reporter = asyncio.create_task(periodic_report())
     if args.operation == "scripted":
         script_task = asyncio.create_task(scripted())
+    elif args.operation == "agent":
+        script_task = asyncio.create_task(agent())
     try:
         await stopping.wait()
     finally:
         reporter.cancel()
+        if objective_runner is not None:
+            await objective_runner.cancel()
         if script_task:
             script_task.cancel()
         await asyncio.gather(reporter, *([script_task] if script_task else []), return_exceptions=True)
         await server.stop()
+        if args.operation == "agent" and outcome is None:
+            outcome = cancelled_outcome()
         save_report()
     return 1 if outcome and not outcome["passed"] else 0
 
 
 def main():
     parser = argparse.ArgumentParser(prog="actor-runtime")
-    parser.add_argument("operation", choices=("serve", "scripted"))
-    parser.add_argument("example", nargs="?", help="Installed actor.examples entry point")
+    parser.add_argument("operation", choices=("serve", "scripted", "agent", "codex"))
+    parser.add_argument("example", nargs="?", help="Installed actor.examples entry point, or codex status/login")
     parser.add_argument("--port", type=int, default=int(os.environ.get("ACTOR_BRIDGE_PORT", "50051")))
     parser.add_argument("--command-timeout-ms", type=int, default=250)
     parser.add_argument("--connect-timeout", type=float, default=120)
@@ -96,15 +153,32 @@ def main():
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--measure-allocations", action="store_true",
                         help="Include traced Python memory in developer reports")
+    parser.add_argument("--brain", default="scripted", help="Installed actor.brains entry point")
+    parser.add_argument("--objective", help="User objective for the selected Brain")
+    parser.add_argument("--model", help="Optional provider model override; otherwise uses its configured default")
+    parser.add_argument("--decision-timeout", type=float, default=120)
+    parser.add_argument("--objective-timeout", type=float, default=600)
+    parser.add_argument("--max-decisions", type=int, default=12)
     args = parser.parse_args()
     if args.operation == "scripted" and not args.example:
         parser.error("scripted requires an installed example name")
+    if args.operation == "agent" and (not args.objective or not args.objective.strip() or len(args.objective) > 4096):
+        parser.error("agent requires a 1-4096 character --objective")
+    if args.operation == "codex" and args.example not in ("status", "login"):
+        parser.error("codex requires status or login")
+    if any(not math.isfinite(value) or value <= 0 for value in
+           (args.connect_timeout, args.decision_timeout, args.objective_timeout)) or args.max_decisions < 1:
+        parser.error("Execution timeouts and decision limit must be finite and positive")
     logging.basicConfig(level=logging.DEBUG if args.debug else logging.INFO,
                         format="%(asctime)s %(levelname)s %(message)s")
     if args.measure_allocations:
         tracemalloc.start(1)
     try:
-        result = asyncio.run(serve(args))
+        if args.operation == "codex":
+            from actor_codex.auth import command
+            result = asyncio.run(command(args.example))
+        else:
+            result = asyncio.run(serve(args))
     except ActorError as error:
         LOG.error("%s", json.dumps(error.as_dict()))
         result = 1
