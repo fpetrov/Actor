@@ -22,6 +22,8 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         {
             ["Match:DatabasePath"] = Path.Combine(folder, "actor.db"),
             ["Match:UnityServerExecutable"] = "/unused/test-server",
+            // This fixture tests admission/lifecycle independently of production releases.
+            ["Match:GameVersion"] = "0.3.0", ["Match:ProtocolVersion"] = "3",
             ["Match:GameServerPortStart"] = "24200", ["Match:GameServerPortEnd"] = "24204"
         }));
         builder.ConfigureServices(services =>

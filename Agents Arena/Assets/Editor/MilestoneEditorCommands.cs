@@ -28,6 +28,7 @@ namespace Actor.Editor
                     case "build": PlayableMilestoneBuilder.Build(); break;
                     case "verify": PlayableMilestoneVerification.Start(); break;
                     case "prepare-multiplayer": MultiplayerBuild.Prepare(); break;
+                    case "preview-world-passage": EngineeringRoomBuilder.ShowPassagePreview(); break;
                     case "build-client": MultiplayerBuild.BuildMacClient(); break;
                     case "build-server": MultiplayerBuild.BuildLinuxDedicatedServer(); break;
                     case "verify-prediction": MovementPredictionVerification.Run(); break;

@@ -19,9 +19,9 @@ Sprite:
   m_PixelsToUnits: 50
   m_Pivot: {x: 0.5, y: 0.5}
   m_Extrude: 0
-  m_PackingTag: 
+  m_PackingTag:
   m_RenderDataKey:
-    00000000000000000000000000000000: 0
+    8d32e9dd64db94f14bd41b31391e74bd: 21300000
   m_AtlasTags: []
   m_SpriteAtlas: {fileID: 0}
   m_RD:
@@ -219,4 +219,4 @@ Sprite:
   m_PhysicsShape: []
   m_Bones: []
   m_ScriptableObjects: []
-  m_SpriteID: 
+  m_SpriteID:

@@ -176,6 +176,9 @@ namespace Actor.Networking
         public static Vector3 SpawnPosition(int slot)
         {
             float[] x = { -1.8f, -0.85f, 0.85f, 1.8f };
+            // The lower row sits inside the atlas hall's curved southern floor.
+            // Keep the first row stable while avoiding walls for a full lobby.
+            if ((slot / 4) % 4 == 1) x = new[] { -0.75f, -0.25f, 0.25f, 0.75f };
             float[] y = { -1.4f, -2.5f, -0.3f, 0.8f };
             return new Vector3(x[slot % 4], y[(slot / 4) % 4], 0);
         }

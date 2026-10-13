@@ -16,7 +16,7 @@ public sealed class MatchOptions
     public int EmptyLobbyGracePeriod { get; set; } = 60;
     public int HeartbeatTimeout { get; set; } = 20;
     public int JoinTicketLifetime { get; set; } = 45;
-    public string GameVersion { get; set; } = "0.3.0";
+    public string GameVersion { get; set; } = "0.4.0";
     public string ProtocolVersion { get; set; } = "3";
 
     public bool IsValid() => MaxConcurrentGameServers > 0

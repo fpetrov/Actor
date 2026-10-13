@@ -35,9 +35,10 @@ namespace Actor.Networking
         }
         [System.Serializable] private sealed class Report
         {
-            public string role = "O", playerName, observedPlayer, roomCode, stage, recordedAtUtc;
+            public string role = "O", playerName, observedPlayer, roomCode, stage, recordedAtUtc, scenario;
             public bool connected, completed, passed;
             public float elapsed, remoteDisplacement, observerDisplacement, peakRemoteSpeed;
+            public float engineeringDwellSeconds, engineeringStoppedSeconds, requiredStopSeconds;
             public Peer[] peers;
             public MotionSample[] trajectory;
             public RoomEvent[] roomEvents;
@@ -54,6 +55,9 @@ namespace Actor.Networking
         private NetworkRoomMembership remoteMembership;
         private Vector3 ownStart, remoteStart;
         private float started, nextSample, nextSave, remoteDisplacement, observerDisplacement, peakRemoteSpeed;
+        private float engineeringEnteredAt = -1, engineeringReturnedAt = -1, stoppedSince = -1;
+        private float engineeringStoppedSeconds, requiredStopSeconds;
+        private bool waitScreenshotCaptured;
         private uint initialRevision;
         private bool active, observing, completed, enteredEngineering, returnedMainHall;
         private bool finiteSpeed = true, humanInputEnabled = true, captureScreenshots;
@@ -79,6 +83,10 @@ namespace Actor.Networking
                 System.Globalization.CultureInfo.InvariantCulture, out float parsed) && float.IsFinite(parsed)
                 ? Mathf.Clamp(parsed, 5, 600) : 120;
             captureScreenshots = System.Array.IndexOf(args, "--probe-no-screenshots") < 0;
+            bool cognitive = System.Array.IndexOf(args, "--probe-cognitive") >= 0;
+            requiredStopSeconds = float.TryParse(value("--probe-min-engineering-stop"), System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out float stopDuration) && float.IsFinite(stopDuration)
+                ? Mathf.Clamp(stopDuration, 0, 120) : cognitive ? 2 : 0;
             started = Time.realtimeSinceStartup;
             active = true;
             Application.logMessageReceived += OnLog;
@@ -149,6 +157,9 @@ namespace Actor.Networking
                 peakRemoteSpeed.ToString("F3") + " units/s");
             Add("Server room state reaches Engineering and returns to Main Hall", enteredEngineering && returnedMainHall
                 && remoteMembership.CurrentRoomId == Actor.World.RoomId.MainHall);
+            if (requiredStopSeconds > 0)
+                Add("Human observes the cognitive agent waiting in Engineering", engineeringStoppedSeconds + 0.1f >= requiredStopSeconds,
+                    engineeringStoppedSeconds.ToString("F3") + " stopped seconds; required=" + requiredStopSeconds);
             bool ordered = roomEvents.Count == 2
                 && roomEvents[0].previousRoom == Actor.World.RoomId.MainHall && roomEvents[0].currentRoom == Actor.World.RoomId.Engineering
                 && roomEvents[1].previousRoom == Actor.World.RoomId.Engineering && roomEvents[1].currentRoom == Actor.World.RoomId.MainHall
@@ -170,10 +181,18 @@ namespace Actor.Networking
             {
                 string room = remoteMembership.CurrentRoomId;
                 if (!enteredEngineering && room == Actor.World.RoomId.Engineering)
-                { enteredEngineering = true; stage = "engineering"; RequestScreenshot("engineering"); }
+                { enteredEngineering = true; engineeringEnteredAt = Time.realtimeSinceStartup; stage = "engineering"; RequestScreenshot("engineering"); }
                 if (enteredEngineering && !returnedMainHall && room == Actor.World.RoomId.MainHall)
-                { returnedMainHall = true; stage = "returned-main-hall"; RequestScreenshot("return"); }
+                { returnedMainHall = true; engineeringReturnedAt = Time.realtimeSinceStartup; stage = "returned-main-hall"; RequestScreenshot("return"); }
                 var velocity = remote.Velocity;
+                if (room == Actor.World.RoomId.Engineering && velocity.sqrMagnitude < 0.0025f)
+                {
+                    if (stoppedSince < 0) stoppedSince = Time.realtimeSinceStartup;
+                    engineeringStoppedSeconds = Mathf.Max(engineeringStoppedSeconds, Time.realtimeSinceStartup - stoppedSince);
+                    if (requiredStopSeconds > 0 && !waitScreenshotCaptured && engineeringStoppedSeconds >= requiredStopSeconds)
+                    { waitScreenshotCaptured = true; RequestScreenshot("engineering-wait"); }
+                }
+                else stoppedSince = -1;
                 finiteSpeed &= float.IsFinite(velocity.x) && float.IsFinite(velocity.y);
                 if (finiteSpeed) peakRemoteSpeed = Mathf.Max(peakRemoteSpeed, velocity.magnitude);
                 remoteDisplacement = Mathf.Max(remoteDisplacement, Vector3.Distance(remoteStart, remote.transform.position));
@@ -270,6 +289,9 @@ namespace Actor.Networking
                 recordedAtUtc = System.DateTime.UtcNow.ToString("O"), connected = GetComponent<MatchSession>().IsConnected,
                 completed = completed, passed = completed && AllChecksPassed(), elapsed = Time.realtimeSinceStartup - started,
                 remoteDisplacement = remoteDisplacement, observerDisplacement = observerDisplacement, peakRemoteSpeed = peakRemoteSpeed,
+                scenario = requiredStopSeconds > 0 ? "cognitive-round-trip" : "round-trip",
+                requiredStopSeconds = requiredStopSeconds, engineeringStoppedSeconds = engineeringStoppedSeconds,
+                engineeringDwellSeconds = engineeringEnteredAt < 0 ? 0 : (engineeringReturnedAt >= 0 ? engineeringReturnedAt : Time.realtimeSinceStartup) - engineeringEnteredAt,
                 peers = peers, trajectory = trajectory.ToArray(), roomEvents = roomEvents.ToArray(), checks = checks.ToArray(),
                 errors = errors.ToArray(), warnings = warnings.ToArray(), screenshots = screenshots.ToArray() };
             System.IO.File.WriteAllText(output, JsonUtility.ToJson(report, true));

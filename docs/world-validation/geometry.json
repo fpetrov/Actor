@@ -1,0 +1,90 @@
+{
+    "passed": true,
+    "checks": [
+        "Two distinct room volumes",
+        "Main Hall contains the route start",
+        "Engineering contains the route endpoint",
+        "North boundary belongs to Main Hall",
+        "South boundary belongs to Engineering",
+        "South passage sweep x=-0.3",
+        "North passage sweep x=-0.3",
+        "South passage sweep x=-0.2",
+        "North passage sweep x=-0.2",
+        "South passage sweep x=-0.12",
+        "North passage sweep x=-0.12",
+        "South passage sweep x=0",
+        "North passage sweep x=0",
+        "South passage sweep x=0.12",
+        "North passage sweep x=0.12",
+        "South passage sweep x=0.2",
+        "North passage sweep x=0.2",
+        "South passage sweep x=0.3",
+        "North passage sweep x=0.3",
+        "Diagonal hall approach from -1",
+        "Diagonal hall return to -1",
+        "Diagonal hall approach from 1",
+        "Diagonal hall return to 1",
+        "Authored spawn slot 0 lies on free Main Hall floor",
+        "Authored spawn slot 1 lies on free Main Hall floor",
+        "Authored spawn slot 2 lies on free Main Hall floor",
+        "Authored spawn slot 3 lies on free Main Hall floor",
+        "Authored spawn slot 4 lies on free Main Hall floor",
+        "Authored spawn slot 5 lies on free Main Hall floor",
+        "Authored spawn slot 6 lies on free Main Hall floor",
+        "Authored spawn slot 7 lies on free Main Hall floor",
+        "Authored spawn slot 8 lies on free Main Hall floor",
+        "Authored spawn slot 9 lies on free Main Hall floor",
+        "Authored spawn slot 10 lies on free Main Hall floor",
+        "Authored spawn slot 11 lies on free Main Hall floor",
+        "Authored spawn slot 12 lies on free Main Hall floor",
+        "Authored spawn slot 13 lies on free Main Hall floor",
+        "Authored spawn slot 14 lies on free Main Hall floor",
+        "Authored spawn slot 15 lies on free Main Hall floor",
+        "Engineering walls block leaving the room",
+        "Reactor housing remains solid",
+        "Actual physics reaches Engineering x=-0.3",
+        "Actual physics returns to Main Hall x=-0.3",
+        "Actual physics reaches Engineering x=-0.2",
+        "Actual physics returns to Main Hall x=-0.2",
+        "Actual physics reaches Engineering x=0",
+        "Actual physics returns to Main Hall x=0",
+        "Actual physics reaches Engineering x=0.2",
+        "Actual physics returns to Main Hall x=0.2",
+        "Actual physics reaches Engineering x=0.3",
+        "Actual physics returns to Main Hall x=0.3",
+        "Human off-center Engineering approach side=-1",
+        "Human off-center return side=-1",
+        "Human off-center Engineering approach side=1",
+        "Human off-center return side=1",
+        "Previously trapped Human pose can leave the doorway to the right",
+        "A Human capsule can pass a waiting actor on side x=-0.3",
+        "A Human capsule can pass a waiting actor on side x=0.3"
+    ],
+    "roomBoundaryCenterY": -5.210000038146973,
+    "route": [
+        {
+            "x": 0.0,
+            "y": -1.399999976158142
+        },
+        {
+            "x": 0.0,
+            "y": -4.699999809265137
+        },
+        {
+            "x": 0.0,
+            "y": -6.0
+        },
+        {
+            "x": 0.0,
+            "y": -7.0
+        }
+    ],
+    "capsuleSize": {
+        "x": 0.2800000011920929,
+        "y": 0.8100000023841858
+    },
+    "capsuleOffset": {
+        "x": 0.0,
+        "y": 0.46000000834465027
+    }
+}
