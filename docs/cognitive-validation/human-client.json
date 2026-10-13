@@ -1,0 +1,31 @@
+{
+    "mode": "Human",
+    "state": "Disconnected",
+    "actorId": "b1a01e68176a4338a751d7a49033ea38",
+    "roomId": "main-hall",
+    "sessionId": "",
+    "errorCode": "",
+    "error": "",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": true,
+    "position": {
+        "x": 2.1246650218963623,
+        "y": -1.845104694366455
+    },
+    "velocity": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "observations": 0,
+    "messagesSent": 0,
+    "messagesReceived": 0,
+    "commands": 0,
+    "bytesSent": 0,
+    "bytesReceived": 0,
+    "meanFps": 119.3713418768025,
+    "maxPumpMs": 0.0,
+    "elapsedSeconds": 126.303346875,
+    "managedHeapStart": 1789952,
+    "managedHeapCurrent": 5632000
+}

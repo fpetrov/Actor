@@ -40,7 +40,7 @@ At up to 30 Hz the server sends only the owner a post-physics snapshot: position
 
 The server also replicates velocity, facing, ActorId and PlayerName. `ICharacterMotionState` lets animation observe the motor, predicted owner motion or replicated remote motion. It selects the original clips/mirroring without transmitting animation frames. Only the owner enables keyboard input and camera follow. `SetLocalInputSource` can later accept agent/replay commands without changing physics or presentation. `ActorCharacter.CaptureState()` retains the server-replicated root position.
 
-Movement snapshots were introduced in admission protocol 2 / game 0.2.1. The two-room reference world uses **admission protocol 3 / game 0.3.0**, independently of **ACTOR Core protocol 1.0**. Old clients fail version validation before connecting to the incompatible game server.
+Movement snapshots were introduced in admission protocol 2 / game 0.2.1. The two-room reference world uses **admission protocol 3 / game 0.4.0**, independently of **ACTOR Core protocol 1.0**. Old clients fail version validation before connecting to the incompatible game server.
 
 The multiplayer scene is copied from the current Main Hall, preserving the user's collider/light changes. Its southern end cap opens into Engineering, assembled from existing map art and separate floor colliders. Server-written NetworkRoomMembership resolves physical capsule centers against stable RoomVolume2D IDs and replicates transitions. The original offline scene and character prefab remain available.
 

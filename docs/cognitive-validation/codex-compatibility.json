@@ -1,0 +1,50 @@
+{
+  "sdk": "0.162.1",
+  "sandbox": "read-only",
+  "ephemeral": true,
+  "attempts": [
+    {
+      "mode": "dynamic_one_of",
+      "passed": false,
+      "error_type": "RuntimeError",
+      "error": "{\n  \"type\": \"error\",\n  \"error\": {\n    \"type\": \"invalid_request_error\",\n    \"code\": \"invalid_json_schema\",\n    \"message\": \"Invalid schema for response_format 'codex_output_schema': In context=(), 'oneOf' is not permitted.\",\n    \"param\": \"text.format.schema\"\n  },\n  \"status\": 400\n}",
+      "duration_seconds": 3.6226382910099346
+    },
+    {
+      "mode": "wrapped_any_of",
+      "passed": true,
+      "decision": {
+        "kind": "skill",
+        "skill_id": "actor.wait",
+        "arguments": {
+          "duration_seconds": 2
+        }
+      },
+      "unique_turn_count": 1,
+      "external_joined_initial_turn": true,
+      "duration_seconds": 13.359892000007676,
+      "usage": {
+        "last": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 6656,
+          "input_tokens": 7040,
+          "output_tokens": 105,
+          "reasoning_output_tokens": 72,
+          "total_tokens": 7145
+        },
+        "model_context_window": 760000,
+        "total": {
+          "cache_write_input_tokens": 0,
+          "cached_input_tokens": 6656,
+          "input_tokens": 13936,
+          "output_tokens": 214,
+          "reasoning_output_tokens": 148,
+          "total_tokens": 14150
+        }
+      }
+    }
+  ],
+  "authentication_mode": "chatgpt",
+  "accepted_mode": "wrapped_any_of",
+  "passed": true
+}

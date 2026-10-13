@@ -1,0 +1,31 @@
+{
+    "mode": "Runtime",
+    "state": "Error",
+    "actorId": "ed39e510ff834d41877360191b255a71",
+    "roomId": "main-hall",
+    "sessionId": "08fa571e73da4e77892b5be236976d0c",
+    "errorCode": "RuntimeDisconnected",
+    "error": "Runtime shutdown",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": false,
+    "position": {
+        "x": 0.8500000238418579,
+        "y": -1.399999976158142
+    },
+    "velocity": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "observations": 387,
+    "messagesSent": 417,
+    "messagesReceived": 28,
+    "commands": 0,
+    "bytesSent": 211566,
+    "bytesReceived": 1159,
+    "meanFps": 115.8738521443385,
+    "maxPumpMs": 2.6438,
+    "elapsedSeconds": 29.411294584000004,
+    "managedHeapStart": 1794048,
+    "managedHeapCurrent": 5685248
+}

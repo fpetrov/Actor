@@ -1,0 +1,638 @@
+{
+  "runtime": {
+    "endpoint": "127.0.0.1:50051",
+    "elapsed_seconds": 20.710009917005664,
+    "cpu_seconds": 0.865939,
+    "cpu_percent_one_core": 4.18125825854361,
+    "sessions": [
+      {
+        "session_id": "e3c0204a6ff44fc59ae32476c7dd6daa",
+        "game_id": "agents-arena",
+        "game_version": "0.3.0",
+        "protocol_version": {
+          "major": 1,
+          "minor": 0
+        },
+        "actor_id": "59c6d471627d49229f6d9457832a709f",
+        "loaded_extensions": [
+          "actor.standard",
+          "agents-arena"
+        ],
+        "opaque_extensions": [],
+        "capabilities": [
+          "actor.standard.locomotion2d",
+          "actor.standard.motion2d",
+          "actor.standard.transform2d",
+          "agents-arena.room-changed",
+          "agents-arena.room-membership"
+        ],
+        "commands_sent": 282,
+        "command_values_replaced": 7,
+        "observation_frames": 231,
+        "events_received": 2,
+        "last_received_sequence": 534,
+        "last_sent_sequence": 300,
+        "command_result_rtt_ms": [
+          10.871916980249807,
+          6.753833993570879,
+          5.296666990034282,
+          4.314249992603436,
+          2.057125006103888,
+          0.88825001148507,
+          7.8710829839110374,
+          5.675833992427215,
+          5.181708984309807,
+          6.527082994580269,
+          3.9001249824650586,
+          2.64062502537854,
+          1.1139580165036023,
+          8.383958018384874,
+          6.804959004512057,
+          7.10912499926053,
+          3.296999988378957,
+          3.4039579913951457,
+          7.942208991153166,
+          6.330707983579487,
+          4.153292014962062,
+          1.1870830203406513,
+          7.231041992781684,
+          6.839208013843745,
+          5.801374994916841,
+          2.816249994793907,
+          9.922459023073316,
+          7.3404999857302755,
+          5.652291001752019,
+          3.8413750007748604,
+          1.4927090087439865,
+          7.326541992370039,
+          5.530583002837375,
+          3.4545829985290766,
+          2.0785839878953993,
+          7.635333022335544,
+          6.5441670012660325,
+          3.387499978998676,
+          1.1395410110708326,
+          7.504083012463525,
+          5.6215410004369915,
+          3.9980000001378357,
+          2.2387919889297336,
+          8.765750011662021,
+          5.905832978896797,
+          8.267166995210573,
+          8.375375007744879,
+          5.994459002977237,
+          4.593042016495019,
+          2.6535829820204526,
+          8.556999993743375,
+          6.97341698105447,
+          4.546540993032977,
+          2.37574998755008,
+          8.412958006374538,
+          6.330833013635129,
+          5.172292003408074,
+          2.9223339806776494,
+          7.789208990288898,
+          5.6585000129416585,
+          4.133834008825943,
+          2.0849589782301337,
+          9.440541994990781,
+          7.888000021921471,
+          5.573959002504125,
+          3.7186250265222043,
+          9.835416014539078,
+          6.972542003495619,
+          5.4452499898616225,
+          3.73408300220035,
+          2.8424999909475446,
+          9.346292004920542,
+          6.852665974292904,
+          3.8939170190133154,
+          1.9131660228595138,
+          8.51737498305738,
+          5.877207993762568,
+          3.416999999899417,
+          9.183415997540578,
+          6.446416984545067,
+          4.482749995077029,
+          2.1872080105822533,
+          8.379332983167842,
+          5.0779580196831375,
+          4.262250004103407,
+          1.4831659791525453,
+          8.31195802311413,
+          7.43958298698999,
+          5.976125015877187,
+          4.449416999705136,
+          1.7499999958090484,
+          8.071999996900558,
+          5.867166997632012,
+          3.7585840036626905,
+          3.525582986185327,
+          9.754291007993743,
+          9.631374996388331,
+          5.432333011412993,
+          4.391374997794628,
+          4.495957982726395,
+          1.6985420079436153,
+          1.1292079871054739,
+          7.833832991309464,
+          5.577500007348135,
+          1.9413749978411943,
+          8.956875011790544,
+          7.126999989850447,
+          4.7249579802155495,
+          2.791958977468312,
+          1.6923329967539757,
+          8.473542024148628,
+          7.630832988070324,
+          6.3838339992798865,
+          4.633375006960705,
+          3.551792004145682,
+          2.469625003868714,
+          8.075624995399266,
+          6.939249986317009,
+          6.232124986127019,
+          4.664417007006705,
+          3.5175830125808716,
+          1.3044170045759529,
+          7.965333003085107,
+          6.733457994414493,
+          4.356791003374383,
+          2.770582999801263,
+          1.4047499862499535,
+          9.034832997713238,
+          7.757707993732765,
+          5.966416996670887,
+          5.229959002463147,
+          2.6989170000888407,
+          0.9777500235941261,
+          6.67004199931398,
+          5.405500007327646,
+          3.480999992461875,
+          1.7835410253610462,
+          0.9242499945685267,
+          7.504915993195027,
+          5.976625019684434,
+          5.433999991510063,
+          2.9910420125816017,
+          7.947000005515292,
+          6.567500007804483,
+          5.73037497815676,
+          4.423458012752235,
+          1.9924999796785414,
+          8.446874999208376,
+          7.79137501376681,
+          7.376082998234779,
+          5.090292019303888,
+          2.9895409825257957,
+          0.9108340018428862,
+          8.457874995656312,
+          6.719708006130531,
+          5.68141698022373,
+          3.1344159797299653,
+          8.801624993793666,
+          6.883416004711762,
+          5.601791985100135,
+          4.335167002864182,
+          2.227207995019853,
+          8.205541991628706,
+          7.294125010957941,
+          5.249167006695643,
+          6.000083987601101,
+          3.5985829890705645,
+          6.15229198592715,
+          3.6768749996554106,
+          2.3101670085452497,
+          1.0159169905818999,
+          8.785875019384548,
+          6.169125001179054,
+          4.445084021426737,
+          3.1394169782288373,
+          0.8258329762611538,
+          7.125708012608811,
+          5.159665975952521,
+          4.391958005726337,
+          2.8516250022221357,
+          9.065709018614143,
+          7.530957984272391,
+          4.14029200328514,
+          3.257207979913801,
+          1.661749993218109,
+          8.410332986386493,
+          6.382333987858146,
+          4.94854201679118,
+          4.050040995934978,
+          2.8983750089537352,
+          8.951499999966472,
+          9.196792001603171,
+          1.96658301865682,
+          6.819166010245681,
+          5.282124999212101,
+          4.340999992564321,
+          2.148333005607128,
+          0.7223339925985783,
+          7.433999999193475,
+          4.607707989634946,
+          15.745041018817574,
+          4.625082976417616,
+          2.145125006791204,
+          8.846916985930875,
+          7.568333006929606,
+          5.167458002688363,
+          3.952458006097004,
+          1.808708009775728,
+          8.906875009415671,
+          7.860375015297905,
+          6.98929198551923,
+          5.541249993257225,
+          3.7800420250277966,
+          1.0714999807532877,
+          8.79512500250712,
+          7.24499998614192,
+          6.618374987738207,
+          5.261333979433402,
+          3.5658330016303807,
+          2.162124990718439,
+          0.6186249956954271,
+          8.34450000547804,
+          6.845291005447507,
+          4.5932909997645766,
+          2.4453340156469494,
+          0.5917499947827309,
+          8.166334009729326,
+          7.331083994358778,
+          5.852833011886105,
+          3.746292000869289,
+          2.173625020077452,
+          9.21104199369438,
+          8.175790979294106,
+          4.077916993992403,
+          1.7306660010945052,
+          8.733584021683782,
+          6.757125025615096,
+          6.003207992762327,
+          4.300500004319474,
+          2.45445899781771,
+          8.637249993626028,
+          7.593333022668958,
+          5.5042919993866235,
+          5.838124983711168,
+          2.749792009126395,
+          1.0249159822706133,
+          7.554624986369163,
+          5.793333984911442,
+          5.012000008719042,
+          4.135374998440966,
+          1.6331669758073986,
+          9.25029197242111,
+          6.602417008252814,
+          5.763333989307284,
+          3.709958982653916,
+          2.8281660052016377,
+          1.7996250244323164,
+          8.487457991577685,
+          6.133624992799014,
+          5.093665997264907,
+          3.4832909877877682,
+          1.7703750054351985,
+          8.540249982615933,
+          8.014874998480082,
+          5.981041991617531,
+          4.866125003900379,
+          2.097124990541488,
+          6.803791999118403,
+          6.387917004758492,
+          4.928625014144927,
+          3.3895829983521253,
+          2.9425419925246388,
+          0.9362499986309558,
+          7.292458991287276,
+          7.105666998540983,
+          5.607875005807728,
+          4.205500008538365,
+          1.6294580127578229,
+          8.8967909978237,
+          6.188125000335276,
+          0.9045409969985485,
+          5.167916999198496
+        ],
+        "errors": []
+      }
+    ],
+    "python_traced_memory_bytes": {
+      "current": 5491618,
+      "peak": 5582926
+    }
+  },
+  "objective": {
+    "passed": true,
+    "result": {
+      "objective_id": "cb2b05694382436fa4737692262f908e",
+      "status": "succeeded",
+      "reason": "finished",
+      "message": null,
+      "duration_seconds": 16.495044042007066,
+      "decision_count": 4,
+      "skill_results": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "room_id": "engineering",
+            "stopped": true,
+            "waypoints_reached": 4,
+            "room_change_confirmed": true
+          },
+          "duration_seconds": 7.670401208015392,
+          "commands_sent": 154,
+          "details": {}
+        },
+        {
+          "skill_id": "actor.wait",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "waited_seconds": 2.0015685420075897
+          },
+          "duration_seconds": 2.0025958330079447,
+          "commands_sent": 0,
+          "details": {}
+        },
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "room_id": "main-hall",
+            "stopped": true,
+            "waypoints_reached": 3,
+            "room_change_confirmed": true
+          },
+          "duration_seconds": 6.784327875007875,
+          "commands_sent": 135,
+          "details": {}
+        }
+      ]
+    }
+  },
+  "cognitive": {
+    "objective": {
+      "id": "cb2b05694382436fa4737692262f908e",
+      "text": "Go to Engineering, wait there for 2 seconds, then return to Main Hall and finish.",
+      "created_at": "2026-10-13T14:47:37.875766Z",
+      "status": "succeeded"
+    },
+    "result": {
+      "objective_id": "cb2b05694382436fa4737692262f908e",
+      "status": "succeeded",
+      "reason": "finished",
+      "message": null,
+      "duration_seconds": 16.495044042007066,
+      "decision_count": 4,
+      "skill_results": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "room_id": "engineering",
+            "stopped": true,
+            "waypoints_reached": 4,
+            "room_change_confirmed": true
+          },
+          "duration_seconds": 7.670401208015392,
+          "commands_sent": 154,
+          "details": {}
+        },
+        {
+          "skill_id": "actor.wait",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "waited_seconds": 2.0015685420075897
+          },
+          "duration_seconds": 2.0025958330079447,
+          "commands_sent": 0,
+          "details": {}
+        },
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "room_id": "main-hall",
+            "stopped": true,
+            "waypoints_reached": 3,
+            "room_change_confirmed": true
+          },
+          "duration_seconds": 6.784327875007875,
+          "commands_sent": 135,
+          "details": {}
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "index": 1,
+        "duration_seconds": 0.0005402499809861183,
+        "status": "accepted",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "index": 2,
+        "duration_seconds": 0.0014920829853508621,
+        "status": "accepted",
+        "skill_id": "actor.wait"
+      },
+      {
+        "index": 3,
+        "duration_seconds": 0.0011492089834064245,
+        "status": "accepted",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "index": 4,
+        "duration_seconds": 0.0009999590110965073,
+        "status": "accepted"
+      }
+    ],
+    "skills": [
+      {
+        "skill_id": "agents-arena.navigate-to-room",
+        "skill_version": "1.0.0",
+        "status": "succeeded",
+        "reason": "",
+        "output": {
+          "room_id": "engineering",
+          "stopped": true,
+          "waypoints_reached": 4,
+          "room_change_confirmed": true
+        },
+        "duration_seconds": 7.670401208015392,
+        "commands_sent": 154,
+        "details": {}
+      },
+      {
+        "skill_id": "actor.wait",
+        "skill_version": "1.0.0",
+        "status": "succeeded",
+        "reason": "",
+        "output": {
+          "waited_seconds": 2.0015685420075897
+        },
+        "duration_seconds": 2.0025958330079447,
+        "commands_sent": 0,
+        "details": {}
+      },
+      {
+        "skill_id": "agents-arena.navigate-to-room",
+        "skill_version": "1.0.0",
+        "status": "succeeded",
+        "reason": "",
+        "output": {
+          "room_id": "main-hall",
+          "stopped": true,
+          "waypoints_reached": 3,
+          "room_change_confirmed": true
+        },
+        "duration_seconds": 6.784327875007875,
+        "commands_sent": 135,
+        "details": {}
+      }
+    ],
+    "lifecycle": [
+      {
+        "event": "ObjectiveStarted",
+        "elapsed_seconds": 0.002482,
+        "objective_id": "cb2b05694382436fa4737692262f908e"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 0.017067,
+        "kind": "skill",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 7.695275,
+        "kind": "skill",
+        "skill_id": "actor.wait"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 9.704486,
+        "kind": "skill",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 16.494636,
+        "kind": "finish",
+        "status": "success"
+      },
+      {
+        "event": "ObjectiveSucceeded",
+        "elapsed_seconds": 16.495327,
+        "reason": "finished"
+      }
+    ],
+    "scheduler": {
+      "active_skill_id": "",
+      "skills": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "room_id": "engineering",
+            "stopped": true,
+            "waypoints_reached": 4,
+            "room_change_confirmed": true
+          },
+          "duration_seconds": 7.670401208015392,
+          "commands_sent": 154,
+          "details": {},
+          "started": true
+        },
+        {
+          "skill_id": "actor.wait",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "waited_seconds": 2.0015685420075897
+          },
+          "duration_seconds": 2.0025958330079447,
+          "commands_sent": 0,
+          "details": {},
+          "started": true
+        },
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "room_id": "main-hall",
+            "stopped": true,
+            "waypoints_reached": 3,
+            "room_change_confirmed": true
+          },
+          "duration_seconds": 6.784327875007875,
+          "commands_sent": 135,
+          "details": {},
+          "started": true
+        }
+      ],
+      "events": [
+        {
+          "event": "SkillStarted",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 234567.209215625
+        },
+        {
+          "event": "SkillSucceeded",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 234574.879331875
+        },
+        {
+          "event": "SkillStarted",
+          "skill_id": "actor.wait",
+          "at_monotonic": 234574.8871895
+        },
+        {
+          "event": "SkillSucceeded",
+          "skill_id": "actor.wait",
+          "at_monotonic": 234576.889538375
+        },
+        {
+          "event": "SkillStarted",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 234576.89660625
+        },
+        {
+          "event": "SkillSucceeded",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 234583.680725208
+        }
+      ],
+      "skill_count": 3,
+      "failed_skill_count": 0
+    },
+    "brain": {
+      "provider": "sequence",
+      "decisions": 4,
+      "interrupted": false,
+      "closed": true
+    },
+    "cleanup_errors": []
+  }
+}

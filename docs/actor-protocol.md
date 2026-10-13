@@ -3,8 +3,9 @@
 ACTOR Core does not prescribe a game's world model. It defines a typed, versioned extension mechanism through which a game declares observations, events, commands and supported capabilities. Rooms, health, weapons, inventories and game rules belong to optional capability packages or game extensions.
 
 ```text
-Python ACTOR Runtime
-  ExtensionRegistry → WorldState → installed scripted policy
+User Objective → Brain → Runtime Skill Engine
+                           ↓
+Python ACTOR Runtime: ExtensionRegistry / WorldState / RuntimeSession
                 ↕ one loopback HTTP/2 gRPC stream
 ACTOR SDK: protocol / registry / main-thread Pump / bounded mailboxes
                 ↕ IActorGameAdapter
@@ -31,7 +32,7 @@ Game developers register a generated message type through a generic SDK method. 
 
 An extension package includes ID/version, supported Core major, a SHA-256 fingerprint, canonical descriptor set and capability metadata. Its fingerprint covers deterministic descriptor bytes, with imported schemas included, source comments removed and files sorted. Generated helpers and package resources carry the exact same descriptor artifact. Required packages must match the exact version/hash in this MVP. Missing or incompatible packages produce structured errors containing the package identity and expected schema hash. Optional unknown/incompatible packages are retained as opaque data or skipped without breaking the connection.
 
-Capability definitions include kind, description, version, extension identity and input/output type URLs. Infrastructure kinds include Observation, Command, Event and future Skill; no skill execution is implemented. Ordered/latest command delivery describes queue semantics, not a game mechanic. Only registered observations, events and commands appear in a game's manifest.
+Capability definitions include kind, description, version, extension identity and input/output type URLs. Infrastructure kinds include Observation, Command, Event and future game-native Skill. Runtime-side Skills compose existing capabilities locally and do not use the reserved wire Skill kind or add manifest entries. See [Skills](skills.md) and [Brains](brains.md). Ordered/latest command delivery describes queue semantics, not a game mechanic. Only registered observations, events and commands appear in a game's manifest.
 
 ## Session and stream
 
@@ -63,10 +64,10 @@ Standard Transform2D/Motion2D come from a coherent raw owner post-physics server
 
 ## Versioning and generated sources
 
-Core protocol **1.0**, extension package **0.1.0**, game **0.3.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
+Core protocol **1.0**, extension package **0.1.0**, game **0.4.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
 
 Generated C#/Python files, descriptors and metadata are version controlled. Unity users do not need protoc. `scripts/generate-proto.sh --check` regenerates in a temporary output tree and compares artifacts; CI fails on stale generated sources. [Tooling and schema rules](../proto/README.md), [Unity SDK API](../packages/com.actor.sdk/README.md), [Python Runtime](python-runtime.md), [custom extensions](extensions.md), [actual gRPC spike](grpc-spike/README.md).
 
 ## Current scope
 
-No Codex/LLM, persistent memory, classifier, skill execution, navigation system, package auto-download or additional IPC transport is implemented. The scripted example belongs to the Agents Arena extension and uses simple known waypoints. Future brains and skill/policy layers can sit above the same typed capability protocol without teaching Core a universal game ontology.
+Runtime 0.2.0 adds typed Skills, ObjectiveRunner and interchangeable Brains, including an optional official Codex provider, above this unchanged capability protocol. Game-specific navigation stays in the Agents Arena plugin. Persistent memory, classifiers, generic navigation, package auto-download and additional IPC transports remain future layers.

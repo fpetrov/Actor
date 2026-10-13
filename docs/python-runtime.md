@@ -1,15 +1,19 @@
 # ACTOR Python Runtime
 
 The Runtime is a local process that handles typed protocol exchange, extension
-discovery, a deterministic latest-observation cache and command output. It has
-no Unity/NGO knowledge, LLM, navigation system or memory service. Standard and
-Agents Arena semantics live in separately registered Python plugin modules.
+discovery, a deterministic latest-observation cache, typed Skill execution and
+Objective orchestration through interchangeable Brains. Core has no Unity/NGO,
+provider or game ontology. Standard, Agents Arena and optional Codex semantics
+live in separately registered Python plugin modules. There is no persistent
+memory or generic navigation service.
 
 ## Install and run
 
 Python 3.12+ is required. Protobuf and gRPC versions are pinned in
 `runtime/pyproject.toml`; generated sources and descriptor artifacts are checked
 in. Generation is needed only after changing schemas.
+Runtime 0.2.0 adds Pydantic 2.14.1, `actor.skills` and `actor.brains` entry points;
+Core wire protocol remains 1.0. Codex is optional via `runtime[codex]`.
 
 ```bash
 python3 -m venv build/runtime-venv
@@ -36,6 +40,11 @@ default), `--command-timeout-ms` sets command TTL (250 ms), and `--debug` enable
 gRPC debug diagnostics. `--measure-allocations` includes current/peak traced
 Python memory in the report; it does not account for all native gRPC allocations.
 `ACTOR_BRIDGE_PORT` supplies the default port.
+
+For the Brain → Skill objective flow, use `actor-runtime agent --brain ...
+--objective ...`, or `scripts/launch-agent.py`. See [Skills](skills.md),
+[Brains](brains.md) and [Codex setup/launch](codex.md). The old scripted example
+continues to run through `actor.examples`.
 
 The server always binds `127.0.0.1`. It rejects invalid tokens before creating a
 session and limits gRPC messages to 1 MiB. A five-second missing-peer deadline

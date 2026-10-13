@@ -1,0 +1,31 @@
+{
+    "mode": "Human",
+    "state": "Disconnected",
+    "actorId": "6231be8ba62e455db081589a1b2b53fd",
+    "roomId": "engineering",
+    "sessionId": "",
+    "errorCode": "",
+    "error": "",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": true,
+    "position": {
+        "x": 1.8012785911560059,
+        "y": -7.941338062286377
+    },
+    "velocity": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "observations": 0,
+    "messagesSent": 0,
+    "messagesReceived": 0,
+    "commands": 0,
+    "bytesSent": 0,
+    "bytesReceived": 0,
+    "meanFps": 118.89964545063712,
+    "maxPumpMs": 0.0,
+    "elapsedSeconds": 189.23521525,
+    "managedHeapStart": 1798144,
+    "managedHeapCurrent": 5320704
+}

@@ -1,13 +1,16 @@
 # ACTOR
 
-ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. The current milestone includes a Python Runtime, Unity SDK, real loopback gRPC bridge and a scripted player in the deployed multiplayer reference game.
+ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. The current milestone adds typed Runtime Skills, interchangeable Brains and an official Codex-powered objective loop to the working Unity SDK, local gRPC bridge and deployed multiplayer reference game.
 
 ## What ACTOR is
 
 **ACTOR does not prescribe a game's world model. Games expose capabilities through typed, versioned extensions.** Core handles sessions, discovery, envelopes, ordering and command outcomes. Reusable Standard packages are optional; game-specific concepts belong to game extensions. Agents Arena's rooms are an extension, not an ACTOR Core concept.
 
 ```text
-Python Runtime / plugins / WorldState
+User Objective
+      ↓ Brain (Scripted / optional Codex / other plugins)
+      ↓ Skill Engine (typed catalog / scheduler / lifecycle)
+Python Runtime / RuntimeSession / WorldState
            ↕ local gRPC + Protobuf
 Unity ACTOR SDK / typed capability registry
            ↕ Agents Arena adapter / AgentInputSource
@@ -16,8 +19,9 @@ Unity client ↔ NGO ↔ VPS Dedicated Server
 
 - **ACTOR SDK** — local UPM `packages/com.actor.sdk`, engine-independent Core/Standard protocol and typed registration.
 - **gRPC transport** — local UPM `com.actor.transport.grpc`, Grpc.Net.Client + native YetAnotherHttpHandler.
-- **Python Runtime** — `runtime/`, descriptor/generated-type plugins, generic state cache and CLI; no LLM.
-- **Agents Arena** — Unity 6000.6.4f1, Main Hall ↔ Engineering, server physics/rooms and responsive owner prediction.
+- **Python Runtime 0.2.0** — descriptors/plugins, state cache, typed Skills, ObjectiveRunner and CLI.
+- **Brains** — deterministic SequenceBrain and optional official `openai-codex==0.162.1`; model decisions occur between Skills.
+- **Agents Arena 0.4.0** — Unity 6000.6.4f1, a common atlas for Main Hall ↔ Engineering, tested passages, authoritative physics/rooms and responsive owner prediction.
 - **Control Plane** — .NET 10 Minimal APIs, SQLite admission/process lifecycle; static website via nginx.
 
 **Website:** http://5.181.134.236/
@@ -61,11 +65,11 @@ The six original sheets provide 48 complete character poses. Twelve idle/walk cl
 
 ## Verification and limits
 
-18 backend, 50 SDK/bridge and 59 Python Runtime tests passed. Generated schema freshness and custom extension self-test passed. Both Unity builds succeeded. Actual remote Editor + Standalone probes passed 9 and 8 checks with no runtime errors/warnings; names, motion, collisions, disconnect/reconnect and local-transform correction were checked. Five real servers used unique UDP ports 7777–7781 and the sixth room received 409. Empty-room cleanup, process crash handling and stale persisted state are covered.
+18 backend, 50 SDK/bridge and 156 Python Runtime tests passed. Generated schema freshness and custom extension self-test passed. Both Unity builds succeeded. Actual remote Editor + Standalone probes passed 9 and 8 checks with no runtime errors/warnings; names, motion, collisions, disconnect/reconnect and local-transform correction were checked. Five real servers used unique UDP ports 7777–7781 and the sixth room received 409. Empty-room cleanup, process crash handling and stale persisted state are covered.
 
 The limit and timeouts are configurable, with production MaxConcurrentGameServers=5. Control Plane serves API only on 127.0.0.1:5080; nginx exposes HTTP 80, and gameplay uses direct UDP. There is no TLS/domain, account system or durable recovery of active matches. Restarting/deploying the Control Plane ends active matches; metadata persists in SQLite.
 
-The typed scripted bot completed MainHall→Engineering→MainHall through a real VPS lobby; Human observer checks10/10, control-safety checks8/8 and human movement regression13/13 passed. See [ACTOR validation](docs/actor-validation/README.md), [networking](docs/networking.md), [deployment](docs/deployment.md), [previous remote evidence](docs/multiplayer-validation/README.md) and [playable milestone](docs/VALIDATION.md).
+The typed scripted bot and the new Brain→Skill loop completed MainHall→Engineering→MainHall through real VPS lobbies. Codex chose Navigate→Wait→Navigate→Finish using the dynamic catalog, with no model calls during Skills. See [cognitive validation](docs/cognitive-validation/README.md), [previous ACTOR validation](docs/actor-validation/README.md), [networking](docs/networking.md), [deployment](docs/deployment.md), [previous remote evidence](docs/multiplayer-validation/README.md) and [playable milestone](docs/VALIDATION.md).
 
 ## Run the scripted player
 
@@ -81,6 +85,21 @@ The helper generates an ephemeral bridge credential, starts the local Runtime an
 
 Developers: [protocol/architecture](docs/actor-protocol.md), [extension tutorial](docs/extensions.md), [Python CLI and plugins](docs/python-runtime.md), [Unity SDK](packages/com.actor.sdk/README.md), [gRPC compatibility spike](docs/grpc-spike/README.md). Generated artifacts are committed; validate with `scripts/generate-proto.sh --check`.
 
+## Run a Brain-driven objective
+
+Install the optional provider once, create a room, then select the Brain:
+
+```bash
+build/runtime-venv/bin/python -m pip install -e 'runtime[dev,codex]'
+build/runtime-venv/bin/actor-runtime codex status
+python3 scripts/launch-agent.py --room ABC123 --brain codex \
+  --objective "Go to Engineering, wait there for 2 seconds, then return to Main Hall and finish."
+```
+
+Use `--brain scripted` for the fixed deterministic demo through the same Skill Engine. The old scripted player remains available. **Codex does not drive frames or send Unity commands directly.** It chooses a typed Skill; Runtime validates, executes and cleans it up before the next decision. Existing ChatGPT/Codex sign-in is reused; `actor-runtime codex login` provides official sign-in if needed.
+
+Developer guides: [Skills](docs/skills.md), [Brains/Objectives](docs/brains.md), [Codex provider and authority boundary](docs/codex.md).
+
 ## Next milestone
 
-Add optional higher-level skills and interchangeable brains above the capability protocol. Codex integration, memory, classifiers and realtime policies remain future layers; game-specific NGO details stay behind the adapter.
+Extend game-native observations/actions and add useful typed Skills. Bounded event classification can later create additional decision points; persistent memory and retrieval remain separate future layers. Game-specific navigation and NGO details stay behind their plugins/adapters.

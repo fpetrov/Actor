@@ -1,0 +1,155 @@
+{
+  "scenario": "codex-interrupt",
+  "room": "2M35FM",
+  "passed": true,
+  "active_sdk_turn_ids": [
+    "01a135d3-82dd-7c30-853e-bbcb252b247e"
+  ],
+  "sdk_turn_statuses": [
+    "interrupted"
+  ],
+  "sdk_interrupted": true,
+  "objective": {
+    "objective_id": "2bbab82c846045dda24ee1a8834ea10f",
+    "status": "cancelled",
+    "reason": "objective_cancelled",
+    "message": null,
+    "duration_seconds": 4.83211783299339,
+    "decision_count": 1,
+    "skill_results": []
+  },
+  "cognitive": {
+    "objective": {
+      "id": "2bbab82c846045dda24ee1a8834ea10f",
+      "text": "Go to Engineering, wait there for 2 seconds, then return to Main Hall and finish.",
+      "created_at": "2026-10-13T15:13:33.709158Z",
+      "status": "cancelled"
+    },
+    "result": {
+      "objective_id": "2bbab82c846045dda24ee1a8834ea10f",
+      "status": "cancelled",
+      "reason": "objective_cancelled",
+      "message": null,
+      "duration_seconds": 4.83211783299339,
+      "decision_count": 1,
+      "skill_results": []
+    },
+    "decisions": [
+      {
+        "index": 1,
+        "duration_seconds": 2.0315212919958867,
+        "status": "interrupted"
+      }
+    ],
+    "skills": [],
+    "lifecycle": [
+      {
+        "event": "ObjectiveStarted",
+        "elapsed_seconds": 0.001434,
+        "objective_id": "2bbab82c846045dda24ee1a8834ea10f"
+      },
+      {
+        "event": "ObjectiveCancelled",
+        "elapsed_seconds": 4.832144,
+        "reason": "objective_cancelled"
+      }
+    ],
+    "scheduler": {
+      "active_skill_id": "",
+      "skills": [],
+      "events": [],
+      "skill_count": 0,
+      "failed_skill_count": 0
+    },
+    "brain": {
+      "provider": "codex",
+      "decision_count": 0,
+      "turns": [],
+      "adapter": {
+        "sdk_version": "0.162.1",
+        "authentication_mode": "chatgpt",
+        "sandbox": "read-only",
+        "ephemeral": true,
+        "schema_mode": "wrapped_any_of",
+        "unique_model_turns": 1,
+        "interrupted": true,
+        "interrupted_turns": 1,
+        "completed_turn_statuses": {
+          "01a135d3-82dd-7c30-853e-bbcb252b247e": "interrupted"
+        },
+        "closed": true
+      }
+    },
+    "cleanup_errors": []
+  },
+  "unity_continues_running": true,
+  "unity_safe_stop": {
+    "mode": "Runtime",
+    "state": "Error",
+    "actorId": "9383da4e05e649fabcab14d1b8d5d268",
+    "roomId": "main-hall",
+    "sessionId": "5ed85253d85a4314b95a4c3adf81cfb1",
+    "errorCode": "RuntimeDisconnected",
+    "error": "Runtime shutdown",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": false,
+    "position": {
+      "x": -0.8500000238418579,
+      "y": -1.399999976158142
+    },
+    "velocity": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "observations": 68,
+    "messagesSent": 75,
+    "messagesReceived": 6,
+    "commands": 0,
+    "bytesSent": 38155,
+    "bytesReceived": 260,
+    "meanFps": 104.54941873990333,
+    "maxPumpMs": 2.4139,
+    "elapsedSeconds": 6.638009167000001,
+    "managedHeapStart": 1781760,
+    "managedHeapCurrent": 5369856
+  },
+  "runtime": {
+    "endpoint": "127.0.0.1:50051",
+    "elapsed_seconds": 10.263368374988204,
+    "cpu_seconds": 0.365231,
+    "cpu_percent_one_core": 3.5585880449352936,
+    "sessions": [
+      {
+        "session_id": "5ed85253d85a4314b95a4c3adf81cfb1",
+        "game_id": "agents-arena",
+        "game_version": "0.3.0",
+        "protocol_version": {
+          "major": 1,
+          "minor": 0
+        },
+        "actor_id": "9383da4e05e649fabcab14d1b8d5d268",
+        "loaded_extensions": [
+          "actor.standard",
+          "agents-arena"
+        ],
+        "opaque_extensions": [],
+        "capabilities": [
+          "actor.standard.locomotion2d",
+          "actor.standard.motion2d",
+          "actor.standard.transform2d",
+          "agents-arena.room-changed",
+          "agents-arena.room-membership"
+        ],
+        "commands_sent": 0,
+        "command_values_replaced": 0,
+        "observation_frames": 68,
+        "events_received": 0,
+        "last_received_sequence": 75,
+        "last_sent_sequence": 6,
+        "command_result_rtt_ms": [],
+        "errors": []
+      }
+    ]
+  }
+}
