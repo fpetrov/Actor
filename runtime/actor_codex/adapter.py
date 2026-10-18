@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 from dataclasses import dataclass
 import importlib
-from importlib.metadata import version
+from importlib.metadata import PackageNotFoundError, version
 import json
 import os
 import tempfile
@@ -40,6 +40,7 @@ class CodexAdapter(Protocol):
     async def start_episode(self, objective: str, catalog: list[dict]) -> None: ...
     async def decide(self, external_json: str) -> CodexReply: ...
     async def interrupt(self) -> None: ...
+    async def interrupt_decision(self) -> None: ...
     async def close(self) -> None: ...
 
 
@@ -56,8 +57,12 @@ def sdk_module():
 
 def configuration(sdk, cwd):
     environment = {key: value for key, value in os.environ.items() if key != "ACTOR_BRIDGE_TOKEN"}
+    try:
+        runtime_version = version("actor-runtime")
+    except PackageNotFoundError:
+        runtime_version = "source"
     return sdk.CodexConfig(cwd=cwd, env=environment, client_name="actor_runtime", client_title="ACTOR Runtime",
-        client_version="0.2.0", config_overrides=("features.shell_tool=false", "features.apps=false",
+        client_version=runtime_version, config_overrides=("features.shell_tool=false", "features.apps=false",
             "features.plugins=false", "features.multi_agent=false", "web_search=\"disabled\"", "mcp_servers={}"))
 
 
@@ -70,6 +75,9 @@ class OfficialCodexAdapter:
         self.schema = None
         self.handles = []
         self.interrupt_requested = False
+        self._decision_interrupt_requested = False
+        self._decision_epoch = 0
+        self.usage_totals = {}
         self._interrupt_lock = asyncio.Lock()
         self.turn_ids = set()
         self.interrupted_turn_ids = set()
@@ -86,6 +94,9 @@ class OfficialCodexAdapter:
         self.turn_ids.clear()
         self.interrupted_turn_ids.clear()
         self.completed_turns.clear()
+        self.usage_totals.clear()
+        self._decision_epoch = 0
+        self._decision_interrupt_requested = False
         self.schema = decision_schema(catalog)
         try:
             self.workspace = tempfile.TemporaryDirectory(prefix="actor-codex-")
@@ -108,18 +119,18 @@ class OfficialCodexAdapter:
             raise
 
     async def _start_turn(self, input):
-        if self.interrupt_requested:
+        if self.interrupt_requested or self._decision_interrupt_requested:
             raise asyncio.CancelledError
         handle = await self.thread.turn(input, output_schema=self.schema)
         self.handles.append(handle)
         self.turn_ids.add(handle.id)
-        if self.interrupt_requested:
-            self.interrupted_turn_ids.add(handle.id)
-            await handle.interrupt()
+        if self.interrupt_requested or self._decision_interrupt_requested:
+            await self._interrupt_handles()
             try:
                 async with asyncio.timeout(2):
-                    result = await handle.run()
-                    self.completed_turns[result.id] = str(getattr(result.status, "value", result.status))
+                    results = await asyncio.gather(*(item.run() for item in self.handles))
+                    for result in results:
+                        self._record_result(result)
             except Exception:
                 pass
             raise asyncio.CancelledError
@@ -128,28 +139,30 @@ class OfficialCodexAdapter:
     async def decide(self, external_json: str) -> CodexReply:
         if self.thread is None or self.closed:
             raise ActorError("codex_episode_unavailable", "Codex episode has not started")
-        if self.handles:
+        if self._decision_task is not None:
             raise ActorError("codex_turn_busy", "A Codex decision is already active")
         if self.interrupt_requested:
             raise asyncio.CancelledError
         started = time.monotonic()
         self._decision_task = asyncio.current_task()
         self._decision_done.clear()
+        epoch = self._decision_epoch
         try:
             if self.objective is not None:
                 # Public SDK input union keeps user TextInput separate from ExternalMessage.
-                await self._start_turn(self.sdk.TextInput(self.objective))
+                objective = self.objective
                 self.objective = None
+                await self._start_turn(self.sdk.TextInput(objective))
             external = self.sdk.ExternalMessage(tool_name="actor_game", namespace="world_state", content=external_json)
             await self._start_turn(external)
             # ExternalMessage joins a regular active turn. Consume each public handle's
             # subscription even when both refer to the same turn; count unique IDs only.
             results = await asyncio.gather(*(handle.run() for handle in self.handles))
             for item in results:
-                self.completed_turns[item.id] = str(getattr(item.status, "value", item.status))
+                self._record_result(item)
             result = results[-1]
             status = str(getattr(result.status, "value", result.status))
-            if status == "interrupted" and self.interrupt_requested:
+            if self.interrupt_requested or self._decision_interrupt_requested or epoch != self._decision_epoch:
                 raise asyncio.CancelledError
             if status != "completed" or not result.final_response:
                 raise ActorError("codex_turn_incomplete", "Codex did not produce a completed structured decision",
@@ -166,7 +179,11 @@ class OfficialCodexAdapter:
                              for item in getattr(result, "items", ()))
             return CodexReply(result.final_response, result.id, status, time.monotonic() - started, usage, tool_calls)
         except asyncio.CancelledError:
-            await self.interrupt()
+            # A soft preemption must not poison the whole Objective episode.
+            # The requester already interrupted the remote turn. Repeating an
+            # interrupt after its completion can itself wait for a stale RPC.
+            if not self._decision_interrupt_requested and not self.interrupt_requested:
+                await self.interrupt()
             raise
         except ActorError:
             raise
@@ -179,15 +196,28 @@ class OfficialCodexAdapter:
             self.handles.clear()
             self._decision_task = None
             self._decision_done.set()
+            self._decision_interrupt_requested = False
 
-    async def interrupt(self):
-        self.interrupt_requested = True
+    def _record_result(self, result):
+        self.completed_turns[result.id] = str(getattr(result.status, "value", result.status))
+        usage = result.usage.model_dump(mode="json") if getattr(result, "usage", None) is not None else None
+        # SDK total is cumulative thread usage: taking maxima avoids counting
+        # the initial joined TextInput/ExternalMessage subscriptions twice.
+        if usage:
+            for key in ("input_tokens", "cached_input_tokens", "output_tokens", "total_tokens"):
+                value = usage.get("total", {}).get(key)
+                if type(value) is int and value >= 0:
+                    self.usage_totals[key] = max(self.usage_totals.get(key, 0), value)
+
+    async def _interrupt_handles(self):
         async with self._interrupt_lock:
             seen = set()
             for handle in tuple(self.handles):
                 if handle.id in seen:
                     continue
                 seen.add(handle.id)
+                if handle.id in self.interrupted_turn_ids:
+                    continue
                 self.interrupted_turn_ids.add(handle.id)
                 try:
                     async with asyncio.timeout(5):
@@ -195,6 +225,24 @@ class OfficialCodexAdapter:
                 except Exception:
                     # Closing the official SDK process is the final cancellation boundary.
                     pass
+
+    async def interrupt_decision(self):
+        """Public SDK interruption, then drain; keep this Objective's thread."""
+        if self._decision_task is None:
+            return
+        self._decision_epoch += 1
+        self._decision_interrupt_requested = True
+        await self._interrupt_handles()
+        if self._decision_task is not asyncio.current_task():
+            try:
+                async with asyncio.timeout(2):
+                    await self._decision_done.wait()
+            except TimeoutError as error:
+                raise ActorError("codex_interrupt_timeout", "Codex turn did not drain; episode cannot continue") from error
+
+    async def interrupt(self):
+        self.interrupt_requested = True
+        await self._interrupt_handles()
         if self._decision_task is not None and self._decision_task is not asyncio.current_task():
             try:
                 async with asyncio.timeout(2):
@@ -231,4 +279,6 @@ class OfficialCodexAdapter:
                 "unique_model_turns": len(self.turn_ids), "interrupted": bool(self.interrupted_turn_ids),
                 "interrupted_turns": len(self.interrupted_turn_ids),
                 "completed_turn_statuses": dict(self.completed_turns),
+                "decision_epoch": self._decision_epoch, "decision_active": self._decision_task is not None,
+                "usage_totals": dict(self.usage_totals),
                 "closed": self.closed}

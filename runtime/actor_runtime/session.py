@@ -38,6 +38,7 @@ class RuntimeSession:
         self.capabilities = {}
         self.extensions = {}
         self.world: WorldState | None = None
+        self.event_router = None
         self.mailbox = OutboundMailbox()
         self.ready = asyncio.Event()
         self.closed = asyncio.Event()
@@ -101,6 +102,8 @@ class RuntimeSession:
         elif body == "event":
             item = self._decode(message.event, core.CAPABILITY_KIND_EVENT,
                                 message.sequence, message.event.revision)
+            # Live bounded ingress precedes the diagnostic historical ring.
+            self.event_router.ingest(item)
             self.world.apply_event(item)
             self.events_received += 1
             LOG.info("Event capability=%s entity=%s revision=%s", item.capability_id,
@@ -164,6 +167,8 @@ class RuntimeSession:
         self.manifest.CopyFrom(manifest)
         self.negotiated, self.extensions, self.capabilities = negotiated, extensions, capabilities
         self.world = WorldState(manifest.self_actor_id)
+        from .events import EventRouter
+        self.event_router = EventRouter(self)
         self.mailbox.put_control(wire.RuntimeToGame(hello=core.RuntimeHello(
             protocol_version=core.ProtocolVersion(major=1, minor=0), accepted=True)))
         self.ready.set()

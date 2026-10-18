@@ -50,6 +50,13 @@ class Brain(Protocol):
     async def close(self) -> None: ...
 
 
+class ReplannableBrain(Brain, Protocol):
+    # Optional at runtime: interrupt only the active decision, retaining the
+    # Objective episode. Legacy providers are drained before stale output is
+    # discarded, without calling their terminal interrupt().
+    async def interrupt_decision(self) -> None: ...
+
+
 def build_decision_schema(catalog: list[dict]) -> dict:
     """Specialize each SkillCall branch from its typed input model's JSON Schema."""
     branches, definitions, seen = [], {}, set()
@@ -141,6 +148,9 @@ class BrainRegistry:
         if any(not inspect.iscoroutinefunction(getattr(brain, name, None))
                for name in ("start", "decide", "interrupt", "close")):
             raise ActorError("brain_plugin_invalid", "Brain does not implement its lifecycle interface")
+        if (getattr(brain, "interrupt_decision", None) is not None and
+                not inspect.iscoroutinefunction(brain.interrupt_decision)):
+            raise ActorError("brain_plugin_invalid", "Optional decision interruption must be async")
         return brain
 
 
@@ -181,6 +191,11 @@ class SequenceBrain:
 
     async def interrupt(self):
         self.interrupted = True
+
+    async def interrupt_decision(self):
+        # There is no remote work to stop. Runner cancels/drains this local
+        # decision coroutine before invoking decide again.
+        pass
 
     async def close(self):
         self.closed = True

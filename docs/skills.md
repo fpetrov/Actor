@@ -64,6 +64,23 @@ Execution and cleanup waits are bounded. Cooperative Skills finish promptly; com
 
 Reasons include `unknown_skill`, `invalid_arguments`, `required_capability_missing`, `required_observation_missing`, `stale_world_state`, `command_ownership_conflict`, `session_disconnected`, `route_failed`, `cancelled`, `timeout`, `skill_exception` and `cleanup_failed`. Callers use these fields and never infer a result from exception prose.
 
+Event-driven soft preemption uses the same cancellation/cleanup path:
+
+```python
+await scheduler.cancel(reason="preempted_by_event", details={
+    "trigger_event_ids": [event_id], "decision_reason": "critical_event",
+})
+```
+
+The result is `cancelled` with reason `preempted_by_event`; the Objective stays
+Running and receives a new decision point after cleanup. Ordinary `cancel()`
+keeps reason `cancelled`. The first cancellation request owns its bounded JSON
+diagnostics. This is separate from terminal `ObjectiveRunner.cancel()`, which
+ends the whole episode. EventRouter decides whether an assessed event merits
+interruption; a review-only event can wait until this Skill naturally completes.
+Wait exits its monotonic sleep promptly. Navigation revokes command rights and
+issues zero intent before another Skill can acquire the same command lease.
+
 Runtime diagnostics emit `SkillStarted`, `SkillSucceeded`, `SkillFailed`, `SkillCancelled` and `SkillTimedOut`; these are Runtime lifecycle records, not new game wire events. `scheduler.report()` includes bounded result/event history, active Skill and aggregate execution/failure information. Command count measures typed intents issued; session transport telemetry separately counts messages actually written after coalescing.
 
 ## Included Skills
@@ -128,7 +145,8 @@ For a real command procedure, add typed capability requirements and its owned co
 
 ```bash
 build/runtime-venv/bin/python -m pytest \
-  runtime/tests/test_skills.py runtime/tests/test_navigation_skill.py -q
+  runtime/tests/test_skills.py runtime/tests/test_navigation_skill.py \
+  runtime/tests/test_preemption.py -q
 ```
 
 Tests cover synthetic plugin discovery without Core edits, deterministic catalog and compatibility, duplicate/version/schema rejection, strict input bounds/types/finite values, success/failure/exception/cancellation/deadline/disconnect cleanup, shared ownership and revoked rights. Navigation tests use the actual typed RuntimeSession interfaces, authoritative room events and closed-loop fixture physics; real remote Unity multiplayer evidence is recorded separately.

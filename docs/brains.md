@@ -2,7 +2,8 @@
 
 A Brain chooses a high-level Runtime Skill at a decision point. The Skill then
 executes independently until its lifecycle and command cleanup finish. World
-frames, movement updates and game events do not invoke the Brain. The same
+frames and movement updates do not invoke the Brain. The EventRouter creates
+additional decision points for relevant strategic events. The same
 `ObjectiveRunner` and `SkillScheduler` serve deterministic and model providers;
 neither component depends on Codex, Unity, NGO or Agents Arena concepts.
 
@@ -40,6 +41,12 @@ same bounded repair path as unknown skills or invalid arguments. Authentication
 and unrelated provider failures do not start a retry loop.
 
 Providers implement `interrupt` idempotently and release resources in `close`.
+An optional `async interrupt_decision()` stops only the active decision and
+preserves the episode for another `decide`. `ReplannableBrain` describes this
+extended interface. A legacy provider without it finishes its current decision;
+the Runner discards stale output before asking again. The normal decision
+deadline still applies. Terminal `interrupt()` is never used as a soft stop
+followed by an unsafe attempt to reuse the provider.
 An optional synchronous `report()` returns safe aggregate usage, counters,
 durations and status. It must never expose credentials or hidden reasoning.
 
@@ -104,6 +111,39 @@ result. Closed episodes can be followed by another episode on the same Runner.
 Provider lifecycle errors become controlled failure diagnostics, rather than
 escaping and crashing Runtime.
 
+## Strategic events and soft preemption
+
+The Runner uses the negotiated session's existing EventRouter by default. An
+explicit `event_router`, `CognitiveConfig` and shared `memory` can be supplied
+to the constructor. CLI owns the MemoryStore lifetime. There remains one
+ObjectiveRunner loop and one foreground Scheduler.
+
+Routine events may be buffered or remembered without waking the Brain. A
+review that does not request Skill interruption waits for its natural result.
+An interrupting event cancels the foreground Skill with
+`status="cancelled", reason="preempted_by_event"`. Result details carry bounded
+trigger IDs, their total count, decision reason and cognitive revision. The
+Objective remains Running. Ownership is revoked and cleanup, including zero
+movement intent, completes before a new Brain decision or Skill starts.
+
+Each strategic review changes `cognitive_revision`; Transform updates do not.
+A snapshot records that revision. A newer event during reasoning interrupts
+the current decision through the provider's nonterminal method, drains the old
+task and discards its answer. A burst produces one updated snapshot, never
+parallel competing decisions. The revision is checked again immediately before
+Scheduler dispatch. Trigger acknowledgement distinguishes inclusion in context
+from a valid, nonstale decision handling it. Invalid output leaves its evidence
+available for the bounded repair.
+
+`RouterConfig` controls cooldown and critical bypass; `max_replans` bounds
+replanning (eight by default), independently of the decision/episode limits.
+The Runner fails with `replan_limit` instead of reasoning forever. An overflow
+or failed critical ingestion marks routing degraded and safely stops the
+Objective with `event_routing_degraded`. Explicit Objective cancellation,
+disconnect and deadlines retain terminal semantics and win races with replan.
+An unresponsive provider cannot hold command ownership or make teardown wait
+indefinitely; continuation fails if its old decision cannot be drained safely.
+
 ## Snapshot and authority boundary
 
 Core uses generic Protobuf JSON reflection for known observations and events.
@@ -112,18 +152,23 @@ contains capability/entity/type identity, sequence, revision, age and a JSON
 value. Unknown optional payloads expose metadata with `opaque=true`; their
 binary bytes are omitted.
 
-Snapshot defaults bound observations to 64, events since the previous decision
-to the latest 32, each value to 8 KiB, and the external state to 64 KiB. Large
-values are marked truncated; counts report omitted records. Self observations
-are preferred and ordering is deterministic. Per-observation receipt times
-preserve freshness even when unrelated frames or events arrive.
+The existing reflection builder now selects relevant routed events and scoped
+memory alongside current observations. With `CognitiveConfig`, defaults are
+24 observations, 12 events, six memories, 4 KiB event payloads and 32 KiB total
+external JSON. The lower-level builder preserves its legacy bounds when called
+without configuration. Trigger events and the previous Skill result have
+priority over optional observations/memories. Large values are marked truncated;
+omission counters and exact external UTF-8 bytes are reported. Estimated tokens
+are a byte heuristic, distinct from measured provider usage. See
+[Context Builder](context-builder.md) and [Memory](memory.md).
 
 The context deliberately separates authority:
 
 - `objective` is the human user's instruction.
 - `available_skills` is trusted installed Runtime metadata and typed schemas.
 - `external_state()` / `external_json()` contains game state, game events,
-  previous Skill results and validation feedback; it excludes objective/catalog.
+previous Skill results, trigger events, retrieved memories and validation
+feedback; it excludes objective/catalog.
 
 The Codex adapter sends the objective as user `TextInput`, installed catalog
 instructions as developer guidance, and the external projection as official
@@ -141,7 +186,10 @@ Skill input validation still occur before execution.
 Runner reports include Objective duration/status, decision count and durations,
 Skill results, Scheduler lifecycle and provider aggregate telemetry. A movement
 Skill can send hundreds of commands while Brain count stays unchanged; the
-model is called again only after the Skill ends.
+model is called again after the Skill ends or is safely preempted. Reports also
+include replan count, revision, decision reason, trigger IDs, context bytes and
+Router telemetry. Skill results and Objective outcomes enter the shared
+MemoryStore; persistence failure is explicit `memory_failure`.
 
 Automated tests use synthetic plugins and the real Scheduler without model
 authentication. They cover typed decisions/catalog schemas, bounded generic
@@ -150,3 +198,7 @@ foreground execution, bounded repair, Skill failure, Brain/episode timeouts,
 cancellation/disconnect races and owned-command cleanup. Provider-specific
 authentication, `ExternalMessage` construction and live model execution are
 tested separately by the optional adapter.
+`runtime/tests/test_preemption.py` additionally covers a 1,000-event routine
+burst, duplicate urgent signals, Wait and actual navigation preemption,
+ownership release, stale reasoning, single-flight continuation, terminal races,
+degraded routing and bounded replans.

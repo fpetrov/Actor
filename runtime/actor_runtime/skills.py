@@ -218,6 +218,8 @@ class _Lease:
     cleanup_task: asyncio.Task | None = None
     commands_sent: int = 0
     cancellation: asyncio.Event = field(default_factory=asyncio.Event)
+    cancellation_reason: str = "cancelled"
+    cancellation_details: dict = field(default_factory=dict)
 
 
 _FOREGROUND: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
@@ -395,7 +397,8 @@ class SkillScheduler:
             if self.session.closed.is_set():
                 raise SkillError("session_disconnected", "Game session disconnected during skill")
             if lease.cancellation.is_set():
-                status, reason = "cancelled", "cancelled"
+                status, reason = "cancelled", lease.cancellation_reason
+                details.update(lease.cancellation_details)
             elif timeout in done and execute not in done:
                 status, reason = "timed_out", "timeout"
             else:
@@ -405,7 +408,8 @@ class SkillScheduler:
                 output = definition.result_model.model_validate(value.model_dump(), strict=True).model_dump(mode="json")
                 json.dumps(output, allow_nan=False)
         except asyncio.CancelledError:
-            status, reason = "cancelled", "cancelled"
+            status, reason = "cancelled", lease.cancellation_reason
+            details.update(lease.cancellation_details)
             current = asyncio.current_task()
             if current is not None: current.uncancel()
         except SkillError as error:
@@ -443,8 +447,17 @@ class SkillScheduler:
         return self._result(definition.skill_id, status, reason, version=definition.version, started=started,
                             output=output, commands=lease.commands_sent, details=details, did_start=True)
 
-    async def cancel(self):
+    async def cancel(self, *, reason="cancelled", details=None):
+        if reason not in ("cancelled", "preempted_by_event"):
+            raise ValueError("Unknown Skill cancellation reason")
+        # Cancellation metadata is diagnostic JSON, never executable policy.
+        metadata = json.loads(json.dumps(details or {}, allow_nan=False))
+        if not isinstance(metadata, dict) or len(json.dumps(metadata).encode("utf-8")) > 8192:
+            raise ValueError("Skill cancellation details must be a bounded JSON object")
         task, lease = self._task, self._lease
         if task is not None and not task.done():
-            if lease is not None: lease.cancellation.set()
+            if lease is not None and not lease.cancellation.is_set():
+                lease.cancellation_reason = reason
+                lease.cancellation_details = metadata
+                lease.cancellation.set()
             await asyncio.shield(task)

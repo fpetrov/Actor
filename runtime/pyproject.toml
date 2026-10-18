@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "actor-runtime"
-version = "0.2.0"
+version = "0.3.0"
 description = "Typed ACTOR game runtime with discoverable extensions, skills and interchangeable brains"
 requires-python = ">=3.12"
 dependencies = ["grpcio==1.82.2", "protobuf==7.36.2", "pydantic==2.14.1"]
@@ -12,6 +12,7 @@ dependencies = ["grpcio==1.82.2", "protobuf==7.36.2", "pydantic==2.14.1"]
 [project.optional-dependencies]
 dev = ["grpcio-tools==1.82.2", "pytest==9.0.2", "pytest-asyncio==1.3.0"]
 codex = ["openai-codex==0.162.1"]
+jev = ["typesafe-sdk==0.7.5"]
 
 [project.scripts]
 actor-runtime = "actor_runtime.cli:main"
@@ -31,9 +32,16 @@ agents-arena = "actor_agents_arena.skills:skill_package"
 scripted = "actor_agents_arena.demo_brain:scripted_brain"
 codex = "actor_codex:brain_factory"
 
+[project.entry-points."actor.event_rules"]
+agents-arena = "actor_agents_arena.events:event_rules"
+
+[project.entry-points."actor.classifiers"]
+rules = "actor_runtime.classifiers:rules_factory"
+jev = "actor_jev:classifier_factory"
+
 [tool.setuptools]
-package-dir = {actor_runtime = "actor_runtime", actor_standard = "actor_standard", actor_agents_arena = "actor_agents_arena", actor_codex = "actor_codex", actor = "../generated/python/actor", extensions = "../generated/python/extensions"}
-packages = ["actor_runtime", "actor_standard", "actor_agents_arena", "actor_codex", "actor", "actor.core", "actor.core.v1", "actor.standard", "actor.standard.v1", "actor.metadata", "extensions", "extensions.agents_arena", "extensions.agents_arena.v1", "extensions.agents_arena.metadata"]
+package-dir = {actor_runtime = "actor_runtime", actor_standard = "actor_standard", actor_agents_arena = "actor_agents_arena", actor_codex = "actor_codex", actor_jev = "actor_jev", actor = "../generated/python/actor", extensions = "../generated/python/extensions"}
+packages = ["actor_runtime", "actor_standard", "actor_agents_arena", "actor_codex", "actor_jev", "actor", "actor.core", "actor.core.v1", "actor.standard", "actor.standard.v1", "actor.metadata", "extensions", "extensions.agents_arena", "extensions.agents_arena.v1", "extensions.agents_arena.metadata"]
 
 [tool.setuptools.package-data]
 "actor.metadata" = ["*.pb", "*.json"]

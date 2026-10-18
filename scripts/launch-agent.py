@@ -20,6 +20,12 @@ def main():
     parser.add_argument("--brain", default="scripted", help="Installed actor.brains provider, e.g. scripted or codex")
     parser.add_argument("--objective", required=True, help="Objective passed only to the Python Runtime")
     parser.add_argument("--model", help="Optional Brain model override")
+    parser.add_argument("--config", type=Path, help="Validated local cognitive JSON configuration")
+    parser.add_argument("--classifier", help="Classifier provider; default rules, optional jev")
+    parser.add_argument("--memory", choices=("sqlite", "none"))
+    parser.add_argument("--memory-database", type=Path)
+    parser.add_argument("--agent-profile", help="Explicit persistent identity for local episodic memory")
+    parser.add_argument("--no-event-routing", action="store_true")
     parser.add_argument("--player-name", default="Agent Pilot")
     parser.add_argument("--port", type=int, default=50051)
     parser.add_argument("--decision-timeout", type=float, default=120)
@@ -53,6 +59,14 @@ def main():
         "--measure-allocations", "--exit-on-complete"]
     if args.model:
         runtime_args += ["--model", args.model]
+    for flag, value in (("--config", args.config.resolve() if args.config else None),
+                        ("--classifier", args.classifier), ("--memory", args.memory),
+                        ("--memory-database", args.memory_database.resolve() if args.memory_database else None),
+                        ("--agent-profile", args.agent_profile)):
+        if value is not None:
+            runtime_args += [flag, str(value)]
+    if args.no_event_routing:
+        runtime_args += ["--no-event-routing"]
     def interrupted(_signal, _frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, interrupted)

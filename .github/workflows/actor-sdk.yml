@@ -22,7 +22,9 @@ jobs:
         run: dotnet test Actor.sln --configuration Release --nologo
       - name: Install local Runtime and extension packages
         run: python -m pip install -e 'runtime[dev]'
-      - name: Codex dependency remains optional for deterministic CI
-        run: python -c 'import importlib.util; assert importlib.util.find_spec("openai_codex") is None'
-      - name: Runtime, Skills, Brains and real loopback gRPC tests
+      - name: Cognitive providers remain optional for deterministic CI
+        run: python -c 'import importlib.util; assert importlib.util.find_spec("openai_codex") is None; assert importlib.util.find_spec("typesafe_sdk") is None'
+      - name: Runtime, routing, memory, Skills, Brains and real loopback gRPC tests
         run: python -m pytest runtime/tests -q
+      - name: Curated deterministic event-routing evaluation
+        run: python scripts/evaluate-events.py
