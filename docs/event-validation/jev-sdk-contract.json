@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "scope": "Official typesafe-sdk0.7.5 with offline HTTP mock; no live inference",
+  "requests": [
+    {
+      "path": "/v1/systemone",
+      "model": "jev-1.13.0",
+      "questions": {
+        "relevance": "choice",
+        "urgency": "score",
+        "remember": "noul",
+        "interrupt": "noul",
+        "review": "noul"
+      },
+      "state_bytes": 259
+    }
+  ],
+  "assessment": {
+    "relevance": "relevant",
+    "urgency": "important",
+    "should_buffer": true,
+    "should_remember": true,
+    "should_interrupt_skill": false,
+    "should_request_brain_review": true,
+    "confidence": 0.95,
+    "provider": "jev",
+    "reason_code": "jev_typed_assessment"
+  },
+  "provider": {
+    "provider": "jev",
+    "sdk_version": "0.7.5",
+    "model": "jev-1.13.0",
+    "counts": {
+      "calls": 1,
+      "external_requests": 1
+    },
+    "active_requests": 0,
+    "latency_ms": [
+      43.13108400674537
+    ],
+    "confidence": [
+      0.95
+    ],
+    "request_bytes": [
+      244
+    ],
+    "closed": true
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "version": "0.3.0",
+  "cwd_outside_checkout": true,
+  "entry_points": {
+    "actor.extensions": [
+      "agents-arena",
+      "standard"
+    ],
+    "actor.skills": [
+      "agents-arena",
+      "builtins"
+    ],
+    "actor.brains": [
+      "codex",
+      "scripted"
+    ],
+    "actor.event_rules": [
+      "agents-arena"
+    ],
+    "actor.classifiers": [
+      "jev",
+      "rules"
+    ]
+  },
+  "skills": [
+    "actor.wait",
+    "agents-arena.navigate-to-room"
+  ],
+  "brains": [
+    "codex",
+    "scripted"
+  ],
+  "event_rule_count": 2,
+  "classifier_provider": "rules",
+  "extension_ids": [
+    "actor.standard",
+    "agents-arena"
+  ],
+  "descriptor_resources": {
+    "standard.v1": {
+      ".json": 1321,
+      ".pb": 613
+    },
+    "agents_arena.v1": {
+      ".json": 1359,
+      ".pb": 989
+    }
+  },
+  "module_origins": {
+    "actor_runtime": "actor_runtime/__init__.py",
+    "actor_runtime.events": "actor_runtime/events.py",
+    "actor_runtime.memory": "actor_runtime/memory.py",
+    "actor_runtime.snapshots": "actor_runtime/snapshots.py",
+    "actor_agents_arena": "actor_agents_arena/__init__.py",
+    "actor.core.v1.actor_pb2": "actor/core/v1/actor_pb2.py",
+    "extensions.agents_arena.v1.station_signals_pb2": "extensions/agents_arena/v1/station_signals_pb2.py"
+  },
+  "generic_core_roundtrip": {
+    "accepted": true,
+    "status": "succeeded",
+    "decision_count": 2,
+    "skills_executed": 1,
+    "game_commands": 0,
+    "game_capabilities": 0
+  },
+  "memory_cli": {
+    "entries_before": 1,
+    "cleared": 1,
+    "entries_after": 0,
+    "other_profile_entries_after": 1,
+    "profile_isolated": true
+  },
+  "optional_import_probes_blocked": [
+    "openai_codex",
+    "typesafe_sdk"
+  ],
+  "optional_imports_during_core_run": [],
+  "optional_sdk_modules_loaded": [],
+  "passed": true,
+  "wheel_name": "actor_runtime-0.3.0-py3-none-any.whl",
+  "wheel_bytes": 88182,
+  "wheel_sha256": "cf47566640dd5f7ccdae9ae08f71e8e12e8142d3bf9a9ff8b7f0299fdf91a98b",
+  "isolation": "python -I; stdlib plus unpacked wheel plus required dependency symlinks; no editable hooks"
+}

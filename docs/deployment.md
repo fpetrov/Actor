@@ -47,7 +47,7 @@ Build outputs stay under ignored `build/`. Server build uses `StandaloneLinux64`
 
 ## Configuration
 
-See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight players, startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.4.0, ProtocolVersion=3.
+See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight players, startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.5.0, ProtocolVersion=3.
 
 The deployment script preserves an existing `/etc/actor/control-plane.env`; edit it deliberately before redeploying if the host or versions change. There is no persistent signing secret to configure: every allocated match gets a random environment-only key. Never print `/proc/.../environ`, full join tickets or private-key contents.
 
@@ -101,4 +101,4 @@ The relay adds 100±10 ms in each direction (about 200 ms additional round trip)
 
 Only the reference game server/Control Plane/static website are deployed to the VPS. ACTOR Runtime remains a local Python process on the client machine. It listens on loopback50051 (configurable), authenticates an ephemeral token and streams Protobuf over HTTP/2. No gRPC server, token, LLM or SDK brain service is deployed/publicly exposed on the VPS.
 
-Local play/bridge instructions: [Python Runtime](python-runtime.md), [protocol](actor-protocol.md), [SDK milestone evidence](actor-validation/README.md). The generic transport abstraction currently has the verified Grpc.Net.Client + YetAnotherHttpHandler implementation. A game0.4.0 client requires matching admission protocol3; rebuild old clients before joining current rooms.
+Local play/bridge instructions: [Python Runtime](python-runtime.md), [protocol](actor-protocol.md), [SDK milestone evidence](actor-validation/README.md). The generic transport abstraction currently has the verified Grpc.Net.Client + YetAnotherHttpHandler implementation. A game0.5.0 client requires matching admission protocol3; rebuild old clients before joining current rooms.

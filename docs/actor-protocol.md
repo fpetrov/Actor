@@ -20,7 +20,7 @@ Dedicated Server: motor / physics / room membership
 | --- | --- | --- |
 | Core | `proto/actor/core/v1`, `actor.core.v1` | Session, identity, manifest, Any envelopes, ordering, heartbeat, command outcome, errors |
 | Standard | `proto/actor/standard/v1`, `actor.standard.v1` | Optional reusable Transform2D, Motion2D and Locomotion2D |
-| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | RoomMembership and RoomChanged |
+| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | RoomMembership, RoomChanged and StationSignal |
 
 `com.actor.sdk` contains Core/Standard generated types, extension registration and generic bridge lifecycle. It has no Unity engine references, NGO dependency or room mechanics. `com.actor.transport.grpc` provides the concrete native HTTP/2 implementation. The Unity reference game's adapter binds these generic interfaces to its existing network player and input abstraction.
 
@@ -64,10 +64,10 @@ Standard Transform2D/Motion2D come from a coherent raw owner post-physics server
 
 ## Versioning and generated sources
 
-Core protocol **1.0**, extension package **0.1.0**, game **0.4.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
+Core protocol **1.0**, Standard package **0.1.0**, Arena package **0.2.0**, game **0.5.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
 
 Generated C#/Python files, descriptors and metadata are version controlled. Unity users do not need protoc. `scripts/generate-proto.sh --check` regenerates in a temporary output tree and compares artifacts; CI fails on stale generated sources. [Tooling and schema rules](../proto/README.md), [Unity SDK API](../packages/com.actor.sdk/README.md), [Python Runtime](python-runtime.md), [custom extensions](extensions.md), [actual gRPC spike](grpc-spike/README.md).
 
 ## Current scope
 
-Runtime 0.2.0 adds typed Skills, ObjectiveRunner and interchangeable Brains, including an optional official Codex provider, above this unchanged capability protocol. Game-specific navigation stays in the Agents Arena plugin. Persistent memory, classifiers, generic navigation, package auto-download and additional IPC transports remain future layers.
+Runtime0.3.0 adds event routing, soft replanning, bounded context and local episodic memory above the existing Skills/Brains and unchanged Core protocol. Game-specific navigation and station-signal semantics stay in the Arena plugin. Optional Jev uses the provider-neutral classifier API; generic navigation and package auto-download remain future layers.

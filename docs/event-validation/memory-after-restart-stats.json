@@ -1,0 +1,17 @@
+{
+  "state": "ready",
+  "persistent": true,
+  "profile": "milestone4-skill-recall",
+  "administration": true,
+  "limits_enforced": false,
+  "game_id": "agents-arena",
+  "entries": 5,
+  "global_entries": 10,
+  "max_entries": 1000,
+  "max_payload_bytes": 4096,
+  "database_bytes": 36864,
+  "max_database_bytes": 24641536,
+  "retrieval_count": 0,
+  "retrieved_entries": 0,
+  "pending_operations": 1
+}

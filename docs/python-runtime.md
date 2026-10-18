@@ -4,15 +4,16 @@ The Runtime is a local process that handles typed protocol exchange, extension
 discovery, a deterministic latest-observation cache, typed Skill execution and
 Objective orchestration through interchangeable Brains. Core has no Unity/NGO,
 provider or game ontology. Standard, Agents Arena and optional Codex semantics
-live in separately registered Python plugin modules. There is no persistent
-memory or generic navigation service.
+live in separately registered Python plugin modules. Event routing and bounded SQLite memory extend this same lifecycle; generic
+navigation remains outside Core.
 
 ## Install and run
 
 Python 3.12+ is required. Protobuf and gRPC versions are pinned in
 `runtime/pyproject.toml`; generated sources and descriptor artifacts are checked
 in. Generation is needed only after changing schemas.
-Runtime 0.2.0 adds Pydantic 2.14.1, `actor.skills` and `actor.brains` entry points;
+Runtime0.3.0 adds `actor.event_rules` and `actor.classifiers`, bounded context,
+SQLite episodic memory and soft replanning to the existing Pydantic/Skill/Brain APIs;
 Core wire protocol remains 1.0. Codex is optional via `runtime[codex]`.
 
 ```bash
@@ -63,7 +64,7 @@ are normal Python packaging metadata; Core does not branch on game IDs.
 The repository includes these registered plugins:
 
 - `actor_standard`: Transform2D, Motion2D and Locomotion2D.
-- `actor_agents_arena`: RoomMembership and RoomChanged; the route example is an
+- `actor_agents_arena`: RoomMembership, RoomChanged and authoritative StationSignal; the route example is an
   `actor.examples` entry point, also outside Runtime Core.
 
 The registry verifies exact SHA-256 fingerprints of generated descriptor
@@ -155,3 +156,16 @@ The optional report includes session counts, observations, commands/events,
 command-result round-trip samples and Python CPU usage. Default logs describe
 connections, capabilities, events and aggregate command counts; individual
 transform frames are not logged.
+
+## Event-driven cognition configuration
+
+`agent --classifier rules --memory sqlite` is the local default. Use `--config`
+for a validated JSON CognitiveConfig (Router, Classifier, Context, Memory and Brain
+limits). `--no-event-routing` retains the previous Skill-boundary loop for
+comparison. Persistent memory requires `--agent-profile` and `--memory-database`;
+otherwise SQLite is session-local. `memory stats/clear` scopes administration
+to the explicit game/profile and never silently prunes unrelated profiles.
+
+See [routing/plugin API](event-routing.md), [context budgets](context-builder.md),
+[memory API/admin commands](memory.md), [optional classifier/privacy](classifiers.md)
+and [actual multiplayer acceptance](event-validation/README.md).

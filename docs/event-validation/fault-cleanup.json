@@ -1,0 +1,16 @@
+{
+  "owned_lobby_id": "29493566782c4cffa439c3c09425608a",
+  "owned_room": "8Z6D62",
+  "owned_server_pid": 87040,
+  "owned_server_pid_absent": true,
+  "owned_udp_port": 7779,
+  "owned_udp_port_unbound": true,
+  "owned_client_pids": [
+    82367,
+    82375
+  ],
+  "owned_clients_exited": true,
+  "protected_room": "J78LRT",
+  "protected_status": "Running",
+  "protected_players": 2
+}

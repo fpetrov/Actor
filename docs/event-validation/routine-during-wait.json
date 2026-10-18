@@ -1,0 +1,545 @@
+{
+  "runtime": {
+    "endpoint": "127.0.0.1:50051",
+    "elapsed_seconds": 56.14574800000992,
+    "cpu_seconds": 2.660154,
+    "cpu_percent_one_core": 4.737943824347179,
+    "sessions": [
+      {
+        "session_id": "f076665508fe4f59804ec2bc1f7e09cc",
+        "game_id": "agents-arena",
+        "game_version": "0.5.0",
+        "protocol_version": {
+          "major": 1,
+          "minor": 0
+        },
+        "actor_id": "ab64134a49434690bcb585fc74b2f756",
+        "loaded_extensions": [
+          "actor.standard",
+          "agents-arena"
+        ],
+        "opaque_extensions": [],
+        "capabilities": [
+          "actor.standard.locomotion2d",
+          "actor.standard.motion2d",
+          "actor.standard.transform2d",
+          "agents-arena.room-changed",
+          "agents-arena.room-membership",
+          "agents-arena.station-signal"
+        ],
+        "commands_sent": 159,
+        "command_values_replaced": 4,
+        "observation_frames": 727,
+        "events_received": 2,
+        "last_received_sequence": 942,
+        "last_sent_sequence": 211,
+        "command_result_rtt_ms": [
+          9.328167012427002,
+          5.742917011957616,
+          5.218957958277315,
+          3.597125003580004,
+          2.8857089928351343,
+          1.5157499583438039,
+          8.160166966263205,
+          7.457875006366521,
+          6.344624969642609,
+          5.000250006560236,
+          3.006499959155917,
+          0.8526670280843973,
+          7.685916963964701,
+          6.0540830017998815,
+          4.703957994934171,
+          2.1550829987972975,
+          9.355875023175031,
+          7.618375006131828,
+          5.089125013910234,
+          2.6587920146994293,
+          0.9542920161038637,
+          7.7755830134265125,
+          5.979458044748753,
+          4.001666035037488,
+          2.454624976962805,
+          8.103791973553598,
+          6.3273750129155815,
+          5.166499991901219,
+          2.8235000208951533,
+          8.861041977070272,
+          6.525625009089708,
+          4.724500002339482,
+          2.8354579699225724,
+          9.221583022736013,
+          7.521583989728242,
+          5.729625001549721,
+          3.6757499910891056,
+          2.162999997381121,
+          7.499333005398512,
+          6.182791956234723,
+          3.9132499950937927,
+          2.5106669636443257,
+          7.907500024884939,
+          5.324582976754755,
+          3.030874999240041,
+          1.475416007451713,
+          7.491500000469387,
+          5.884874961338937,
+          3.7309579784050584,
+          1.7290409887209535,
+          1.8289159634150565,
+          7.081209041643888,
+          5.198707978706807,
+          3.320791991427541,
+          2.4872920475900173,
+          8.371916017495096,
+          6.7167499801144,
+          5.380709015298635,
+          3.67762497626245,
+          2.1887909970246255,
+          7.855791016481817,
+          6.39824999962002,
+          4.755291971378028,
+          3.106458985712379,
+          8.81870900047943,
+          7.047292019706219,
+          5.039250012487173,
+          2.926749992184341,
+          8.622082998044789,
+          5.787874979432672,
+          4.160417011007667,
+          2.3768749670125544,
+          7.41495902184397,
+          6.020708999130875,
+          4.724166996311396,
+          2.2972090519033372,
+          8.54675000300631,
+          7.9804169945418835,
+          6.567041971720755,
+          5.5191669962368906,
+          2.8853329713456333,
+          9.278959012590349,
+          7.312582980375737,
+          5.3342090104706585,
+          3.1635419582016766,
+          1.316332956776023,
+          7.910541957244277,
+          6.158291012980044,
+          4.480417002923787,
+          2.387500018812716,
+          7.872750051319599,
+          5.403667048085481,
+          3.5569160245358944,
+          1.488334033638239,
+          7.133583014365286,
+          4.614750039763749,
+          2.8643750119954348,
+          1.5211669960990548,
+          6.996750016696751,
+          5.287333973683417,
+          3.5286250058561563,
+          1.9925410160794854,
+          7.185375026892871,
+          5.205792025662959,
+          3.2765829819254577,
+          1.0309169883839786,
+          7.133292034268379,
+          6.259250047150999,
+          4.546665993984789,
+          2.6873329770751297,
+          1.0986250126734376,
+          7.2524999850429595,
+          5.511707975529134,
+          4.2975409887731075,
+          3.1226249993778765,
+          1.3359590084291995,
+          8.144584018737078,
+          6.398750003427267,
+          5.135124956723303,
+          3.0893340008333325,
+          2.3902919492684305,
+          8.764792000874877,
+          3.0587500077672303,
+          1.1661250027827919,
+          7.291334040928632,
+          5.524625012185425,
+          3.990790981333703,
+          2.398209006059915,
+          9.160624991636723,
+          8.06612498126924,
+          6.841666996479034,
+          5.031374981626868,
+          3.606499987654388,
+          1.1640830198302865,
+          7.8910409938544035,
+          6.345166999381036,
+          5.292250018101186,
+          2.9419169877655804,
+          9.469832992181182,
+          7.138332992326468,
+          6.619416002649814,
+          3.772249969188124,
+          2.9780829790979624,
+          9.375875000841916,
+          7.687707955483347,
+          6.348291994072497,
+          3.7851670058444142,
+          2.3367920075543225,
+          10.287416982464492,
+          7.597042014822364,
+          5.646999983582646,
+          4.290333017706871,
+          2.491624967660755,
+          9.028917003888637,
+          6.713416951242834,
+          5.287082982249558,
+          3.16979200579226,
+          3.1474159914068878,
+          10.338041989598423
+        ],
+        "errors": []
+      }
+    ],
+    "python_traced_memory_bytes": {
+      "current": 18408973,
+      "peak": 18514279
+    }
+  },
+  "cognitive": {
+    "objective": {
+      "id": "83cf57dc24d545fc94dbc46e424589f5",
+      "text": "Go to Engineering and wait there for 30 seconds. Ignore routine station notifications, but if an urgent recall signal is received, return immediately to Main Hall and finish.",
+      "created_at": "2026-10-18T19:02:30.771986Z",
+      "status": "running"
+    },
+    "result": null,
+    "decisions": [
+      {
+        "index": 1,
+        "duration_seconds": 11.011083666002378,
+        "status": "accepted",
+        "cognitive_revision": 0,
+        "context_bytes": 1367,
+        "estimated_tokens": 342,
+        "trigger_event_ids": [],
+        "decision_reason": "objective_started",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "index": 2,
+        "duration_seconds": 2.7720048329792917,
+        "status": "accepted",
+        "cognitive_revision": 0,
+        "context_bytes": 3110,
+        "estimated_tokens": 778,
+        "trigger_event_ids": [],
+        "decision_reason": "skill_succeeded",
+        "skill_id": "actor.wait"
+      }
+    ],
+    "skills": [
+      {
+        "skill_id": "agents-arena.navigate-to-room",
+        "skill_version": "1.0.0",
+        "status": "succeeded",
+        "reason": "",
+        "output": {
+          "room_id": "engineering",
+          "stopped": true,
+          "waypoints_reached": 4,
+          "room_change_confirmed": true
+        },
+        "duration_seconds": 8.138423624972347,
+        "commands_sent": 163,
+        "details": {}
+      }
+    ],
+    "lifecycle": [
+      {
+        "event": "ObjectiveStarted",
+        "elapsed_seconds": 0.002179,
+        "objective_id": "83cf57dc24d545fc94dbc46e424589f5"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 15.33207,
+        "kind": "skill",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 26.251002,
+        "kind": "skill",
+        "skill_id": "actor.wait"
+      }
+    ],
+    "scheduler": {
+      "active_skill_id": "actor.wait",
+      "skills": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "succeeded",
+          "reason": "",
+          "output": {
+            "room_id": "engineering",
+            "stopped": true,
+            "waypoints_reached": 4,
+            "room_change_confirmed": true
+          },
+          "duration_seconds": 8.138423624972347,
+          "commands_sent": 163,
+          "details": {},
+          "started": true
+        }
+      ],
+      "events": [
+        {
+          "event": "SkillStarted",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 329150.3536875
+        },
+        {
+          "event": "SkillSucceeded",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 329158.491862375
+        },
+        {
+          "event": "SkillStarted",
+          "skill_id": "actor.wait",
+          "at_monotonic": 329161.272083833
+        }
+      ],
+      "skill_count": 1,
+      "failed_skill_count": 0
+    },
+    "brain": {
+      "provider": "codex",
+      "decision_count": 2,
+      "turns": [
+        {
+          "decision_index": 1,
+          "cognitive_revision": 0,
+          "status": "completed",
+          "duration_seconds": 11.010052750003524,
+          "turn_id": "01a15065-0287-7e50-9425-b0c3014a403a",
+          "usage": {
+            "last": {
+              "cached_input_tokens": 7296,
+              "input_tokens": 8055,
+              "output_tokens": 48,
+              "total_tokens": 8103
+            },
+            "total": {
+              "cached_input_tokens": 7296,
+              "input_tokens": 15480,
+              "output_tokens": 252,
+              "total_tokens": 15732
+            }
+          },
+          "tool_calls": 0
+        },
+        {
+          "decision_index": 2,
+          "cognitive_revision": 0,
+          "status": "completed",
+          "duration_seconds": 2.770626750017982,
+          "turn_id": "01a15065-4d5a-75c0-ab49-20f2a08fd005",
+          "usage": {
+            "last": {
+              "cached_input_tokens": 0,
+              "input_tokens": 9045,
+              "output_tokens": 40,
+              "total_tokens": 9085
+            },
+            "total": {
+              "cached_input_tokens": 7296,
+              "input_tokens": 24525,
+              "output_tokens": 292,
+              "total_tokens": 24817
+            }
+          },
+          "tool_calls": 0
+        }
+      ],
+      "usage_totals": {
+        "input_tokens": 24525,
+        "cached_input_tokens": 7296,
+        "output_tokens": 292,
+        "total_tokens": 24817
+      },
+      "usage_warning": false,
+      "limits": {
+        "max_turns": 16,
+        "usage_warning_tokens": 100000,
+        "usage_limit_tokens": 500000
+      },
+      "adapter": {
+        "sdk_version": "0.162.1",
+        "authentication_mode": "chatgpt",
+        "sandbox": "read-only",
+        "ephemeral": true,
+        "schema_mode": "wrapped_any_of",
+        "unique_model_turns": 2,
+        "interrupted": false,
+        "interrupted_turns": 0,
+        "completed_turn_statuses": {
+          "01a15065-0287-7e50-9425-b0c3014a403a": "completed",
+          "01a15065-4d5a-75c0-ab49-20f2a08fd005": "completed"
+        },
+        "decision_epoch": 0,
+        "decision_active": false,
+        "usage_totals": {
+          "input_tokens": 24525,
+          "cached_input_tokens": 7296,
+          "output_tokens": 292,
+          "total_tokens": 24817
+        },
+        "closed": false
+      }
+    },
+    "cleanup_errors": [],
+    "replan_count": 0,
+    "cognitive_revision": 0,
+    "event_router": {
+      "session_id": "f076665508fe4f59804ec2bc1f7e09cc",
+      "objective_id": "83cf57dc24d545fc94dbc46e424589f5",
+      "enabled": true,
+      "cognitive_revision": 0,
+      "degraded": false,
+      "degraded_reason": null,
+      "queue_size": 0,
+      "pending_events": 0,
+      "dedup_keys": 2,
+      "counts": {
+        "events_received": 2,
+        "queue_high_watermark": 1,
+        "classifier_calls": 2,
+        "events_classified": 2,
+        "events_ignored": 2
+      },
+      "classifier_latency_ms": [
+        0.0867500202730298,
+        0.07983401883393526
+      ],
+      "provider": {
+        "provider": "rules",
+        "calls": 2,
+        "external_requests": 0
+      },
+      "acknowledgements": [
+        {
+          "event_id": "f076665508fe4f59804ec2bc1f7e09cc:402:agents-arena.room-changed",
+          "sequence": 402,
+          "action": "received",
+          "revision": 0,
+          "reason": null,
+          "aggregate_count": 1
+        },
+        {
+          "event_id": "f076665508fe4f59804ec2bc1f7e09cc:402:agents-arena.room-changed",
+          "sequence": 402,
+          "action": "assessed",
+          "revision": 0,
+          "reason": "expected_room_state_change",
+          "aggregate_count": 1
+        },
+        {
+          "event_id": "f076665508fe4f59804ec2bc1f7e09cc:402:agents-arena.room-changed",
+          "sequence": 402,
+          "action": "context_included",
+          "revision": 0,
+          "reason": "expected_room_state_change",
+          "aggregate_count": 1
+        },
+        {
+          "event_id": "f076665508fe4f59804ec2bc1f7e09cc:402:agents-arena.room-changed",
+          "sequence": 402,
+          "action": "handled",
+          "revision": 0,
+          "reason": "expected_room_state_change",
+          "aggregate_count": 1
+        },
+        {
+          "event_id": "f076665508fe4f59804ec2bc1f7e09cc:858:agents-arena.station-signal",
+          "sequence": 858,
+          "action": "received",
+          "revision": 0,
+          "reason": null,
+          "aggregate_count": 1
+        },
+        {
+          "event_id": "f076665508fe4f59804ec2bc1f7e09cc:858:agents-arena.station-signal",
+          "sequence": 858,
+          "action": "assessed",
+          "revision": 0,
+          "reason": "routine_station_notice",
+          "aggregate_count": 1
+        }
+      ]
+    },
+    "pending_cleanup_tasks": 0
+  },
+  "cognitive_config": {
+    "router": {
+      "enabled": true,
+      "max_queue_size": 128,
+      "max_pending_events": 128,
+      "max_dedup_keys": 4096,
+      "max_event_bytes": 16384,
+      "aggregation_window": 2,
+      "decision_cooldown": 2,
+      "max_replans": 8,
+      "stale_event_seconds": 60
+    },
+    "classifier": {
+      "provider": "rules",
+      "timeout": 1.5,
+      "confidence_threshold": 0.85,
+      "max_concurrency": 1,
+      "requests_per_minute": 30,
+      "retries": 1,
+      "max_request_bytes": 8192,
+      "model": "jev-1.13.0"
+    },
+    "context": {
+      "max_external_context_bytes": 32768,
+      "max_observations": 24,
+      "max_events": 12,
+      "max_memory_items": 6,
+      "max_event_payload_bytes": 4096,
+      "stale_observation_seconds": 3
+    },
+    "memory": {
+      "enabled": true,
+      "path": "/Users/fpetrov/PycharmProjects/Actor/build/event-validation/memory.sqlite3",
+      "profile": "milestone4-skill-recall",
+      "max_entries": 1000,
+      "max_payload_bytes": 4096,
+      "ttl_seconds": 604800,
+      "max_retrieved": 6
+    },
+    "brain": {
+      "decision_timeout": 120,
+      "objective_timeout": 600,
+      "max_decisions": 16,
+      "usage_warning_tokens": 100000,
+      "usage_limit_tokens": 500000
+    },
+    "policy_tags": []
+  },
+  "memory": {
+    "state": "ready",
+    "persistent": true,
+    "profile": "milestone4-skill-recall",
+    "administration": false,
+    "limits_enforced": true,
+    "game_id": "agents-arena",
+    "entries": 1,
+    "global_entries": 6,
+    "max_entries": 1000,
+    "max_payload_bytes": 4096,
+    "database_bytes": 32768,
+    "max_database_bytes": 24641536,
+    "retrieval_count": 2,
+    "retrieved_entries": 1,
+    "pending_operations": 1
+  }
+}

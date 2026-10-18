@@ -1,0 +1,368 @@
+{
+  "scenario": "multiplayer_disconnect_during_navigation",
+  "passed": true,
+  "lobby": {
+    "lobbyId": "29493566782c4cffa439c3c09425608a",
+    "roomCode": "8Z6D62",
+    "displayName": "Milestone4Safety0.5",
+    "status": "Ready",
+    "createdAt": "2026-10-18T19:08:01.5667125+00:00",
+    "gameVersion": "0.5.0",
+    "protocolVersion": "3",
+    "publicHost": "5.181.134.236",
+    "gamePort": 7779,
+    "currentPlayers": 0,
+    "maxPlayers": 2
+  },
+  "protected_room": "J78LRT",
+  "port": 50052,
+  "client_pid": 82375,
+  "commands_before_fault": 12,
+  "unity_before_fault": {
+    "mode": "Runtime",
+    "state": "Connected",
+    "actorId": "385aab07d58e4e20816d02184d67eceb",
+    "roomId": "main-hall",
+    "sessionId": "da0bc6ae2d4745b5996f1076ffb0c1ed",
+    "errorCode": "",
+    "error": "",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": false,
+    "position": {
+      "x": -0.45806291699409485,
+      "y": -1.399999976158142
+    },
+    "velocity": {
+      "x": 0.45312488079071045,
+      "y": -6.19888282926695e-08
+    },
+    "observations": 9,
+    "messagesSent": 24,
+    "messagesReceived": 13,
+    "commands": 12,
+    "bytesSent": 7027,
+    "bytesReceived": 2564,
+    "meanFps": 88.06911181335418,
+    "maxPumpMs": 2.5723,
+    "elapsedSeconds": 2.0324946660000003,
+    "managedHeapStart": 1789952,
+    "managedHeapCurrent": 5734400,
+    "stationSignals": 0,
+    "lastSignalRevision": 0,
+    "lastSignalId": "",
+    "lastSignalKind": "",
+    "lastSignalSourceActorId": ""
+  },
+  "server_identity": {
+    "lobby_id": "29493566782c4cffa439c3c09425608a",
+    "room": "8Z6D62",
+    "port": 7779,
+    "pid": 87040,
+    "comm": "Unity Main Thre",
+    "executable": "/opt/actor/agents-arena/releases/20261018T185733Z-42b32dc/AgentsArenaServer",
+    "exact_udp_owner": true,
+    "ready_identity_verified": true,
+    "signal": "SIGTERM"
+  },
+  "objective": {
+    "objective_id": "2c56e6374a924f78a8f7419c58553b94",
+    "status": "failed",
+    "reason": "session_disconnected",
+    "message": null,
+    "duration_seconds": 3.4973707500030287,
+    "decision_count": 1,
+    "skill_results": [
+      {
+        "skill_id": "agents-arena.navigate-to-room",
+        "skill_version": "1.0.0",
+        "status": "failed",
+        "reason": "session_disconnected",
+        "output": {},
+        "duration_seconds": 3.4936635839985684,
+        "commands_sent": 69,
+        "details": {}
+      }
+    ]
+  },
+  "seconds_to_objective_terminal": 2.9051756669650786,
+  "commands_after_cleanup": 68,
+  "commands_one_second_later": 68,
+  "unity_continues_running": true,
+  "unity_safe_stop": {
+    "mode": "Runtime",
+    "state": "Disconnected",
+    "actorId": "",
+    "roomId": "",
+    "sessionId": "",
+    "errorCode": "",
+    "error": "",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": false,
+    "position": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "velocity": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "observations": 0,
+    "messagesSent": 0,
+    "messagesReceived": 0,
+    "commands": 0,
+    "bytesSent": 0,
+    "bytesReceived": 0,
+    "meanFps": 107.96599179224532,
+    "maxPumpMs": 0.0,
+    "elapsedSeconds": 5.557305500000002,
+    "managedHeapStart": 1789952,
+    "managedHeapCurrent": 5849088,
+    "stationSignals": 0,
+    "lastSignalRevision": 0,
+    "lastSignalId": "",
+    "lastSignalKind": "",
+    "lastSignalSourceActorId": ""
+  },
+  "seconds_to_unity_stopped_report": 4.008393291966058,
+  "cognitive": {
+    "objective": {
+      "id": "2c56e6374a924f78a8f7419c58553b94",
+      "text": "Go to Engineering, wait there for 2 seconds, then return to Main Hall and finish.",
+      "created_at": "2026-10-18T19:09:09.616426Z",
+      "status": "failed"
+    },
+    "result": {
+      "objective_id": "2c56e6374a924f78a8f7419c58553b94",
+      "status": "failed",
+      "reason": "session_disconnected",
+      "message": null,
+      "duration_seconds": 3.4973707500030287,
+      "decision_count": 1,
+      "skill_results": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "failed",
+          "reason": "session_disconnected",
+          "output": {},
+          "duration_seconds": 3.4936635839985684,
+          "commands_sent": 69,
+          "details": {}
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "index": 1,
+        "duration_seconds": 0.0002965420135296881,
+        "status": "accepted",
+        "cognitive_revision": 0,
+        "context_bytes": 1362,
+        "estimated_tokens": 341,
+        "trigger_event_ids": [],
+        "decision_reason": "objective_started",
+        "skill_id": "agents-arena.navigate-to-room"
+      }
+    ],
+    "skills": [
+      {
+        "skill_id": "agents-arena.navigate-to-room",
+        "skill_version": "1.0.0",
+        "status": "failed",
+        "reason": "session_disconnected",
+        "output": {},
+        "duration_seconds": 3.4936635839985684,
+        "commands_sent": 69,
+        "details": {}
+      }
+    ],
+    "lifecycle": [
+      {
+        "event": "ObjectiveStarted",
+        "elapsed_seconds": 0.001252,
+        "objective_id": "2c56e6374a924f78a8f7419c58553b94"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 0.002774,
+        "kind": "skill",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "event": "ObjectiveFailed",
+        "elapsed_seconds": 3.4974,
+        "reason": "session_disconnected"
+      }
+    ],
+    "scheduler": {
+      "active_skill_id": "",
+      "skills": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "failed",
+          "reason": "session_disconnected",
+          "output": {},
+          "duration_seconds": 3.4936635839985684,
+          "commands_sent": 69,
+          "details": {},
+          "started": true
+        }
+      ],
+      "events": [
+        {
+          "event": "SkillStarted",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 329529.473328375
+        },
+        {
+          "event": "SkillFailed",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 329532.966987208
+        }
+      ],
+      "skill_count": 1,
+      "failed_skill_count": 1
+    },
+    "brain": {
+      "provider": "sequence",
+      "decisions": 1,
+      "interrupted": true,
+      "closed": true
+    },
+    "cleanup_errors": [],
+    "replan_count": 0,
+    "cognitive_revision": 0,
+    "event_router": {
+      "session_id": "da0bc6ae2d4745b5996f1076ffb0c1ed",
+      "objective_id": "2c56e6374a924f78a8f7419c58553b94",
+      "enabled": true,
+      "cognitive_revision": 0,
+      "degraded": false,
+      "degraded_reason": null,
+      "queue_size": 0,
+      "pending_events": 0,
+      "dedup_keys": 0,
+      "counts": {},
+      "classifier_latency_ms": [],
+      "provider": {
+        "provider": "rules",
+        "calls": 0,
+        "external_requests": 0
+      },
+      "acknowledgements": []
+    },
+    "pending_cleanup_tasks": 0
+  },
+  "runtime": {
+    "endpoint": "127.0.0.1:50052",
+    "elapsed_seconds": 8.856455458968412,
+    "cpu_seconds": 0.14453300000000002,
+    "cpu_percent_one_core": 1.6319508483909322,
+    "sessions": [
+      {
+        "session_id": "da0bc6ae2d4745b5996f1076ffb0c1ed",
+        "game_id": "agents-arena",
+        "game_version": "0.5.0",
+        "protocol_version": {
+          "major": 1,
+          "minor": 0
+        },
+        "actor_id": "385aab07d58e4e20816d02184d67eceb",
+        "loaded_extensions": [
+          "actor.standard",
+          "agents-arena"
+        ],
+        "opaque_extensions": [],
+        "capabilities": [
+          "actor.standard.locomotion2d",
+          "actor.standard.motion2d",
+          "actor.standard.transform2d",
+          "agents-arena.room-changed",
+          "agents-arena.room-membership",
+          "agents-arena.station-signal"
+        ],
+        "commands_sent": 68,
+        "command_values_replaced": 1,
+        "observation_frames": 49,
+        "events_received": 0,
+        "last_received_sequence": 123,
+        "last_sent_sequence": 72,
+        "command_result_rtt_ms": [
+          7.102124975062907,
+          5.710916011594236,
+          4.969000001437962,
+          3.543000028003007,
+          5.61283400747925,
+          9.419333015102893,
+          8.567208016756922,
+          7.367791957221925,
+          5.888874991796911,
+          4.5748749980703,
+          2.027625043410808,
+          1.2895839754492044,
+          7.9412919585593045,
+          5.633499997202307,
+          4.072208015713841,
+          2.601041051093489,
+          1.0905410163104534,
+          7.751125027425587,
+          7.190875010564923,
+          4.758708004374057,
+          4.135209019295871,
+          2.145333040971309,
+          8.05191695690155,
+          6.746458995621651,
+          5.660584021825343,
+          4.192750027868897,
+          2.9714159900322556,
+          8.577374974265695,
+          6.2169579905457795,
+          5.371208011638373,
+          3.984499955549836,
+          2.1797080407850444,
+          9.308917040470988,
+          8.49195901537314,
+          5.7594579993747175,
+          5.508583039045334,
+          4.094833042472601,
+          2.0330409752205014,
+          8.513583044987172,
+          7.151417026761919,
+          5.678292014636099,
+          3.4121249918825924,
+          3.52758402004838,
+          2.4737080093473196,
+          9.916541050188243,
+          7.68595898989588,
+          6.234582979232073,
+          5.332125001586974,
+          3.893250017426908,
+          2.0835829782299697,
+          9.810749965254217,
+          7.563874998595566,
+          5.789041984826326,
+          4.173708031885326,
+          2.30320799164474,
+          8.994709001854062,
+          7.654374989215285,
+          6.282709015067667,
+          4.453040950465947,
+          3.0485830502584577,
+          9.690042003057897,
+          7.173167017754167,
+          6.400707992725074,
+          3.7061250186525285,
+          3.8115420029498637,
+          1.0462920181453228,
+          8.749833039473742,
+          7.120374997612089
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "owned_client_cleaned": true
+}

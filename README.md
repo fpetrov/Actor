@@ -1,32 +1,45 @@
 # ACTOR
 
-ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. The current milestone adds typed Runtime Skills, interchangeable Brains and an official Codex-powered objective loop to the working Unity SDK, local gRPC bridge and deployed multiplayer reference game.
+ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone4 adds event-driven replanning, relevant bounded contexts and local episodic memory to the working typed Skill/Brain loop and deployed multiplayer reference game.
 
 ## What ACTOR is
 
 **ACTOR does not prescribe a game's world model. Games expose capabilities through typed, versioned extensions.** Core handles sessions, discovery, envelopes, ordering and command outcomes. Reusable Standard packages are optional; game-specific concepts belong to game extensions. Agents Arena's rooms are an extension, not an ACTOR Core concept.
 
 ```text
-User Objective
-      ↓ Brain (Scripted / optional Codex / other plugins)
-      ↓ Skill Engine (typed catalog / scheduler / lifecycle)
-Python Runtime / RuntimeSession / WorldState
-           ↕ local gRPC + Protobuf
-Unity ACTOR SDK / typed capability registry
-           ↕ Agents Arena adapter / AgentInputSource
-Unity client ↔ NGO ↔ VPS Dedicated Server
+                         USER OBJECTIVE
+                               │
+                               ▼
+                        Brain / Codex
+                               ▲
+                               │
+                         Context Builder
+                               ▲
+                   ┌───────────┴──────────┐
+                   │                      │
+               Event Router           SQLite Memory
+                   ▲                      ▲
+                   └──── WorldState ──────┘
+                               ▲
+                        local gRPC bridge
+                               ▲
+                    Unity SDK / Game Adapter
+                               ↕
+                    NGO / Dedicated Server
+
+Action pipeline: Brain → typed Skill → cleanup/ownership → Game
 ```
 
 - **ACTOR SDK** — local UPM `packages/com.actor.sdk`, engine-independent Core/Standard protocol and typed registration.
 - **gRPC transport** — local UPM `com.actor.transport.grpc`, Grpc.Net.Client + native YetAnotherHttpHandler.
-- **Python Runtime 0.2.0** — descriptors/plugins, state cache, typed Skills, ObjectiveRunner and CLI.
-- **Brains** — deterministic SequenceBrain and optional official `openai-codex==0.162.1`; model decisions occur between Skills.
-- **Agents Arena 0.4.0** — Unity 6000.6.4f1, a common atlas for Main Hall ↔ Engineering, tested passages, authoritative physics/rooms and responsive owner prediction.
+- **Python Runtime 0.3.0** — descriptors/plugins, state cache, typed Skills, event routing, bounded context, memory and ObjectiveRunner.
+- **Brains** — deterministic SequenceBrain and optional official `openai-codex==0.162.1`; model decisions occur at Skill boundaries or justified strategic events, with one active turn.
+- **Agents Arena 0.5.0** — Unity 6000.6.4f1, a common atlas for Main Hall ↔ Engineering, tested passages, authoritative station-signal console, server physics/rooms and responsive owner prediction.
 - **Control Plane** — .NET 10 Minimal APIs, SQLite admission/process lifecycle; static website via nginx.
 
 **Website:** http://5.181.134.236/
 
-**Source:** https://github.com/fpetrov/Actor (private)
+**Source:** https://github.com/fpetrov/Actor (public)
 
 ## Play
 
@@ -65,7 +78,7 @@ The six original sheets provide 48 complete character poses. Twelve idle/walk cl
 
 ## Verification and limits
 
-18 backend, 50 SDK/bridge and 156 Python Runtime tests passed. Generated schema freshness and custom extension self-test passed. Both Unity builds succeeded. Actual remote Editor + Standalone probes passed 9 and 8 checks with no runtime errors/warnings; names, motion, collisions, disconnect/reconnect and local-transform correction were checked. Five real servers used unique UDP ports 7777–7781 and the sixth room received 409. Empty-room cleanup, process crash handling and stale persisted state are covered.
+Current verification passed18 backend,68 SDK/bridge and255 Python tests. Milestone4 results and real multiplayer evidence are in [event validation](docs/event-validation/README.md). Generated schema freshness and custom extension self-test passed. Both Unity builds succeeded. Actual remote Editor + Standalone probes passed 9 and 8 checks with no runtime errors/warnings; names, motion, collisions, disconnect/reconnect and local-transform correction were checked. Five real servers used unique UDP ports 7777–7781 and the sixth room received 409. Empty-room cleanup, process crash handling and stale persisted state are covered.
 
 The limit and timeouts are configurable, with production MaxConcurrentGameServers=5. Control Plane serves API only on 127.0.0.1:5080; nginx exposes HTTP 80, and gameplay uses direct UDP. There is no TLS/domain, account system or durable recovery of active matches. Restarting/deploying the Control Plane ends active matches; metadata persists in SQLite.
 
@@ -100,6 +113,27 @@ Use `--brain scripted` for the fixed deterministic demo through the same Skill E
 
 Developer guides: [Skills](docs/skills.md), [Brains/Objectives](docs/brains.md), [Codex provider and authority boundary](docs/codex.md).
 
+## Event-driven objective
+
+```bash
+python3 scripts/launch-agent.py --room ABC123 --brain codex --classifier rules \
+  --memory sqlite --agent-profile alice --memory-database build/alice.sqlite3 \
+  --objective "Go to Engineering and wait there for 30 seconds. Ignore routine station notifications, but if an urgent recall signal is received, return immediately to Main Hall and finish."
+```
+
+A Human player near the Main Hall Signal Console presses E, then chooses Routine
+Notice or Urgent Recall. The server validates the interaction. Routine notices
+leave the Skill running; an urgent recall safely preempts it and asks Codex to
+replan. Objective cancellation remains a separate terminal operation. Without an
+explicit database/profile, memory is session-local. Optional Jev is enabled only
+with `--classifier jev` and the `runtime[jev]` extra.
+
+Developer guides: [events/plugins](docs/event-routing.md),
+[Context Builder](docs/context-builder.md), [memory](docs/memory.md),
+[classifiers](docs/classifiers.md), [Signal Console](docs/station-signals.md).
+
 ## Next milestone
 
-Extend game-native observations/actions and add useful typed Skills. Bounded event classification can later create additional decision points; persistent memory and retrieval remain separate future layers. Game-specific navigation and NGO details stay behind their plugins/adapters.
+Add useful game-native interaction capabilities and typed Skills, building on
+bounded event-driven cognition. Social memory, beliefs and richer task systems
+remain separate layers; game semantics stay in their extensions.

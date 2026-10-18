@@ -62,8 +62,9 @@ Type: `type.googleapis.com/actor.extensions.agents_arena.v1.StationSignalEvent`.
 | `audience` | 7 | `STATION_WIDE=1`; zero is unspecified |
 | `server_revision` | 8 | Increasing revision for this match's console |
 
-The outer event's entity is the source actor and its revision is the same
-server revision. Bridge session/sequence remain separate transport ordering.
+The outer event's entity is the source actor. Payload `server_revision` is the
+authoritative console counter; SDK assigns the outer revision independently for
+bridge ordering, alongside the bridge session and sequence.
 `signal_id` lets the Runtime deduplicate the same semantic event even when it is
 seen under another envelope sequence. Event metadata describes gameplay;
 classification disposition remains a Runtime policy, never a Protobuf enum here.

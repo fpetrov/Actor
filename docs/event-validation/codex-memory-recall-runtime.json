@@ -1,0 +1,262 @@
+{
+  "runtime": {
+    "endpoint": "127.0.0.1:50051",
+    "elapsed_seconds": 23.170827415946405,
+    "cpu_seconds": 1.782708,
+    "cpu_percent_one_core": 7.693760641336104,
+    "sessions": [
+      {
+        "session_id": "0df7dca78db0478fb0a7befe7e65f4f9",
+        "game_id": "agents-arena",
+        "game_version": "0.5.0",
+        "protocol_version": {
+          "major": 1,
+          "minor": 0
+        },
+        "actor_id": "411c931ad8eb470ca115a2ade7ed6b0d",
+        "loaded_extensions": [
+          "actor.standard",
+          "agents-arena"
+        ],
+        "opaque_extensions": [],
+        "capabilities": [
+          "actor.standard.locomotion2d",
+          "actor.standard.motion2d",
+          "actor.standard.transform2d",
+          "agents-arena.room-changed",
+          "agents-arena.room-membership",
+          "agents-arena.station-signal"
+        ],
+        "commands_sent": 0,
+        "command_values_replaced": 0,
+        "observation_frames": 263,
+        "events_received": 0,
+        "last_received_sequence": 284,
+        "last_sent_sequence": 20,
+        "command_result_rtt_ms": [],
+        "errors": []
+      }
+    ],
+    "python_traced_memory_bytes": {
+      "current": 18208845,
+      "peak": 18398359
+    }
+  },
+  "objective": {
+    "passed": true,
+    "result": {
+      "objective_id": "3bce6bc77a64416d8931316354cc2638",
+      "status": "succeeded",
+      "reason": "finished",
+      "message": "The most recent remembered signal was an urgent station-wide recall ordering all available personnel to Main Hall immediately. It interrupted my wait; I returned to Main Hall and stopped.",
+      "duration_seconds": 18.730773166986182,
+      "decision_count": 1,
+      "skill_results": []
+    }
+  },
+  "cognitive": {
+    "objective": {
+      "id": "3bce6bc77a64416d8931316354cc2638",
+      "text": "Recall the most recent important station signal from your retrieved episodic memories and report what happened in the structured objective result reason. This asks about past evidence, not a new live signal. Do not move or wait; finish with a concise factual summary.",
+      "created_at": "2026-10-18T19:05:04.239165Z",
+      "status": "succeeded"
+    },
+    "result": {
+      "objective_id": "3bce6bc77a64416d8931316354cc2638",
+      "status": "succeeded",
+      "reason": "finished",
+      "message": "The most recent remembered signal was an urgent station-wide recall ordering all available personnel to Main Hall immediately. It interrupted my wait; I returned to Main Hall and stopped.",
+      "duration_seconds": 18.730773166986182,
+      "decision_count": 1,
+      "skill_results": []
+    },
+    "decisions": [
+      {
+        "index": 1,
+        "duration_seconds": 14.592789333022665,
+        "status": "accepted",
+        "cognitive_revision": 0,
+        "context_bytes": 6271,
+        "estimated_tokens": 1568,
+        "trigger_event_ids": [],
+        "decision_reason": "objective_started"
+      }
+    ],
+    "skills": [],
+    "lifecycle": [
+      {
+        "event": "ObjectiveStarted",
+        "elapsed_seconds": 0.002258,
+        "objective_id": "3bce6bc77a64416d8931316354cc2638"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 18.693405,
+        "kind": "finish",
+        "status": "success"
+      },
+      {
+        "event": "ObjectiveSucceeded",
+        "elapsed_seconds": 18.732483,
+        "reason": "finished"
+      }
+    ],
+    "scheduler": {
+      "active_skill_id": "",
+      "skills": [],
+      "events": [],
+      "skill_count": 0,
+      "failed_skill_count": 0
+    },
+    "brain": {
+      "provider": "codex",
+      "decision_count": 1,
+      "turns": [
+        {
+          "decision_index": 1,
+          "cognitive_revision": 0,
+          "status": "completed",
+          "duration_seconds": 14.591427083010785,
+          "turn_id": "01a15067-5941-7df3-90ba-e756e5c71e89",
+          "usage": {
+            "last": {
+              "cached_input_tokens": 7552,
+              "input_tokens": 9765,
+              "output_tokens": 211,
+              "total_tokens": 9976
+            },
+            "total": {
+              "cached_input_tokens": 7552,
+              "input_tokens": 17208,
+              "output_tokens": 515,
+              "total_tokens": 17723
+            }
+          },
+          "tool_calls": 0
+        }
+      ],
+      "usage_totals": {
+        "input_tokens": 17208,
+        "cached_input_tokens": 7552,
+        "output_tokens": 515,
+        "total_tokens": 17723
+      },
+      "usage_warning": false,
+      "limits": {
+        "max_turns": 16,
+        "usage_warning_tokens": 100000,
+        "usage_limit_tokens": 500000
+      },
+      "adapter": {
+        "sdk_version": "0.162.1",
+        "authentication_mode": "chatgpt",
+        "sandbox": "read-only",
+        "ephemeral": true,
+        "schema_mode": "wrapped_any_of",
+        "unique_model_turns": 1,
+        "interrupted": false,
+        "interrupted_turns": 0,
+        "completed_turn_statuses": {
+          "01a15067-5941-7df3-90ba-e756e5c71e89": "completed"
+        },
+        "decision_epoch": 0,
+        "decision_active": false,
+        "usage_totals": {
+          "input_tokens": 17208,
+          "cached_input_tokens": 7552,
+          "output_tokens": 515,
+          "total_tokens": 17723
+        },
+        "closed": true
+      }
+    },
+    "cleanup_errors": [],
+    "replan_count": 0,
+    "cognitive_revision": 0,
+    "event_router": {
+      "session_id": "0df7dca78db0478fb0a7befe7e65f4f9",
+      "objective_id": "3bce6bc77a64416d8931316354cc2638",
+      "enabled": true,
+      "cognitive_revision": 0,
+      "degraded": false,
+      "degraded_reason": null,
+      "queue_size": 0,
+      "pending_events": 0,
+      "dedup_keys": 0,
+      "counts": {},
+      "classifier_latency_ms": [],
+      "provider": {
+        "provider": "rules",
+        "calls": 0,
+        "external_requests": 0
+      },
+      "acknowledgements": []
+    },
+    "pending_cleanup_tasks": 0
+  },
+  "cognitive_config": {
+    "router": {
+      "enabled": true,
+      "max_queue_size": 128,
+      "max_pending_events": 128,
+      "max_dedup_keys": 4096,
+      "max_event_bytes": 16384,
+      "aggregation_window": 2.0,
+      "decision_cooldown": 2.0,
+      "max_replans": 8,
+      "stale_event_seconds": 60.0
+    },
+    "classifier": {
+      "provider": "rules",
+      "timeout": 1.5,
+      "confidence_threshold": 0.85,
+      "max_concurrency": 1,
+      "requests_per_minute": 30,
+      "retries": 1,
+      "max_request_bytes": 8192,
+      "model": "jev-1.13.0"
+    },
+    "context": {
+      "max_external_context_bytes": 32768,
+      "max_observations": 24,
+      "max_events": 12,
+      "max_memory_items": 6,
+      "max_event_payload_bytes": 4096,
+      "stale_observation_seconds": 3.0
+    },
+    "memory": {
+      "enabled": true,
+      "path": "/Users/fpetrov/PycharmProjects/Actor/build/event-validation/memory.sqlite3",
+      "profile": "milestone4-skill-recall",
+      "max_entries": 1000,
+      "max_payload_bytes": 4096,
+      "ttl_seconds": 604800.0,
+      "max_retrieved": 6
+    },
+    "brain": {
+      "decision_timeout": 120.0,
+      "objective_timeout": 600.0,
+      "max_decisions": 16,
+      "usage_warning_tokens": 100000,
+      "usage_limit_tokens": 500000
+    },
+    "policy_tags": []
+  },
+  "memory": {
+    "state": "ready",
+    "persistent": true,
+    "profile": "milestone4-skill-recall",
+    "administration": false,
+    "limits_enforced": true,
+    "game_id": "agents-arena",
+    "entries": 6,
+    "global_entries": 11,
+    "max_entries": 1000,
+    "max_payload_bytes": 4096,
+    "database_bytes": 36864,
+    "max_database_bytes": 24641536,
+    "retrieval_count": 1,
+    "retrieved_entries": 5,
+    "pending_operations": 1
+  }
+}

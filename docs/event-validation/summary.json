@@ -1,0 +1,671 @@
+{
+  "date": "2026-10-18",
+  "versions": {
+    "runtime": "0.3.0",
+    "game": "0.5.0",
+    "arena_extension": "0.2.0",
+    "standard": "0.1.0",
+    "core": "1.0",
+    "admission": "3",
+    "codex_sdk": "0.162.1",
+    "typesafe_sdk": "0.7.5"
+  },
+  "deployment": "20261018T185733Z-42b32dc",
+  "git": {
+    "sdk_fix": "ab09553",
+    "station_signals": "42b32dc",
+    "runtime": "a2223e9",
+    "reliability": "8405438",
+    "visibility": "public",
+    "visibility_authorized_by_user": true
+  },
+  "tests": {
+    "python": 255,
+    "sdk": 68,
+    "backend": 18,
+    "schema_artifacts": 37,
+    "geometry": 58,
+    "console": 4,
+    "prediction": 12,
+    "human_isolated": 13,
+    "human_relay": 14,
+    "baseline_observer": 11
+  },
+  "runs": {
+    "urgent_during_skill": {
+      "room": "J78LRT",
+      "objective_id": "83cf57dc24d545fc94dbc46e424589f5",
+      "session_id": "f076665508fe4f59804ec2bc1f7e09cc",
+      "status": "succeeded",
+      "duration_seconds": 64.01508733298397,
+      "decisions": 4,
+      "unique_sdk_turns": 4,
+      "replans": 1,
+      "skill_statuses": [
+        {
+          "id": "agents-arena.navigate-to-room",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 8.138423624972347
+        },
+        {
+          "id": "actor.wait",
+          "status": "cancelled",
+          "reason": "preempted_by_event",
+          "seconds": 26.65032891696319
+        },
+        {
+          "id": "agents-arena.navigate-to-room",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 6.719206458015833
+        }
+      ],
+      "skill_seconds_without_brain": 41.50795899995137,
+      "commands_written": 291,
+      "event_counts": {
+        "events_received": 4,
+        "queue_high_watermark": 1,
+        "classifier_calls": 4,
+        "events_classified": 4,
+        "events_ignored": 3,
+        "replans_requested": 1,
+        "events_remembered": 1
+      },
+      "classifier_latency_median_ms": 0.08329201955348253,
+      "classifier_latency_max_ms": 0.0992499990388751,
+      "context_bytes": [
+        1367,
+        3110,
+        4051,
+        5799
+      ],
+      "context_average_bytes": 3581.75,
+      "fps": 118.98817213830299,
+      "rtt_samples": 291,
+      "rtt_median_ms": 5.1558330305852,
+      "rtt_p95_ms": 8.764792000874877,
+      "cpu_percent_one_core": 4.482326898483965,
+      "python_tracemalloc": {
+        "current": 18353935,
+        "peak": 18635291
+      },
+      "codex_usage": {
+        "input_tokens": 47097,
+        "cached_input_tokens": 24064,
+        "output_tokens": 366,
+        "total_tokens": 47463
+      },
+      "memory": {
+        "state": "ready",
+        "persistent": true,
+        "profile": "milestone4-skill-recall",
+        "administration": false,
+        "limits_enforced": true,
+        "game_id": "agents-arena",
+        "entries": 5,
+        "global_entries": 10,
+        "max_entries": 1000,
+        "max_payload_bytes": 4096,
+        "database_bytes": 36864,
+        "max_database_bytes": 24641536,
+        "retrieval_count": 4,
+        "retrieved_entries": 6,
+        "pending_operations": 1
+      },
+      "tool_calls": 0
+    },
+    "urgent_during_brain": {
+      "room": "J78LRT",
+      "objective_id": "60d440779f5442499c169a3d66f9eb46",
+      "session_id": "e233c774a2b94cb099d17bdd1058b067",
+      "status": "succeeded",
+      "duration_seconds": 67.32696674996987,
+      "decisions": 5,
+      "unique_sdk_turns": 5,
+      "replans": 1,
+      "skill_statuses": [
+        {
+          "id": "agents-arena.navigate-to-room",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 8.610507041972596
+        },
+        {
+          "id": "actor.wait",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 30.001452125026844
+        },
+        {
+          "id": "agents-arena.navigate-to-room",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 6.748566458991263
+        }
+      ],
+      "skill_seconds_without_brain": 45.360525625990704,
+      "commands_written": 302,
+      "event_counts": {
+        "events_received": 5,
+        "queue_high_watermark": 1,
+        "classifier_calls": 5,
+        "events_classified": 5,
+        "events_ignored": 4,
+        "replans_requested": 1,
+        "events_remembered": 1
+      },
+      "classifier_latency_median_ms": 0.0974580179899931,
+      "classifier_latency_max_ms": 0.30266697285696864,
+      "context_bytes": [
+        1368,
+        3108,
+        2875,
+        3900,
+        5647
+      ],
+      "context_average_bytes": 3379.6,
+      "fps": 118.21486397783754,
+      "rtt_samples": 302,
+      "rtt_median_ms": 4.989395500160754,
+      "rtt_p95_ms": 8.780375006608665,
+      "cpu_percent_one_core": 3.9351751700746256,
+      "python_tracemalloc": {
+        "current": 18330925,
+        "peak": 18619901
+      },
+      "codex_usage": {
+        "input_tokens": 49002,
+        "cached_input_tokens": 33536,
+        "output_tokens": 363,
+        "total_tokens": 49365
+      },
+      "memory": {
+        "state": "ready",
+        "persistent": true,
+        "profile": "milestone4-recall",
+        "game_id": "agents-arena",
+        "entries": 5,
+        "global_entries": 5,
+        "max_entries": 1000,
+        "max_payload_bytes": 4096,
+        "database_bytes": 32768,
+        "max_database_bytes": 24641536,
+        "retrieval_count": 5,
+        "retrieved_entries": 8,
+        "pending_operations": 1
+      },
+      "tool_calls": 0
+    },
+    "memory_after_restart": {
+      "room": "J78LRT",
+      "objective_id": "3bce6bc77a64416d8931316354cc2638",
+      "session_id": "0df7dca78db0478fb0a7befe7e65f4f9",
+      "status": "succeeded",
+      "duration_seconds": 18.730773166986182,
+      "decisions": 1,
+      "unique_sdk_turns": 1,
+      "replans": 0,
+      "skill_statuses": [],
+      "skill_seconds_without_brain": 0,
+      "commands_written": 0,
+      "event_counts": {},
+      "classifier_latency_median_ms": null,
+      "classifier_latency_max_ms": null,
+      "context_bytes": [
+        6271
+      ],
+      "context_average_bytes": 6271,
+      "fps": 119.13938727868349,
+      "rtt_samples": 0,
+      "rtt_median_ms": null,
+      "rtt_p95_ms": null,
+      "cpu_percent_one_core": 7.693760641336104,
+      "python_tracemalloc": {
+        "current": 18208845,
+        "peak": 18398359
+      },
+      "codex_usage": {
+        "input_tokens": 17208,
+        "cached_input_tokens": 7552,
+        "output_tokens": 515,
+        "total_tokens": 17723
+      },
+      "memory": {
+        "state": "ready",
+        "persistent": true,
+        "profile": "milestone4-skill-recall",
+        "administration": false,
+        "limits_enforced": true,
+        "game_id": "agents-arena",
+        "entries": 6,
+        "global_entries": 11,
+        "max_entries": 1000,
+        "max_payload_bytes": 4096,
+        "database_bytes": 36864,
+        "max_database_bytes": 24641536,
+        "retrieval_count": 1,
+        "retrieved_entries": 5,
+        "pending_operations": 1
+      },
+      "tool_calls": 0
+    },
+    "baseline": {
+      "room": "J78LRT",
+      "objective_id": "91074ce93de5481390c735868a555df1",
+      "session_id": "616f477792524f109f200a7c751eb123",
+      "status": "succeeded",
+      "duration_seconds": 37.90851883398136,
+      "decisions": 4,
+      "unique_sdk_turns": 4,
+      "replans": 0,
+      "skill_statuses": [
+        {
+          "id": "agents-arena.navigate-to-room",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 9.022668290999718
+        },
+        {
+          "id": "actor.wait",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 2.0022312909713946
+        },
+        {
+          "id": "agents-arena.navigate-to-room",
+          "status": "succeeded",
+          "reason": "",
+          "seconds": 6.624310875020456
+        }
+      ],
+      "skill_seconds_without_brain": 17.649210456991568,
+      "commands_written": 306,
+      "event_counts": {
+        "events_received": 2,
+        "queue_high_watermark": 1,
+        "classifier_calls": 2,
+        "events_classified": 2,
+        "events_ignored": 2
+      },
+      "classifier_latency_median_ms": 0.19264599541202188,
+      "classifier_latency_max_ms": 0.2490829792805016,
+      "context_bytes": [
+        1367,
+        2436,
+        1616,
+        2423
+      ],
+      "context_average_bytes": 1960.5,
+      "fps": 119.18132291776443,
+      "rtt_samples": 306,
+      "rtt_median_ms": 5.310937005560845,
+      "rtt_p95_ms": 9.13233298342675,
+      "cpu_percent_one_core": 6.132396479539213,
+      "python_tracemalloc": {
+        "current": 18343358,
+        "peak": 18568214
+      },
+      "codex_usage": {
+        "input_tokens": 43845,
+        "cached_input_tokens": 33152,
+        "output_tokens": 402,
+        "total_tokens": 44247
+      },
+      "memory": {
+        "state": "disabled",
+        "entries": 0,
+        "persistent": false
+      },
+      "tool_calls": 0
+    }
+  },
+  "offline_evaluation": {
+    "scope": "Hand-curated typed-event policy checks; not general semantic accuracy or confidence calibration",
+    "provider": "rules",
+    "cases": 32,
+    "correct": 32,
+    "interruption_precision": 1.0,
+    "interruption_recall": 1.0,
+    "important_false_negatives": 0,
+    "unnecessary_interruptions": 0,
+    "classifier_invocations": 32,
+    "latency_median_ms": 0.06856251275166869,
+    "latency_p95_ms": 0.12733298353850842,
+    "external_requests": 0,
+    "model_calls": 0,
+    "details": [
+      {
+        "id": "routine-wait",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.12733298353850842,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "routine-navigation",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.09574997238814831,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "routine-brain",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.10004197247326374,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "routine-burst",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.1479170168749988,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 24
+      },
+      {
+        "id": "routine-injection",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.0820419518277049,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "routine-missing-source",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.07624999852851033,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "routine-stale",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.1105829724110663,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "routine-observe-only",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.07025001104921103,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "urgent-wait",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.03758398815989494,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "urgent-navigation",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.07137499051168561,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "urgent-brain",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.03600004129111767,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "urgent-duplicate",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.059959013015031815,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 1
+      },
+      {
+        "id": "urgent-replay-burst",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.11100003030151129,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 24
+      },
+      {
+        "id": "urgent-stale-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.04295801045373082,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "urgent-injection",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.03841595025733113,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "hard-negative-same-urgent-observe-only",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.035750039387494326,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "hard-positive-same-urgent-react",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.042082974687218666,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "observe-only-navigation",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.027292000595480204,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "observe-only-brain",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.04975002957507968,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "observe-only-repeated",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.057541998103260994,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 4
+      },
+      {
+        "id": "missing-kind-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.0695830094628036,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "missing-logical-id-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.04358298610895872,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "missing-audience-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.03504200140014291,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "missing-revision-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.04616699879989028,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "missing-time-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.08450000314041972,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "missing-target-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.06754201604053378,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "missing-source-conservative",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.048833026085048914,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      },
+      {
+        "id": "unknown-optional-semantics",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.07775000995025039,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "unknown-routine-semantics",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.10375003330409527,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "unknown-injection",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.07658399408683181,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "routine-recall-word-does-not-matter",
+        "expected_interrupt": false,
+        "actual_interrupt": false,
+        "correct": true,
+        "latency_ms": 0.10433397255837917,
+        "classifier_calls": 1,
+        "replans": 0,
+        "duplicates": 0
+      },
+      {
+        "id": "urgent-empty-text-still-critical",
+        "expected_interrupt": true,
+        "actual_interrupt": true,
+        "correct": true,
+        "latency_ms": 0.044625019654631615,
+        "classifier_calls": 1,
+        "replans": 1,
+        "duplicates": 0
+      }
+    ]
+  },
+  "jev_live": {
+    "configured": false,
+    "external_requests": 0,
+    "limitation": "No TYPESAFE_API_KEY; official SDK offline transport and fallback cases tested; live accuracy/latency/cost unmeasured."
+  },
+  "ci_branch": {
+    "head": "840543864687855c8b5a8644c3c7daf7bf0cc4ac",
+    "conclusion": "success",
+    "url": "https://github.com/fpetrov/Actor/actions/runs/39157850574"
+  },
+  "final_human_room": "5K436N"
+}

@@ -1,0 +1,91 @@
+{
+  "sdk_version": "0.162.1",
+  "fixture": "real_provider_only_no_unity",
+  "game_commands": 0,
+  "passed": true,
+  "old_decision_cancelled": true,
+  "interrupt_seconds": 0.005157791951205581,
+  "initial_turn_statuses": {
+    "01a1505f-0404-7902-9f07-18e39bc9b821": "interrupted"
+  },
+  "old_decision_drained_before_resume": true,
+  "same_thread": true,
+  "same_client": true,
+  "continuation_decision": {
+    "kind": "finish",
+    "status": "success",
+    "reason": "Urgent recall received."
+  },
+  "peak_active_decisions": 1,
+  "single_flight": true,
+  "duration_seconds": 8.316742875031196,
+  "brain": {
+    "provider": "codex",
+    "decision_count": 2,
+    "turns": [
+      {
+        "decision_index": 1,
+        "cognitive_revision": 0,
+        "status": "interrupted",
+        "duration_seconds": 0.026549500005785376
+      },
+      {
+        "decision_index": 2,
+        "cognitive_revision": 1,
+        "status": "completed",
+        "duration_seconds": 5.643089334014803,
+        "turn_id": "01a1505f-041d-7591-83bd-b66b083c3374",
+        "usage": {
+          "last": {
+            "cached_input_tokens": 0,
+            "input_tokens": 7398,
+            "output_tokens": 76,
+            "total_tokens": 7474
+          },
+          "total": {
+            "cached_input_tokens": 0,
+            "input_tokens": 7398,
+            "output_tokens": 76,
+            "total_tokens": 7474
+          }
+        },
+        "tool_calls": 0
+      }
+    ],
+    "usage_totals": {
+      "input_tokens": 7398,
+      "cached_input_tokens": 0,
+      "output_tokens": 76,
+      "total_tokens": 7474
+    },
+    "usage_warning": false,
+    "limits": {
+      "max_turns": 24,
+      "usage_warning_tokens": 100000,
+      "usage_limit_tokens": 200000
+    },
+    "adapter": {
+      "sdk_version": "0.162.1",
+      "authentication_mode": "chatgpt",
+      "sandbox": "read-only",
+      "ephemeral": true,
+      "schema_mode": "wrapped_any_of",
+      "unique_model_turns": 2,
+      "interrupted": true,
+      "interrupted_turns": 1,
+      "completed_turn_statuses": {
+        "01a1505f-0404-7902-9f07-18e39bc9b821": "interrupted",
+        "01a1505f-041d-7591-83bd-b66b083c3374": "completed"
+      },
+      "decision_epoch": 1,
+      "decision_active": false,
+      "usage_totals": {
+        "input_tokens": 7398,
+        "cached_input_tokens": 0,
+        "output_tokens": 76,
+        "total_tokens": 7474
+      },
+      "closed": true
+    }
+  }
+}

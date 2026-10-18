@@ -1,0 +1,43 @@
+{
+  "scope": "Offline synthetic selection over the production ContextBuilder; not model usage or live game evidence",
+  "observations_available": 512,
+  "historical_events_available": 64,
+  "default_budget_bytes": 65536,
+  "configured_budget_bytes": 32768,
+  "default_64k": {
+    "external_bytes": 55680,
+    "estimated_tokens": 13920,
+    "observations_selected": 64,
+    "observations_omitted": 448,
+    "recent_events_selected": 32,
+    "events_omitted": 31,
+    "trigger_events_selected": 1,
+    "truncated_payloads": 0,
+    "trigger_payload_preserved": true,
+    "controlled_actor_observation_preserved": true,
+    "previous_skill_reason": "preempted_by_event"
+  },
+  "configured_32k": {
+    "external_bytes": 21670,
+    "estimated_tokens": 5418,
+    "observations_selected": 24,
+    "observations_omitted": 488,
+    "recent_events_selected": 12,
+    "events_omitted": 51,
+    "trigger_events_selected": 1,
+    "truncated_payloads": 0,
+    "trigger_payload_preserved": true,
+    "controlled_actor_observation_preserved": true,
+    "previous_skill_reason": "preempted_by_event"
+  },
+  "external_bytes_reduction": 34010,
+  "external_bytes_reduction_fraction": 0.6108117816091954,
+  "checks": {
+    "both_preserve_trigger_payload": true,
+    "selected_within_budget": true,
+    "selected_context_smaller": true,
+    "selected_preserves_controlled_actor": true,
+    "selected_preserves_preemption_reason": true
+  },
+  "passed": true
+}

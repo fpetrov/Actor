@@ -1,0 +1,36 @@
+{
+    "mode": "Runtime",
+    "state": "Error",
+    "actorId": "411c931ad8eb470ca115a2ade7ed6b0d",
+    "roomId": "main-hall",
+    "sessionId": "f70ec788d88f4e3382f0913e4cf1c230",
+    "errorCode": "RuntimeUnavailable",
+    "error": "The local ACTOR Runtime is unavailable or its stream failed.",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": false,
+    "position": {
+        "x": -0.8500000238418579,
+        "y": -1.399999976158142
+    },
+    "velocity": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "observations": 0,
+    "messagesSent": 2,
+    "messagesReceived": 0,
+    "commands": 0,
+    "bytesSent": 1537,
+    "bytesReceived": 0,
+    "meanFps": 119.13938727868349,
+    "maxPumpMs": 0.0,
+    "elapsedSeconds": 145.879548292,
+    "managedHeapStart": 1785856,
+    "managedHeapCurrent": 5672960,
+    "stationSignals": 0,
+    "lastSignalRevision": 0,
+    "lastSignalId": "",
+    "lastSignalKind": "",
+    "lastSignalSourceActorId": ""
+}

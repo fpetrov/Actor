@@ -1,0 +1,180 @@
+{
+  "scope": "Offline deterministic fake Brain; real RuntimeSession/ObjectiveRunner/SkillScheduler/SQLite; no Unity, Codex, gRPC socket or ML",
+  "created_at": "2026-10-18T19:06:28.253883+00:00",
+  "external_model_calls": 0,
+  "python_memory_scope": "tracemalloc additional peak allocations per case; excludes native libraries and other processes",
+  "disabled": {
+    "routing": "disabled",
+    "declared_wait_seconds": 20.0,
+    "objective_duration_seconds": 20.02133312501246,
+    "skill_result": {
+      "skill_id": "actor.wait",
+      "skill_version": "1.0.0",
+      "status": "succeeded",
+      "reason": "",
+      "output": {
+        "waited_seconds": 20.001422917004675
+      },
+      "duration_seconds": 20.00203341699671,
+      "commands_sent": 0,
+      "details": {}
+    },
+    "important_reaction_delay_seconds": 19.8089349999791,
+    "noise_duration_seconds": 0.20058970799436793,
+    "brain_decision_count": 2,
+    "brain_calls_after_routine": 1,
+    "routine_extra_brain_calls": 0,
+    "classifier_calls": 0,
+    "classifier_latency_median_ms": null,
+    "context_sizes_bytes": [
+      342,
+      7617
+    ],
+    "estimated_context_tokens": [
+      86,
+      1905
+    ],
+    "trigger_event_counts": [
+      0,
+      0
+    ],
+    "received_wire_events": 2026,
+    "routine_events": 1000,
+    "unrelated_low_priority_events": 1000,
+    "duplicate_urgent_events": 25,
+    "queue_counts": {},
+    "peak_queue_entries": 0,
+    "peak_pending_entries": 0,
+    "peak_dedup_entries": 0,
+    "peak_world_event_entries": 64,
+    "python_peak_additional_bytes": 176498,
+    "memory": {
+      "state": "ready",
+      "persistent": false,
+      "profile": "session:routing-comparison-disabled",
+      "administration": false,
+      "limits_enforced": true,
+      "game_id": "agents-arena",
+      "entries": 2,
+      "global_entries": 2,
+      "max_entries": 1000,
+      "max_payload_bytes": 4096,
+      "database_bytes": 24576,
+      "max_database_bytes": 24641536,
+      "retrieval_count": 2,
+      "retrieved_entries": 1,
+      "pending_operations": 1
+    },
+    "checks": {
+      "objective_succeeded": true,
+      "exactly_two_decisions": true,
+      "routine_extra_brain_calls_zero": true,
+      "important_evidence_reached_brain": true,
+      "queue_bounded": true,
+      "pending_bounded": true,
+      "dedup_bounded": true,
+      "world_history_bounded": true,
+      "memory_bounded": true,
+      "no_commands": true,
+      "routing_not_degraded": true,
+      "expected_wait_termination": true
+    },
+    "passed": true
+  },
+  "rules": {
+    "routing": "rules",
+    "declared_wait_seconds": 20.0,
+    "objective_duration_seconds": 0.2914012909750454,
+    "skill_result": {
+      "skill_id": "actor.wait",
+      "skill_version": "1.0.0",
+      "status": "cancelled",
+      "reason": "preempted_by_event",
+      "output": {},
+      "duration_seconds": 0.2667032919707708,
+      "commands_sent": 0,
+      "details": {
+        "trigger_event_ids": [
+          "routing-comparison-rules:2003:agents-arena.station-signal"
+        ],
+        "trigger_event_count": 1,
+        "decision_reason": "critical_event",
+        "cognitive_revision": 1
+      }
+    },
+    "important_reaction_delay_seconds": 0.02175537502625957,
+    "noise_duration_seconds": 0.2623435420100577,
+    "brain_decision_count": 2,
+    "brain_calls_after_routine": 1,
+    "routine_extra_brain_calls": 0,
+    "classifier_calls": 129,
+    "classifier_latency_median_ms": 0.020540959667414427,
+    "context_sizes_bytes": [
+      342,
+      11778
+    ],
+    "estimated_context_tokens": [
+      86,
+      2945
+    ],
+    "trigger_event_counts": [
+      0,
+      1
+    ],
+    "received_wire_events": 2026,
+    "routine_events": 1000,
+    "unrelated_low_priority_events": 1000,
+    "duplicate_urgent_events": 25,
+    "queue_counts": {
+      "events_received": 2026,
+      "queue_high_watermark": 128,
+      "events_aggregated": 999,
+      "classifier_calls": 129,
+      "events_classified": 129,
+      "events_ignored": 128,
+      "events_evicted": 873,
+      "replans_requested": 1,
+      "events_duplicated": 25,
+      "events_remembered": 1
+    },
+    "peak_queue_entries": 128,
+    "peak_pending_entries": 128,
+    "peak_dedup_entries": 2001,
+    "peak_world_event_entries": 64,
+    "python_peak_additional_bytes": 970195,
+    "memory": {
+      "state": "ready",
+      "persistent": false,
+      "profile": "session:routing-comparison-rules",
+      "administration": false,
+      "limits_enforced": true,
+      "game_id": "agents-arena",
+      "entries": 3,
+      "global_entries": 3,
+      "max_entries": 1000,
+      "max_payload_bytes": 4096,
+      "database_bytes": 24576,
+      "max_database_bytes": 24641536,
+      "retrieval_count": 2,
+      "retrieved_entries": 1,
+      "pending_operations": 1
+    },
+    "checks": {
+      "objective_succeeded": true,
+      "exactly_two_decisions": true,
+      "routine_extra_brain_calls_zero": true,
+      "important_evidence_reached_brain": true,
+      "queue_bounded": true,
+      "pending_bounded": true,
+      "dedup_bounded": true,
+      "world_history_bounded": true,
+      "memory_bounded": true,
+      "no_commands": true,
+      "routing_not_degraded": true,
+      "expected_wait_termination": true
+    },
+    "passed": true
+  },
+  "reaction_delay_reduction_seconds": 19.78717962495284,
+  "passed": true
+}

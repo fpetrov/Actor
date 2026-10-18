@@ -1,0 +1,337 @@
+{
+  "scope": "Hand-curated typed-event policy checks; not general semantic accuracy or confidence calibration",
+  "provider": "rules",
+  "cases": 32,
+  "correct": 32,
+  "interruption_precision": 1.0,
+  "interruption_recall": 1.0,
+  "important_false_negatives": 0,
+  "unnecessary_interruptions": 0,
+  "classifier_invocations": 32,
+  "latency_median_ms": 0.06856251275166869,
+  "latency_p95_ms": 0.12733298353850842,
+  "external_requests": 0,
+  "model_calls": 0,
+  "details": [
+    {
+      "id": "routine-wait",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.12733298353850842,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "routine-navigation",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.09574997238814831,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "routine-brain",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.10004197247326374,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "routine-burst",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.1479170168749988,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 24
+    },
+    {
+      "id": "routine-injection",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.0820419518277049,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "routine-missing-source",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.07624999852851033,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "routine-stale",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.1105829724110663,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "routine-observe-only",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.07025001104921103,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "urgent-wait",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.03758398815989494,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "urgent-navigation",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.07137499051168561,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "urgent-brain",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.03600004129111767,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "urgent-duplicate",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.059959013015031815,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 1
+    },
+    {
+      "id": "urgent-replay-burst",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.11100003030151129,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 24
+    },
+    {
+      "id": "urgent-stale-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.04295801045373082,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "urgent-injection",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.03841595025733113,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "hard-negative-same-urgent-observe-only",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.035750039387494326,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "hard-positive-same-urgent-react",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.042082974687218666,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "observe-only-navigation",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.027292000595480204,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "observe-only-brain",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.04975002957507968,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "observe-only-repeated",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.057541998103260994,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 4
+    },
+    {
+      "id": "missing-kind-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.0695830094628036,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "missing-logical-id-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.04358298610895872,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "missing-audience-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.03504200140014291,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "missing-revision-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.04616699879989028,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "missing-time-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.08450000314041972,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "missing-target-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.06754201604053378,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "missing-source-conservative",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.048833026085048914,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    },
+    {
+      "id": "unknown-optional-semantics",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.07775000995025039,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "unknown-routine-semantics",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.10375003330409527,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "unknown-injection",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.07658399408683181,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "routine-recall-word-does-not-matter",
+      "expected_interrupt": false,
+      "actual_interrupt": false,
+      "correct": true,
+      "latency_ms": 0.10433397255837917,
+      "classifier_calls": 1,
+      "replans": 0,
+      "duplicates": 0
+    },
+    {
+      "id": "urgent-empty-text-still-critical",
+      "expected_interrupt": true,
+      "actual_interrupt": true,
+      "correct": true,
+      "latency_ms": 0.044625019654631615,
+      "classifier_calls": 1,
+      "replans": 1,
+      "duplicates": 0
+    }
+  ]
+}

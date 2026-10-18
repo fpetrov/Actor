@@ -1,0 +1,135 @@
+{
+  "recorded_at": 1792350098.2680771,
+  "active_skill": "actor.wait",
+  "decision_count": 2,
+  "event_router": {
+    "session_id": "e233c774a2b94cb099d17bdd1058b067",
+    "objective_id": "60d440779f5442499c169a3d66f9eb46",
+    "enabled": true,
+    "cognitive_revision": 0,
+    "degraded": false,
+    "degraded_reason": null,
+    "queue_size": 0,
+    "pending_events": 0,
+    "dedup_keys": 3,
+    "counts": {
+      "events_received": 3,
+      "queue_high_watermark": 1,
+      "classifier_calls": 3,
+      "events_classified": 3,
+      "events_ignored": 3
+    },
+    "classifier_latency_ms": [
+      0.30266697285696864,
+      0.0974580179899931,
+      0.07624999852851033
+    ],
+    "provider": {
+      "provider": "rules",
+      "calls": 3,
+      "external_requests": 0
+    },
+    "acknowledgements": [
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:378:agents-arena.room-changed",
+        "sequence": 378,
+        "action": "received",
+        "revision": 0,
+        "reason": null,
+        "aggregate_count": 1
+      },
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:378:agents-arena.room-changed",
+        "sequence": 378,
+        "action": "assessed",
+        "revision": 0,
+        "reason": "expected_room_state_change",
+        "aggregate_count": 1
+      },
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:378:agents-arena.room-changed",
+        "sequence": 378,
+        "action": "context_included",
+        "revision": 0,
+        "reason": "expected_room_state_change",
+        "aggregate_count": 1
+      },
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:378:agents-arena.room-changed",
+        "sequence": 378,
+        "action": "handled",
+        "revision": 0,
+        "reason": "expected_room_state_change",
+        "aggregate_count": 1
+      },
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:646:agents-arena.station-signal",
+        "sequence": 646,
+        "action": "received",
+        "revision": 0,
+        "reason": null,
+        "aggregate_count": 1
+      },
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:646:agents-arena.station-signal",
+        "sequence": 646,
+        "action": "assessed",
+        "revision": 0,
+        "reason": "routine_station_notice",
+        "aggregate_count": 1
+      },
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:816:agents-arena.station-signal",
+        "sequence": 816,
+        "action": "received",
+        "revision": 0,
+        "reason": null,
+        "aggregate_count": 1
+      },
+      {
+        "event_id": "e233c774a2b94cb099d17bdd1058b067:816:agents-arena.station-signal",
+        "sequence": 816,
+        "action": "assessed",
+        "revision": 0,
+        "reason": "routine_station_notice",
+        "aggregate_count": 1
+      }
+    ]
+  },
+  "human": {
+    "mode": "Human",
+    "state": "Disconnected",
+    "actorId": "9cf27fbf79174195a05315313ef17afb",
+    "roomId": "main-hall",
+    "sessionId": "",
+    "errorCode": "",
+    "error": "",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": true,
+    "position": {
+      "x": -1.7999999523162842,
+      "y": -1.399999976158142
+    },
+    "velocity": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "observations": 0,
+    "messagesSent": 0,
+    "messagesReceived": 0,
+    "commands": 0,
+    "bytesSent": 0,
+    "bytesReceived": 0,
+    "meanFps": 118.42086940809676,
+    "maxPumpMs": 0.0,
+    "elapsedSeconds": 71.777888834,
+    "managedHeapStart": 1798144,
+    "managedHeapCurrent": 5812224,
+    "stationSignals": 2,
+    "lastSignalRevision": 2,
+    "lastSignalId": "a917fd347fb64ed4a8fa93c4057119a9",
+    "lastSignalKind": "RoutineNotice",
+    "lastSignalSourceActorId": "9cf27fbf79174195a05315313ef17afb"
+  }
+}

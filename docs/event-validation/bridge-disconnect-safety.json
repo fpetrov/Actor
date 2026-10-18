@@ -1,0 +1,301 @@
+{
+  "scenario": "bridge_disconnect_during_navigation",
+  "passed": true,
+  "lobby": {
+    "lobbyId": "29493566782c4cffa439c3c09425608a",
+    "roomCode": "8Z6D62",
+    "displayName": "Milestone4Safety0.5",
+    "status": "Ready",
+    "createdAt": "2026-10-18T19:08:01.5667125+00:00",
+    "gameVersion": "0.5.0",
+    "protocolVersion": "3",
+    "publicHost": "5.181.134.236",
+    "gamePort": 7779,
+    "currentPlayers": 0,
+    "maxPlayers": 2
+  },
+  "protected_room": "J78LRT",
+  "port": 50052,
+  "client_pid": 82367,
+  "commands_before_fault": 12,
+  "unity_before_fault": {
+    "mode": "Runtime",
+    "state": "Connected",
+    "actorId": "28e019125a0d448685d7ea5bc4c7d0ee",
+    "roomId": "main-hall",
+    "sessionId": "13c6a3483bc04639950b3caf88284cbf",
+    "errorCode": "",
+    "error": "",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": false,
+    "position": {
+      "x": -0.9920009970664978,
+      "y": -1.399999976158142
+    },
+    "velocity": {
+      "x": 2.5999999046325684,
+      "y": -3.547895488509312e-08
+    },
+    "observations": 8,
+    "messagesSent": 23,
+    "messagesReceived": 14,
+    "commands": 12,
+    "bytesSent": 6469,
+    "bytesReceived": 2604,
+    "meanFps": 67.02105847709831,
+    "maxPumpMs": 2.6607,
+    "elapsedSeconds": 2.5514368750000003,
+    "managedHeapStart": 1794048,
+    "managedHeapCurrent": 5541888,
+    "stationSignals": 0,
+    "lastSignalRevision": 0,
+    "lastSignalId": "",
+    "lastSignalKind": "",
+    "lastSignalSourceActorId": ""
+  },
+  "objective": {
+    "objective_id": "eb7e5ac98bb44f85923b2f0ea50f71f7",
+    "status": "failed",
+    "reason": "session_disconnected",
+    "message": null,
+    "duration_seconds": 0.595778374990914,
+    "decision_count": 1,
+    "skill_results": [
+      {
+        "skill_id": "agents-arena.navigate-to-room",
+        "skill_version": "1.0.0",
+        "status": "failed",
+        "reason": "session_disconnected",
+        "output": {},
+        "duration_seconds": 0.5884389170096256,
+        "commands_sent": 12,
+        "details": {}
+      }
+    ]
+  },
+  "seconds_to_objective_terminal": 0.0029884169925935566,
+  "commands_after_cleanup": 12,
+  "commands_one_second_later": 12,
+  "unity_continues_running": true,
+  "unity_safe_stop": {
+    "mode": "Runtime",
+    "state": "Error",
+    "actorId": "28e019125a0d448685d7ea5bc4c7d0ee",
+    "roomId": "main-hall",
+    "sessionId": "99e1545c3e484b06b7b79d2ea7ee7c2e",
+    "errorCode": "RuntimeUnavailable",
+    "error": "The local ACTOR Runtime is unavailable or its stream failed.",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": false,
+    "position": {
+      "x": -0.3320011496543884,
+      "y": -1.399999976158142
+    },
+    "velocity": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "observations": 0,
+    "messagesSent": 2,
+    "messagesReceived": 0,
+    "commands": 0,
+    "bytesSent": 1537,
+    "bytesReceived": 0,
+    "meanFps": 86.86583734700082,
+    "maxPumpMs": 0.0,
+    "elapsedSeconds": 4.075249958000001,
+    "managedHeapStart": 1794048,
+    "managedHeapCurrent": 5619712,
+    "stationSignals": 0,
+    "lastSignalRevision": 0,
+    "lastSignalId": "",
+    "lastSignalKind": "",
+    "lastSignalSourceActorId": ""
+  },
+  "seconds_to_unity_stopped_report": 1.6131543339579366,
+  "cognitive": {
+    "objective": {
+      "id": "eb7e5ac98bb44f85923b2f0ea50f71f7",
+      "text": "Go to Engineering, wait there for 2 seconds, then return to Main Hall and finish.",
+      "created_at": "2026-10-18T19:09:03.111560Z",
+      "status": "failed"
+    },
+    "result": {
+      "objective_id": "eb7e5ac98bb44f85923b2f0ea50f71f7",
+      "status": "failed",
+      "reason": "session_disconnected",
+      "message": null,
+      "duration_seconds": 0.595778374990914,
+      "decision_count": 1,
+      "skill_results": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "failed",
+          "reason": "session_disconnected",
+          "output": {},
+          "duration_seconds": 0.5884389170096256,
+          "commands_sent": 12,
+          "details": {}
+        }
+      ]
+    },
+    "decisions": [
+      {
+        "index": 1,
+        "duration_seconds": 0.0002969999914057553,
+        "status": "accepted",
+        "cognitive_revision": 0,
+        "context_bytes": 1361,
+        "estimated_tokens": 341,
+        "trigger_event_ids": [],
+        "decision_reason": "objective_started",
+        "skill_id": "agents-arena.navigate-to-room"
+      }
+    ],
+    "skills": [
+      {
+        "skill_id": "agents-arena.navigate-to-room",
+        "skill_version": "1.0.0",
+        "status": "failed",
+        "reason": "session_disconnected",
+        "output": {},
+        "duration_seconds": 0.5884389170096256,
+        "commands_sent": 12,
+        "details": {}
+      }
+    ],
+    "lifecycle": [
+      {
+        "event": "ObjectiveStarted",
+        "elapsed_seconds": 0.000727,
+        "objective_id": "eb7e5ac98bb44f85923b2f0ea50f71f7"
+      },
+      {
+        "event": "BrainDecision",
+        "elapsed_seconds": 0.006439,
+        "kind": "skill",
+        "skill_id": "agents-arena.navigate-to-room"
+      },
+      {
+        "event": "ObjectiveFailed",
+        "elapsed_seconds": 0.595845,
+        "reason": "session_disconnected"
+      }
+    ],
+    "scheduler": {
+      "active_skill_id": "",
+      "skills": [
+        {
+          "skill_id": "agents-arena.navigate-to-room",
+          "skill_version": "1.0.0",
+          "status": "failed",
+          "reason": "session_disconnected",
+          "output": {},
+          "duration_seconds": 0.5884389170096256,
+          "commands_sent": 12,
+          "details": {},
+          "started": true
+        }
+      ],
+      "events": [
+        {
+          "event": "SkillStarted",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 329522.972290708
+        },
+        {
+          "event": "SkillFailed",
+          "skill_id": "agents-arena.navigate-to-room",
+          "at_monotonic": 329523.560724291
+        }
+      ],
+      "skill_count": 1,
+      "failed_skill_count": 1
+    },
+    "brain": {
+      "provider": "sequence",
+      "decisions": 1,
+      "interrupted": true,
+      "closed": true
+    },
+    "cleanup_errors": [],
+    "replan_count": 0,
+    "cognitive_revision": 0,
+    "event_router": {
+      "session_id": "13c6a3483bc04639950b3caf88284cbf",
+      "objective_id": "eb7e5ac98bb44f85923b2f0ea50f71f7",
+      "enabled": true,
+      "cognitive_revision": 0,
+      "degraded": false,
+      "degraded_reason": null,
+      "queue_size": 0,
+      "pending_events": 0,
+      "dedup_keys": 0,
+      "counts": {},
+      "classifier_latency_ms": [],
+      "provider": {
+        "provider": "rules",
+        "calls": 0,
+        "external_requests": 0
+      },
+      "acknowledgements": []
+    },
+    "pending_cleanup_tasks": 0
+  },
+  "runtime": {
+    "endpoint": "127.0.0.1:50052",
+    "elapsed_seconds": 7.098893916991074,
+    "cpu_seconds": 0.061161999999999994,
+    "cpu_percent_one_core": 0.8615708406856153,
+    "sessions": [
+      {
+        "session_id": "13c6a3483bc04639950b3caf88284cbf",
+        "game_id": "agents-arena",
+        "game_version": "0.5.0",
+        "protocol_version": {
+          "major": 1,
+          "minor": 0
+        },
+        "actor_id": "28e019125a0d448685d7ea5bc4c7d0ee",
+        "loaded_extensions": [
+          "actor.standard",
+          "agents-arena"
+        ],
+        "opaque_extensions": [],
+        "capabilities": [
+          "actor.standard.locomotion2d",
+          "actor.standard.motion2d",
+          "actor.standard.transform2d",
+          "agents-arena.room-changed",
+          "agents-arena.room-membership",
+          "agents-arena.station-signal"
+        ],
+        "commands_sent": 12,
+        "command_values_replaced": 0,
+        "observation_frames": 9,
+        "events_received": 0,
+        "last_received_sequence": 24,
+        "last_sent_sequence": 15,
+        "command_result_rtt_ms": [
+          7.018124975729734,
+          4.2547499760985374,
+          3.57504200655967,
+          3.202499996405095,
+          4.083124978933483,
+          3.899957984685898,
+          3.6564579932019114,
+          1.432166958693415,
+          0.9948749793693423,
+          8.654790988657624,
+          7.591417001094669,
+          6.167666986584663
+        ],
+        "errors": []
+      }
+    ]
+  },
+  "owned_client_cleaned": true
+}

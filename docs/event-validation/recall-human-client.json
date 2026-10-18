@@ -1,0 +1,36 @@
+{
+    "mode": "Human",
+    "state": "Disconnected",
+    "actorId": "9cf27fbf79174195a05315313ef17afb",
+    "roomId": "main-hall",
+    "sessionId": "",
+    "errorCode": "",
+    "error": "",
+    "errors": [],
+    "warnings": [],
+    "keyboardEnabled": true,
+    "position": {
+        "x": -1.7999999523162842,
+        "y": -1.399999976158142
+    },
+    "velocity": {
+        "x": 0.0,
+        "y": 0.0
+    },
+    "observations": 0,
+    "messagesSent": 0,
+    "messagesReceived": 0,
+    "commands": 0,
+    "bytesSent": 0,
+    "bytesReceived": 0,
+    "meanFps": 119.15472974141466,
+    "maxPumpMs": 0.0,
+    "elapsedSeconds": 426.596578334,
+    "managedHeapStart": 1798144,
+    "managedHeapCurrent": 5525504,
+    "stationSignals": 5,
+    "lastSignalRevision": 5,
+    "lastSignalId": "983de943f8e64d0f9f6e9273f5a2d08f",
+    "lastSignalKind": "UrgentRecall",
+    "lastSignalSourceActorId": "9cf27fbf79174195a05315313ef17afb"
+}
