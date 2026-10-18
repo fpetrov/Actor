@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Settings(BaseModel):
@@ -57,6 +57,12 @@ class BrainConfig(Settings):
     max_decisions: int = Field(default=16, ge=1, le=64)
     usage_warning_tokens: int = Field(default=100000, ge=1000)
     usage_limit_tokens: int = Field(default=500000, ge=1000)
+
+    @model_validator(mode="after")
+    def ordered_usage_limits(self):
+        if self.usage_warning_tokens > self.usage_limit_tokens:
+            raise ValueError("Brain usage warning threshold must not exceed its limit")
+        return self
 
 
 class CognitiveConfig(Settings):

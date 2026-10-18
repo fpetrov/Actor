@@ -197,6 +197,7 @@ async def test_oversized_or_unknown_event_has_explicit_bounded_evidence_without_
 async def test_credentials_and_hidden_reasoning_not_persisted_in_structured_content():
     async with store() as memory:
         entry = await fact(memory, "public-result", content={"message": "Observed", "api_key": "secret-key",
+            "accessToken": "camel-case-secret", "actorBridgeToken": "runtime-token",
             "nested": [{"authorization": "Bearer secret", "hidden_reasoning": "private", "reason": "skill_failed"}]})
         assert entry.content == {"message": "Observed", "nested": [{"reason": "skill_failed"}]}
         assert "secret-key" not in (await memory.retrieve())[0].model_dump_json()
@@ -237,6 +238,51 @@ async def test_missing_database_parent_path_error_is_controlled(tmp_path):
         assert parent.read_text() == "owned existing data"
     finally:
         await memory.close()
+
+
+async def test_administration_stats_never_prunes_large_history_or_expired_other_profiles(tmp_path):
+    path = tmp_path / "large history #1.sqlite3"
+    # Build a valid large-history fixture in one transaction. The production
+    # store creates/validates its format; bulk fixture insertion avoids thousands
+    # of unrelated fsyncs in a read-only administration regression.
+    async with store(path=str(path), profile="alice", max_entries=8000) as writer:
+        await fact(writer, "seed")
+    with sqlite3.connect(path) as db:
+        prototype = list(db.execute("SELECT * FROM memories").fetchone())
+        rows = []
+        for index in range(5000):
+            row = list(prototype)
+            row[0], row[6] = f"fixture-{index}", f"source-{index}"
+            if index >= 4990:
+                row[1] = "bob"
+                row[17] = 1.0  # even expired other-profile evidence stays intact
+            rows.append(row)
+        db.executemany("INSERT INTO memories VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
+        db.commit()
+    before = path.read_bytes()
+    async with store(path=str(path), profile="alice", max_entries=8, max_payload_bytes=512,
+                     administration=True) as admin:
+        assert path.stat().st_size > admin.max_database_bytes  # valid older file may exceed admin defaults
+        stats = await admin.stats()
+        assert stats["entries"] == 4991 and stats["global_entries"] == 5001
+        assert stats["administration"] and not stats["limits_enforced"]
+        assert path.read_bytes() == before
+        with pytest.raises(ActorError) as failure:
+            await admin.retrieve()
+        assert failure.value.code == "memory_administration"
+        assert await admin.clear() == 4991
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT count(*) FROM memories").fetchone()[0] == 10
+        assert db.execute("SELECT DISTINCT profile FROM memories").fetchall() == [("bob",)]
+
+
+async def test_administration_missing_database_does_not_create_file_or_directories(tmp_path):
+    path = tmp_path / "not-created" / "memory.sqlite3"
+    async with store(path=str(path), profile="alice", administration=True) as admin:
+        stats = await admin.stats()
+        assert stats["state"] == "missing" and stats["entries"] == 0
+        assert await admin.clear() == 0
+        assert not path.exists() and not path.parent.exists()
 
 
 async def test_disk_worker_does_not_block_event_loop_and_cancelled_write_is_still_serialized():

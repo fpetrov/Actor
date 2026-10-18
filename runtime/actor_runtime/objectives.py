@@ -310,6 +310,10 @@ class ObjectiveRunner:
                 await self._abort_active(interrupt=True)
                 raise _Terminal(ObjectiveStatus.FAILED, "event_routing_degraded")
             episode_expired = time.monotonic() - self._started_at >= self.objective_timeout_seconds
+            operation_timed_out = self._active_task not in done and (replan is None or replan not in done)
+            if episode_expired or operation_timed_out:
+                await self._abort_active(interrupt=True)
+                raise _Terminal(ObjectiveStatus.FAILED, "objective_timeout" if episode_expired else "brain_timeout")
             stale_brain = phase == "brain" and epoch is not None and self._revision() != epoch
             preempt_skill = (phase == "skill" and replan is not None and replan in done
                              and self._active_task not in done)
@@ -322,9 +326,6 @@ class ObjectiveRunner:
                     await self._abort_active(interrupt=True)
                     raise _Terminal(ObjectiveStatus.FAILED, "session_disconnected")
                 raise _Replan
-            if self._active_task not in done or episode_expired:
-                await self._abort_active(interrupt=True)
-                raise _Terminal(ObjectiveStatus.FAILED, "objective_timeout" if episode_expired else "brain_timeout")
             try:
                 result = await self._active_task
                 if phase == "skill":

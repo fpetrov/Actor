@@ -36,6 +36,16 @@ is created with owner-only permissions; existing file permissions are unchanged.
 No memory content is sent to a model unless selected into an explicitly chosen
 Brain provider's external context.
 
+The CLI opens `MemoryStore(..., administration=True)` for these operations.
+Administrative statistics do not prune rows, expire evidence, vacuum or change
+page limits. A history created with a larger custom budget can be inspected
+without losing entries to current defaults. Scoped clear deletes only its
+explicit game/profile; even expired records in other profiles remain unchanged.
+An absent database reports `state="missing"` with zero entries and is never
+created by administration. Existing format/health checks still apply. These
+handles cannot remember or retrieve evidence for a Brain. Runtime handles keep
+their normal pruning/enforcement policy.
+
 ## Evidence and deduplication
 
 `MemoryEntry` records ID, profile/game/session/actor, evidence kind,

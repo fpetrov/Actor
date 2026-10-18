@@ -27,7 +27,8 @@ from .extensions import OpaquePayload, type_url
 
 _FORMAT_VERSION = 1
 _APPLICATION_ID = 0x41435452  # ACTR, never adopt another application's database.
-_SENSITIVE_KEYS = frozenset({"authorization", "api_key", "apikey", "access_token", "refresh_token",
+_SENSITIVE_KEYS = frozenset(key.replace("_", "") for key in {
+                             "authorization", "api_key", "apikey", "access_token", "refresh_token",
                              "token", "bridge_token", "actor_bridge_token", "client_secret", "secret_key",
                              "password", "secret", "credentials", "hidden_reasoning", "reasoning"})
 
@@ -39,7 +40,7 @@ def _json(value):
 def _clean(value):
     if isinstance(value, dict):
         return {str(key): _clean(item) for key, item in value.items()
-                if str(key).lower().replace("-", "_") not in _SENSITIVE_KEYS}
+                if str(key).lower().replace("-", "").replace("_", "") not in _SENSITIVE_KEYS}
     if isinstance(value, (list, tuple)):
         return [_clean(item) for item in value]
     return value
@@ -77,7 +78,7 @@ class MemoryStore:
     def __init__(self, *, game_id: str, session_id: str, actor_id: str = "",
                  path: str | None = None, profile: str | None = None, max_entries=1000,
                  max_payload_bytes=4096, ttl_seconds=604800, max_retrieved=8,
-                 enabled=True, clock=time.time):
+                 enabled=True, clock=time.time, administration=False):
         if (not isinstance(game_id, str) or not game_id or len(game_id) > 160 or
                 not isinstance(session_id, str) or not session_id or len(session_id) > 128 or
                 not isinstance(actor_id, str) or len(actor_id) > 128 or
@@ -85,6 +86,8 @@ class MemoryStore:
             raise ValueError("Memory requires bounded game, session and profile identities")
         if path is not None and profile is None:
             raise ValueError("Persistent memory requires an explicit agent profile")
+        if administration and path is None:
+            raise ValueError("Memory administration requires an existing database path")
         if (type(max_entries) is not int or not 1 <= max_entries <= 100000 or
                 type(max_payload_bytes) is not int or not 128 <= max_payload_bytes <= 65536 or
                 type(max_retrieved) is not int or not 1 <= max_retrieved <= 128 or
@@ -97,6 +100,7 @@ class MemoryStore:
         self.max_entries, self.max_payload_bytes = max_entries, max_payload_bytes
         self.ttl_seconds, self.max_retrieved = float(ttl_seconds), max_retrieved
         self.enabled, self._clock = enabled, clock
+        self.administration = administration
         self.state = "ready" if enabled else "disabled"
         self.error_code = None
         self._connection = None
@@ -119,6 +123,8 @@ class MemoryStore:
     async def _call(self, operation, *args):
         if self._closed:
             raise ActorError("memory_closed", "MemoryStore has been closed")
+        if self.administration and operation in (self._remember, self._retrieve):
+            raise ActorError("memory_administration", "Administration supports only statistics and scoped clear")
         if not self.enabled:
             return None
         if self.state == "degraded":
@@ -147,15 +153,22 @@ class MemoryStore:
             return
         fresh = self.path is None
         if self.path is not None:
-            self.path.parent.mkdir(parents=True, exist_ok=True)
-            try:
-                descriptor = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            except FileExistsError:
-                pass
+            if self.administration:
+                if not self.path.exists():
+                    self.state = "missing"
+                    return
             else:
-                os.close(descriptor)
-                fresh = True
-        connection = sqlite3.connect(str(self.path) if self.path else ":memory:", timeout=0.25)
+                self.path.parent.mkdir(parents=True, exist_ok=True)
+                try:
+                    descriptor = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                except FileExistsError:
+                    pass
+                else:
+                    os.close(descriptor)
+                    fresh = True
+        connection = (sqlite3.connect(self.path.as_uri() + "?mode=rw", uri=True, timeout=0.25)
+                      if self.administration else
+                      sqlite3.connect(str(self.path) if self.path else ":memory:", timeout=0.25))
         try:
             application_id = connection.execute("PRAGMA application_id").fetchone()[0]
             if fresh:
@@ -178,17 +191,19 @@ class MemoryStore:
                   connection.execute("PRAGMA auto_vacuum").fetchone()[0] != 2 or
                   connection.execute("PRAGMA quick_check(1)").fetchone()[0] != "ok"):
                 raise ValueError("Not a supported healthy ACTOR memory database")
-            connection.execute("PRAGMA journal_mode=DELETE")
-            connection.execute("PRAGMA secure_delete=ON")
-            page_size = connection.execute("PRAGMA page_size").fetchone()[0]
-            pages = max(64, math.ceil(self.max_database_bytes / page_size))
-            self.max_database_bytes = pages * page_size
-            connection.execute(f"PRAGMA max_page_count={pages}")
-            current_pages = connection.execute("PRAGMA page_count").fetchone()[0]
-            if current_pages > pages:
-                raise ValueError("Existing memory database exceeds configured file bound")
+            if not self.administration:
+                connection.execute("PRAGMA journal_mode=DELETE")
+                connection.execute("PRAGMA secure_delete=ON")
+                page_size = connection.execute("PRAGMA page_size").fetchone()[0]
+                pages = max(64, math.ceil(self.max_database_bytes / page_size))
+                self.max_database_bytes = pages * page_size
+                connection.execute(f"PRAGMA max_page_count={pages}")
+                current_pages = connection.execute("PRAGMA page_count").fetchone()[0]
+                if current_pages > pages:
+                    raise ValueError("Existing memory database exceeds configured file bound")
             connection.row_factory = sqlite3.Row
             self._connection = connection
+            self.state = "ready"
         except BaseException:
             connection.close()
             raise
@@ -373,9 +388,15 @@ class MemoryStore:
         return await self._call(self._stats)
 
     def _stats(self):
-        self._prune()
+        if self._connection is None and self.administration:
+            return {"state": "missing", "entries": 0, "global_entries": 0, "database_bytes": 0,
+                    "persistent": True, "profile": self.profile, "game_id": self.game_id,
+                    "administration": True}
+        if not self.administration:
+            self._prune()
         db = self._connection
         return {"state": self.state, "persistent": self.persistent, "profile": self.profile,
+                "administration": self.administration, "limits_enforced": not self.administration,
                 "game_id": self.game_id,
                 "entries": db.execute("SELECT count(*) FROM memories WHERE profile=? AND game=?",
                                       (self.profile, self.game_id)).fetchone()[0],
@@ -390,9 +411,16 @@ class MemoryStore:
         return await self._call(self._clear) or 0
 
     def _clear(self):
+        if self._connection is None and self.administration:
+            return 0
+        if self.administration:
+            self._connection.execute("PRAGMA secure_delete=ON")
         result = self._connection.execute("DELETE FROM memories WHERE profile=? AND game=?",
                                           (self.profile, self.game_id))
-        self._prune()
+        if self.administration:
+            self._connection.commit()
+        else:
+            self._prune()
         return result.rowcount
 
     async def close(self):

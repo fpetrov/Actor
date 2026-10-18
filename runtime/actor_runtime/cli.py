@@ -247,7 +247,7 @@ def main():
             from .memory import MemoryStore
             async def administer():
                 store = MemoryStore(game_id=args.game_id, session_id="administration",
-                    path=str(args.memory_database.resolve()), profile=args.agent_profile)
+                    path=str(args.memory_database.resolve()), profile=args.agent_profile, administration=True)
                 try:
                     if args.example == "clear":
                         print(json.dumps({"cleared": await store.clear()}))

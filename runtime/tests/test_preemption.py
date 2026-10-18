@@ -334,6 +334,21 @@ async def test_legacy_brain_drains_stale_decision_without_terminal_interrupt_the
     assert brain.calls == 2 and not brain.interrupted and not skill.called
 
 
+async def test_legacy_provider_with_stale_pending_output_still_obeys_decision_deadline(session):
+    from test_brains import HangingBrain
+    class LegacyBrain(HangingBrain):
+        interrupt_decision = None
+    router, brain = routing(session), LegacyBrain()
+    runner = ObjectiveRunner(session, count_registry(CountSkill()), brain,
+                             event_router=router, decision_timeout_seconds=0.03)
+    task = asyncio.create_task(runner.run(Objective(text="Finish within the decision budget.")))
+    await brain.started_turn.wait()
+    emit(router, 3, "urgent:legacy-timeout")
+    result = await asyncio.wait_for(task, timeout=0.3)
+    assert result.status == "failed" and result.reason == "brain_timeout"
+    assert brain.interrupted and brain.turn_cancelled and not result.skill_results
+
+
 async def test_runner_retrieves_memory_and_persists_skill_and_objective_without_closing_store(session):
     from actor_runtime.memory import MemoryStore
     store = MemoryStore(game_id=session.manifest.game_id, session_id=session.session_id,
