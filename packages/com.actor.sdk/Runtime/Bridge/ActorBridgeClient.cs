@@ -350,6 +350,7 @@ namespace Actor.Sdk
             bool overflow;
             lock (session.Gate)
             {
+                if (Volatile.Read(ref session.Ending) != 0) return;
                 session.Diagnostics.CommandsReceived++;
                 if (latestKey != null && session.LatestCommands.TryGetValue(latestKey, out LinkedListNode<PendingCommand> previous))
                 {
@@ -410,6 +411,14 @@ namespace Actor.Sdk
             lock (stateGate)
             {
                 if (!ReferenceEquals(current, session) || Interlocked.CompareExchange(ref session.Ending, 1, 0) != 0) return;
+                // Error is observable before transport Abort/Dispose finishes.
+                // Revoke pending work atomically before publishing that state;
+                // slow native teardown must not leave stale commands visible.
+                lock (session.Gate)
+                {
+                    session.Commands.Clear(); session.LatestCommands.Clear();
+                    session.Reliable.Clear(); session.Observation = null;
+                }
                 state = ActorConnectionState.Error;
                 lastErrorCode = string.IsNullOrEmpty(code) ? "ProtocolError" : code;
                 lastErrorMessage = (message ?? "").Replace(session.Endpoint.Token, "[redacted]");

@@ -28,6 +28,7 @@ public sealed class BridgeTests
         public TaskCompletionSource? ConnectGate;
         public TaskCompletionSource<RuntimeToGame>? LateRead;
         public bool HangingDisconnect;
+        public ManualResetEventSlim? AbortEntered, AbortRelease;
         public string SessionId = "";
         public int Aborts, Disposals, SendAttempts;
 
@@ -61,7 +62,13 @@ public sealed class BridgeTests
 
         public Task DisconnectAsync(CancellationToken cancellation) => HangingDisconnect
             ? new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task : Task.CompletedTask;
-        public void Abort() { Interlocked.Increment(ref Aborts); incoming.Writer.TryComplete(); }
+        public void Abort()
+        {
+            Interlocked.Increment(ref Aborts);
+            AbortEntered?.Set();
+            AbortRelease?.Wait(TimeSpan.FromSeconds(5));
+            incoming.Writer.TryComplete();
+        }
         public void Dispose() { Interlocked.Increment(ref Disposals); incoming.Writer.TryComplete(); }
     }
 
@@ -392,6 +399,29 @@ public sealed class BridgeTests
         Assert.Equal(0, bridge.Diagnostics.PendingCommands);
         Assert.Equal(0, adapter.Intent);
         Assert.False(bridge.CanRetry);
+    }
+
+    [Fact]
+    public void ErrorRevokesPendingCommandsBeforeSlowTransportTeardown()
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var transport = new FakeTransport { AbortEntered = entered, AbortRelease = release };
+        var adapter = new Adapter { Intent = 1 };
+        using var bridge = new ActorBridgeClient(adapter, () => transport, new ActorBridgeOptions { QueueCapacity = 2 });
+        Connect(bridge);
+        try
+        {
+            for (ulong id = 1; id <= 3; id++)
+                transport.Push(new RuntimeToGame { Command = Command(id, capability: "test.ordered") });
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(2)));
+            Assert.Equal(ActorConnectionState.Error, bridge.State);
+            Assert.Equal(0, bridge.Diagnostics.PendingCommands);
+            bridge.Pump(0);
+            Assert.Equal(0, adapter.Intent);
+            Assert.Empty(adapter.Commands);
+        }
+        finally { release.Set(); }
     }
 
     [Fact]
