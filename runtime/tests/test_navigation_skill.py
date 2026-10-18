@@ -12,7 +12,7 @@ from actor_agents_arena.skills import NavigateToRoom, skill_package
 from actor_standard import (TRANSFORM, MOTION, LOCOMOTION, Transform2DObservation,
                             Motion2DObservation, Locomotion2DCommand)
 from actor_agents_arena import ROOM_MEMBERSHIP, ROOM_CHANGED, RoomMembershipObservation, RoomChangedEvent
-from conftest import envelope, message
+from conftest import envelope, message, extension_version
 
 
 async def observe(session, sequence, x=0, y=-1.4, room="main-hall", vx=0, vy=0):
@@ -121,7 +121,7 @@ async def test_navigation_round_trip_uses_real_typed_session_and_authoritative_r
                 packed = Any(); packed.Pack(RoomChangedEvent(previous_room_id=room, current_room_id=next_room))
                 room = next_room; sequence += 1
                 await session.accept(message(sequence, event=core.GameEventEnvelope(revision=sequence,
-                    capability_id=ROOM_CHANGED, extension_id="agents-arena", extension_version="0.1.0",
+                    capability_id=ROOM_CHANGED, extension_id="agents-arena", extension_version=extension_version("agents-arena"),
                     entity_id="actor-1", payload=packed)))
             sequence += 1
             await observe(session, sequence, x=x, y=y, room=room, vx=dx * 10.4, vy=dy * 10.4)

@@ -10,7 +10,7 @@ from google.protobuf.any_pb2 import Any
 from actor_runtime.server import RuntimeServer
 from actor_standard import TRANSFORM, LOCOMOTION, Transform2DObservation, Locomotion2DCommand
 from actor_agents_arena import ROOM_CHANGED, RoomChangedEvent
-from conftest import message, envelope
+from conftest import message, envelope, extension_version
 
 TOKEN = "test-only-random-placeholder-token-32chars"
 
@@ -53,7 +53,7 @@ async def test_true_bidi_hello_manifest_observation_command_result_event(server,
         packed = Any()
         packed.Pack(RoomChangedEvent(previous_room_id="main-hall", current_room_id="engineering"))
         await call.write(message(5, event=core.GameEventEnvelope(revision=2, capability_id=ROOM_CHANGED,
-                        extension_id="agents-arena", extension_version="0.1.0",
+                        extension_id="agents-arena", extension_version=extension_version("agents-arena"),
                         entity_id="actor-1", payload=packed)))
         await session.world.wait_until(lambda world: len(world.events) == 1, timeout=3)
         assert session.world.latest(Transform2DObservation).x == 2
@@ -79,7 +79,7 @@ async def test_required_missing_extension_sent_as_protocol_error(server, manifes
         failure = await handshake(call, manifest)
         assert failure.error.code == "RequiredExtensionMissing"
         assert failure.error.extension_id == "missing-extension"
-        assert failure.error.required_version == "0.1.0"
+        assert failure.error.required_version == manifest.extensions[1].extension_version
         assert failure.error.schema_hash
         assert (await call.read()).disconnect.reason == "RequiredExtensionMissing"
         assert await call.read() is grpc.aio.EOF

@@ -1,0 +1,28 @@
+syntax = "proto3";
+package actor.extensions.agents_arena.v1;
+option csharp_namespace = "AgentsArena.ActorProtocol.V1";
+
+// Game semantics, not a Runtime classifier's disposition or trust level.
+enum StationSignalKind {
+  STATION_SIGNAL_KIND_UNSPECIFIED = 0;
+  ROUTINE_NOTICE = 1;
+  URGENT_RECALL = 2;
+}
+
+// Explicit audience: this demo is public to the connected station, not private.
+enum StationSignalAudience {
+  STATION_SIGNAL_AUDIENCE_UNSPECIFIED = 0;
+  STATION_WIDE = 1;
+}
+
+// Created exclusively after a dedicated-server console interaction validation.
+message StationSignalEvent {
+  string signal_id = 1;
+  StationSignalKind signal_kind = 2;
+  string source_actor_id = 3;
+  string target_room_id = 4;
+  string message = 5;
+  int64 server_unix_ms = 6;
+  StationSignalAudience audience = 7;
+  uint64 server_revision = 8;
+}

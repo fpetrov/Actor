@@ -1,8 +1,8 @@
 # ACTOR protocol sources
 
-ACTOR defines an exchange mechanism for typed, versioned capabilities. It does not prescribe a game's world model. `actor/core/v1` contains only infrastructure; `actor/standard/v1` supplies three optional reusable 2D capabilities; `extensions/agents_arena/v1` owns room membership and room-change events.
+ACTOR defines an exchange mechanism for typed, versioned capabilities. It does not prescribe a game's world model. `actor/core/v1` contains only infrastructure; `actor/standard/v1` supplies three optional reusable 2D capabilities; `extensions/agents_arena/v1` owns room membership, room-change events and the server-validated StationSignal event.
 
-Core protocol **1.0** is independent of both Agents Arena's game version and its multiplayer admission protocol. Proto packages ending in `v1` identify a schema major. Extension/package version **0.1.0** is advertised separately. Required packages currently require an exact version and schema fingerprint match; optional unknown packages can remain opaque.
+Core protocol **1.0** is independent of both Agents Arena's game version and its multiplayer admission protocol. Proto packages ending in `v1` identify a schema major. Standard package **0.1.0** and Agents Arena package **0.2.0** are advertised separately. Required packages currently require an exact version and schema fingerprint match; optional unknown packages can remain opaque. Arena's additive StationSignal contract is documented in [Signal Console](../docs/station-signals.md).
 
 ## Generate and verify
 

@@ -13,7 +13,7 @@ from actor_runtime.errors import ActorError
 from actor_standard import TRANSFORM, MOTION, Locomotion2DCommand, Transform2DObservation, Motion2DObservation
 from actor_agents_arena import ROOM_MEMBERSHIP, ROOM_CHANGED, RoomMembershipObservation, RoomChangedEvent
 from actor_agents_arena.scripted import run, waypoint, hold_stopped
-from conftest import message, envelope
+from conftest import message, envelope, extension_version
 
 
 @pytest.mark.parametrize("input_delay,observation_delay", [(0, 0), (0.1, 0.1)])
@@ -54,7 +54,7 @@ async def test_scripted_observation_command_event_round_trip(session, input_dela
                 pending_observations.append((time.monotonic() + observation_delay,
                     message(sequence, event=core.GameEventEnvelope(
                     revision=revision, capability_id=ROOM_CHANGED, extension_id="agents-arena",
-                    extension_version="0.1.0", entity_id="actor-1", payload=packed))))
+                    extension_version=extension_version("agents-arena"), entity_id="actor-1", payload=packed))))
             if time.monotonic() - observed_at >= 1 / 15:
                 observed_at = time.monotonic()
                 revision += 1

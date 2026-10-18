@@ -54,12 +54,15 @@ namespace Actor.Editor
             player.AddComponent<NetworkCharacter>();
             player.AddComponent<NetworkNameplate>();
             player.AddComponent<NetworkRoomMembership>();
+            player.AddComponent<NetworkStationSignals>();
             PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefab);
             UnityEngine.Object.DestroyImmediate(player);
             UnityEngine.Object.DestroyImmediate(source.gameObject);
             var camera = UnityEngine.Object.FindObjectsByType<Camera>().Single();
             camera.GetComponent<CameraFollow2D>().Follow(null);
             EngineeringRoomBuilder.AddToCurrentMultiplayerScene();
+            SignalConsoleBuilder.AddToCurrentMultiplayerScene();
+            EngineeringRoomBuilder.ValidateCurrentMultiplayerScene();
             EditorSceneManager.SaveScene(original, GameplayScene);
 
             string settingsPath = "Assets/Settings/LobbyClient.asset";

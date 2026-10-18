@@ -1,5 +1,6 @@
 using System;
 using Actor.Networking;
+using Actor.World;
 using Actor.Protocol.Core.V1;
 using Actor.Protocol.Standard.V1;
 using Actor.Sdk;
@@ -13,6 +14,7 @@ namespace Actor.GameAdapter
         private readonly NetworkCharacter character;
         private readonly AgentInputSource input;
         private readonly NetworkRoomMembership membership;
+        private readonly SignalConsole signalConsole;
         private readonly Func<bool> agentControlEnabled;
         private AgentsArenaActorExtension arenaExtension;
         public GameIdentity Identity { get; }
@@ -27,6 +29,7 @@ namespace Actor.GameAdapter
             this.input = input;
             this.agentControlEnabled = agentControlEnabled;
             membership = character.GetComponent<NetworkRoomMembership>();
+            signalConsole = SignalConsole.Current;
             Identity = new GameIdentity("agents-arena", gameVersion);
             SelfActorId = character.AuthoritativeActorId;
         }
@@ -37,6 +40,7 @@ namespace Actor.GameAdapter
             arenaExtension = new AgentsArenaActorExtension(this);
             registry.RegisterExtension(arenaExtension);
             membership.RoomChanged += OnRoomChanged;
+            if (signalConsole != null) signalConsole.SignalReceived += OnStationSignal;
         }
 
         internal Transform2DObservation CaptureTransform()
@@ -62,10 +66,12 @@ namespace Actor.GameAdapter
         }
         private void OnRoomChanged(string previous, string current, uint revision)
             => arenaExtension.Publish(previous, current, SelfActorId, revision);
+        private void OnStationSignal(StationSignalEvent signal) => arenaExtension.Publish(signal);
         public void OnDisconnected() { if (input != null) input.Clear(); }
         public void Dispose()
         {
             if (membership != null) membership.RoomChanged -= OnRoomChanged;
+            if (signalConsole != null) signalConsole.SignalReceived -= OnStationSignal;
             OnDisconnected();
         }
 
@@ -90,6 +96,7 @@ namespace Actor.GameAdapter
     {
         private readonly AgentsArenaGameAdapter game;
         private ActorEventPublisher<RoomChangedEvent> changed;
+        private ActorEventPublisher<StationSignalEvent> stationSignal;
         public ExtensionPackage Package { get; } = AgentsArenaExtensionPackage.Create();
         public AgentsArenaActorExtension(AgentsArenaGameAdapter game) => this.game = game;
         public void Register(IActorExtensionRegistrar registry)
@@ -97,8 +104,12 @@ namespace Actor.GameAdapter
             registry.RegisterObservation<RoomMembershipObservation>("agents-arena.room-membership",
                 "Server-determined room containing this actor.", _ => new RoomMembershipObservation { RoomId = game.CurrentRoom });
             changed = registry.RegisterEvent<RoomChangedEvent>("agents-arena.room-changed", "Authoritative room membership changed.");
+            stationSignal = registry.RegisterEvent<StationSignalEvent>("agents-arena.station-signal",
+                "Server-validated station-wide training console signal with explicit audience and stable signal identity.");
         }
         public void Publish(string previous, string current, string actorId, uint revision)
             => changed.Publish(new RoomChangedEvent { PreviousRoomId = previous, CurrentRoomId = current }, actorId, revision);
+        public void Publish(StationSignalEvent signal)
+            => stationSignal.Publish(signal, signal.SourceActorId, signal.ServerRevision);
     }
 }

@@ -1,5 +1,6 @@
 import json
 from importlib import resources
+from functools import cache
 
 import pytest
 from google.protobuf.any_pb2 import Any
@@ -53,8 +54,17 @@ async def session(registry, manifest):
     result.close()
 
 
+@cache
+def extension_version(extension):
+    resource, name = {
+        "actor.standard": ("actor.metadata", "standard.v1.json"),
+        "agents-arena": ("extensions.agents_arena.metadata", "agents_arena.v1.json"),
+    }[extension]
+    return json.loads(resources.files(resource).joinpath(name).read_bytes())["extension_version"]
+
+
 def envelope(capability, extension, payload, *, entity="actor-1"):
     packed = Any()
     packed.Pack(payload)
     return core.ObservationEnvelope(capability_id=capability, extension_id=extension,
-                                    extension_version="0.1.0", entity_id=entity, payload=packed)
+                                    extension_version=extension_version(extension), entity_id=entity, payload=packed)

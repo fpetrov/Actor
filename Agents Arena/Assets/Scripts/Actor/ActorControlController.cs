@@ -5,6 +5,7 @@ using System.IO;
 using Actor.Characters;
 using Actor.Lobby;
 using Actor.Networking;
+using Actor.World;
 using Actor.Sdk;
 using Actor.Transport.Grpc;
 using Unity.Netcode;
@@ -27,6 +28,8 @@ namespace Actor.GameAdapter
             public long observations, messagesSent, messagesReceived, commands, bytesSent, bytesReceived;
             public double meanFps, maxPumpMs, elapsedSeconds;
             public long managedHeapStart, managedHeapCurrent;
+            public ulong stationSignals, lastSignalRevision;
+            public string lastSignalId, lastSignalKind, lastSignalSourceActorId;
         }
         private NetworkCharacter owner;
         private PlayerInputSource keyboard;
@@ -203,6 +206,8 @@ namespace Actor.GameAdapter
         private void SaveReport()
         {
             var diagnostic = bridge?.Diagnostics;
+            var console = SignalConsole.Current;
+            var signal = console != null ? console.LastReceivedSignal : null;
             double elapsed = Time.realtimeSinceStartupAsDouble - startedAt;
             var report = new Report
             {
@@ -216,7 +221,10 @@ namespace Actor.GameAdapter
                 messagesReceived = diagnostic?.MessagesReceived ?? 0, commands = diagnostic?.CommandsDispatched ?? 0,
                 bytesSent = diagnostic?.BytesSent ?? 0, bytesReceived = diagnostic?.BytesReceived ?? 0,
                 maxPumpMs = diagnostic?.MaxPumpMilliseconds ?? 0, elapsedSeconds = elapsed, meanFps = elapsed > 0 ? frames / elapsed : 0,
-                managedHeapStart = heapStart, managedHeapCurrent = GC.GetTotalMemory(false), errors = errors.ToArray(), warnings = warnings.ToArray()
+                managedHeapStart = heapStart, managedHeapCurrent = GC.GetTotalMemory(false), errors = errors.ToArray(), warnings = warnings.ToArray(),
+                stationSignals = console != null ? console.ReceivedSignalCount : 0, lastSignalId = signal?.SignalId,
+                lastSignalKind = signal?.SignalKind.ToString(), lastSignalSourceActorId = signal?.SourceActorId,
+                lastSignalRevision = signal?.ServerRevision ?? 0
             };
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath)));
             File.WriteAllText(reportPath, JsonUtility.ToJson(report, true));

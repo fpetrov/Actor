@@ -65,7 +65,7 @@ public sealed class RegistryTests
         var value = new RoomMembershipObservation { RoomId = "engineering" };
         var envelope = new ObservationEnvelope
         {
-            CapabilityId = "agents-arena.room-membership", ExtensionId = "agents-arena", ExtensionVersion = "0.1.0",
+            CapabilityId = "agents-arena.room-membership", ExtensionId = "agents-arena", ExtensionVersion = AgentsArenaExtensionPackage.Version,
             EntityId = ActorId, Payload = Any.Pack(value)
         };
         Assert.Equal(value, ObservationEnvelope.Parser.ParseFrom(envelope.ToByteArray()).Payload.Unpack<RoomMembershipObservation>());

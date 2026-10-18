@@ -12,6 +12,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
     <ProjectReference Include="../../packages/com.actor.sdk/Actor.Sdk.csproj" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Actor/Generated/*.cs" Link="ArenaProtocol/%(Filename)%(Extension)" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Networking/StationSignalRules.cs" Link="ArenaGame/StationSignalRules.cs" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

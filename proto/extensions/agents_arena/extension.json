@@ -1,9 +1,9 @@
 {
   "extension_id": "agents-arena",
-  "extension_version": "0.1.0",
+  "extension_version": "0.2.0",
   "supported_protocol_major": 1,
   "generation": {
-    "sources": ["extensions/agents_arena/v1/rooms.proto"],
+    "sources": ["extensions/agents_arena/v1/rooms.proto", "extensions/agents_arena/v1/station_signals.proto"],
     "csharp_output": "Agents Arena/Assets/Scripts/Actor/Generated",
     "helper_namespace": "AgentsArena.ActorProtocol.V1",
     "helper_name": "AgentsArenaExtensionPackage",
@@ -12,6 +12,7 @@
   },
   "capabilities": [
     { "capability_id": "agents-arena.room-membership", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.RoomMembershipObservation", "description": "Authoritative room containing the actor." },
-    { "capability_id": "agents-arena.room-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.RoomChangedEvent", "description": "Authoritative room membership changed." }
+    { "capability_id": "agents-arena.room-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.RoomChangedEvent", "description": "Authoritative room membership changed." },
+    { "capability_id": "agents-arena.station-signal", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.StationSignalEvent", "description": "Server-validated station-wide training console signal; explicit audience and stable signal identity." }
   ]
 }

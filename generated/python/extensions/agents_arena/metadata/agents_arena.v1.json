@@ -7,7 +7,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomMembershipObservation",
-      "version": "0.1.0"
+      "version": "0.2.0"
     },
     {
       "capability_id": "agents-arena.room-changed",
@@ -16,12 +16,21 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomChangedEvent",
-      "version": "0.1.0"
+      "version": "0.2.0"
+    },
+    {
+      "capability_id": "agents-arena.station-signal",
+      "description": "Server-validated station-wide training console signal; explicit audience and stable signal identity.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StationSignalEvent",
+      "version": "0.2.0"
     }
   ],
   "descriptor_set": "agents_arena.v1.pb",
   "extension_id": "agents-arena",
-  "extension_version": "0.1.0",
-  "schema_hash": "d235c0b75f4dd226d249c97e21fa9d337b3040c04f2ec1d881f0a2bf13abdc38",
+  "extension_version": "0.2.0",
+  "schema_hash": "0aa3a44a5d8531efbf85c8409173d5911e75711fd8e9682a19b8d1c621208257",
   "supported_protocol_major": 1
 }
