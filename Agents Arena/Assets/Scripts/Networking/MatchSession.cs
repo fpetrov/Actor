@@ -82,8 +82,8 @@ namespace Actor.Networking
             double deadline = Time.realtimeSinceStartupAsDouble + ClientConnectionDeadlineSeconds;
             while (attempt == connectionAttempt && !returningToLobby && !manager.IsConnectedClient
                 && manager.IsListening && Time.realtimeSinceStartupAsDouble < deadline) yield return null;
-            if (attempt != connectionAttempt || returningToLobby || manager.IsConnectedClient || !manager.IsListening) yield break;
-            Diagnostic("client-connection-deadline");
+            if (attempt != connectionAttempt || returningToLobby || manager.IsConnectedClient) yield break;
+            Diagnostic(manager.IsListening ? "client-connection-deadline" : "client-connection-stopped");
             yield return ReturnToLobby("The game server did not complete the connection. Please try again.");
         }
 

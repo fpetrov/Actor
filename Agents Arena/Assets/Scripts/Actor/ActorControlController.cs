@@ -110,11 +110,13 @@ namespace Actor.GameAdapter
                 if (controller != null && view != null && !view.Busy && session != null
                     && !session.IsConnected && Time.realtimeSinceStartupAsDouble >= nextAttempt)
                 {
-                    if (attempts >= 4) yield break;
+                    if (attempts >= 8) yield break;
                     view.PlayerName = Argument("--player-name", mode == ActorControlMode.Runtime ? "Agent Pilot" : "Human Player");
                     view.DirectRoomCode = code;
                     ++attempts;
-                    nextAttempt = Time.realtimeSinceStartupAsDouble + 2.5;
+                    // Failed transports may leave a short-lived server admission
+                    // reservation. Back off long enough to allow its expiry.
+                    nextAttempt = Time.realtimeSinceStartupAsDouble + Math.Min(20, 2.5 * Math.Pow(2, attempts - 1));
                     // Each retry requests fresh ordinary admission; never reuse a ticket.
                     controller.JoinRoom(code);
                 }
