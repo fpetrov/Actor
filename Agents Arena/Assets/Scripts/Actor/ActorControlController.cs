@@ -67,6 +67,10 @@ namespace Actor.GameAdapter
         }
         private void Awake()
         {
+            // A Player in batch mode has no display/vsync to pace its loop.
+            // Bound unattended clients so several agents leave CPU time for
+            // their independent Runtime/Brain and the user's desktop.
+            if (Application.isBatchMode) Application.targetFrameRate = 60;
             mode = string.Equals(Argument("--control-mode"), "actor", StringComparison.OrdinalIgnoreCase)
                 ? ActorControlMode.Runtime : ActorControlMode.Human;
             if (float.TryParse(Argument("--actor-command-timeout"), System.Globalization.NumberStyles.Float,
