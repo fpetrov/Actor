@@ -92,7 +92,9 @@ def main():
         with (args.output / "client-stdout.log").open("w") as client_stdout:
             client = subprocess.Popen([str(args.client), "--auto-room", args.room.upper(), "--player-name", args.player_name,
                 "--control-mode", "actor", "--actor-endpoint", f"http://127.0.0.1:{args.port}",
-                "--actor-report", str(args.output / "client.json"), "-logFile", str(args.output / "client.log")],
+                "--actor-report", str(args.output / "client.json"),
+                "-screen-fullscreen", "0", "-screen-width", "800", "-screen-height", "600",
+                "-logFile", str(args.output / "client.log")],
                 cwd=root, env=environment, stdout=client_stdout, stderr=subprocess.STDOUT)
         processes.append(client)
         # Process/isolation evidence only; neither credential nor game payload

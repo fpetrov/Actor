@@ -1,0 +1,9 @@
+{
+  "case": "scripted-mechanical-03",
+  "completed": false,
+  "interrupted_by_user_preference": true,
+  "reason": "Stop fullscreen test windows to preserve concurrent laptop use.",
+  "owned_fullscreen_clients_closed": 4,
+  "future_launch_mode": "windowed 800x600; fault clients windowed 640x360",
+  "not_counted_as_investigation_success": true
+}

@@ -115,15 +115,28 @@ def main():
                 process = subprocess.Popen(command, cwd=root, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             processes.append(process); return process
         python = sys.executable
+        def wait_client(process, path, *, bridge=False):
+            deadline = time.monotonic() + 120
+            while True:
+                try: value = json.loads(path.read_text())
+                except (OSError, ValueError): value = {}
+                if value.get("actorId") and (not bridge or value.get("state") == "Connected"): return
+                if process.poll() is not None: raise RuntimeError("Owned client stopped before readiness")
+                if time.monotonic() >= deadline: raise TimeoutError("Owned client readiness deadline")
+                time.sleep(.1)
         if args.human_observer:
-            launch([str(root / "build/agents-arena-client/AgentsArena.app/Contents/MacOS/Agents Arena"),
+            human_process = launch([str(root / "build/agents-arena-client/AgentsArena.app/Contents/MacOS/Agents Arena"),
                 "--auto-room", lobby["roomCode"], "--player-name", "Human Observer", "--control-mode", "human",
-                "--actor-report", str(output / "human.json"), "-logFile", str(output / "human-client.log")], "human-stdout")
+                "--actor-report", str(output / "human.json"),
+                "-screen-fullscreen", "0", "-screen-width", "800", "-screen-height", "600",
+                "-logFile", str(output / "human-client.log")], "human-stdout")
+            wait_client(human_process, output / "human.json")
         crew = launch([python, str(root / "scripts/launch-agent.py"), "--room", lobby["roomCode"],
             "--brain", "investigation-claimant" if args.claimant else "maintenance-operator",
             "--objective", "Perform ordinary panel maintenance using circuit alpha, then observe the public incident lifecycle.",
             "--player-name", "Crew Operator", "--port", str(args.base_port + 2), "--output", str(output / "crew"),
             "--objective-timeout", "600", "--max-decisions", "12"], "crew-launcher")
+        wait_client(crew, output / "crew/client.json", bridge=True)
         command = [python, str(root / "scripts/launch-investigation-agents.py"), "--room", lobby["roomCode"],
             "--engineer-brain", args.engineer_brain, "--sheriff-brain", args.sheriff_brain,
             "--base-port", str(args.base_port), "--output", str(output / "pair"), "--exit-on-complete"]
@@ -146,9 +159,28 @@ def main():
             except (OSError, ValueError, KeyError, TypeError): pass
             if crew.poll() is not None: break
             time.sleep(.1)
+        def report(path):
+            try: return json.loads(path.read_text())
+            except (OSError, ValueError): return {}
+        crew_value = report(crew_report)
+        skills = crew_value.get("cognitive", {}).get("skills", [])
+        maintenance_ok = any(item.get("skill_id") == "agents-arena.maintenance-override" and item.get("status") == "succeeded" for item in skills)
+        claim_ok = any(item.get("skill_id") == "actor.send-message" and item.get("status") == "succeeded" for item in skills)
+        crew_client = report(output / "crew/client.json")
+        claim_ack = claim_ok and crew_client.get("receiptsClientReceivedCount", 0) > 0
+        human = report(output / "human.json")
+        sheriff = report(output / "pair/sheriff/client.json")
+        human_ok = (bool(human.get("actorId")) and human.get("crewRole") == "Crew"
+            and human.get("incidentId") == sheriff.get("incidentId") and human.get("incidentStatus") == "Resolved"
+            and human.get("keyboardEnabled") is True and human.get("diagnosticEvidenceCount") == 0
+            and human.get("securityEvidenceCount") == 0 and human.get("ownDiagnosticPresent") is False
+            and human.get("ownSecurityPresent") is False)
+        passed = pair_code == 0 and crew_ok and maintenance_ok and (not args.claimant or claim_ack) and (not args.human_observer or human_ok)
         (output / "fixture-result.json").write_text(json.dumps(dict(scenario=args.scenario, claimant=args.claimant,
-            human_observer=args.human_observer, pair_exit_code=pair_code, crew_objective_passed=crew_ok), indent=2) + "\n")
-        return 0 if pair_code == 0 and crew_ok else 1
+            human_observer_requested=args.human_observer, human_observer_verified=human_ok,
+            pair_exit_code=pair_code, crew_objective_passed=crew_ok, actual_maintenance_verified=maintenance_ok,
+            claimant_send_skill_succeeded=claim_ok, claimant_client_receipt_verified=claim_ack, passed=passed), indent=2) + "\n")
+        return 0 if passed else 1
     except KeyboardInterrupt:
         return 130
     finally:
