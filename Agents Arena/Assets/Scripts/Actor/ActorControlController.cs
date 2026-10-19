@@ -21,7 +21,7 @@ namespace Actor.GameAdapter
 #if !UNITY_SERVER
         [Serializable] private sealed class Report
         {
-            public string mode, state, actorId, roomId, sessionId, errorCode, error;
+            public string mode, state, actorId, roomId, sessionId, lastAcceptedSessionId, errorCode, error, lobbyStatus;
             public string[] errors, warnings;
             public bool keyboardEnabled;
             public Vector2 position, velocity;
@@ -41,6 +41,8 @@ namespace Actor.GameAdapter
         private AgentInputSource agent;
         private AgentsArenaGameAdapter adapter;
         private ActorBridgeClient bridge;
+        private ActorBridgeDiagnostics lastAcceptedDiagnostics;
+        private string lastAcceptedSessionId = "";
         private ActorControlMode mode;
         private BridgeEndpoint endpoint;
         private string configurationError, reportPath;
@@ -95,13 +97,29 @@ namespace Actor.GameAdapter
             string code = Argument("--auto-room");
             // Explicit probes own their lobby workflow; ordinary clients can auto-join independently.
             if (code == null || Argument("--probe-role") != null) yield break;
+            double deadline = Time.realtimeSinceStartupAsDouble + 90;
             yield return new WaitForSecondsRealtime(0.5f);
-            var controller = FindAnyObjectByType<LobbyMenuController>();
-            var view = FindAnyObjectByType<LobbyMenuView>();
-            if (controller == null || view == null) yield break;
-            view.PlayerName = Argument("--player-name", mode == ActorControlMode.Runtime ? "Agent Pilot" : "Human Player");
-            view.DirectRoomCode = code;
-            controller.JoinRoom(code);
+            int attempts = 0;
+            double nextAttempt = 0;
+            while (!shuttingDown && Time.realtimeSinceStartupAsDouble < deadline)
+            {
+                var session = FindAnyObjectByType<MatchSession>();
+                if (session != null && session.IsConnected) yield break;
+                var controller = FindAnyObjectByType<LobbyMenuController>();
+                var view = FindAnyObjectByType<LobbyMenuView>();
+                if (controller != null && view != null && !view.Busy && session != null
+                    && !session.IsConnected && Time.realtimeSinceStartupAsDouble >= nextAttempt)
+                {
+                    if (attempts >= 4) yield break;
+                    view.PlayerName = Argument("--player-name", mode == ActorControlMode.Runtime ? "Agent Pilot" : "Human Player");
+                    view.DirectRoomCode = code;
+                    ++attempts;
+                    nextAttempt = Time.realtimeSinceStartupAsDouble + 2.5;
+                    // Each retry requests fresh ordinary admission; never reuse a ticket.
+                    controller.JoinRoom(code);
+                }
+                yield return new WaitForSecondsRealtime(0.25f);
+            }
         }
         private void Update()
         {
@@ -129,7 +147,12 @@ namespace Actor.GameAdapter
                     if (retryScheduled && Time.realtimeSinceStartupAsDouble >= reconnectAt)
                     { retryScheduled = false; bridge.Abort(); _ = bridge.StartAsync(endpoint); }
                 }
-                else if (bridge?.State == ActorConnectionState.Connected) { reconnectAttempt = 0; retryScheduled = false; }
+                else if (bridge?.State == ActorConnectionState.Connected)
+                {
+                    reconnectAttempt = 0; retryScheduled = false;
+                    lastAcceptedSessionId = bridge.SessionId;
+                    lastAcceptedDiagnostics = bridge.Diagnostics;
+                }
             }
             if (reportPath != null && Time.realtimeSinceStartupAsDouble >= nextReport)
             { nextReport = Time.realtimeSinceStartupAsDouble + 0.5; SaveReport(); }
@@ -138,6 +161,8 @@ namespace Actor.GameAdapter
         {
             if (shuttingDown || owner == character) return;
             if (owner != null) Detach();
+            lastAcceptedSessionId = "";
+            lastAcceptedDiagnostics = null;
             owner = character;
             keyboard = owner.GetComponent<PlayerInputSource>();
             agent = owner.GetComponent<AgentInputSource>() ?? owner.gameObject.AddComponent<AgentInputSource>();
@@ -210,7 +235,10 @@ namespace Actor.GameAdapter
         }
         private void SaveReport()
         {
-            var diagnostic = bridge?.Diagnostics;
+            // An unsuccessful reconnect has a fresh attempt ID and empty
+            // counters. Keep evidence for the last accepted Runtime session.
+            var diagnostic = bridge != null && bridge.SessionId == lastAcceptedSessionId
+                ? bridge.Diagnostics : lastAcceptedDiagnostics;
             var console = SignalConsole.Current;
             var cooperation = owner != null ? owner.GetComponent<NetworkCooperation>() : null;
             var signal = console != null ? console.LastReceivedSignal : null;
@@ -220,6 +248,8 @@ namespace Actor.GameAdapter
                 mode = mode.ToString(), state = bridge?.State.ToString() ?? "Disconnected", actorId = owner?.AuthoritativeActorId,
                 roomId = owner != null ? owner.GetComponent<NetworkRoomMembership>().CurrentRoomId : null,
                 sessionId = bridge?.SessionId, errorCode = bridge?.LastErrorCode, error = bridge?.LastErrorMessage,
+                lastAcceptedSessionId = lastAcceptedSessionId,
+                lobbyStatus = SanitizedLobbyStatus(),
                 keyboardEnabled = keyboard != null && keyboard.enabled,
                 position = owner != null ? owner.AuthoritativePosition : Vector2.zero,
                 velocity = owner != null ? owner.AuthoritativeVelocity : Vector2.zero,
@@ -241,6 +271,16 @@ namespace Actor.GameAdapter
             };
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath)));
             File.WriteAllText(reportPath, JsonUtility.ToJson(report, true));
+        }
+        private static string SanitizedLobbyStatus()
+        {
+            // This is the public lobby UI status, never chat/diagnostic content.
+            string status = FindAnyObjectByType<LobbyMenuView>()?.Status;
+            if (string.IsNullOrEmpty(status)) return "";
+            char[] bounded = status.ToCharArray(0, Math.Min(512, status.Length));
+            for (int i = 0; i < bounded.Length; ++i)
+                if (char.IsControl(bounded[i])) bounded[i] = ' ';
+            return new string(bounded).Trim();
         }
         private void OnDisable() => Shutdown();
         private void OnDestroy() => Shutdown();

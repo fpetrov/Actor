@@ -32,6 +32,7 @@ namespace Actor.Networking
         internal string LastMessageTask { get; private set; } = "";
         internal double MeanMessageLatencyMs => MessageCount == 0 ? 0 : latencyTotal / MessageCount;
         private double latencyTotal;
+        private ulong taskStateRevision;
         internal bool Human => IsSpawned && IsClient && IsOwner && GetComponent<PlayerInputSource>().isActiveAndEnabled;
         private double tokens = 8, tokenAt, nextInvalidReply, nextUnavailable;
         private double ackTokens = 32, ackAt, serverUnavailableAt;
@@ -133,10 +134,16 @@ namespace Actor.Networking
             {
                 case CommunicationPeersObservation peers: Peers = peers; return;
                 case CalibrationTaskStateObservation state:
-                    TaskState = state;
-                    if (state.Status != CalibrationStatus.AwaitingAuthorization && state.Status != CalibrationStatus.AwaitingDiagnostic) PrivateDiagnostic = null;
+                    ApplyTaskState(state);
                     return;
-                case CalibrationProgressObservation progress: Progress = progress; return;
+                case CalibrationProgressObservation progress:
+                    if (progress.ServerRevision >= Progress.ServerRevision) Progress = progress;
+                    return;
+                case CalibrationTaskChangedEvent changed:
+                    // Update presentation/report state before forwarding the
+                    // same authoritative event to the Runtime adapter.
+                    ApplyTaskState(changed.State);
+                    break;
                 case MessageReceivedEvent message:
                     if (message.RecipientActorId != GetComponent<NetworkCharacter>().AuthoritativeActorId) return;
                     AcknowledgeRpc(message.MessageId, message.MatchId);
@@ -154,12 +161,29 @@ namespace Actor.Networking
                     LastAction = receipt.ReasonCode + " · " + receipt.Stage; break;
                 case DiagnosticResultEvent diagnostic:
                     ++DiagnosticCount;
-                    if (diagnostic.Accepted) PrivateDiagnostic = diagnostic;
+                    if (diagnostic.Accepted && diagnostic.TaskId == TaskState.TaskId && diagnostic.ServerRevision >= taskStateRevision
+                        && (TaskState.Status == CalibrationStatus.AwaitingAuthorization || TaskState.Status == CalibrationStatus.AwaitingDiagnostic)
+                        && diagnostic.ExpiresAtUnixMs > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) PrivateDiagnostic = diagnostic;
                     LastAction = diagnostic.Accepted ? "Private diagnostic authorization received" : diagnostic.ReasonCode; break;
                 case CalibrationResultEvent result: LastAction = result.Action + " · " + result.ReasonCode; break;
                 case CalibrationAssignmentEvent assignment: LastAction = "Assigned " + assignment.Role; break;
             }
             PermittedEvent?.Invoke(value);
+        }
+
+        private void ApplyTaskState(CalibrationTaskStateObservation state)
+        {
+            if (state == null) return;
+            // Unassigned private state deliberately carries no task details and
+            // revision zero. Its preceding public Progress supplies the match's
+            // revision, allowing assignment clearing without rolling back the
+            // watermark when a terminal Changed event arrived first.
+            ulong revision = state.TaskId.Length == 0 ? Math.Max(state.ServerRevision, Progress.ServerRevision) : state.ServerRevision;
+            if (revision < taskStateRevision) return;
+            taskStateRevision = revision;
+            TaskState = state;
+            if (state.Status != CalibrationStatus.AwaitingAuthorization && state.Status != CalibrationStatus.AwaitingDiagnostic)
+                PrivateDiagnostic = null;
         }
         public string DisplayName(string actorId)
         {
@@ -174,6 +198,7 @@ namespace Actor.Networking
         {
             if (LocalOwner == this) LocalOwner = null;
             PrivateDiagnostic = null; Inbox.Clear(); seen.Clear(); seenOrder.Clear();
+            taskStateRevision = 0;
             Peers = new(); TaskState = new(); Progress = new();
         }
     }

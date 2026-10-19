@@ -20,10 +20,15 @@ namespace Actor.Networking
         [SerializeField] private Camera lobbyCamera;
         private NetworkManager manager;
         private UnityTransport transport;
+        private NetworkSceneManager observedSceneManager;
         private string matchId, roomCode, gameVersion, protocolVersion, internalApi;
         private byte[] secret;
         private int maxPlayers;
         private bool gameplayLoaded, returningToLobby;
+        private int diagnosticMessages;
+        private int connectionAttempt;
+        private const double ClientConnectionDeadlineSeconds = 20;
+        private const int MaxDiagnosticMessages = 128;
         private readonly Dictionary<ulong, JoinTicketClaims> approvals = new();
         private readonly Dictionary<ulong, int> spawnSlots = new();
         private readonly Dictionary<string, long> consumedTickets = new();
@@ -39,6 +44,8 @@ namespace Actor.Networking
             transport = GetComponent<UnityTransport>();
             manager.OnClientConnectedCallback += OnConnected;
             manager.OnClientDisconnectCallback += OnDisconnected;
+            manager.OnTransportFailure += OnTransportFailure;
+            transport.OnTransportEvent += OnTransportEvent;
             Application.runInBackground = true;
         }
 
@@ -55,11 +62,29 @@ namespace Actor.Networking
         public void Connect(JoinInfo admission)
         {
             if (manager.IsListening) throw new InvalidOperationException("A network session is already active.");
+            Diagnostic("admission-received", $"host={DiagnosticHost(admission.host)} port={admission.port}");
             roomCode = admission.roomCode;
             matchId = admission.lobbyId;
             transport.SetConnectionData(admission.host, (ushort)admission.port);
             manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(admission.joinTicket);
-            if (!manager.StartClient()) Disconnected?.Invoke("Could not start the network connection.");
+            bool started = manager.StartClient();
+            Diagnostic("client-start", $"started={started} listening={manager.IsListening}");
+            if (started)
+            {
+                ObserveSceneEvents();
+                StartCoroutine(WatchClientConnection(++connectionAttempt));
+            }
+            else Disconnected?.Invoke("Could not start the network connection.");
+        }
+
+        private IEnumerator WatchClientConnection(int attempt)
+        {
+            double deadline = Time.realtimeSinceStartupAsDouble + ClientConnectionDeadlineSeconds;
+            while (attempt == connectionAttempt && !returningToLobby && !manager.IsConnectedClient
+                && manager.IsListening && Time.realtimeSinceStartupAsDouble < deadline) yield return null;
+            if (attempt != connectionAttempt || returningToLobby || manager.IsConnectedClient || !manager.IsListening) yield break;
+            Diagnostic("client-connection-deadline");
+            yield return ReturnToLobby("The game server did not complete the connection. Please try again.");
         }
 
         public void Disconnect()
@@ -94,13 +119,15 @@ namespace Actor.Networking
             }
             transport.SetConnectionData("0.0.0.0", (ushort)port, "0.0.0.0");
             manager.ConnectionApprovalCallback = Approve;
-            if (!manager.StartServer())
+            bool started = manager.StartServer();
+            Diagnostic("server-start", $"started={started} port={port}");
+            if (!started)
             {
                 Debug.LogError("ACTOR: could not bind the game server transport.");
                 Application.Quit(3); yield break;
             }
             manager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
-            manager.SceneManager.OnSceneEvent += OnSceneEvent;
+            ObserveSceneEvents();
             var result = manager.SceneManager.LoadScene(settings.gameplayScene, LoadSceneMode.Additive);
             if (result != SceneEventProgressStatus.Started)
             {
@@ -138,6 +165,7 @@ namespace Actor.Networking
 
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
+            Diagnostic("scene-event", $"event={sceneEvent.SceneEventType} client={sceneEvent.ClientId} scene={DiagnosticLabel(sceneEvent.SceneName)} players={manager.ConnectedClientsIds.Count}");
             if (!manager.IsServer || sceneEvent.SceneEventType != SceneEventType.LoadEventCompleted || sceneEvent.SceneName != settings.gameplayScene) return;
             gameplayLoaded = true;
 #if UNITY_SERVER
@@ -154,16 +182,20 @@ namespace Actor.Networking
             response.Pending = false;
             response.Reason = "Invalid or expired join ticket.";
             string ticket = Encoding.UTF8.GetString(request.Payload);
-            if (!gameplayLoaded || !JoinTicketCodec.TryVerify(ticket, secret, out string payload)) return;
+            if (!gameplayLoaded) { ApprovalRejected(request.ClientNetworkId, "gameplay-not-ready"); return; }
+            if (!JoinTicketCodec.TryVerify(ticket, secret, out string payload))
+            { ApprovalRejected(request.ClientNetworkId, "ticket-invalid"); return; }
             JoinTicketClaims claims;
             try { claims = JsonUtility.FromJson<JoinTicketClaims>(payload); }
-            catch (ArgumentException) { return; }
+            catch (ArgumentException) { ApprovalRejected(request.ClientNetworkId, "ticket-payload-invalid"); return; }
             long now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            if (!JoinTicketCodec.ClaimsMatch(claims, matchId, gameVersion, protocolVersion, now)) return;
+            if (!JoinTicketCodec.ClaimsMatch(claims, matchId, gameVersion, protocolVersion, now))
+            { ApprovalRejected(request.ClientNetworkId, "ticket-claims-invalid"); return; }
             foreach (string nonce in consumedTickets.Where(p => p.Value <= now).Select(p => p.Key).ToArray()) consumedTickets.Remove(nonce);
-            if (consumedTickets.ContainsKey(claims.nonce)) { response.Reason = "Join ticket has already been used."; return; }
+            if (consumedTickets.ContainsKey(claims.nonce))
+            { response.Reason = "Join ticket has already been used."; ApprovalRejected(request.ClientNetworkId, "ticket-replayed"); return; }
             if (manager.ConnectedClientsIds.Count >= maxPlayers || spawnSlots.Count >= maxPlayers)
-            { response.Reason = "The room is full."; return; }
+            { response.Reason = "The room is full."; ApprovalRejected(request.ClientNetworkId, "room-full"); return; }
             int slot = Enumerable.Range(0, maxPlayers).First(i => !spawnSlots.ContainsValue(i));
             approvals[request.ClientNetworkId] = claims;
             spawnSlots[request.ClientNetworkId] = slot;
@@ -173,6 +205,7 @@ namespace Actor.Networking
             response.Position = SpawnPosition(slot);
             response.Rotation = Quaternion.identity;
             response.Reason = "";
+            Diagnostic("approval-accepted", $"client={request.ClientNetworkId} approved={approvals.Count} players={manager.ConnectedClientsIds.Count}");
         }
 
         public static Vector3 SpawnPosition(int slot)
@@ -187,6 +220,7 @@ namespace Actor.Networking
 
         private void OnConnected(ulong clientId)
         {
+            Diagnostic("ngo-connected", $"client={clientId} players={manager.ConnectedClientsIds.Count}");
             if (manager.IsServer) Debug.Log($"ACTOR_PLAYER_CONNECTED client={clientId} players={manager.ConnectedClientsIds.Count}");
             if (!manager.IsClient || clientId != manager.LocalClientId) return;
             if (lobbyCamera != null) lobbyCamera.gameObject.SetActive(false);
@@ -195,6 +229,7 @@ namespace Actor.Networking
 
         private void OnDisconnected(ulong clientId)
         {
+            Diagnostic("ngo-disconnected", $"client={clientId} event={transport.DisconnectEvent} players={manager.ConnectedClientsIds.Count}");
             if (manager.IsServer)
             {
                 approvals.Remove(clientId); spawnSlots.Remove(clientId);
@@ -208,15 +243,68 @@ namespace Actor.Networking
 
         private IEnumerator ReturnToLobby(string reason)
         {
+            ++connectionAttempt;
+            Diagnostic("return-to-lobby", $"connected={manager.IsConnectedClient} listening={manager.IsListening}");
             returningToLobby = true;
             manager.Shutdown();
             yield return null;
             while (manager.ShutdownInProgress) yield return null;
+            ObserveSceneEvents();
             Scene gameplay = SceneManager.GetSceneByName(settings.gameplayScene);
             if (gameplay.IsValid() && gameplay.isLoaded) yield return SceneManager.UnloadSceneAsync(gameplay);
             if (lobbyCamera != null) lobbyCamera.gameObject.SetActive(true);
             returningToLobby = false;
+            Diagnostic("lobby-restored");
             Disconnected?.Invoke(reason);
+        }
+
+        private void OnTransportEvent(NetworkEvent eventType, ulong clientId, ArraySegment<byte> payload, float receiveTime)
+        {
+            // Never inspect or retain payload: it can include admission tickets,
+            // private communication, or short-lived diagnostic authorization.
+            if (eventType == NetworkEvent.Connect || eventType == NetworkEvent.Disconnect || eventType == NetworkEvent.TransportFailure)
+                Diagnostic("transport-event", $"event={eventType} client={clientId} disconnect={transport.DisconnectEvent}");
+        }
+
+        private void OnTransportFailure() => Diagnostic("transport-failure");
+
+        private void ObserveSceneEvents()
+        {
+            var current = manager.SceneManager;
+            if (ReferenceEquals(observedSceneManager, current)) return;
+            if (observedSceneManager != null) observedSceneManager.OnSceneEvent -= OnSceneEvent;
+            observedSceneManager = current;
+            if (observedSceneManager != null) observedSceneManager.OnSceneEvent += OnSceneEvent;
+        }
+
+        private void ApprovalRejected(ulong clientId, string reason)
+            => Diagnostic("approval-rejected", $"client={clientId} reason={reason} approved={approvals.Count} players={manager.ConnectedClientsIds.Count}");
+
+        private void Diagnostic(string phase, string metadata = "")
+        {
+            // A fixed lifetime cap avoids packet/tick noise and bounds logging
+            // even when unapproved peers repeatedly attempt to connect.
+            if (diagnosticMessages > MaxDiagnosticMessages) return;
+            if (diagnosticMessages++ == MaxDiagnosticMessages)
+            { Debug.Log($"ACTOR_NETWORK phase=log-limit limit={MaxDiagnosticMessages}"); return; }
+            Debug.Log($"ACTOR_NETWORK utc_ms={DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()} phase={phase} {metadata}");
+        }
+
+        private static string DiagnosticHost(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length > 253) return "invalid";
+            foreach (char c in value)
+                if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
+                    && c != '.' && c != '-' && c != ':' && c != '[' && c != ']') return "invalid";
+            return value;
+        }
+
+        private static string DiagnosticLabel(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "none";
+            var result = new StringBuilder(Math.Min(value.Length, 128));
+            foreach (char c in value.Take(128)) result.Append(char.IsLetterOrDigit(c) || c == '-' || c == '_' || c == '.' ? c : '_');
+            return result.ToString();
         }
 
         private IEnumerator Callback(string operation, string body, Action<bool> result)
@@ -257,7 +345,9 @@ namespace Actor.Networking
             if (manager == null) return;
             manager.OnClientConnectedCallback -= OnConnected;
             manager.OnClientDisconnectCallback -= OnDisconnected;
-            if (manager.SceneManager != null) manager.SceneManager.OnSceneEvent -= OnSceneEvent;
+            manager.OnTransportFailure -= OnTransportFailure;
+            if (transport != null) transport.OnTransportEvent -= OnTransportEvent;
+            if (observedSceneManager != null) observedSceneManager.OnSceneEvent -= OnSceneEvent;
         }
     }
 }
