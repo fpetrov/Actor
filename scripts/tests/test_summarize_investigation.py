@@ -64,6 +64,21 @@ class InvestigationSummaryTests(unittest.TestCase):
     def modify(self, role, name, fn):
         value = json.loads((self.directory / role / name).read_text()); fn(value); self.write(role, name, value)
 
+    def capture_completion(self, observer="supervisor_barrier"):
+        for role in SUMMARY.ROLES:
+            output = self.directory / role
+            runtime = json.loads((output / "runtime.json").read_text())
+            client = json.loads((output / "client.json").read_text())
+            snapshot = LAUNCHER.completion_snapshot(runtime, client, role, observer)
+            self.assertIsNotNone(snapshot)
+            LAUNCHER.save_completion_snapshot(output, snapshot)
+
+    def clear_final_owners(self):
+        for role in SUMMARY.ROLES:
+            self.modify(role, "client.json", lambda value: value.update(lastAcceptedSessionId=value["sessionId"],
+                actorId=None, crewRole=None, incidentId=None, incidentStatus=None, coolingStatus=None,
+                investigationReportValidated=False, ownDiagnosticPresent=False, ownSecurityPresent=False, state="Disconnected"))
+
     def test_strict_authoritative_two_role_completion_passes(self):
         report = SUMMARY.summarize(self.directory, "mechanical-decoy")
         self.assertTrue(report["passed"])
@@ -80,6 +95,97 @@ class InvestigationSummaryTests(unittest.TestCase):
         self.assertEqual(report["skills"]["by_id"]["agents-arena.select-role"], 1)
         self.assertEqual(report["skills"]["by_id"]["agents-arena.maintenance-override"], 1)
         self.assertNotIn("other", report["skills"]["by_id"])
+
+    def test_own_completed_snapshot_survives_despawn_with_exact_accepted_runtime_identity(self):
+        self.capture_completion("readonly_completion_watcher"); self.clear_final_owners()
+        report = SUMMARY.summarize(self.directory)
+        self.assertTrue(report["passed"])
+        for role in SUMMARY.ROLES:
+            agent = report["agents"][role]
+            self.assertEqual(agent["identity"]["actor_id"], "actor-" + role)
+            self.assertEqual(agent["completion_evidence"], {"source": "own_resolved_snapshot",
+                "validation": "exact_owner_session_verified", "observer": "readonly_completion_watcher"})
+            self.assertEqual(agent["client"]["mean_fps"], 119)
+        launches = [(role, self.directory / role, []) for role in SUMMARY.ROLES]
+        self.assertTrue(LAUNCHER.completed_pair(launches))
+        self.assertNotIn("PRIVATE-", json.dumps(report))
+
+    def test_completion_capture_requires_contemporaneous_own_success_and_resolution(self):
+        runtime = json.loads((self.directory / "engineer/runtime.json").read_text())
+        client = json.loads((self.directory / "engineer/client.json").read_text())
+        snapshot = LAUNCHER.completion_snapshot(runtime, client, "engineer")
+        self.assertEqual(set(snapshot), SUMMARY.COMPLETION_FIELDS)
+        self.assertNotIn("PRIVATE-", json.dumps({k:v for k,v in snapshot.items() if k != "acceptedSessionId"}))
+        for change in ({"passed": False}, {"passed": "true"}, {"result": {"status": "failed"}}):
+            altered = deepcopy(runtime); altered["objective"].update(change)
+            self.assertIsNone(LAUNCHER.completion_snapshot(altered, client, "engineer"))
+        for change in ({"incidentStatus": "Active"}, {"coolingStatus": "Failure"},
+                {"investigationReportValidated": False}, {"crewRole": "Sheriff"}):
+            altered = {**client, **change}
+            self.assertIsNone(LAUNCHER.completion_snapshot(runtime, altered, "engineer"))
+
+    def test_missing_snapshot_does_not_reconstruct_completion_after_despawn(self):
+        self.clear_final_owners()
+        report = SUMMARY.summarize(self.directory)
+        self.assertFalse(report["passed"])
+        self.assertEqual(report["agents"]["sheriff"]["completion_evidence"]["validation"], "missing")
+
+    def test_snapshot_cannot_override_failed_or_new_current_incident(self):
+        self.capture_completion(); self.clear_final_owners()
+        path = self.directory / "sheriff/client.json"; original = path.read_text()
+        for change in ({"incidentStatus": "Failed"}, {"incidentId": "new-incident", "incidentStatus": "Active"},
+                {"crewRole": "Crew"}, {"state": "Connected"}):
+            path.write_text(original)
+            self.modify("sheriff", "client.json", lambda value: value.update(change))
+            with self.subTest(change=change):
+                report = SUMMARY.summarize(self.directory)
+                self.assertFalse(report["passed"])
+                self.assertEqual(report["agents"]["sheriff"]["completion_evidence"]["source"], "final_client")
+
+    def test_snapshot_rejects_replaced_actor_session_duplicate_runtime_and_wrong_role(self):
+        self.capture_completion(); self.clear_final_owners()
+        path = self.directory / "sheriff/client.json"; original = path.read_text()
+        for change in ({"actorId": "other-actor"}, {"lastAcceptedSessionId": "other-session"}):
+            path.write_text(original)
+            self.modify("sheriff", "client.json", lambda value: value.update(change))
+            with self.subTest(change=change):
+                report = SUMMARY.summarize(self.directory)
+                self.assertFalse(report["passed"])
+                self.assertEqual(report["agents"]["sheriff"]["completion_evidence"]["validation"], "identity_mismatch")
+        path.write_text(original)
+        self.modify("sheriff", "runtime.json", lambda value: value["runtime"]["sessions"].append(dict(value["runtime"]["sessions"][0])))
+        self.assertFalse(SUMMARY.summarize(self.directory)["passed"])
+
+    def test_snapshot_cannot_restore_final_counts_private_checks_or_failed_objective(self):
+        self.capture_completion(); self.clear_final_owners()
+        path = self.directory / "sheriff/client.json"; original = path.read_text()
+        for change in ({"securityEvidenceCount": 0}, {"diagnosticEvidenceCount": 1}, {"reportsValidatedCount": 0}):
+            path.write_text(original)
+            self.modify("sheriff", "client.json", lambda value: value.update(change))
+            self.assertFalse(SUMMARY.summarize(self.directory)["passed"])
+        path.write_text(original)
+        self.modify("sheriff", "runtime.json", lambda value: value["objective"]["result"].update(status="failed"))
+        self.assertFalse(SUMMARY.summarize(self.directory)["passed"])
+
+    def test_snapshot_unknown_private_or_non_success_fields_are_rejected(self):
+        self.capture_completion(); self.clear_final_owners()
+        path = self.directory / "sheriff/client-investigation-completed.json"; original = path.read_text()
+        for change in ({"observer": "unknown"}, {"crewRole": "Engineer"}, {"incidentStatus": "Failed"},
+                {"objectiveStatus": "failed"}, {"objectivePassed": "true"}, {"evidence_id": "PRIVATE-EVIDENCE"}):
+            path.write_text(original)
+            self.modify("sheriff", "client-investigation-completed.json", lambda value: value.update(change))
+            with self.subTest(change=change):
+                report = SUMMARY.summarize(self.directory)
+                self.assertFalse(report["passed"])
+                self.assertEqual(report["agents"]["sheriff"]["completion_evidence"]["validation"], "invalid_snapshot")
+                self.assertNotIn("PRIVATE-EVIDENCE", json.dumps(report))
+
+    def test_snapshot_inputs_are_protected_from_output_overwrite(self):
+        self.capture_completion(); self.clear_final_owners()
+        path = self.directory / "sheriff/client-investigation-completed.json"; original = path.read_bytes()
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            SUMMARY.main([str(self.directory), "--output", str(path)])
+        self.assertEqual(path.read_bytes(), original)
 
     def test_finish_alone_missing_report_or_unrestored_cooling_never_passes(self):
         path = self.directory / "engineer/client.json"; original = path.read_text()

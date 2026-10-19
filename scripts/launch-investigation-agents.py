@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import importlib.util
 import json
 import math
 import os
@@ -25,6 +26,51 @@ OBJECTIVES = {
         "technical origin, submit a server-validated investigation report, and cooperate until the "
         "incident is resolved. Distinguish observations from other agents' unverified claims.",
 }
+COMPLETION_SCHEMA = "actor.investigation-client-completion.v1"
+_completion_validator = None
+
+
+def completion_snapshot(runtime, client, role, observer="supervisor_barrier"):
+    """Capture current public own resolution only after this own Objective succeeds."""
+    if objective_outcome(runtime) is not True or observer not in ("supervisor_barrier", "readonly_completion_watcher"):
+        return None
+    accepted = client.get("lastAcceptedSessionId") or client.get("sessionId")
+    if (client.get("crewRole") != role.title() or client.get("incidentStatus") != "Resolved"
+            or client.get("coolingStatus") != "Restored" or client.get("investigationReportValidated") is not True
+            or not all(isinstance(value, str) and 0 < len(value) <= 128
+                for value in (client.get("actorId"), accepted, client.get("incidentId")))):
+        return None
+    return {"schema": COMPLETION_SCHEMA, "observer": observer, "actorId": client["actorId"],
+        "acceptedSessionId": accepted, "crewRole": client["crewRole"], "incidentId": client["incidentId"],
+        "incidentStatus": "Resolved", "coolingStatus": "Restored", "investigationReportValidated": True,
+        "objectivePassed": True, "objectiveStatus": "succeeded"}
+
+
+def save_completion_snapshot(output, snapshot):
+    target = output / "client-investigation-completed.json"
+    temporary = target.with_suffix(target.suffix + ".tmp")
+    temporary.write_text(json.dumps(snapshot, indent=2, allow_nan=False) + "\n")
+    temporary.replace(target)
+
+
+def completed_pair(launches):
+    # The same strict offline validator handles despawn-cleared reports in the
+    # supervisor barrier and final summary. It inspects only own public DTOs and
+    # negotiated identity metadata; it never transfers evidence between agents.
+    global _completion_validator
+    if _completion_validator is None:
+        spec = importlib.util.spec_from_file_location("actor_investigation_completion_validator",
+            Path(__file__).with_name("summarize-investigation.py"))
+        _completion_validator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_completion_validator)
+    states = {}
+    for role, output, _ in launches:
+        runtime, client = read_report(output / "runtime.json"), read_report(output / "client.json")
+        snapshot = completion_snapshot(runtime, client, role)
+        if snapshot is not None and not (output / "client-investigation-completed.json").exists():
+            save_completion_snapshot(output, snapshot)
+        states[role], _ = _completion_validator.completed_client(output, role, client, runtime)
+    return resolved_pair(states)
 
 
 def plans(root: Path, args):
@@ -187,12 +233,19 @@ def main(argv=None):
         completed = False
         deadline = time.monotonic() + args.timeout + 60
         while True:
+            # Each own terminal report may disappear on independent Runtime
+            # shutdown before its partner finishes. Latch only contemporaneous
+            # own success and own public resolution, never another agent's data.
+            for role, output, _ in launches:
+                snapshot = completion_snapshot(read_report(output / "runtime.json"), read_report(output / "client.json"), role)
+                if snapshot is not None and not (output / "client-investigation-completed.json").exists():
+                    save_completion_snapshot(output, snapshot)
             outcomes = [objective_outcome(read_report(output / "runtime.json")) for _, output, _ in launches]
             if all(outcome is not None for outcome in outcomes) and not completed:
                 if not all(outcomes):
                     return 1
                 state_deadline = time.monotonic() + 8
-                while not resolved_pair({role: read_report(output / "client.json") for role, output, _ in launches}):
+                while not completed_pair(launches):
                     if time.monotonic() >= state_deadline:
                         raise TimeoutError("Successful objectives lack matching Resolved/Restored/validated game reports")
                     time.sleep(.1)

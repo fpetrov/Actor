@@ -8,9 +8,11 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -27,6 +29,80 @@ OBJECTIVES = {
         "authorization information through in-game communication, perform calibration at the Engineering "
         "console, and finish only after the server confirms the task is complete.",
 }
+
+COMPLETION_SCHEMA = "actor.cooperation-client-completion.v1"
+_completion_validator = None
+
+
+def read_report(path):
+    try:
+        if path.stat().st_size > 32 * 1024 * 1024:
+            return {}
+        value = json.loads(path.read_text())
+        return value if isinstance(value, dict) else {}
+    except (OSError, UnicodeError, ValueError):
+        return {}
+
+
+def completed_report(state):
+    accepted = state.get("lastAcceptedSessionId") or state.get("sessionId")
+    identifiers = (state.get("actorId"), accepted, state.get("calibrationTaskId"))
+    if (not all(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_.:/-]{1,128}", value) for value in identifiers)
+            or state.get("calibrationStatus") != "Completed" or state.get("publicCalibrationStatus") != "Completed"
+            or state.get("ownCalibrationAssignment") is not True
+            or type(state.get("calibrationRevision")) is not int or state["calibrationRevision"] <= 0):
+        return None
+    return {"schema": COMPLETION_SCHEMA, "actorId": identifiers[0], "acceptedSessionId": accepted,
+        "calibrationTaskId": identifiers[2], "calibrationStatus": "Completed",
+        "publicCalibrationStatus": "Completed", "calibrationRevision": state["calibrationRevision"],
+        "ownCalibrationAssignment": True}
+
+
+def latch_completed_reports(launches):
+    for _, output, _ in launches:
+        runtime = read_report(output / "runtime.json")
+        objective = runtime.get("objective", {})
+        if (not isinstance(objective, dict) or objective.get("passed") is not True
+                or not isinstance(objective.get("result"), dict) or objective["result"].get("status") != "succeeded"):
+            continue
+        snapshot = completed_report(read_report(output / "client.json"))
+        if snapshot is not None and not (output / "client-completed.json").exists():
+            save_completed_reports([(output, snapshot)])
+
+
+def completed_reports(launches):
+    """Read one pair of authoritative own completions, without copying private data."""
+    global _completion_validator
+    if _completion_validator is None:
+        spec = importlib.util.spec_from_file_location("actor_cooperation_completion_validator",
+            Path(__file__).with_name("summarize-cooperation.py"))
+        _completion_validator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_completion_validator)
+    completed = []
+    for _, output, _ in launches:
+        state, runtime = read_report(output / "client.json"), read_report(output / "runtime.json")
+        sessions = runtime.get("runtime", {}).get("sessions", [])
+        sessions = [item for item in sessions if isinstance(item, dict)] if isinstance(sessions, list) else []
+        selected, _ = _completion_validator.completed_calibration(output, state, sessions)
+        snapshot = completed_report(selected)
+        if snapshot is None:
+            return None
+        completed.append((output, snapshot))
+    if (len(completed) != 2 or completed[0][1]["calibrationTaskId"] != completed[1][1]["calibrationTaskId"]
+            or completed[0][1]["actorId"] == completed[1][1]["actorId"]
+            or completed[0][1]["acceptedSessionId"] == completed[1][1]["acceptedSessionId"]):
+        return None
+    return completed
+
+
+def save_completed_reports(completed):
+    # Persist the reports actually inspected at the barrier, before shutdown can
+    # clear a player's private assignment. This file has only public proof fields.
+    for output, snapshot in completed:
+        target = output / "client-completed.json"
+        temporary = target.with_suffix(target.suffix + ".tmp")
+        temporary.write_text(json.dumps(snapshot, indent=2, allow_nan=False) + "\n")
+        temporary.replace(target)
 
 
 def plans(root: Path, args):
@@ -46,6 +122,8 @@ def plans(root: Path, args):
             command += ["--model", args.model]
         if args.client:
             command += ["--client", str(args.client)]
+        if getattr(args, "headless_client", False):
+            command += ["--headless-client"]
         result.append((role, output, command))
     return result
 
@@ -61,6 +139,8 @@ def main():
     parser.add_argument("--client", type=Path)
     parser.add_argument("--model")
     parser.add_argument("--timeout", type=float, default=600)
+    parser.add_argument("--headless-client", action="store_true",
+                        help="Run both ordinary Unity clients without graphics windows")
     parser.add_argument("--exit-on-complete", action="store_true",
                         help="Close both clients after both independent objectives terminate")
     args = parser.parse_args()
@@ -114,13 +194,15 @@ def main():
         completed = False
         deadline = time.monotonic() + args.timeout + 60
         while True:
+            latch_completed_reports(launches)
             results = []
             for role, output, _ in launches:
                 try:
                     report = json.loads((output / "runtime.json").read_text())
                     result = report.get("objective", {})
-                    if "passed" in result:
-                        results.append(bool(result["passed"]))
+                    status = result.get("result", {}).get("status")
+                    if type(result.get("passed")) is bool and status in ("succeeded", "failed", "cancelled"):
+                        results.append(result["passed"] and status == "succeeded")
                 except (OSError, json.JSONDecodeError):
                     pass
             if len(results) == 2 and not completed:
@@ -133,14 +215,9 @@ def main():
                         # before closing it; this barrier transfers no payload.
                         state_deadline = time.monotonic() + 8
                         while True:
-                            states = []
-                            for _, output, _ in launches:
-                                try:
-                                    state = json.loads((output / "client.json").read_text())
-                                    states.append((state.get("calibrationTaskId"), state.get("calibrationStatus")))
-                                except (OSError, json.JSONDecodeError):
-                                    pass
-                            if len(states) == 2 and states[0][0] and states[0] == states[1] and states[0][1] == "Completed":
+                            captured = completed_reports(launches)
+                            if captured is not None:
+                                save_completed_reports(captured)
                                 break
                             if time.monotonic() >= state_deadline:
                                 raise TimeoutError("Successful objectives lack matching Completed game reports")

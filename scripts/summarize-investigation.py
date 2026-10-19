@@ -17,6 +17,9 @@ ROLES = ("engineer", "sheriff")
 STATUSES = {"succeeded", "failed", "cancelled", "timed_out", "pending", "running"}
 INCIDENT_STATUSES = {"None", "Active", "Resolved", "Expired", "Cancelled", "Failed", "Unspecified"}
 COOLING_STATUSES = {"Operational", "Failure", "Repairing", "Restored", "Unspecified"}
+COMPLETION_SCHEMA = "actor.investigation-client-completion.v1"
+COMPLETION_FIELDS = {"schema", "observer", "actorId", "acceptedSessionId", "crewRole", "incidentId",
+    "incidentStatus", "coolingStatus", "investigationReportValidated", "objectivePassed", "objectiveStatus"}
 SKILLS = {"actor.wait", "actor.send-message", "actor.wait-for-message", "agents-arena.navigate-to-room",
     "agents-arena.select-role", "agents-arena.wait-for-incident", "agents-arena.inspect-cooling",
     "agents-arena.inspect-security-records", "agents-arena.repair-cooling", "agents-arena.submit-investigation-report",
@@ -36,6 +39,46 @@ def launch_metadata(directory, role):
         "profile_matches": value.get("agent_profile") == role}
 
 
+def completed_client(directory, role, client, runtime):
+    evidence = {"source": "final_client", "validation": "not_needed"}
+    cleared = (client.get("crewRole") in (None, "", "Unspecified")
+        and client.get("incidentId") in (None, "") and client.get("incidentStatus") in (None, "", "Unspecified")
+        and client.get("coolingStatus") in (None, "", "Unspecified")
+        and client.get("investigationReportValidated") is False
+        and client.get("ownDiagnosticPresent") is False and client.get("ownSecurityPresent") is False
+        and client.get("state") in ("Disconnected", "Error"))
+    if not cleared:
+        return client, evidence
+    snapshot, error = BASE.read_report(directory / "client-investigation-completed.json")
+    if error:
+        evidence["validation"] = error
+        return client, evidence
+    evidence["validation"] = "invalid_snapshot"
+    objective = BASE.mapping(runtime.get("objective"))
+    if (set(snapshot) != COMPLETION_FIELDS or snapshot.get("schema") != COMPLETION_SCHEMA
+            or snapshot.get("observer") not in ("supervisor_barrier", "readonly_completion_watcher")
+            or snapshot.get("crewRole") != role.title() or snapshot.get("incidentStatus") != "Resolved"
+            or snapshot.get("coolingStatus") != "Restored" or snapshot.get("investigationReportValidated") is not True
+            or snapshot.get("objectivePassed") is not True or snapshot.get("objectiveStatus") != "succeeded"
+            or objective.get("passed") is not True or BASE.mapping(objective.get("result")).get("status") != "succeeded"
+            or not BASE.token(snapshot.get("incidentId"))):
+        return client, evidence
+    accepted = BASE.token(client.get("lastAcceptedSessionId")) or BASE.token(client.get("sessionId"))
+    actor = BASE.token(snapshot.get("actorId"))
+    sessions = [BASE.mapping(value) for value in BASE.rows(BASE.mapping(runtime.get("runtime")).get("sessions"))]
+    matched = [value for value in sessions if value.get("session_id") == accepted]
+    if (not actor or not accepted or snapshot.get("acceptedSessionId") != accepted
+            or client.get("actorId") not in (None, "", actor)
+            or len(matched) != 1 or matched[0].get("actor_id") != actor):
+        evidence["validation"] = "identity_mismatch"
+        return client, evidence
+    selected = dict(client)
+    for key in ("actorId", "crewRole", "incidentId", "incidentStatus", "coolingStatus", "investigationReportValidated"):
+        selected[key] = snapshot[key]
+    evidence.update(source="own_resolved_snapshot", validation="exact_owner_session_verified", observer=snapshot["observer"])
+    return selected, evidence
+
+
 def agent(directory, role):
     # Reuse the tested M5 numeric metrics and read-only structural SQLite audit.
     # Only the explicit projection below is published; M5 task/session identifiers
@@ -43,6 +86,10 @@ def agent(directory, role):
     base = BASE.summarize_agent(directory, role)
     runtime, _ = BASE.read_report(directory / "runtime.json")
     client, _ = BASE.read_report(directory / "client.json")
+    selected, completion_evidence = completed_client(directory, role, client, runtime)
+    identity = dict(base["identity"])
+    if selected is not client:
+        identity.update(actor_id=BASE.token(selected.get("actorId")), actor_matches_runtime=True)
     cognitive = BASE.mapping(runtime.get("cognitive"))
     brain = BASE.mapping(cognitive.get("brain"))
     skills = [BASE.mapping(item) for item in BASE.rows(cognitive.get("skills"))]
@@ -50,11 +97,11 @@ def agent(directory, role):
     status_counts = Counter(enum(item.get("status"), STATUSES) or "unknown" for item in skills)
     launch, launch_checks = launch_metadata(directory, role)
     report = {
-        "inputs": base["inputs"], "input_errors": base["input_errors"],
-        "identity": {"actor_id": base["identity"]["actor_id"], "role": enum(client.get("crewRole"), {"Engineer", "Sheriff", "Crew"}),
-            "runtime_session_count": base["identity"]["runtime_session_count"],
-            "matching_runtime_sessions": base["identity"]["matching_runtime_sessions"],
-            "actor_matches_runtime": base["identity"]["actor_matches_runtime"]},
+        "inputs": {**base["inputs"], "client_investigation_completed": BASE.artifact(directory / "client-investigation-completed.json")}, "input_errors": base["input_errors"],
+        "identity": {"actor_id": identity["actor_id"], "role": enum(selected.get("crewRole"), {"Engineer", "Sheriff", "Crew"}),
+            "runtime_session_count": identity["runtime_session_count"],
+            "matching_runtime_sessions": identity["matching_runtime_sessions"],
+            "actor_matches_runtime": identity["actor_matches_runtime"]},
         "objective": {**base["objective"], "status": enum(base["objective"]["status"], STATUSES)},
         "cognition": {key: value for key, value in base["cognition"].items() if key != "provider"},
         "provider": enum(brain.get("provider"), {"codex", "scripted", "investigation-scripted"}),
@@ -68,10 +115,10 @@ def agent(directory, role):
         "client": {key: value for key, value in base["client"].items() if key in {
             "mean_fps", "max_pump_ms", "elapsed_seconds", "errors", "warnings", "messages_received",
             "receipts_server_accepted", "receipts_client_received", "receipts_rejected", "mean_message_latency_ms"}},
-        "incident": {"incident_id": BASE.token(client.get("incidentId")),
-            "status": enum(client.get("incidentStatus"), INCIDENT_STATUSES),
-            "cooling_status": enum(client.get("coolingStatus"), COOLING_STATUSES),
-            "report_validated": client.get("investigationReportValidated") is True,
+        "incident": {"incident_id": BASE.token(selected.get("incidentId")),
+            "status": enum(selected.get("incidentStatus"), INCIDENT_STATUSES),
+            "cooling_status": enum(selected.get("coolingStatus"), COOLING_STATUSES),
+            "report_validated": selected.get("investigationReportValidated") is True,
             "own_diagnostic_present": client.get("ownDiagnosticPresent") is True,
             "own_security_present": client.get("ownSecurityPresent") is True,
             "diagnostic_evidence_count": BASE.count(client.get("diagnosticEvidenceCount")),
@@ -82,10 +129,11 @@ def agent(directory, role):
             "incidents_started": BASE.count(client.get("incidentsStartedCount")),
             "hypotheses_proposed_by_scripted_provider": BASE.count(brain.get("hypotheses_proposed"))},
         "launch_metadata": launch_checks,
+        "completion_evidence": completion_evidence,
         "rendering_mode": "headless" if launch.get("headless_client") is True else "windowed" if launch.get("headless_client") is False else "unspecified",
     }
     # Return private validation inputs separately; callers never serialize them.
-    return report, base["identity"], launch
+    return report, identity, launch
 
 
 def summarize(directory, case_label=None):
@@ -139,6 +187,7 @@ def summarize(directory, case_label=None):
             "recorded_launch_metadata_checked": True, "actual_live_pids_verified": False},
         "measurement_notes": [
             "Success requires both Objectives passed+succeeded and matching public Resolved/Restored/report-validated state; FinishObjective alone is insufficient.",
+            "Only fully cleared final owner state may use a contemporaneous own-success/own-Resolved snapshot tied to its retained accepted session and exact Runtime actor. All final counters and private-view checks remain unchanged.",
             "Recorded launch PIDs, ports, credential fingerprints and database paths are compared privately; no live process identity is inspected and those values are omitted.",
             "Evidence counters describe authorized client receipts; private payloads, reference IDs, hypotheses and messages are never reproduced.",
             "Successful share-evidence Skill calls and client ACK counts are separate metrics; neither claims a Brain understood a message or an exact reference count.",
@@ -164,7 +213,7 @@ def main(argv=None):
     if args.output:
         target = args.output.resolve()
         protected = {(directory / role / name).resolve() for role in ROLES for name in (
-            "runtime.json", "client.json", "launch.json", "memory.sqlite3", "memory.sqlite3-wal", "memory.sqlite3-shm")}
+            "runtime.json", "client.json", "client-investigation-completed.json", "launch.json", "memory.sqlite3", "memory.sqlite3-wal", "memory.sqlite3-shm")}
         if target in protected or target.exists() and any(path.is_file() and target.samefile(path) for path in protected):
             parser.error("Output must not overwrite a raw input or private launch artifact")
         target.parent.mkdir(parents=True, exist_ok=True)

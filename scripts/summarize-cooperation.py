@@ -26,6 +26,9 @@ PRIVATE = {"session_only", "sensitive"}
 SECRET_KEYS = {"authorizationcode", "secret", "secrets", "password", "accesstoken",
                "refreshtoken", "apikey", "authtoken", "bridgeauth", "bridgekey"}
 USAGE_KEYS = ("input_tokens", "cached_input_tokens", "output_tokens", "total_tokens")
+COMPLETION_SCHEMA = "actor.cooperation-client-completion.v1"
+COMPLETION_FIELDS = {"schema", "actorId", "acceptedSessionId", "calibrationTaskId", "calibrationStatus",
+                     "publicCalibrationStatus", "calibrationRevision", "ownCalibrationAssignment"}
 
 
 def mapping(value):
@@ -172,6 +175,43 @@ def usage(report):
     return {key: count(mapping(report).get(key)) for key in USAGE_KEYS}
 
 
+def completed_calibration(directory, client, sessions):
+    """Historical completion is usable only after an exact owner's cleared final state."""
+    evidence = {"source": "final_client", "validation": "not_needed",
+        "final_task_status": token(client.get("calibrationStatus")),
+        "final_assignment_present": client.get("ownCalibrationAssignment") is True}
+    cleared = (client.get("calibrationTaskId") == "" and client.get("calibrationStatus") == "Unspecified"
+        and client.get("publicCalibrationStatus") in ("Unspecified", "Completed")
+        and client.get("ownCalibrationAssignment") is False
+        and type(client.get("calibrationRevision")) is int and client["calibrationRevision"] == 0)
+    if not cleared:
+        return client, evidence
+    snapshot, error = read_report(directory / "client-completed.json")
+    if error:
+        evidence["validation"] = error
+        return client, evidence
+    evidence["validation"] = "invalid_snapshot"
+    if (set(snapshot) != COMPLETION_FIELDS or snapshot.get("schema") != COMPLETION_SCHEMA
+            or snapshot.get("calibrationStatus") != "Completed"
+            or snapshot.get("publicCalibrationStatus") != "Completed"
+            or snapshot.get("ownCalibrationAssignment") is not True
+            or type(snapshot.get("calibrationRevision")) is not int or snapshot["calibrationRevision"] <= 0
+            or not token(snapshot.get("calibrationTaskId"))):
+        return client, evidence
+    actor = token(client.get("actorId"))
+    accepted = token(client.get("lastAcceptedSessionId")) or token(client.get("sessionId"))
+    matched = [item for item in sessions if item.get("session_id") == accepted]
+    if (not actor or not accepted or snapshot.get("actorId") != actor or snapshot.get("acceptedSessionId") != accepted
+            or len(matched) != 1 or matched[0].get("actor_id") != actor):
+        evidence["validation"] = "identity_mismatch"
+        return client, evidence
+    selected = dict(client)
+    for field in ("calibrationTaskId", "calibrationStatus", "publicCalibrationStatus", "calibrationRevision", "ownCalibrationAssignment"):
+        selected[field] = snapshot[field]
+    evidence.update(source="supervisor_completed_snapshot", validation="exact_owner_session_verified")
+    return selected, evidence
+
+
 def summarize_agent(directory, role):
     runtime, runtime_error = read_report(directory / "runtime.json")
     client, client_error = read_report(directory / "client.json")
@@ -180,6 +220,7 @@ def summarize_agent(directory, role):
     objective = mapping(runtime.get("objective"))
     result = mapping(objective.get("result"))
     sessions = [mapping(item) for item in rows(core.get("sessions"))]
+    calibration, completion_evidence = completed_calibration(directory, client, sessions)
     actor_id = token(client.get("actorId"))
     session_id = token(client.get("lastAcceptedSessionId")) or token(client.get("sessionId"))
     matched = [item for item in sessions if item.get("session_id") == session_id]
@@ -193,7 +234,8 @@ def summarize_agent(directory, role):
     privacy = mapping(session.get("privacy"))
     report = {
         "inputs": {"runtime": artifact(directory / "runtime.json"),
-                   "client": artifact(directory / "client.json")},
+                   "client": artifact(directory / "client.json"),
+                   "client_completed": artifact(directory / "client-completed.json")},
         "input_errors": {"runtime": runtime_error, "client": client_error},
         "processes": {"runtime_expected": 1, "unity_client_expected": 1,
                       "total_expected": 2, "actual_pids_verified": False,
@@ -253,11 +295,12 @@ def summarize_agent(directory, role):
             "receipts_rejected": count(client.get("receiptsRejectedCount")),
             "mean_message_latency_ms": number(client.get("meanMessageLatencyMs")),
             "diagnostic_results": count(client.get("diagnosticResultsCount")),
-            "task_id": token(client.get("calibrationTaskId")),
-            "task_status": token(client.get("calibrationStatus")),
-            "task_revision": count(client.get("calibrationRevision")),
-            "public_task_status": token(client.get("publicCalibrationStatus")),
-            "own_assignment_present": client.get("ownCalibrationAssignment") is True},
+            "task_id": token(calibration.get("calibrationTaskId")),
+            "task_status": token(calibration.get("calibrationStatus")),
+            "task_revision": count(calibration.get("calibrationRevision")),
+            "public_task_status": token(calibration.get("publicCalibrationStatus")),
+            "own_assignment_present": calibration.get("ownCalibrationAssignment") is True},
+        "completion_evidence": completion_evidence,
         "memory": memory_metrics(directory / "memory.sqlite3", role, runtime),
     }
     return report
@@ -291,6 +334,7 @@ def summarize(directory):
             "acceptance": checks, "agents": agents,
             "measurement_notes": [
                 "Success requires both Objective passed+succeeded and both authoritative client task statuses Completed; FinishObjective alone is insufficient.",
+                "After final assignment cleanup only, calibration fields may come from a supervisor-captured Completed barrier snapshot tied to the exact final actor, accepted session and Runtime identity; current metrics remain from the final client report.",
                 "Two expected game processes per agent means one Runtime and one Unity client, excluding launcher/Codex helpers; PIDs are not verified by this offline summarizer.",
                 "RTT p95 uses nearest rank over retained command-result samples; FPS is the client report mean, not a measured worst-frame percentile.",
                 "Mean message latency uses receiver wall clock minus server Unix time and is approximate across hosts; it is not transport RTT.",
@@ -312,7 +356,7 @@ def main():
         # Never overwrite the raw evidence or a persistent memory database.
         target = args.output.resolve()
         protected = {(args.directory.resolve() / role / name).resolve() for role in ROLES
-                     for name in ("runtime.json", "client.json", "memory.sqlite3", "memory.sqlite3-wal", "memory.sqlite3-shm")}
+                     for name in ("runtime.json", "client.json", "client-completed.json", "memory.sqlite3", "memory.sqlite3-wal", "memory.sqlite3-shm")}
         if target in protected or target.exists() and any(path.is_file() and target.samefile(path) for path in protected):
             parser.error("The output must not replace an input artifact")
         target.parent.mkdir(parents=True, exist_ok=True)
