@@ -1,0 +1,21 @@
+{
+  "actor_id": "cbcbd5f31eaa43e4b90e724dc4191ffb",
+  "client_left_open_at_probe_completion": true,
+  "elapsed_seconds_approximate": 20.73,
+  "keyboard_enabled": true,
+  "mode": "Human",
+  "native_keyboard_latency_measured": false,
+  "playable_human_peer_retained": {
+    "pid": 1611,
+    "room_code": "V2J6AA"
+  },
+  "probe_client_later_closed_by_owner": true,
+  "probe_input": "Development diagnostic intent; normal Human PlayerInputSource restored after the probe",
+  "probe_passed_checks": 13,
+  "room_id": "main-hall",
+  "schema": "actor.cooperation-human-prediction-client.v1",
+  "source": "Run-owner safe DTO snapshot at accepted probe completion",
+  "source_commit": "c289e1a",
+  "source_report": "build/cooperative-validation/human-prediction-verified/client.json",
+  "startup_mean_fps_approximate": 117.36
+}

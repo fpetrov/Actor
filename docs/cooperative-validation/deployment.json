@@ -1,0 +1,16 @@
+{
+  "game_version": "0.6.0",
+  "admission_protocol": "3",
+  "runtime_version": "0.4.0",
+  "core_protocol": "1.0",
+  "standard_motion": "0.1.0",
+  "standard_communication": "0.1.0",
+  "arena_extension": "0.3.0",
+  "source_commit": "c289e1a",
+  "server_release": "20261019T1804Z-c289e1a",
+  "server_assembly_sha256": "7f94ae1659cb0c96e900218cb3409b6731896318878ece05e4a36d10b53fe1b4",
+  "client_assembly_sha256": "e7cd7be9f7a9fdbe089cb934981add439b1ed04321be8f49ae2f5c2e1fd33868",
+  "client_build": "success",
+  "server_build": "success",
+  "existing_human_match_preserved": true
+}

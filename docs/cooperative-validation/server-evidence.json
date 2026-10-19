@@ -1,0 +1,68 @@
+{
+  "scripted": {
+    "lobby_id": "eb25135144594afbb48b1615a62df08c",
+    "room": "83VGVQ",
+    "metadata_only_lines": [
+      "ACTOR_READY match=eb25135144594afbb48b1615a62df08c room=83VGVQ port=7777",
+      "ACTOR_PLAYER_CONNECTED client=1 players=1",
+      "ACTOR_PLAYER_CONNECTED client=2 players=2",
+      "ACTOR_CALIBRATION actor=5f7c640f99cc4b73a67a1eab2a91b39f action=Start accepted=True reason=accepted status=AwaitingDiagnostic revision=1",
+      "ACTOR_CALIBRATION actor=5f7c640f99cc4b73a67a1eab2a91b39f action=InspectDiagnostic accepted=True reason=accepted status=AwaitingAuthorization revision=2",
+      "ACTOR_DIAGNOSTIC actor=5f7c640f99cc4b73a67a1eab2a91b39f accepted=True revision=2",
+      "ACTOR_COMM message=24a6a0150211485e929a2d131381a0e9 sender=5f7c640f99cc4b73a67a1eab2a91b39f recipient=10e33a146188409b8a763e26a285e799 channel=direct sensitive=True",
+      "ACTOR_CALIBRATION actor=10e33a146188409b8a763e26a285e799 action=Submit accepted=True reason=accepted status=Completed revision=3",
+      "ACTOR_PLAYER_DISCONNECTED client=1 players=1",
+      "ACTOR_PLAYER_DISCONNECTED client=2 players=0"
+    ]
+  },
+  "mixed-a": {
+    "lobby_id": "eb6fd12140584cb1a1baddf34214e543",
+    "room": "3D3K5F",
+    "metadata_only_lines": [
+      "ACTOR_READY match=eb6fd12140584cb1a1baddf34214e543 room=3D3K5F port=7777",
+      "ACTOR_PLAYER_CONNECTED client=1 players=1",
+      "ACTOR_PLAYER_CONNECTED client=2 players=2",
+      "ACTOR_CALIBRATION actor=8298900765fd49c396841f0427a77004 action=Start accepted=True reason=accepted status=AwaitingDiagnostic revision=1",
+      "ACTOR_CALIBRATION actor=8298900765fd49c396841f0427a77004 action=InspectDiagnostic accepted=True reason=accepted status=AwaitingAuthorization revision=2",
+      "ACTOR_DIAGNOSTIC actor=8298900765fd49c396841f0427a77004 accepted=True revision=2",
+      "ACTOR_COMM message=064749f9e58848928443aac94ac00415 sender=8298900765fd49c396841f0427a77004 recipient=8906b04762134fabb8bd315a28faba70 channel=direct sensitive=True",
+      "ACTOR_CALIBRATION actor=8906b04762134fabb8bd315a28faba70 action=Submit accepted=True reason=accepted status=Completed revision=3",
+      "ACTOR_PLAYER_DISCONNECTED client=2 players=1",
+      "ACTOR_PLAYER_DISCONNECTED client=1 players=0"
+    ]
+  },
+  "mixed-b": {
+    "lobby_id": "d2a000a4e0db401c8bb5a5f92a7c67e5",
+    "room": "V5FUA2",
+    "metadata_only_lines": [
+      "ACTOR_READY match=d2a000a4e0db401c8bb5a5f92a7c67e5 room=V5FUA2 port=7780",
+      "ACTOR_PLAYER_CONNECTED client=1 players=1",
+      "ACTOR_PLAYER_CONNECTED client=2 players=2",
+      "ACTOR_CALIBRATION actor=851692250a2842ba8db65e5e02dfc641 action=Start accepted=True reason=accepted status=AwaitingDiagnostic revision=1",
+      "ACTOR_CALIBRATION actor=851692250a2842ba8db65e5e02dfc641 action=InspectDiagnostic accepted=True reason=accepted status=AwaitingAuthorization revision=2",
+      "ACTOR_DIAGNOSTIC actor=851692250a2842ba8db65e5e02dfc641 accepted=True revision=2",
+      "ACTOR_COMM message=4867d62864e248059a2c5b6cb658100d sender=851692250a2842ba8db65e5e02dfc641 recipient=2d739db5a0cb4ace8753d120af233c75 channel=direct sensitive=True",
+      "ACTOR_COMM message=a1c046eb0a4c47ebad08928a69a82967 sender=2d739db5a0cb4ace8753d120af233c75 recipient=851692250a2842ba8db65e5e02dfc641 channel=direct sensitive=True",
+      "ACTOR_CALIBRATION actor=2d739db5a0cb4ace8753d120af233c75 action=Submit accepted=True reason=accepted status=Completed revision=3",
+      "ACTOR_PLAYER_DISCONNECTED client=1 players=1",
+      "ACTOR_PLAYER_DISCONNECTED client=2 players=0"
+    ]
+  },
+  "codex": {
+    "lobby_id": "79717f57e37d402c8e2a007a6fff13d4",
+    "room": "7PLYPW",
+    "metadata_only_lines": [
+      "ACTOR_READY match=79717f57e37d402c8e2a007a6fff13d4 room=7PLYPW port=7781",
+      "ACTOR_PLAYER_CONNECTED client=1 players=1",
+      "ACTOR_PLAYER_CONNECTED client=2 players=2",
+      "ACTOR_CALIBRATION actor=a6f3fa5a4f8d41ec9155d203b3017604 action=Start accepted=True reason=accepted status=AwaitingDiagnostic revision=1",
+      "ACTOR_CALIBRATION actor=a6f3fa5a4f8d41ec9155d203b3017604 action=InspectDiagnostic accepted=True reason=accepted status=AwaitingAuthorization revision=2",
+      "ACTOR_DIAGNOSTIC actor=a6f3fa5a4f8d41ec9155d203b3017604 accepted=True revision=2",
+      "ACTOR_COMM message=8ec567343de64e6097655caf70610228 sender=ad0bcc96c96e44c09c6b0a1a1356b39c recipient=a6f3fa5a4f8d41ec9155d203b3017604 channel=direct sensitive=False",
+      "ACTOR_COMM message=c36838d7b6434aeea167cba663509a2d sender=a6f3fa5a4f8d41ec9155d203b3017604 recipient=ad0bcc96c96e44c09c6b0a1a1356b39c channel=direct sensitive=True",
+      "ACTOR_CALIBRATION actor=ad0bcc96c96e44c09c6b0a1a1356b39c action=Submit accepted=True reason=accepted status=Completed revision=3",
+      "ACTOR_PLAYER_DISCONNECTED client=1 players=1",
+      "ACTOR_PLAYER_DISCONNECTED client=2 players=0"
+    ]
+  }
+}

@@ -1,0 +1,545 @@
+{
+  "acceptance": {
+    "both_authoritative_clients_completed": true,
+    "both_objectives_passed": true,
+    "client_runtime_identities_match": true,
+    "database_configuration_matches": true,
+    "distinct_actor_ids": true,
+    "distinct_database_files": true,
+    "distinct_database_paths": true,
+    "distinct_runtime_endpoints": true,
+    "distinct_session_ids": true,
+    "same_nonempty_task_id": true,
+    "sqlite_structural_redaction_passed": true
+  },
+  "agents": {
+    "coordinator": {
+      "client": {
+        "diagnostic_results": 1,
+        "elapsed_seconds": 51.510657458000004,
+        "errors": 0,
+        "max_pump_ms": 3.0218,
+        "mean_fps": 117.64555723135767,
+        "mean_message_latency_ms": 113.0,
+        "messages_received": 1,
+        "mode": "Runtime",
+        "own_assignment_present": true,
+        "public_task_status": "Completed",
+        "receipts_client_received": 1,
+        "receipts_rejected": 0,
+        "receipts_server_accepted": 1,
+        "state": "Error",
+        "task_id": "80f5d33c37914545ad5723ed2141f9be",
+        "task_revision": 3,
+        "task_status": "Completed",
+        "warnings": 0
+      },
+      "codex": {
+        "interrupted_turns": null,
+        "turn_duration_seconds": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "p95": null,
+          "samples": 0,
+          "total": null
+        },
+        "turns": [],
+        "turns_recorded": 0,
+        "unique_model_turns": null,
+        "usage_totals": {
+          "cached_input_tokens": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "total_tokens": null
+        }
+      },
+      "cognition": {
+        "cleanup_error_count": 0,
+        "context_bytes": {
+          "max": 10260,
+          "mean": 7274,
+          "median": 7621.5,
+          "p95": 10260,
+          "samples": 6,
+          "total": 43644
+        },
+        "decision_duration_seconds": {
+          "max": 0.00279291596962139,
+          "mean": 0.002178874652599916,
+          "median": 0.002240270492620766,
+          "p95": 0.00279291596962139,
+          "samples": 6,
+          "total": 0.013073247915599495
+        },
+        "decisions_recorded": 6,
+        "pending_cleanup_tasks": 0,
+        "provider": "cooperative-scripted"
+      },
+      "identity": {
+        "actor_id": "851692250a2842ba8db65e5e02dfc641",
+        "actor_matches_runtime": true,
+        "game_id": "agents-arena",
+        "game_version": "0.6.0",
+        "local_runtime_endpoint": "127.0.0.1:50051",
+        "matching_runtime_sessions": 1,
+        "runtime_session_count": 1,
+        "session_id": "02f84ea0c90148d986213936afe3a2de"
+      },
+      "input_errors": {
+        "client": null,
+        "runtime": null
+      },
+      "inputs": {
+        "client": {
+          "bytes": 1686,
+          "present": true,
+          "sha256": "31d046a3e910ba5918134d0d51ec6f3b63557ca2b559599cfa9b0abdec95c458"
+        },
+        "runtime": {
+          "bytes": 36391,
+          "present": true,
+          "sha256": "83c86cef57f8ef91fd03c8532bc6c3cf658978fdc6c7ff52f72688051a209ca0"
+        }
+      },
+      "memory": {
+        "actors": 1,
+        "artifact": {
+          "bytes": 32768,
+          "present": true,
+          "sha256": "e75e232868d363a9f5073b4d9ad212efb3684fd73a09ad22c40fd9e5778c8648"
+        },
+        "configured_path_matches_local_database": true,
+        "entries": 6,
+        "entries_by_kind": {
+          "objective_result": 1,
+          "observed_event": 0,
+          "observed_fact": 0,
+          "other": 0,
+          "skill_result": 5
+        },
+        "own_profile_entries": 6,
+        "profiles": 1,
+        "retention_audit": {
+          "invalid_content_rows": 0,
+          "oversized_content_rows": 0,
+          "private_payload_fields": 8,
+          "private_policy_nodes": 4,
+          "redacted_private_payload_fields": 8,
+          "redacted_secret_named_fields": 0,
+          "secret_named_fields": 0,
+          "unredacted_private_payload_fields": 0,
+          "unredacted_secret_named_fields": 0
+        },
+        "runtime_counters": {
+          "entries": 6,
+          "global_entries": 6,
+          "pending_operations": 1,
+          "retrieval_count": 6,
+          "retrieved_entries": 15
+        },
+        "sessions": 1,
+        "state": "read_only",
+        "structural_redaction_passed": true,
+        "wal_present": false
+      },
+      "objective": {
+        "decision_count": 6,
+        "duration_seconds": 46.46709462499712,
+        "passed": true,
+        "status": "succeeded"
+      },
+      "processes": {
+        "actual_pids_verified": false,
+        "launcher_and_codex_helper_processes_excluded": true,
+        "runtime_expected": 1,
+        "total_expected": 2,
+        "unity_client_expected": 1
+      },
+      "runtime": {
+        "command_result_rtt_ms": {
+          "max": 32.511500001419336,
+          "mean": 6.1053663786665044,
+          "median": 5.2686454728245735,
+          "p95": 16.860625008121133,
+          "samples": 68,
+          "total": 415.1649137493223
+        },
+        "commands_sent": 68,
+        "cpu_percent_one_core": 3.070028391978328,
+        "cpu_seconds": 1.617475,
+        "elapsed_seconds": 52.68599483399885,
+        "errors": 0,
+        "events_received": 10,
+        "observation_frames": 652,
+        "privacy": {
+          "private_data_observed": true,
+          "redaction_degraded": false,
+          "registered_secrets": 2
+        }
+      },
+      "skills": {
+        "cancelled": 0,
+        "count": 5,
+        "duration_seconds": {
+          "max": 41.66443462501047,
+          "mean": 9.248310083209072,
+          "median": 1.1604290410177782,
+          "p95": 41.66443462501047,
+          "samples": 5,
+          "total": 46.24155041604536
+        },
+        "failures": 0,
+        "items": [
+          {
+            "commands_sent": 51,
+            "data_policy": "public",
+            "duration_seconds": 2.9696922919829376,
+            "skill_id": "agents-arena.start-calibration",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 6,
+            "data_policy": "public",
+            "duration_seconds": 0.20718850003322586,
+            "skill_id": "agents-arena.navigate-to-room",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 12,
+            "data_policy": "sensitive",
+            "duration_seconds": 1.1604290410177782,
+            "skill_id": "agents-arena.inspect-diagnostic",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 1,
+            "data_policy": "session_only",
+            "duration_seconds": 0.23980595800094306,
+            "skill_id": "actor.send-message",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 0,
+            "data_policy": "public",
+            "duration_seconds": 41.66443462501047,
+            "skill_id": "agents-arena.wait-for-calibration",
+            "status": "succeeded"
+          }
+        ],
+        "statuses": {
+          "succeeded": 5
+        }
+      }
+    },
+    "technician": {
+      "client": {
+        "diagnostic_results": 0,
+        "elapsed_seconds": 57.123594499999996,
+        "errors": 0,
+        "max_pump_ms": 2.9092,
+        "mean_fps": 117.81471489858714,
+        "mean_message_latency_ms": 145.0,
+        "messages_received": 1,
+        "mode": "Runtime",
+        "own_assignment_present": true,
+        "public_task_status": "Completed",
+        "receipts_client_received": 1,
+        "receipts_rejected": 0,
+        "receipts_server_accepted": 1,
+        "state": "Error",
+        "task_id": "80f5d33c37914545ad5723ed2141f9be",
+        "task_revision": 3,
+        "task_status": "Completed",
+        "warnings": 0
+      },
+      "codex": {
+        "interrupted_turns": 0,
+        "turn_duration_seconds": {
+          "max": 17.75976708298549,
+          "mean": 6.279254173665929,
+          "median": 4.088884812983451,
+          "p95": 17.75976708298549,
+          "samples": 6,
+          "total": 37.67552504199557
+        },
+        "turns": [
+          {
+            "duration_seconds": 17.75976708298549,
+            "index": 1,
+            "status": "completed",
+            "tool_calls": 0,
+            "usage_last": {
+              "cached_input_tokens": 10880,
+              "input_tokens": 12273,
+              "output_tokens": 90,
+              "total_tokens": 12363
+            }
+          },
+          {
+            "duration_seconds": 7.206393208005466,
+            "index": 2,
+            "status": "completed",
+            "tool_calls": 0,
+            "usage_last": {
+              "cached_input_tokens": 12032,
+              "input_tokens": 15368,
+              "output_tokens": 290,
+              "total_tokens": 15658
+            }
+          },
+          {
+            "duration_seconds": 4.041723333997652,
+            "index": 3,
+            "status": "completed",
+            "tool_calls": 0,
+            "usage_last": {
+              "cached_input_tokens": 15232,
+              "input_tokens": 17623,
+              "output_tokens": 143,
+              "total_tokens": 17766
+            }
+          },
+          {
+            "duration_seconds": 2.2826559170498513,
+            "index": 4,
+            "status": "completed",
+            "tool_calls": 0,
+            "usage_last": {
+              "cached_input_tokens": 17408,
+              "input_tokens": 19853,
+              "output_tokens": 36,
+              "total_tokens": 19889
+            }
+          },
+          {
+            "duration_seconds": 4.136046291969251,
+            "index": 5,
+            "status": "completed",
+            "tool_calls": 0,
+            "usage_last": {
+              "cached_input_tokens": 19712,
+              "input_tokens": 22297,
+              "output_tokens": 75,
+              "total_tokens": 22372
+            }
+          },
+          {
+            "duration_seconds": 2.24893920798786,
+            "index": 6,
+            "status": "completed",
+            "tool_calls": 0,
+            "usage_last": {
+              "cached_input_tokens": 22144,
+              "input_tokens": 25612,
+              "output_tokens": 37,
+              "total_tokens": 25649
+            }
+          }
+        ],
+        "turns_recorded": 6,
+        "unique_model_turns": 6,
+        "usage_totals": {
+          "cached_input_tokens": 97408,
+          "input_tokens": 124051,
+          "output_tokens": 939,
+          "total_tokens": 124990
+        }
+      },
+      "cognition": {
+        "cleanup_error_count": 0,
+        "context_bytes": {
+          "max": 10019,
+          "mean": 7102.5,
+          "median": 6979.0,
+          "p95": 10019,
+          "samples": 6,
+          "total": 42615
+        },
+        "decision_duration_seconds": {
+          "max": 17.76212495798245,
+          "mean": 6.2815297706692945,
+          "median": 4.0910882290045265,
+          "p95": 17.76212495798245,
+          "samples": 6,
+          "total": 37.68917862401577
+        },
+        "decisions_recorded": 6,
+        "pending_cleanup_tasks": 0,
+        "provider": "codex"
+      },
+      "identity": {
+        "actor_id": "2d739db5a0cb4ace8753d120af233c75",
+        "actor_matches_runtime": true,
+        "game_id": "agents-arena",
+        "game_version": "0.6.0",
+        "local_runtime_endpoint": "127.0.0.1:50052",
+        "matching_runtime_sessions": 1,
+        "runtime_session_count": 1,
+        "session_id": "0e7b15ed1eab43298b03433016db5632"
+      },
+      "input_errors": {
+        "client": null,
+        "runtime": null
+      },
+      "inputs": {
+        "client": {
+          "bytes": 1653,
+          "present": true,
+          "sha256": "9d04a5bd114abe0934839c047e47c97ad7a89bf60ec9492316734e9d6c887d65"
+        },
+        "runtime": {
+          "bytes": 44165,
+          "present": true,
+          "sha256": "b163b328373487b98d73bcee60b48d8cde0eb810109854fab68ae76a65228ad1"
+        }
+      },
+      "memory": {
+        "actors": 1,
+        "artifact": {
+          "bytes": 32768,
+          "present": true,
+          "sha256": "a7b632edb72be3ea6942a122d484383f81977fe0ca84f922a109d48c953a326f"
+        },
+        "configured_path_matches_local_database": true,
+        "entries": 6,
+        "entries_by_kind": {
+          "objective_result": 1,
+          "observed_event": 0,
+          "observed_fact": 0,
+          "other": 0,
+          "skill_result": 5
+        },
+        "own_profile_entries": 6,
+        "profiles": 1,
+        "retention_audit": {
+          "invalid_content_rows": 0,
+          "oversized_content_rows": 0,
+          "private_payload_fields": 8,
+          "private_policy_nodes": 4,
+          "redacted_private_payload_fields": 8,
+          "redacted_secret_named_fields": 0,
+          "secret_named_fields": 0,
+          "unredacted_private_payload_fields": 0,
+          "unredacted_secret_named_fields": 0
+        },
+        "runtime_counters": {
+          "entries": 6,
+          "global_entries": 6,
+          "pending_operations": 1,
+          "retrieval_count": 6,
+          "retrieved_entries": 15
+        },
+        "sessions": 1,
+        "state": "read_only",
+        "structural_redaction_passed": true,
+        "wal_present": false
+      },
+      "objective": {
+        "decision_count": 6,
+        "duration_seconds": 55.23122770804912,
+        "passed": true,
+        "status": "succeeded"
+      },
+      "processes": {
+        "actual_pids_verified": false,
+        "launcher_and_codex_helper_processes_excluded": true,
+        "runtime_expected": 1,
+        "total_expected": 2,
+        "unity_client_expected": 1
+      },
+      "runtime": {
+        "command_result_rtt_ms": {
+          "max": 22.646332974545658,
+          "mean": 5.455948519995875,
+          "median": 5.541499995160848,
+          "p95": 9.076707996428013,
+          "samples": 191,
+          "total": 1042.086167319212
+        },
+        "commands_sent": 191,
+        "cpu_percent_one_core": 5.662670975276603,
+        "cpu_seconds": 3.387377,
+        "elapsed_seconds": 59.81942116696155,
+        "errors": 0,
+        "events_received": 9,
+        "observation_frames": 777,
+        "privacy": {
+          "private_data_observed": true,
+          "redaction_degraded": false,
+          "registered_secrets": 2
+        }
+      },
+      "skills": {
+        "cancelled": 0,
+        "count": 5,
+        "duration_seconds": {
+          "max": 9.139789832988754,
+          "mean": 2.046432891592849,
+          "median": 0.4059618340106681,
+          "p95": 9.139789832988754,
+          "samples": 5,
+          "total": 10.232164457964245
+        },
+        "failures": 0,
+        "items": [
+          {
+            "commands_sent": 0,
+            "data_policy": "public",
+            "duration_seconds": 0.0006807909812778234,
+            "skill_id": "agents-arena.wait-for-calibration-assignment",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 0,
+            "data_policy": "session_only",
+            "duration_seconds": 0.0008305829833261669,
+            "skill_id": "actor.wait-for-message",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 1,
+            "data_policy": "session_only",
+            "duration_seconds": 0.4059618340106681,
+            "skill_id": "actor.send-message",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 183,
+            "data_policy": "public",
+            "duration_seconds": 9.139789832988754,
+            "skill_id": "agents-arena.navigate-to-room",
+            "status": "succeeded"
+          },
+          {
+            "commands_sent": 12,
+            "data_policy": "public",
+            "duration_seconds": 0.6849014170002192,
+            "skill_id": "agents-arena.submit-calibration",
+            "status": "succeeded"
+          }
+        ],
+        "statuses": {
+          "succeeded": 5
+        }
+      }
+    }
+  },
+  "measurement_notes": [
+    "Success requires both Objective passed+succeeded and both authoritative client task statuses Completed; FinishObjective alone is insufficient.",
+    "Two expected game processes per agent means one Runtime and one Unity client, excluding launcher/Codex helpers; PIDs are not verified by this offline summarizer.",
+    "RTT p95 uses nearest rank over retained command-result samples; FPS is the client report mean, not a measured worst-frame percentile.",
+    "Mean message latency uses receiver wall clock minus server Unix time and is approximate across hosts; it is not transport RTT.",
+    "ClientReceived means recipient game client ACK, not Runtime consumption or Brain reading. Station requires all actual recipients ACK.",
+    "SQLite audit checks explicit private data_policy payload redaction and secret-named fields structurally; it cannot prove absence of arbitrary paraphrased secrets.",
+    "SQLite queries use a read-only transaction including committed WAL. Artifact hashes describe files read, not a frozen live-run snapshot; summarize after reports stop for reproducible evidence."
+  ],
+  "passed": true,
+  "processes": {
+    "actual_pids_verified": false,
+    "agent_count_expected": 2,
+    "game_process_count_expected": 4,
+    "runtime_reports_present": 2
+  },
+  "schema": "actor.cooperation-summary.v1"
+}

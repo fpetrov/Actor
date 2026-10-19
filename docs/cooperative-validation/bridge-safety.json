@@ -1,0 +1,98 @@
+{
+  "after_fault": {
+    "coordinator": {
+      "active_skill_id": "",
+      "actor_id": "c4e7e99941514f9b8774f4d08a18fac4",
+      "client_alive": true,
+      "commands_sent": 50,
+      "objective_status": "failed",
+      "session_closed": true,
+      "task_id": "931fafed89f546ef96686656283cc4bc",
+      "task_reason": "participants_assigned",
+      "task_status": "awaiting_diagnostic"
+    },
+    "technician": {
+      "active_skill_id": "",
+      "actor_id": "8681ec58843c488b850c13c78aa4f42e",
+      "client_alive": true,
+      "commands_sent": 178,
+      "objective_status": "failed",
+      "session_closed": false,
+      "task_id": "931fafed89f546ef96686656283cc4bc",
+      "task_reason": "participant_control_unavailable",
+      "task_status": "cancelled"
+    }
+  },
+  "authoritative_task_terminal_observed": true,
+  "before_fault": {
+    "coordinator": {
+      "active_skill_id": "actor.wait",
+      "actor_id": "c4e7e99941514f9b8774f4d08a18fac4",
+      "client_alive": true,
+      "commands_sent": 50,
+      "objective_status": "running",
+      "session_closed": false,
+      "task_id": "931fafed89f546ef96686656283cc4bc",
+      "task_reason": "participants_assigned",
+      "task_status": "awaiting_diagnostic"
+    },
+    "technician": {
+      "active_skill_id": "actor.wait-for-message",
+      "actor_id": "8681ec58843c488b850c13c78aa4f42e",
+      "client_alive": true,
+      "commands_sent": 178,
+      "objective_status": "running",
+      "session_closed": false,
+      "task_id": "931fafed89f546ef96686656283cc4bc",
+      "task_reason": "participants_assigned",
+      "task_status": "awaiting_diagnostic"
+    }
+  },
+  "commands_stable_after_one_second": true,
+  "fault": {
+    "signal": "SIGTERM",
+    "target": "coordinator RuntimeServer.stop"
+  },
+  "lobby": {
+    "gameVersion": "0.6.0",
+    "lobbyId": "68a20d5982c845e0865aca06e2faa7d2",
+    "protocolVersion": "3",
+    "roomCode": "M8D7EJ"
+  },
+  "measurement_notes": [
+    "Terminal-state/unavailability sample times are not measured movement fault-response latency.",
+    "A server-loss sample retains prior task state and proves session unavailability, not a fresh authoritative Cancelled state.",
+    "Nested Objective/Skill output, cognitive context, message bodies, credentials and authorization are deliberately omitted."
+  ],
+  "movement_fault_response_latency_measured": false,
+  "owned_workers_cleaned": true,
+  "passed": true,
+  "protected_human_lobby_unchanged": true,
+  "protected_human_lobby_verification_source": "Run owner independently checked the protected Human lobby unchanged after each case",
+  "scenario": "bridge",
+  "schema": "actor.cooperation-fault-safe.v1",
+  "scope": "Real ordinary Unity clients/ACTOR bridge; no diagnostic inspection or authorization transmission in this fault scenario",
+  "seconds_to_authoritative_terminal_sample": 0.5133905420079827,
+  "seconds_to_both_objectives_terminal": 0.46181366697419435,
+  "seconds_to_terminal_or_unavailable_sample": 0.5133905420079827,
+  "server_identity_verified": {
+    "exact_udp_owner": true,
+    "pid": 95107,
+    "ready_identity_verified": true
+  },
+  "source": "build/cooperative-validation/final-faults-retry/bridge/acceptance.json",
+  "source_sha256": "a2c96a752d6a74ae07ae242e105e334fc11b774a7b6d70d7afd416bd4d26b08d",
+  "stage": "acceptance_checked",
+  "terminal_deadline_seconds": 15,
+  "unity_stopped_at_post_cleanup_sample": true,
+  "worker_cleanup": {
+    "coordinator": {
+      "exit_code": 0,
+      "owned_group_drained": true
+    },
+    "technician": {
+      "exit_code": 0,
+      "owned_group_drained": true
+    }
+  }
+}

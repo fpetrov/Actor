@@ -1,0 +1,109 @@
+{
+  "message_body_omitted": true,
+  "native_observation_source": "Run owner verified ordinary keyboard/UI behaviour and recipient inbox; no message screenshot/body persisted",
+  "native_ui_actions": [
+    "T opened messages",
+    "selected permitted Human Peer",
+    "focused composition and pasted ordinary chat",
+    "clicked Send",
+    "recipient opened T and visibly received the message from HumanPrediction"
+  ],
+  "passed": true,
+  "peer_startup_interpretation": "One real ordinary CLI recovery: first connection hit its20-second deadline, returned to lobby, obtained fresh admission, then transport/NGO connected; not proof of a universal UDP root-cause fix.",
+  "peer_startup_phases": [
+    {
+      "phase": "admission-received",
+      "seconds_from_first_admission": 0.0
+    },
+    {
+      "phase": "client-start",
+      "seconds_from_first_admission": 0.04
+    },
+    {
+      "phase": "client-connection-deadline",
+      "seconds_from_first_admission": 20.042
+    },
+    {
+      "phase": "return-to-lobby",
+      "seconds_from_first_admission": 20.043
+    },
+    {
+      "phase": "lobby-restored",
+      "seconds_from_first_admission": 20.067
+    },
+    {
+      "phase": "admission-received",
+      "seconds_from_first_admission": 20.508
+    },
+    {
+      "phase": "client-start",
+      "seconds_from_first_admission": 20.51
+    },
+    {
+      "phase": "transport-event",
+      "seconds_from_first_admission": 20.71
+    },
+    {
+      "phase": "scene-event",
+      "seconds_from_first_admission": 21.109
+    },
+    {
+      "phase": "scene-event",
+      "seconds_from_first_admission": 21.115
+    },
+    {
+      "phase": "scene-event",
+      "seconds_from_first_admission": 21.116
+    },
+    {
+      "phase": "scene-event",
+      "seconds_from_first_admission": 21.169
+    },
+    {
+      "phase": "ngo-connected",
+      "seconds_from_first_admission": 21.201
+    },
+    {
+      "phase": "scene-event",
+      "seconds_from_first_admission": 21.202
+    }
+  ],
+  "position_unchanged_while_text_focused": true,
+  "recipient": {
+    "actorId": "e527ec53fa854138bdeeabf750b16d4c",
+    "commReceivedCount": 1,
+    "diagnosticResultsCount": 0,
+    "elapsedSeconds": 108.32862200000001,
+    "error_count": 0,
+    "keyboardEnabled": true,
+    "meanFps": 118.97132781768423,
+    "mode": "Human",
+    "receiptsClientReceivedCount": 0,
+    "receiptsRejectedCount": 0,
+    "receiptsServerAcceptedCount": 0,
+    "warning_count": 0
+  },
+  "retained_human_client": {
+    "display_name": "Human Peer",
+    "pid": 1611,
+    "probe_sender_closed_after_ui_check": true,
+    "room_code": "V2J6AA"
+  },
+  "schema": "actor.cooperation-human-chat-safe.v1",
+  "sender": {
+    "actorId": "cbcbd5f31eaa43e4b90e724dc4191ffb",
+    "commReceivedCount": 0,
+    "diagnosticResultsCount": 0,
+    "elapsedSeconds": 196.376807542,
+    "error_count": 0,
+    "keyboardEnabled": true,
+    "meanFps": 119.06701352703875,
+    "mode": "Human",
+    "receiptsClientReceivedCount": 1,
+    "receiptsRejectedCount": 0,
+    "receiptsServerAcceptedCount": 1,
+    "warning_count": 0
+  },
+  "source": "build/cooperative-validation/human-chat.json",
+  "source_sha256": "f221eecc38bdfef0b4da4a459927c7c0bf924080d2feb5f9fe792059e527b879"
+}

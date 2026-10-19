@@ -1,0 +1,29 @@
+{
+  "absolute_database_paths_omitted": true,
+  "credential_values_and_fingerprints_omitted": true,
+  "distinct_memory_database_paths": true,
+  "independent_ephemeral_credentials": true,
+  "launches": [
+    {
+      "agent_profile": "coordinator",
+      "brain": "codex",
+      "bridge_port": 50051,
+      "client_pid": 99851,
+      "launcher_pid": 99849,
+      "runtime_pid": 99850
+    },
+    {
+      "agent_profile": "technician",
+      "brain": "codex",
+      "bridge_port": 50052,
+      "client_pid": 99801,
+      "launcher_pid": 99799,
+      "runtime_pid": 99800
+    }
+  ],
+  "runtime_count": 2,
+  "schema": "actor.cooperation-processes.v1",
+  "source": "build/cooperative-validation/accepted/codex-processes.json",
+  "unity_count": 2,
+  "verification_source": "Run-owner verified launcher metadata; separate from the offline metrics summarizer"
+}

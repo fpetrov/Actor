@@ -1,0 +1,49 @@
+{
+  "actor_joined": true,
+  "client": {
+    "actorId": "d97f1c58665c40ffaf757d4767e3f24d",
+    "elapsedSeconds": 60.022323416000006,
+    "keyboardEnabled": true,
+    "meanFps": 119.08902543573605,
+    "mode": "Human"
+  },
+  "client_error_count": 0,
+  "client_http_status_counts": {
+    "200": 1,
+    "409": 5
+  },
+  "client_warning_count": 0,
+  "lobby": {
+    "gamePort": 7779,
+    "lobbyId": "295d74c0f63046628795ad6824c8ec3e",
+    "maxPlayers": 2,
+    "roomCode": "CYW4U6"
+  },
+  "manual_http_status_counts": {
+    "200": 2,
+    "409": 1
+  },
+  "notes": [
+    "The original wrapper exit1 was its final protected-lobby404 after the owner independently retired that Human client, not a failed admission outcome.",
+    "The protected-lobby unchanged claim is explicitly false for this experiment; separate fault-run protection checks are recorded independently.",
+    "Authorization responses, tickets, message content, public status prose and raw HTTP request bodies are omitted."
+  ],
+  "original_harness_exit_code": 1,
+  "own_server_cleanup_verified": true,
+  "owned_client_cleaned": true,
+  "passed": true,
+  "private_responses_recorded": false,
+  "protected_lobby_final_check": {
+    "external_root_cleanup_confirmed": true,
+    "http_status": 404,
+    "unchanged_claim": false
+  },
+  "report_reconciled_without_relaunch": true,
+  "reservation_count": 2,
+  "schema": "actor.admission-retry-safe.v1",
+  "scope": "Controlled HTTP admission/reservation/backoff only; not proof of the initial UDP/UTP failure cause or fix",
+  "seconds_to_actor": 63.013363207981456,
+  "source": "build/cooperative-validation/admission-retry/report.json",
+  "source_commit": "c289e1a",
+  "source_sha256": "478a5d936fc5f8711fe5a197669ceea1bd86db7044f032a6e79b2168aa2e90ac"
+}

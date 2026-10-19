@@ -1,0 +1,45 @@
+{
+  "actor_id": "11b9e1a84e564d44a821834119d52f8d",
+  "idle_fps_snapshot": {
+    "controlled_comparison_with_scripted_pair": false,
+    "elapsed_seconds_approximate": 272.8,
+    "mean_fps_approximate": 119.37
+  },
+  "limits": [
+    "This observed third-client flow is not evidence that two live CodexBrains have completed the task.",
+    "No private payloads, authorization or bridge credentials are included.",
+    "Native movement functionality was observed; keyboard-to-render latency was not measured.",
+    "Idle Human FPS and short two-agent startup FPS use different workloads and windows.",
+    "No disabled Submit state is claimed; its grey visual theme was not evidence of an input gate. Unassigned actor rejection is covered by pure authority tests."
+  ],
+  "mode": "Human",
+  "native_ui_checks": {
+    "authorization_not_presented": true,
+    "d_s_moved_main_hall_to_engineering": true,
+    "e_chooser_selected_calibration_console": true,
+    "observer_submit_was_not_clicked": true,
+    "t_opened_empty_inbox": true
+  },
+  "observer_diagnostics": {
+    "calibrationStatus": "Unspecified",
+    "calibrationTaskId": "",
+    "commReceivedCount": 0,
+    "diagnosticResultsCount": 0,
+    "ownCalibrationAssignment": false,
+    "publicCalibrationStatus": "Completed"
+  },
+  "online_before_participants": true,
+  "participants": {
+    "authoritative_task_completed": true,
+    "count": 2,
+    "provider": "scripted"
+  },
+  "room_code": "DL945F",
+  "schema": "actor.cooperation-human-observer.v1",
+  "scope": "Third ordinary Human client online before both scripted participants; private visibility and manual terminal access",
+  "screenshots": [
+    "observer-private-inbox.png",
+    "human-engineering-observer.png"
+  ],
+  "source": "Observed by the run owner through native UI and the Human client's safe diagnostic DTO"
+}

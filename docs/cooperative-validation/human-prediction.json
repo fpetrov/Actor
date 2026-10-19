@@ -1,0 +1,83 @@
+{
+  "authoritativeResponseMs": 340.39306640625,
+  "checks": [
+    {
+      "detail": "",
+      "name": "Client physics remains non-authoritative",
+      "passed": true
+    },
+    {
+      "detail": "23.4 ms",
+      "name": "Local presentation responds within two frames",
+      "passed": true
+    },
+    {
+      "detail": "340.4 ms",
+      "name": "Authoritative root still receives server movement",
+      "passed": true
+    },
+    {
+      "detail": "40.4 ms",
+      "name": "Release decelerates locally without waiting for server",
+      "passed": true
+    },
+    {
+      "detail": "0.0046",
+      "name": "Idle reconciles to the server",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "Rapid reversals converge without accumulated drift",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "Predicted and authoritative wall collision agree",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "Holding into a wall does not drift or jitter",
+      "passed": true
+    },
+    {
+      "detail": "start=(3.21, -1.51, 0.00) end=(3.05, -1.84, 0.00)",
+      "name": "Diagonal wall contact slides instead of sticking",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "Can move away from a wall immediately",
+      "passed": true
+    },
+    {
+      "detail": "2.600",
+      "name": "Speed remains normalized",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "Client root manipulation cannot become authoritative",
+      "passed": true
+    },
+    {
+      "detail": "",
+      "name": "No runtime errors or warnings",
+      "passed": true
+    }
+  ],
+  "completed": true,
+  "connected": true,
+  "errors": [],
+  "idleError": 0.004574298858642578,
+  "maxSpeed": 2.5999999046325684,
+  "native_keyboard_latency_measured": false,
+  "public_projection_note": "Only completed checks and their frozen metrics are retained; the live probe continues refreshing its peer list after completion, so that later population snapshot is omitted.",
+  "releaseResponseMs": 40.43769836425781,
+  "role": "P",
+  "schema": "actor.cooperation-prediction-safe.v1",
+  "source": "build/cooperative-validation/human-prediction-verified/prediction.json",
+  "visualResponseMs": 23.412704467773438,
+  "warnings": []
+}

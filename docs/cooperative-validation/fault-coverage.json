@@ -1,0 +1,25 @@
+{
+  "all_requested_cases_passed": true,
+  "initial_setup_failures_counted_as_passes": false,
+  "movement_fault_response_latency_measured": false,
+  "passed_cases": [
+    "cancel",
+    "bridge",
+    "participant",
+    "server"
+  ],
+  "protected_human_lobby_preserved": true,
+  "reports": {
+    "bridge": "bridge-safety.json",
+    "cancel": "cancel-safety.json",
+    "participant": "participant-safety.json",
+    "server": "server-safety.json"
+  },
+  "requested_cases": [
+    "cancel",
+    "bridge",
+    "participant",
+    "server"
+  ],
+  "schema": "actor.cooperation-fault-coverage.v1"
+}

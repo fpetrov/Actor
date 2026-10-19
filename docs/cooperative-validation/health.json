@@ -1,0 +1,15 @@
+{
+  "/health": {
+    "status": "healthy"
+  },
+  "/api/v1/game/version": {
+    "gameVersion": "0.6.0",
+    "protocolVersion": "3",
+    "maxConcurrentGameServers": 5,
+    "defaultMaxPlayers": 8
+  },
+  "services": [
+    "active",
+    "active"
+  ]
+}
