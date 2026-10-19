@@ -16,6 +16,13 @@ from actor_agents_arena.scripted import run, waypoint, hold_stopped
 from conftest import message, envelope, extension_version
 
 
+# Match live room resolution: EngineeringRoomBuilder's shared floor edge is
+# y=-5.21, and NetworkCharacter's capsule center is 0.46 above its root. Putting
+# the edge at the route's y=-6 waypoint makes delayed arrival corrections look
+# like extra room crossings even though that waypoint is inside Engineering.
+ROOM_BOUNDARY_ROOT_Y = -5.21 - 0.46
+
+
 @pytest.mark.parametrize("input_delay,observation_delay", [(0, 0), (0.1, 0.1)])
 async def test_scripted_observation_command_event_round_trip(session, input_delay, observation_delay):
     x, y = -1.8, -1.4
@@ -45,7 +52,7 @@ async def test_scripted_observation_command_event_round_trip(session, input_dela
                 _, (desired_x, desired_y) = pending_inputs.popleft()
             x += desired_x * 2.6 * 0.02
             y += desired_y * 2.6 * 0.02
-            current_room = "engineering" if y < -6 else "main-hall"
+            current_room = "engineering" if y < ROOM_BOUNDARY_ROOT_Y else "main-hall"
             if current_room != room:
                 packed = Any()
                 packed.Pack(RoomChangedEvent(previous_room_id=room, current_room_id=current_room))
@@ -78,6 +85,11 @@ async def test_scripted_observation_command_event_round_trip(session, input_dela
         assert result["passed"]
         assert len(result["checkpoints"]) == 4
         assert session.events_received == 2
+        transitions = result["room_transitions"]
+        assert [(event["previous_room_id"], event["current_room_id"]) for event in transitions] == [
+            ("main-hall", "engineering"), ("engineering", "main-hall")]
+        assert all(event["entity_id"] == "actor-1" for event in transitions)
+        assert transitions[0]["sequence"] < transitions[1]["sequence"]
         assert y == pytest.approx(-1.4, abs=0.15)
         assert room == "main-hall"
         assert any(value[1] < 0 for value in commands)
