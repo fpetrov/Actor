@@ -1,0 +1,47 @@
+{
+  "created_at_utc": "2026-10-19T19:39:32.586005+00:00",
+  "extensions": [
+    {
+      "id": "actor.standard",
+      "schema_sha256": "5188081ff451868991d0ba8cda56dc18d0a422794251c43216586996f7d9fb21",
+      "version": "0.1.0"
+    },
+    {
+      "id": "actor.standard.communication",
+      "schema_sha256": "5a83afb7cd7116b6470b56fa1d3351e33a826a008c6246829430af3894ea49b6",
+      "version": "0.1.0"
+    },
+    {
+      "id": "agents-arena",
+      "schema_sha256": "cc40698a9135d457ea1ff4d24c64fc5a8f7edb28a8adcb67319f88f8ab268fb6",
+      "version": "0.4.0"
+    }
+  ],
+  "plugins": {
+    "brains": 8,
+    "event_rules": 17,
+    "skills": 20
+  },
+  "runtime_version": "0.5.0",
+  "scope": "Isolated installed-wheel validation; no live multiplayer or model claim",
+  "verification": {
+    "generated_resources_present": true,
+    "imports_from_installed_wheel": true,
+    "model_authentication_used": false,
+    "optional_provider_sdks_absent": true,
+    "outside_checkout": true,
+    "passed": true,
+    "test_duration_seconds": 48.489,
+    "tests": {
+      "errors": 0,
+      "failures": 0,
+      "passed": 388,
+      "skipped": 0,
+      "tests": 388
+    }
+  },
+  "wheel": {
+    "bytes": 133967,
+    "sha256": "1717ff5007a2472e357e7ef2df87a6b464f87c2041ac8a69892420b832819827"
+  }
+}

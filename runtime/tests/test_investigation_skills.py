@@ -385,6 +385,81 @@ async def test_objective_cancel_releases_investigation_with_bridge_still_open(se
     assert not runner.report()["cleanup_errors"]
 
 
+@pytest.mark.parametrize("role", [pb.CREW_ROLE_ENGINEER, pb.CREW_ROLE_SHERIFF])
+@pytest.mark.parametrize("terminal", ["cancelled", "failed"])
+async def test_pre_alarm_unsuccessful_objective_releases_selected_duty_without_closing_bridge(session, role, terminal):
+    from actor_runtime.brains import SequenceBrain, SkillCall, FinishObjective
+    from actor_runtime.objectives import Objective, ObjectiveRunner
+    await observe(session, role=role, incident="", status=pb.INCIDENT_STATUS_NONE)
+    owner = scheduler(session)
+    decisions = [SkillCall(skill_id="agents-arena.wait-for-incident", arguments={})] if terminal == "cancelled" else [FinishObjective(status="failure")]
+    runner = ObjectiveRunner(session, owner.registry, SequenceBrain(decisions), scheduler=owner)
+    running = asyncio.create_task(runner.run(Objective(text="Select duty and await the next incident.")))
+    cancellation = None
+    if terminal == "cancelled":
+        async with asyncio.timeout(1):
+            while owner.report()["active_skill_id"] != "agents-arena.wait-for-incident":
+                await asyncio.sleep(0)
+        cancellation = asyncio.create_task(runner.cancel())
+    request = await command(session, pb.SelectRoleCommand)
+    assert request.role == pb.CREW_ROLE_CREW and request.match_id == "match-1"
+    await observe(session, role=pb.CREW_ROLE_CREW, incident="", status=pb.INCIDENT_STATUS_NONE)
+    await event(session, ROLE_RESULT, pb.RoleResultEvent(correlation_id=request.correlation_id, accepted=True,
+        match_id="match-1", state=pb.OwnRoleObservation(actor_id="actor-1", role=pb.CREW_ROLE_CREW, match_id="match-1")))
+    result = await asyncio.wait_for(running, 2)
+    if cancellation is not None: await asyncio.wait_for(cancellation, 1)
+    assert result.status == terminal and not session.closed.is_set()
+    assert not owner.report()["active_skill_id"] and not runner.report()["cleanup_errors"]
+    assert session.world.latest(pb.OwnRoleObservation, capability_id=OWN_ROLE).role == pb.CREW_ROLE_CREW
+    assert session.world.latest(pb.CoolingStateObservation, capability_id=COOLING_STATE).incident_status == pb.INCIDENT_STATUS_NONE
+
+
+async def test_successful_role_only_objective_preserves_selected_duty_and_pending_cycle(session):
+    from actor_runtime.brains import SequenceBrain, FinishObjective
+    from actor_runtime.objectives import Objective, ObjectiveRunner
+    await observe(session, incident="", status=pb.INCIDENT_STATUS_NONE)
+    owner = scheduler(session)
+    runner = ObjectiveRunner(session, owner.registry, SequenceBrain([FinishObjective(status="success")]), scheduler=owner)
+    result = await runner.run(Objective(text="Keep the selected Engineer duty for future work."))
+    assert result.status == "succeeded" and not runner.report()["cleanup_errors"]
+    assert session.next_command_id == 0 and not session.closed.is_set()
+    assert session.world.latest(pb.OwnRoleObservation, capability_id=OWN_ROLE).role == pb.CREW_ROLE_ENGINEER
+
+
+async def test_incident_start_during_pre_alarm_release_is_cancelled_using_its_authoritative_identity(session):
+    from actor_runtime.brains import SequenceBrain, SkillCall
+    from actor_runtime.objectives import Objective, ObjectiveRunner
+    await observe(session, incident="", status=pb.INCIDENT_STATUS_NONE)
+    owner = scheduler(session)
+    runner = ObjectiveRunner(session, owner.registry, SequenceBrain([SkillCall(skill_id="agents-arena.wait-for-incident", arguments={})]), scheduler=owner)
+    running = asyncio.create_task(runner.run(Objective(text="Wait on my selected duty.")))
+    async with asyncio.timeout(1):
+        while owner.report()["active_skill_id"] != "agents-arena.wait-for-incident":
+            await asyncio.sleep(0)
+    cancellation = asyncio.create_task(runner.cancel())
+    release = await command(session, pb.SelectRoleCommand)
+    # The server starts an incident before it receives the role-release request;
+    # its lifecycle event is available before the next periodic observation.
+    sequence = session.last_received_sequence + 1
+    await event(session, INCIDENT_STARTED, pb.IncidentStartedEvent(state=pb.CoolingStateObservation(
+        incident_id="incident-new", incident_status=pb.INCIDENT_STATUS_ACTIVE, match_id="match-1",
+        server_revision=sequence, expires_at_unix_ms=now() + 300000)))
+    await event(session, ROLE_RESULT, pb.RoleResultEvent(correlation_id=release.correlation_id,
+        accepted=False, reason_code="role_selection_locked", match_id="match-1"))
+    await asyncio.sleep(.02)
+    assert not running.done() and session.next_command_id == 1, "A start event must wait for the ordinary Skill's public-state precondition"
+    # CancelInvestigation's normal precondition uses the latest state frame.
+    await observe(session, incident="incident-new")
+    cancel = await command(session, pb.CancelInvestigationCommand)
+    assert cancel.incident_id == "incident-new" and cancel.match_id == "match-1"
+    await observe(session, incident="incident-new", status=pb.INCIDENT_STATUS_CANCELLED)
+    await event(session, INCIDENT_ACTION_RESULT, pb.IncidentActionResultEvent(correlation_id=cancel.correlation_id,
+        action=pb.INCIDENT_ACTION_CANCEL_INVESTIGATION, accepted=True, incident_id="incident-new", match_id="match-1",
+        incident_status=pb.INCIDENT_STATUS_CANCELLED, server_revision=30))
+    result = await asyncio.wait_for(running, 2); await asyncio.wait_for(cancellation, 1)
+    assert result.status == "cancelled" and not session.closed.is_set() and not runner.report()["cleanup_errors"]
+
+
 async def test_private_inspection_results_and_events_are_omitted_from_sqlite(tmp_path, session):
     from types import SimpleNamespace
     from actor_runtime.memory import MemoryStore

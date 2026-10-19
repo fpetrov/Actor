@@ -274,7 +274,7 @@ class MaintenanceOverride(ActorSkill):
             engineers = {entry.actor_id for entry in roster.entries if entry.role == pb.CREW_ROLE_ENGINEER}
             sheriffs = {entry.actor_id for entry in roster.entries if entry.role == pb.CREW_ROLE_SHERIFF}
             return roster.match_id == role.match_id and len(engineers) == len(sheriffs) == 1 and not engineers & sheriffs
-        await context.wait_until(duties_ready, timeout_seconds=30)
+        await context.wait_until(duties_ready, timeout_seconds=180)
         await self.approach(context)
         correlation = uuid.uuid4().hex
         context.command(MAINTENANCE_OVERRIDE, pb.MaintenanceOverrideCommand(circuit_ref=arguments.circuit_ref,
@@ -543,7 +543,7 @@ def skill_package():
             MaintenanceInput, MaintenanceOutput, MaintenanceOverride, (*base, *MOVEMENT_REQUIREMENTS,
                 Requirement(DUTY_ROSTER, pb.DutyRosterObservation, "observation", 3),
                 command(MAINTENANCE_OVERRIDE, pb.MaintenanceOverrideCommand), event(INCIDENT_ACTION_RESULT, pb.IncidentActionResultEvent)),
-            (LOCOMOTION, MAINTENANCE_OVERRIDE), timeout_seconds=140, context_fields=("circuit_ref",)),
+            (LOCOMOTION, MAINTENANCE_OVERRIDE), timeout_seconds=300, context_fields=("circuit_ref",)),
         SkillDefinition("agents-arena.inspect-cooling", "1.0.0", "Engineer: navigate to the cooling console and inspect private technical evidence. A diagnostic alone cannot establish origin.",
             IncidentInput, DiagnosticOutput, InspectCooling, (*terminal, view, command(INSPECT_COOLING, pb.InspectCoolingCommand),
                 event(DIAGNOSTIC_EVIDENCE, pb.DiagnosticEvidenceEvent)), (LOCOMOTION, INSPECT_COOLING), timeout_seconds=100,
@@ -581,14 +581,41 @@ async def finalize_objective(*, session, objective, status, reason, scheduler):
     role = session.world.latest(pb.OwnRoleObservation, capability_id=OWN_ROLE)
     if state is None or role is None or role.role not in (pb.CREW_ROLE_ENGINEER, pb.CREW_ROLE_SHERIFF):
         return
-    # A newer authoritative terminal event can precede the next periodic frame.
-    from . import INCIDENT_CHANGED
-    for entry in session.world.events:
-        if entry.capability_id == INCIDENT_CHANGED and hasattr(entry.payload, "state"):
-            changed = entry.payload.state
-            if (changed.incident_id == state.incident_id and changed.match_id == state.match_id
-                    and changed.server_revision >= state.server_revision):
-                state = changed
+    # Lifecycle events can precede the next periodic frame, including the start
+    # of an incident while a pre-alarm objective is being cancelled.
+    from . import INCIDENT_STARTED, INCIDENT_CHANGED
+    def latest_state():
+        latest = session.world.latest(pb.CoolingStateObservation, capability_id=COOLING_STATE)
+        for entry in session.world.events:
+            if entry.capability_id in (INCIDENT_STARTED, INCIDENT_CHANGED) and hasattr(entry.payload, "state"):
+                changed = entry.payload.state
+                if (changed.match_id == latest.match_id and changed.server_revision >= latest.server_revision
+                        and (changed.incident_id == latest.incident_id or entry.capability_id == INCIDENT_STARTED)):
+                    latest = changed
+        return latest
+    state = latest_state()
+    if state.incident_status == pb.INCIDENT_STATUS_NONE and status in ("cancelled", "failed"):
+        # A successful role-only objective intentionally keeps its duty. A
+        # failed/cancelled one must reset the pending cycle on a live bridge.
+        result = await scheduler.run("agents-arena.select-role", {"role": "crew"})
+        if result.status == "succeeded":
+            return
+        if result.reason != "role_selection_locked":
+            raise SkillError("investigation_cleanup_failed", "Server did not confirm release of the pending investigation duty")
+        try:
+            await session.world.wait_until(lambda _: latest_state().incident_status != pb.INCIDENT_STATUS_NONE,
+                timeout=.5)
+            started = latest_state()
+            # The ordinary CancelInvestigation Skill reads the current public
+            # observation. Wait for its frame after an earlier start event.
+            await session.world.wait_until(lambda world: (
+                world.latest(pb.CoolingStateObservation, capability_id=COOLING_STATE).incident_id == started.incident_id
+                and world.latest(pb.CoolingStateObservation, capability_id=COOLING_STATE).match_id == started.match_id
+                and world.latest(pb.CoolingStateObservation, capability_id=COOLING_STATE).incident_status != pb.INCIDENT_STATUS_NONE),
+                timeout=.5)
+        except TimeoutError:
+            raise SkillError("investigation_cleanup_failed", "An incident locked the duty without a current authoritative identity") from None
+        state = latest_state()
     if not state.incident_id or state.incident_status != pb.INCIDENT_STATUS_ACTIVE:
         return
     result = await scheduler.run("agents-arena.cancel-investigation", {"incident_id": state.incident_id})

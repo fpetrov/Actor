@@ -1,0 +1,21 @@
+{
+  "case": "scripted-mechanical-01",
+  "passed": false,
+  "stage": "initial_role_observation",
+  "provider": "scripted",
+  "sheriff_failed_skill": "agents-arena.select-role",
+  "reason": "role_state_invalid",
+  "sheriff_commands_sent": 0,
+  "investigation_started": false,
+  "fix": "Adapter withholds initial placeholders until all owner-targeted investigation state belongs to this actor and match.",
+  "network_root_cause_claimed_solved": false,
+  "followup": {
+    "case": "scripted-mechanical-02",
+    "passed": false,
+    "engineer_failed_skill": "agents-arena.select-role",
+    "reason": "required_observation_missing",
+    "commands_sent": 0,
+    "investigation_started": false,
+    "fix": "Defer the reference-game gRPC handshake until all own investigation state is ready, in addition to withholding placeholders."
+  }
+}

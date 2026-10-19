@@ -28,5 +28,7 @@ jobs:
         run: python -m pytest runtime/tests scripts/tests -q -o asyncio_mode=auto
       - name: Auth-free cooperative fault acceptance self-test
         run: python spikes/cooperation/runtime_faults.py --self-test
+      - name: Auth-free investigation fixture guard self-test
+        run: python spikes/investigation/fault_cases.py --self-test
       - name: Curated deterministic event-routing evaluation
         run: python scripts/evaluate-events.py
