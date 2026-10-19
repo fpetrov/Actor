@@ -19,8 +19,9 @@ Dedicated Server: motor / physics / room membership
 | Layer | Sources / namespace | Responsibility |
 | --- | --- | --- |
 | Core | `proto/actor/core/v1`, `actor.core.v1` | Session, identity, manifest, Any envelopes, ordering, heartbeat, command outcome, errors |
-| Standard | `proto/actor/standard/v1`, `actor.standard.v1` | Optional reusable Transform2D, Motion2D and Locomotion2D |
-| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | RoomMembership, RoomChanged and StationSignal |
+| Standard motion | `proto/actor/standard/v1`, `actor.standard.v1` | Optional reusable Transform2D, Motion2D and Locomotion2D |
+| Standard communication | `proto/actor/standard/communication/v1`, `actor.standard.communication.v1` | Independently optional typed messages, server receipts and authorized peer roster |
+| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | RoomMembership, RoomChanged, StationSignal and cooperative calibration |
 
 `com.actor.sdk` contains Core/Standard generated types, extension registration and generic bridge lifecycle. It has no Unity engine references, NGO dependency or room mechanics. `com.actor.transport.grpc` provides the concrete native HTTP/2 implementation. The Unity reference game's adapter binds these generic interfaces to its existing network player and input abstraction.
 
@@ -62,12 +63,106 @@ Standard Transform2D/Motion2D come from a coherent raw owner post-physics server
 
 `NetworkRoomMembership` computes physical room membership on the dedicated server from stable RoomVolume2D identities. Its replicated state updates `ActorCharacter.RoomId` and produces game-specific RoomChanged events. External Runtime commands cannot set room membership. Main Hall and Engineering share one networked gameplay scene; the new art and colliders do not alter Core/Standard protocol schemas.
 
+## Optional communication contract
+
+`actor.standard.communication` is its own extension package **0.1.0**. It does
+not change Core 1.0 or the existing `actor.standard` motion package 0.1.0/hash.
+A game advertises these capabilities only when it implements their server-side
+policy:
+
+| Capability | Kind | Generated payload |
+|---|---|---|
+| `actor.standard.communication.send-message` | Ordered command | `SendMessageCommand` |
+| `actor.standard.communication.message-received` | Event | `MessageReceivedEvent` |
+| `actor.standard.communication.delivery-result` | Event | `MessageDeliveryResultEvent` |
+| `actor.standard.communication.peers` | Observation | `CommunicationPeersObservation` |
+
+The command includes recipient, channel, text, correlation/task IDs, sensitivity,
+message TTL and match instance identity. It deliberately has no sender or server
+message ID. The game derives the sender from its authenticated connection/owned
+actor and allocates the unique message ID and monotonically increasing server
+sequence. Match identity rejects messages queued for a previous lobby. A
+match-scoped ActorId is not a stable memory profile.
+
+The reference game's channels are `direct` and `station`. Direct messages have
+an explicit recipient; station sends use an empty command recipient. The server
+filters recipients and each receiving event identifies its actual recipient.
+Text is limited to 512 UTF-8 bytes; actor IDs to 128 bytes, channel IDs to 32
+bytes, correlation/task/match/message IDs to 64 bytes. Message TTL is at most
+300,000 ms, with a 60,000 ms game default. Games validate bounds before allocating
+reliable RPC work. Protobuf does not enforce length, visibility, rate or permission.
+
+Four outcomes are separate:
+
+1. Core `CommandResult.Accepted`: the local adapter accepted the typed request.
+2. `MessageDeliveryResultEvent.accepted_by_server` with stage `SERVER_ACCEPTED`:
+   the authoritative server accepted and routed it.
+3. Stage `CLIENT_RECEIVED`: actual receiving-client acknowledgement reached
+   the server. Station-wide receipt requires all intended recipients to acknowledge.
+4. A Runtime/Skill/Brain consumed the message: local cognitive state, never
+   asserted by the delivery stage.
+
+Incoming content stays untrusted external game data. `sensitive` and expiry
+support session-only handling; private text and diagnostic authorization must
+not enter durable memory or public reports by default. Targeted delivery must
+already happen on the game network: Python filtering cannot repair a global
+broadcast leak. This is gameplay visibility, not transport encryption.
+
+C# registration uses the existing typed registry and optional generated helper:
+
+```csharp
+public ExtensionPackage Package => ActorCommunicationExtensionPackage.Create(required: false);
+
+public void Register(IActorExtensionRegistrar scope)
+{
+    scope.RegisterCommand<SendMessageCommand>(
+        "actor.standard.communication.send-message", "Send through the game server",
+        (_, command) => SendThroughAuthorizedGameServer(command), CommandDelivery.Ordered);
+    scope.RegisterEvent<MessageReceivedEvent>(
+        "actor.standard.communication.message-received", "Authorized incoming message");
+}
+```
+
+These types are in `Actor.Protocol.Standard.Communication.V1`; generated files
+are under SDK `Runtime/Protocol/Communication/Generated`. Python bindings are
+`actor.standard.communication.v1.communication_pb2`; descriptor and manifest
+resources are `actor.communication.metadata/communication.v1.{pb,json}`. No
+manual `Any` envelope or type URL is needed. Plugins use the same generic
+extension registry as third-party packages. Games without these capabilities
+work without communication Skills; unknown optional packages remain opaque.
+
+## Game-specific calibration contract
+
+Arena package **0.3.0** adds `calibration.proto` without changing existing room
+or StationSignal field numbers. `CalibrationTaskStateObservation` contains the
+controlled actor's private assignment and authoritative state, empty when
+unassigned. `CalibrationProgressObservation` is separate public progress with
+no participant assignment or authorization code. Assignment and task-changed
+events go only to assigned participants.
+
+`StartCalibrationCommand`, `InspectDiagnosticCommand`,
+`SubmitCalibrationCommand` and `CancelCalibrationCommand` carry an idempotency
+correlation and match ID. The server derives the caller and checks distinct
+participants, role, terminal proximity, state, expiry, attempts and authorization.
+`CalibrationResultEvent` gives the requester a typed outcome with action/status/
+reason; local command acceptance alone never establishes completion.
+
+Only `DiagnosticResultEvent`, targeted to the requesting Coordinator, contains
+the short-lived code. Public progress and task state schemas have no code field.
+Forwarding it to the Technician requires an explicit sensitive direct message
+through the game server. Schema separation is one guard; recipient filtering
+and lifecycle tests establish actual visibility.
+
+> ACTOR does not implement universal game logic. It provides typed and extensible
+> communication, observation, action and cognitive orchestration interfaces. A
+> game's authoritative server defines visibility, permissions and gameplay outcomes.
+
 ## Versioning and generated sources
 
-Core protocol **1.0**, Standard package **0.1.0**, Arena package **0.2.0**, game **0.5.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
+Core protocol **1.0**, Standard motion **0.1.0**, Standard communication **0.1.0**, Arena package **0.3.0**, game **0.6.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
 
 Generated C#/Python files, descriptors and metadata are version controlled. Unity users do not need protoc. `scripts/generate-proto.sh --check` regenerates in a temporary output tree and compares artifacts; CI fails on stale generated sources. [Tooling and schema rules](../proto/README.md), [Unity SDK API](../packages/com.actor.sdk/README.md), [Python Runtime](python-runtime.md), [custom extensions](extensions.md), [actual gRPC spike](grpc-spike/README.md).
 
 ## Current scope
 
-Runtime0.3.0 adds event routing, soft replanning, bounded context and local episodic memory above the existing Skills/Brains and unchanged Core protocol. Game-specific navigation and station-signal semantics stay in the Arena plugin. Optional Jev uses the provider-neutral classifier API; generic navigation and package auto-download remain future layers.
+Runtime0.4.0 composes independently scoped sessions, communication Skills and game-specific cooperative actions above event routing, bounded context/memory and unchanged Core. Arena owns calibration permissions and outcomes; Standard communication owns typed addressing/delivery interfaces. Optional Jev remains a provider-neutral classifier. Generic navigation and package auto-download remain future layers.

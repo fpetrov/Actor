@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package actor.standard.communication.v1;
+option csharp_namespace = "Actor.Protocol.Standard.Communication.V1";
+
+// Optional game-defined communication. Bounds and authorization are enforced
+// by the authoritative game server, not by Protobuf or ACTOR Core.
+message SendMessageCommand {
+  string recipient_actor_id = 1;
+  string channel_id = 2;
+  string text = 3;
+  string correlation_id = 4;
+  string task_id = 5;
+  bool sensitive = 6;
+  uint32 ttl_ms = 7;
+  string match_id = 8;
+}
+
+message MessageReceivedEvent {
+  string message_id = 1;
+  string sender_actor_id = 2;
+  string recipient_actor_id = 3;
+  string channel_id = 4;
+  string text = 5;
+  int64 server_unix_ms = 6;
+  string correlation_id = 7;
+  string task_id = 8;
+  bool sensitive = 9;
+  int64 expires_at_unix_ms = 10;
+  string match_id = 11;
+  uint64 server_sequence = 12;
+}
+
+enum MessageDeliveryStage {
+  MESSAGE_DELIVERY_STAGE_UNSPECIFIED = 0;
+  MESSAGE_DELIVERY_STAGE_REJECTED = 1;
+  MESSAGE_DELIVERY_STAGE_SERVER_ACCEPTED = 2;
+  // Only an actual receiving-client acknowledgement permits this stage.
+  // It makes no assertion about a Runtime, Skill or Brain reading the message.
+  MESSAGE_DELIVERY_STAGE_CLIENT_RECEIVED = 3;
+}
+
+message MessageDeliveryResultEvent {
+  string correlation_id = 1;
+  string message_id = 2;
+  bool accepted_by_server = 3;
+  string reason_code = 4;
+  MessageDeliveryStage stage = 5;
+  int64 server_unix_ms = 6;
+  string recipient_actor_id = 7;
+  string task_id = 8;
+  string match_id = 9;
+}
+
+message CommunicationPeer {
+  string actor_id = 1;
+  string display_name = 2;
+}
+
+// Only currently connected recipients authorized by the game's policy appear.
+// Actor identity is match-scoped, never a permanent agent/profile identity.
+message CommunicationPeersObservation {
+  repeated CommunicationPeer peers = 1;
+  string match_id = 2;
+  uint64 server_revision = 3;
+  repeated string allowed_channels = 4;
+}

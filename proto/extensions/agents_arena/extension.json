@@ -1,9 +1,9 @@
 {
   "extension_id": "agents-arena",
-  "extension_version": "0.2.0",
+  "extension_version": "0.3.0",
   "supported_protocol_major": 1,
   "generation": {
-    "sources": ["extensions/agents_arena/v1/rooms.proto", "extensions/agents_arena/v1/station_signals.proto"],
+    "sources": ["extensions/agents_arena/v1/rooms.proto", "extensions/agents_arena/v1/station_signals.proto", "extensions/agents_arena/v1/calibration.proto"],
     "csharp_output": "Agents Arena/Assets/Scripts/Actor/Generated",
     "helper_namespace": "AgentsArena.ActorProtocol.V1",
     "helper_name": "AgentsArenaExtensionPackage",
@@ -13,6 +13,16 @@
   "capabilities": [
     { "capability_id": "agents-arena.room-membership", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.RoomMembershipObservation", "description": "Authoritative room containing the actor." },
     { "capability_id": "agents-arena.room-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.RoomChangedEvent", "description": "Authoritative room membership changed." },
-    { "capability_id": "agents-arena.station-signal", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.StationSignalEvent", "description": "Server-validated station-wide training console signal; explicit audience and stable signal identity." }
+    { "capability_id": "agents-arena.station-signal", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.StationSignalEvent", "description": "Server-validated station-wide training console signal; explicit audience and stable signal identity." },
+    { "capability_id": "agents-arena.calibration-state", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.CalibrationTaskStateObservation", "description": "Controlled actor's private task assignment and authoritative state; empty when unassigned, never contains diagnostic secrets." },
+    { "capability_id": "agents-arena.calibration-progress", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.CalibrationProgressObservation", "description": "Public station calibration progress without participant assignments or authorization secrets." },
+    { "capability_id": "agents-arena.calibration-assignment", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.CalibrationAssignmentEvent", "description": "Private server-created assignment for one task participant." },
+    { "capability_id": "agents-arena.calibration-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.CalibrationTaskChangedEvent", "description": "Authoritative task lifecycle delivered only to assigned participants." },
+    { "capability_id": "agents-arena.start-calibration", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.StartCalibrationCommand", "command_delivery": "ordered", "description": "Request a cooperative calibration with a distinct technician; the server assigns both participants." },
+    { "capability_id": "agents-arena.inspect-diagnostic", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.InspectDiagnosticCommand", "command_delivery": "ordered", "description": "Request private short-lived diagnostic authorization; the server checks Coordinator role and terminal proximity." },
+    { "capability_id": "agents-arena.submit-calibration", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.SubmitCalibrationCommand", "command_delivery": "ordered", "description": "Submit task-scoped authorization; the server checks Technician role, console proximity, expiry and code." },
+    { "capability_id": "agents-arena.cancel-calibration", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.CancelCalibrationCommand", "command_delivery": "ordered", "description": "Request cancellation of the caller's active cooperative task." },
+    { "capability_id": "agents-arena.diagnostic-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.DiagnosticResultEvent", "description": "Private requesting-Coordinator interaction result; sensitive short-lived code must never be persisted or publicly reported." },
+    { "capability_id": "agents-arena.calibration-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.CalibrationResultEvent", "description": "Private authoritative action acceptance/rejection for the requesting actor; separate from local bridge CommandResult." }
   ]
 }

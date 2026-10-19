@@ -1,0 +1,46 @@
+{
+  "capabilities": [
+    {
+      "capability_id": "actor.standard.communication.send-message",
+      "command_delivery": "ordered",
+      "description": "Request game-server-authorized message delivery; local command acceptance is not server acceptance.",
+      "extension_id": "actor.standard.communication",
+      "input_type_url": "type.googleapis.com/actor.standard.communication.v1.SendMessageCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.1.0"
+    },
+    {
+      "capability_id": "actor.standard.communication.message-received",
+      "description": "Server-authored ordered message visible only to its authorized recipient.",
+      "extension_id": "actor.standard.communication",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.standard.communication.v1.MessageReceivedEvent",
+      "version": "0.1.0"
+    },
+    {
+      "capability_id": "actor.standard.communication.delivery-result",
+      "description": "Private authoritative send outcome; client receipt never means a Brain read the message.",
+      "extension_id": "actor.standard.communication",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.standard.communication.v1.MessageDeliveryResultEvent",
+      "version": "0.1.0"
+    },
+    {
+      "capability_id": "actor.standard.communication.peers",
+      "description": "Currently connected, game-authorized communication peers and allowed channels.",
+      "extension_id": "actor.standard.communication",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.standard.communication.v1.CommunicationPeersObservation",
+      "version": "0.1.0"
+    }
+  ],
+  "descriptor_set": "communication.v1.pb",
+  "extension_id": "actor.standard.communication",
+  "extension_version": "0.1.0",
+  "schema_hash": "5a83afb7cd7116b6470b56fa1d3351e33a826a008c6246829430af3894ea49b6",
+  "supported_protocol_major": 1
+}

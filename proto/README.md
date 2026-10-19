@@ -1,8 +1,8 @@
 # ACTOR protocol sources
 
-ACTOR defines an exchange mechanism for typed, versioned capabilities. It does not prescribe a game's world model. `actor/core/v1` contains only infrastructure; `actor/standard/v1` supplies three optional reusable 2D capabilities; `extensions/agents_arena/v1` owns room membership, room-change events and the server-validated StationSignal event.
+ACTOR defines an exchange mechanism for typed, versioned capabilities. It does not prescribe a game's world model. `actor/core/v1` contains only infrastructure; `actor/standard/v1` supplies three optional reusable 2D capabilities; `actor/standard/communication/v1` is an independently optional communication package. `extensions/agents_arena/v1` owns rooms, StationSignal and cooperative calibration.
 
-Core protocol **1.0** is independent of both Agents Arena's game version and its multiplayer admission protocol. Proto packages ending in `v1` identify a schema major. Standard package **0.1.0** and Agents Arena package **0.2.0** are advertised separately. Required packages currently require an exact version and schema fingerprint match; optional unknown packages can remain opaque. Arena's additive StationSignal contract is documented in [Signal Console](../docs/station-signals.md).
+Core protocol **1.0** is independent of game and multiplayer admission versions. Proto packages ending in `v1` identify a schema major. Motion `actor.standard` **0.1.0**, `actor.standard.communication` **0.1.0** and `agents-arena` **0.3.0** are advertised separately. Required packages require an exact version/fingerprint match; optional unknown packages can remain opaque. Communication/calibration additions leave Core and motion descriptor bytes unchanged. [Protocol and visibility contracts](../docs/actor-protocol.md).
 
 ## Generate and verify
 
@@ -21,6 +21,7 @@ Generated C#, Python, descriptor sets and metadata are version-controlled. Ordin
 ## Outputs
 
 - `packages/com.actor.sdk/Runtime/Protocol/Generated`: Core and Standard C# messages and the Standard extension package helper.
+- `packages/com.actor.sdk/Runtime/Protocol/Communication/Generated`: independent Communication C# messages and optional package helper.
 - `packages/com.actor.transport.grpc/Runtime/Generated`: official gRPC C# client, kept outside the transport-neutral SDK.
 - `Agents Arena/Assets/Scripts/Actor/Generated`: game extension C# messages and package helper.
 - `generated/python/actor`: Core/Standard Python messages and official Python gRPC service bindings.

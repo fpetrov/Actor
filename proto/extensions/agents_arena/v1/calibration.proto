@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package actor.extensions.agents_arena.v1;
+option csharp_namespace = "AgentsArena.ActorProtocol.V1";
+
+enum CalibrationStatus {
+  CALIBRATION_STATUS_UNSPECIFIED = 0;
+  CALIBRATION_STATUS_AVAILABLE = 1;
+  CALIBRATION_STATUS_AWAITING_DIAGNOSTIC = 2;
+  CALIBRATION_STATUS_AWAITING_AUTHORIZATION = 3;
+  CALIBRATION_STATUS_COMPLETED = 4;
+  CALIBRATION_STATUS_FAILED = 5;
+  CALIBRATION_STATUS_EXPIRED = 6;
+  CALIBRATION_STATUS_CANCELLED = 7;
+}
+
+enum CalibrationRole {
+  CALIBRATION_ROLE_UNSPECIFIED = 0;
+  CALIBRATION_ROLE_COORDINATOR = 1;
+  CALIBRATION_ROLE_TECHNICIAN = 2;
+}
+
+enum CalibrationAction {
+  CALIBRATION_ACTION_UNSPECIFIED = 0;
+  CALIBRATION_ACTION_START = 1;
+  CALIBRATION_ACTION_INSPECT_DIAGNOSTIC = 2;
+  CALIBRATION_ACTION_SUBMIT = 3;
+  CALIBRATION_ACTION_CANCEL = 4;
+}
+
+// Private assignment state for the controlled actor, empty when unassigned.
+// Never includes an authorization code or other actor's diagnostic result.
+message CalibrationTaskStateObservation {
+  string task_id = 1;
+  CalibrationStatus status = 2;
+  string coordinator_actor_id = 3;
+  string technician_actor_id = 4;
+  int64 expires_at_unix_ms = 5;
+  uint32 attempts_remaining = 6;
+  uint64 server_revision = 7;
+  string match_id = 8;
+  string reason_code = 9;
+}
+
+// Public progress is deliberately separate from private participant evidence.
+message CalibrationProgressObservation {
+  string task_id = 1;
+  CalibrationStatus status = 2;
+  uint64 server_revision = 3;
+  string match_id = 4;
+  string reason_code = 5;
+}
+
+message CalibrationAssignmentEvent {
+  string task_id = 1;
+  string coordinator_actor_id = 2;
+  string technician_actor_id = 3;
+  CalibrationRole role = 4;
+  int64 expires_at_unix_ms = 5;
+  string match_id = 6;
+  uint64 server_revision = 7;
+}
+
+message CalibrationTaskChangedEvent {
+  CalibrationTaskStateObservation state = 1;
+}
+
+message StartCalibrationCommand {
+  string technician_actor_id = 1;
+  string correlation_id = 2;
+  string match_id = 3;
+}
+
+message InspectDiagnosticCommand {
+  string task_id = 1;
+  string correlation_id = 2;
+  string match_id = 3;
+}
+
+message SubmitCalibrationCommand {
+  string task_id = 1;
+  string authorization_code = 2;
+  string correlation_id = 3;
+  string match_id = 4;
+}
+
+message CancelCalibrationCommand {
+  string task_id = 1;
+  string correlation_id = 2;
+  string match_id = 3;
+}
+
+// Targeted to the requesting, server-assigned Coordinator only. Ephemeral
+// evidence for the current task; never a public progress field or durable fact.
+message DiagnosticResultEvent {
+  string correlation_id = 1;
+  string task_id = 2;
+  bool accepted = 3;
+  string reason_code = 4;
+  string authorization_code = 5;
+  int64 expires_at_unix_ms = 6;
+  bool sensitive = 7;
+  uint64 server_revision = 8;
+  string match_id = 9;
+}
+
+message CalibrationResultEvent {
+  string correlation_id = 1;
+  CalibrationAction action = 2;
+  bool accepted = 3;
+  string reason_code = 4;
+  string task_id = 5;
+  CalibrationStatus status = 6;
+  uint64 server_revision = 7;
+  string match_id = 8;
+}

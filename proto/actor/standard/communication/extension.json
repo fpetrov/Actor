@@ -1,0 +1,19 @@
+{
+  "extension_id": "actor.standard.communication",
+  "extension_version": "0.1.0",
+  "supported_protocol_major": 1,
+  "generation": {
+    "sources": ["actor/standard/communication/v1/communication.proto"],
+    "csharp_output": "packages/com.actor.sdk/Runtime/Protocol/Communication/Generated",
+    "helper_namespace": "Actor.Protocol.Standard.Communication.V1",
+    "helper_name": "ActorCommunicationExtensionPackage",
+    "python_resource": "actor/communication/metadata/communication.v1",
+    "artifact_name": "actor-standard-communication"
+  },
+  "capabilities": [
+    { "capability_id": "actor.standard.communication.send-message", "kind": "command", "message_type": "actor.standard.communication.v1.SendMessageCommand", "command_delivery": "ordered", "description": "Request game-server-authorized message delivery; local command acceptance is not server acceptance." },
+    { "capability_id": "actor.standard.communication.message-received", "kind": "event", "message_type": "actor.standard.communication.v1.MessageReceivedEvent", "description": "Server-authored ordered message visible only to its authorized recipient." },
+    { "capability_id": "actor.standard.communication.delivery-result", "kind": "event", "message_type": "actor.standard.communication.v1.MessageDeliveryResultEvent", "description": "Private authoritative send outcome; client receipt never means a Brain read the message." },
+    { "capability_id": "actor.standard.communication.peers", "kind": "observation", "message_type": "actor.standard.communication.v1.CommunicationPeersObservation", "description": "Currently connected, game-authorized communication peers and allowed channels." }
+  ]
+}

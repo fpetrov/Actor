@@ -74,12 +74,12 @@ public sealed class StationSignalTests
         var signal = StationSignalRules.Create(StationSignalKind.UrgentRecall, "human-actor", 1790000000000, 9);
         extension.Publisher!.Publish(signal, signal.SourceActorId, signal.ServerRevision);
         var manifest = registry.BuildManifest(new GameIdentity("agents-arena", "0.5.0"), "agent-actor");
-        Assert.Equal("0.2.0", manifest.Extensions.Single().ExtensionVersion);
+        Assert.Equal(AgentsArenaExtensionPackage.Version, manifest.Extensions.Single().ExtensionVersion);
         Assert.Equal(CapabilityKind.Event, manifest.Capabilities.Single().Kind);
         Assert.Equal("human-actor", observed!.EntityId);
         Assert.Equal(9ul, observed.Revision);
         Assert.Equal("agents-arena", observed.ExtensionId);
-        Assert.Equal("0.2.0", observed.ExtensionVersion);
+        Assert.Equal(AgentsArenaExtensionPackage.Version, observed.ExtensionVersion);
         Assert.Equal(signal, observed.Payload.Unpack<StationSignalEvent>());
     }
 }

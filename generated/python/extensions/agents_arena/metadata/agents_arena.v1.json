@@ -7,7 +7,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomMembershipObservation",
-      "version": "0.2.0"
+      "version": "0.3.0"
     },
     {
       "capability_id": "agents-arena.room-changed",
@@ -16,7 +16,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomChangedEvent",
-      "version": "0.2.0"
+      "version": "0.3.0"
     },
     {
       "capability_id": "agents-arena.station-signal",
@@ -25,12 +25,106 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StationSignalEvent",
-      "version": "0.2.0"
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.calibration-state",
+      "description": "Controlled actor's private task assignment and authoritative state; empty when unassigned, never contains diagnostic secrets.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskStateObservation",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.calibration-progress",
+      "description": "Public station calibration progress without participant assignments or authorization secrets.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationProgressObservation",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.calibration-assignment",
+      "description": "Private server-created assignment for one task participant.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationAssignmentEvent",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.calibration-changed",
+      "description": "Authoritative task lifecycle delivered only to assigned participants.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskChangedEvent",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.start-calibration",
+      "command_delivery": "ordered",
+      "description": "Request a cooperative calibration with a distinct technician; the server assigns both participants.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StartCalibrationCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.inspect-diagnostic",
+      "command_delivery": "ordered",
+      "description": "Request private short-lived diagnostic authorization; the server checks Coordinator role and terminal proximity.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectDiagnosticCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.submit-calibration",
+      "command_delivery": "ordered",
+      "description": "Submit task-scoped authorization; the server checks Technician role, console proximity, expiry and code.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SubmitCalibrationCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.cancel-calibration",
+      "command_delivery": "ordered",
+      "description": "Request cancellation of the caller's active cooperative task.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelCalibrationCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.diagnostic-result",
+      "description": "Private requesting-Coordinator interaction result; sensitive short-lived code must never be persisted or publicly reported.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DiagnosticResultEvent",
+      "version": "0.3.0"
+    },
+    {
+      "capability_id": "agents-arena.calibration-result",
+      "description": "Private authoritative action acceptance/rejection for the requesting actor; separate from local bridge CommandResult.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationResultEvent",
+      "version": "0.3.0"
     }
   ],
   "descriptor_set": "agents_arena.v1.pb",
   "extension_id": "agents-arena",
-  "extension_version": "0.2.0",
-  "schema_hash": "0aa3a44a5d8531efbf85c8409173d5911e75711fd8e9682a19b8d1c621208257",
+  "extension_version": "0.3.0",
+  "schema_hash": "dd472a4c427de6691de7c91259de1c129813da98b5ec235c1d4bd176adf804a6",
   "supported_protocol_major": 1
 }

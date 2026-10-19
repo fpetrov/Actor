@@ -20,7 +20,7 @@ def test_station_signal_generated_and_descriptor_only_decoding(kind):
         target_room_id="main-hall", message="Server-authored signal", server_unix_ms=1790000000000,
         audience=STATION_WIDE, server_revision=9)
     package = extension_package()
-    assert package.version == "0.2.0"
+    assert package.version == "0.3.0"
     packed = Any(); packed.Pack(signal)
     assert packed.type_url == type_url(StationSignalEvent)
     registered = ExtensionRegistry(); registered.register(package)
