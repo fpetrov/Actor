@@ -1,0 +1,460 @@
+{
+  "acceptance": {
+    "both_cooling_restored": true,
+    "both_incidents_resolved": true,
+    "both_objectives_passed": true,
+    "both_reports_validated": true,
+    "client_runtime_identities_match": true,
+    "database_configuration_matches": true,
+    "distinct_accepted_session_ids": true,
+    "distinct_actor_ids": true,
+    "distinct_database_files": true,
+    "distinct_database_paths": true,
+    "distinct_runtime_endpoints": true,
+    "engineer_repair_confirmed": true,
+    "expected_distinct_duties": true,
+    "isolated_own_memory_profiles": true,
+    "launch_database_and_profiles_match": true,
+    "launch_ports_match_runtime_endpoints": true,
+    "recorded_distinct_bridge_credentials": true,
+    "recorded_four_distinct_processes": true,
+    "role_private_evidence_separation": true,
+    "same_nonempty_incident_id": true,
+    "sheriff_report_confirmed": true,
+    "sqlite_structural_redaction_passed": true
+  },
+  "agents": {
+    "engineer": {
+      "client": {
+        "elapsed_seconds": 67.92656487500001,
+        "errors": 0,
+        "max_pump_ms": 4.044,
+        "mean_fps": 59.34349848866841,
+        "mean_message_latency_ms": 328.0,
+        "messages_received": 1,
+        "receipts_client_received": 1,
+        "receipts_rejected": 0,
+        "receipts_server_accepted": 1,
+        "warnings": 0
+      },
+      "codex": {
+        "interrupted_turns": null,
+        "turn_duration_seconds": {
+          "max": null,
+          "mean": null,
+          "median": null,
+          "p95": null,
+          "samples": 0,
+          "total": null
+        },
+        "turns_recorded": 0,
+        "unique_model_turns": null,
+        "usage_totals": {
+          "cached_input_tokens": null,
+          "input_tokens": null,
+          "output_tokens": null,
+          "total_tokens": null
+        }
+      },
+      "cognition": {
+        "cleanup_error_count": 0,
+        "context_bytes": {
+          "max": 14837,
+          "mean": 10466.142857142857,
+          "median": 10405,
+          "p95": 14837,
+          "samples": 7,
+          "total": 73263
+        },
+        "decision_duration_seconds": {
+          "max": 0.0027331250021234155,
+          "mean": 0.0020305894265350488,
+          "median": 0.001974958984646946,
+          "p95": 0.0027331250021234155,
+          "samples": 7,
+          "total": 0.01421412598574534
+        },
+        "decisions_recorded": 7,
+        "pending_cleanup_tasks": 0,
+        "replan_count": 0
+      },
+      "completion_evidence": {
+        "source": "final_client",
+        "validation": "not_needed"
+      },
+      "identity": {
+        "actor_id": "8d381c075fb84ba7a784bb1997b6ec4c",
+        "actor_matches_runtime": true,
+        "matching_runtime_sessions": 1,
+        "role": "Engineer",
+        "runtime_session_count": 1
+      },
+      "incident": {
+        "cooling_status": "Restored",
+        "diagnostic_evidence_count": 1,
+        "hypotheses_proposed_by_scripted_provider": 0,
+        "incident_id": "024d1710cfd54da0ba4deaff4581fbc6",
+        "incidents_started": 1,
+        "own_diagnostic_present": false,
+        "own_security_present": false,
+        "repairs_completed": 1,
+        "report_validated": true,
+        "reports_rejected": 0,
+        "reports_validated": 0,
+        "security_evidence_count": 0,
+        "status": "Resolved"
+      },
+      "input_errors": {
+        "client": null,
+        "runtime": null
+      },
+      "inputs": {
+        "client": {
+          "bytes": 2078,
+          "present": true,
+          "sha256": "1b118785752186f1e3571e8219571d1f4d733be6d81e4334e7e28f36f1a427e9"
+        },
+        "client_completed": {
+          "present": false
+        },
+        "client_investigation_completed": {
+          "bytes": 445,
+          "present": true,
+          "sha256": "979adc56fc3ee8a6b851dd4340582887a8f620f1d9a48c34b974f8f0e5f7a18e"
+        },
+        "runtime": {
+          "bytes": 48990,
+          "present": true,
+          "sha256": "bed5b4e3dcec4f9a8c0065613b1553d32b4f3ff967e3c402f005548e9cf55a84"
+        }
+      },
+      "launch_metadata": {
+        "database_matches": true,
+        "present": true,
+        "profile_matches": true
+      },
+      "memory": {
+        "actors": 1,
+        "artifact": {
+          "bytes": 40960,
+          "present": true,
+          "sha256": "d0a420a877cc493f307f6c38322064db7a9700ef5efa900e087d2ec8ba1d45ce"
+        },
+        "configured_path_matches_local_database": true,
+        "entries": 11,
+        "entries_by_kind": {
+          "objective_result": 1,
+          "observed_event": 4,
+          "observed_fact": 0,
+          "other": 0,
+          "skill_result": 6
+        },
+        "own_profile_entries": 11,
+        "profiles": 1,
+        "retention_audit": {
+          "invalid_content_rows": 0,
+          "oversized_content_rows": 0,
+          "private_payload_fields": 8,
+          "private_policy_nodes": 4,
+          "redacted_private_payload_fields": 8,
+          "redacted_secret_named_fields": 0,
+          "secret_named_fields": 0,
+          "unredacted_private_payload_fields": 0,
+          "unredacted_secret_named_fields": 0
+        },
+        "runtime_counters": {
+          "entries": 11,
+          "global_entries": 11,
+          "pending_operations": 1,
+          "retrieval_count": 7,
+          "retrieved_entries": 23
+        },
+        "sessions": 1,
+        "state": "read_only",
+        "structural_redaction_passed": true,
+        "wal_present": false
+      },
+      "objective": {
+        "decision_count": 7,
+        "duration_seconds": 60.89053833403159,
+        "passed": true,
+        "status": "succeeded"
+      },
+      "provider": "investigation-scripted",
+      "rendering_mode": "headless",
+      "runtime": {
+        "command_result_rtt_ms": {
+          "max": 45.190040953457355,
+          "mean": 9.440020824266842,
+          "median": 9.498957952018827,
+          "p95": 16.802500002086163,
+          "samples": 214,
+          "total": 2020.164456393104
+        },
+        "commands_sent": 214,
+        "cpu_percent_one_core": 3.4856015883818663,
+        "cpu_seconds": 2.207006,
+        "elapsed_seconds": 63.317793041991536,
+        "errors": 0,
+        "events_received": 12,
+        "observation_frames": 845,
+        "privacy": {
+          "private_data_observed": true,
+          "redaction_degraded": false,
+          "registered_secrets": 1
+        }
+      },
+      "skills": {
+        "by_id": {
+          "agents-arena.inspect-cooling": 1,
+          "agents-arena.repair-cooling": 1,
+          "agents-arena.select-role": 1,
+          "agents-arena.share-investigation-evidence": 1,
+          "agents-arena.wait-for-incident": 1,
+          "agents-arena.wait-for-incident-resolved": 1
+        },
+        "cancelled": 0,
+        "count": 6,
+        "duration_seconds": {
+          "max": 41.622397708008066,
+          "mean": 10.09272635433202,
+          "median": 3.6403642289806157,
+          "p95": 41.622397708008066,
+          "samples": 6,
+          "total": 60.55635812599212
+        },
+        "failures": 0,
+        "statuses": {
+          "succeeded": 6
+        },
+        "successful_share_evidence_skill_calls": 1
+      }
+    },
+    "sheriff": {
+      "client": {
+        "elapsed_seconds": 70.21999341700001,
+        "errors": 0,
+        "max_pump_ms": 4.1094,
+        "mean_fps": 59.72657922500812,
+        "mean_message_latency_ms": 110.0,
+        "messages_received": 1,
+        "receipts_client_received": 1,
+        "receipts_rejected": 0,
+        "receipts_server_accepted": 1,
+        "warnings": 0
+      },
+      "codex": {
+        "interrupted_turns": 0,
+        "turn_duration_seconds": {
+          "max": 10.852103499986697,
+          "mean": 5.401595428428014,
+          "median": 5.1725345000158995,
+          "p95": 10.852103499986697,
+          "samples": 7,
+          "total": 37.8111679989961
+        },
+        "turns_recorded": 7,
+        "unique_model_turns": 7,
+        "usage_totals": {
+          "cached_input_tokens": 170624,
+          "input_tokens": 211553,
+          "output_tokens": 1169,
+          "total_tokens": 212722
+        }
+      },
+      "cognition": {
+        "cleanup_error_count": 0,
+        "context_bytes": {
+          "max": 13788,
+          "mean": 10223.285714285714,
+          "median": 8920,
+          "p95": 13788,
+          "samples": 7,
+          "total": 71563
+        },
+        "decision_duration_seconds": {
+          "max": 10.853831707965583,
+          "mean": 5.403662565580037,
+          "median": 5.175216292031109,
+          "p95": 10.853831707965583,
+          "samples": 7,
+          "total": 37.82563795906026
+        },
+        "decisions_recorded": 7,
+        "pending_cleanup_tasks": 0,
+        "replan_count": 0
+      },
+      "completion_evidence": {
+        "source": "final_client",
+        "validation": "not_needed"
+      },
+      "identity": {
+        "actor_id": "a91e6190ff524ece92c6b1ac086ef011",
+        "actor_matches_runtime": true,
+        "matching_runtime_sessions": 1,
+        "role": "Sheriff",
+        "runtime_session_count": 1
+      },
+      "incident": {
+        "cooling_status": "Restored",
+        "diagnostic_evidence_count": 0,
+        "hypotheses_proposed_by_scripted_provider": null,
+        "incident_id": "024d1710cfd54da0ba4deaff4581fbc6",
+        "incidents_started": 1,
+        "own_diagnostic_present": false,
+        "own_security_present": false,
+        "repairs_completed": 0,
+        "report_validated": true,
+        "reports_rejected": 0,
+        "reports_validated": 1,
+        "security_evidence_count": 1,
+        "status": "Resolved"
+      },
+      "input_errors": {
+        "client": null,
+        "runtime": null
+      },
+      "inputs": {
+        "client": {
+          "bytes": 2065,
+          "present": true,
+          "sha256": "f35d8f8316487b963b177ecf17f6ee9db9fb67fdd129401302d9aefa43bbfe87"
+        },
+        "client_completed": {
+          "present": false
+        },
+        "client_investigation_completed": {
+          "bytes": 444,
+          "present": true,
+          "sha256": "7efae3836c2c13e833218efe09e40eacb90ae35444c8fa81e33cb6c2669de7ec"
+        },
+        "runtime": {
+          "bytes": 45141,
+          "present": true,
+          "sha256": "5a95a95d43ee1d5d67f0a65b8ffb0a336bd53f5ce847e95402e691862fb5af0f"
+        }
+      },
+      "launch_metadata": {
+        "database_matches": true,
+        "present": true,
+        "profile_matches": true
+      },
+      "memory": {
+        "actors": 1,
+        "artifact": {
+          "bytes": 40960,
+          "present": true,
+          "sha256": "69eff77276a12eff100ddcf7491a77686861f726865f9383ac855bad163eb30e"
+        },
+        "configured_path_matches_local_database": true,
+        "entries": 11,
+        "entries_by_kind": {
+          "objective_result": 1,
+          "observed_event": 4,
+          "observed_fact": 0,
+          "other": 0,
+          "skill_result": 6
+        },
+        "own_profile_entries": 11,
+        "profiles": 1,
+        "retention_audit": {
+          "invalid_content_rows": 0,
+          "oversized_content_rows": 0,
+          "private_payload_fields": 16,
+          "private_policy_nodes": 8,
+          "redacted_private_payload_fields": 16,
+          "redacted_secret_named_fields": 0,
+          "secret_named_fields": 0,
+          "unredacted_private_payload_fields": 0,
+          "unredacted_secret_named_fields": 0
+        },
+        "runtime_counters": {
+          "entries": 11,
+          "global_entries": 11,
+          "pending_operations": 1,
+          "retrieval_count": 7,
+          "retrieved_entries": 21
+        },
+        "sessions": 1,
+        "state": "read_only",
+        "structural_redaction_passed": true,
+        "wal_present": false
+      },
+      "objective": {
+        "decision_count": 7,
+        "duration_seconds": 68.33721833402524,
+        "passed": true,
+        "status": "succeeded"
+      },
+      "provider": "codex",
+      "rendering_mode": "headless",
+      "runtime": {
+        "command_result_rtt_ms": {
+          "max": 51.33258301066235,
+          "mean": 10.346594778652154,
+          "median": 9.67420800589025,
+          "p95": 17.730207997374237,
+          "samples": 69,
+          "total": 713.9150397269987
+        },
+        "commands_sent": 69,
+        "cpu_percent_one_core": 5.276731443669971,
+        "cpu_seconds": 3.737965,
+        "elapsed_seconds": 70.83864395797718,
+        "errors": 0,
+        "events_received": 10,
+        "observation_frames": 911,
+        "privacy": {
+          "private_data_observed": true,
+          "redaction_degraded": false,
+          "registered_secrets": 1
+        }
+      },
+      "skills": {
+        "by_id": {
+          "actor.send-message": 1,
+          "actor.wait-for-message": 1,
+          "agents-arena.inspect-security-records": 1,
+          "agents-arena.select-role": 1,
+          "agents-arena.submit-investigation-report": 1,
+          "agents-arena.wait-for-incident": 1
+        },
+        "cancelled": 0,
+        "count": 6,
+        "duration_seconds": {
+          "max": 20.867810625000857,
+          "mean": 4.4757479305068655,
+          "median": 1.3190408545196988,
+          "p95": 20.867810625000857,
+          "samples": 6,
+          "total": 26.85448758304119
+        },
+        "failures": 0,
+        "statuses": {
+          "succeeded": 6
+        },
+        "successful_share_evidence_skill_calls": 0
+      }
+    }
+  },
+  "measurement_notes": [
+    "Success requires both Objectives passed+succeeded and matching public Resolved/Restored/report-validated state; FinishObjective alone is insufficient.",
+    "Only fully cleared final owner state may use a contemporaneous own-success/own-Resolved snapshot tied to its retained accepted session and exact Runtime actor. All final counters and private-view checks remain unchanged.",
+    "Recorded launch PIDs, ports, credential fingerprints and database paths are compared privately; no live process identity is inspected and those values are omitted.",
+    "Evidence counters describe authorized client receipts; private payloads, reference IDs, hypotheses and messages are never reproduced.",
+    "Successful share-evidence Skill calls and client ACK counts are separate metrics; neither claims a Brain understood a message or an exact reference count.",
+    "SQLite audit checks explicit private-policy/secret-key structure, not arbitrary paraphrases. Read after reports stop for reproducible artifact hashes.",
+    "RTT p95 is nearest-rank over retained samples; FPS is client mean; cross-host message latency is approximate wall-clock difference.",
+    "Headless clients have no graphics device: their frame rate is not a rendered-game performance measurement.",
+    "The optional case label is supplied only to this offline validator and is never forwarded to a Brain."
+  ],
+  "passed": true,
+  "processes": {
+    "actual_live_pids_verified": false,
+    "agents_expected": 2,
+    "recorded_launch_metadata_checked": true,
+    "runtime_and_unity_processes_expected": 4
+  },
+  "schema": "actor.investigation-summary.v1",
+  "validation_case": "mixed-codex-sheriff"
+}

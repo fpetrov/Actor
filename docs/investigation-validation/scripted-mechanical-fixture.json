@@ -1,0 +1,12 @@
+{
+  "scenario": "mechanical",
+  "claimant": false,
+  "human_observer_requested": true,
+  "human_observer_verified": true,
+  "pair_exit_code": 0,
+  "crew_objective_passed": true,
+  "actual_maintenance_verified": true,
+  "claimant_send_skill_succeeded": false,
+  "claimant_client_receipt_verified": false,
+  "passed": true
+}

@@ -1,0 +1,16 @@
+{
+  "schema": "actor.m6-source-invariants.v1",
+  "baseline_commit": "1236ab6e94bb0cad0586e16758e7a79ff68f18f1",
+  "checks": {
+    "core_schema_unchanged": true,
+    "standard_motion_unchanged": true,
+    "standard_communication_unchanged": true,
+    "offline_main_hall_unchanged": true,
+    "original_character_prefab_unchanged": true,
+    "movement_motor_unchanged": true,
+    "network_prediction_unchanged": true,
+    "all_original_png_bytes_unchanged": true
+  },
+  "original_png_files_verified": 46,
+  "passed": true
+}

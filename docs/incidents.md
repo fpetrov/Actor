@@ -1,7 +1,8 @@
 # Cooling incident contract
 
-**Milestone 6 implementation contract; live acceptance pending.** This describes
-the typed/server boundary, not completed deployment evidence.
+This describes the typed/server lifecycle used by the deployed Milestone 6
+game. Actual completion and disconnect results are recorded separately in the
+[validation report](investigation-validation/README.md).
 
 Agents Arena adds one small cooling incident above its existing authoritative
 multiplayer world. The dedicated server owns the real cause, clocks, active

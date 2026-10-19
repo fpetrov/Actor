@@ -1,9 +1,8 @@
 # Role-based investigation
 
-**Milestone 6 implementation contract; live demonstration pending.** Generated types
-and protocol checks alone do not prove successful multiplayer investigation.
-Actual scripted, mixed-provider, two-Codex, observer and failure runs require
-separate reviewed evidence after implementation and deployment.
+Milestone 6 provides server-authoritative role-based investigation. The
+[validation report](investigation-validation/README.md) separates live scripted,
+mixed-provider and two-Codex results, fault tests and measured limitations.
 
 The Engineer observes technical symptoms; the Sheriff observes a bounded audit
 slice. Neither receives a server `actual_cause` field. Two independent Runtime

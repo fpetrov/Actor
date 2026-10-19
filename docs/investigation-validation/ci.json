@@ -1,0 +1,19 @@
+{
+  "schema": "actor.m6-ci.v1",
+  "functional_source_commit": "0e4607e7904e74c28268b5da8c3fe5acfce2359c",
+  "workflows": [
+    {
+      "name": "Control Plane",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/fpetrov/Actor/actions/runs/39319802473"
+    },
+    {
+      "name": "ACTOR SDK and Runtime",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/fpetrov/Actor/actions/runs/39319802455"
+    }
+  ],
+  "passed": true
+}

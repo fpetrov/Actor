@@ -1,0 +1,83 @@
+{
+  "completed": true,
+  "connected": true,
+  "maxSpeed": 2.5999999046325684,
+  "visualResponseMs": 32.351016998291016,
+  "authoritativeResponseMs": 323.7543029785156,
+  "releaseResponseMs": 99.14923095703125,
+  "idleError": 0.004975616931915283,
+  "checks": [
+    {
+      "name": "Client physics remains non-authoritative",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Local presentation responds within two frames",
+      "passed": true,
+      "detail": "32.4 ms"
+    },
+    {
+      "name": "Authoritative root still receives server movement",
+      "passed": true,
+      "detail": "323.8 ms"
+    },
+    {
+      "name": "Release decelerates locally without waiting for server",
+      "passed": true,
+      "detail": "99.1 ms"
+    },
+    {
+      "name": "Idle reconciles to the server",
+      "passed": true,
+      "detail": "0.0050"
+    },
+    {
+      "name": "Rapid reversals converge without accumulated drift",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Predicted and authoritative wall collision agree",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Holding into a wall does not drift or jitter",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Diagonal wall contact slides instead of sticking",
+      "passed": true,
+      "detail": "start=(3.21, -1.52, 0.00) end=(3.03, -1.86, 0.00)"
+    },
+    {
+      "name": "Can move away from a wall immediately",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Speed remains normalized",
+      "passed": true,
+      "detail": "2.600"
+    },
+    {
+      "name": "Client root manipulation cannot become authoritative",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "No runtime errors or warnings",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "schema": "actor.m6-movement-regression.v1",
+  "windowed": true,
+  "synthetic_input_source": true,
+  "native_keyboard_latency_measured": false,
+  "passed": true
+}

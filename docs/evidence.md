@@ -1,8 +1,8 @@
 # Investigation evidence and provenance
 
-**Milestone 6 implementation contract; live acceptance pending.** Typed schemas
-and deterministic checks do not establish deployed recipient isolation or a
-successful live paired-scenario run.
+Evidence is issued by the game server and delivered only to the permitted
+owner. The [validation report](investigation-validation/README.md) records
+recipient separation, hard-negative tests and live cooperative results.
 
 Evidence is an Agents Arena concept. `EvidenceProvenance` records a server-issued
 identity, incident, source entity, observation/expiry times, server revision,

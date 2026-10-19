@@ -1,8 +1,8 @@
 # Agents Arena station duties
 
-**Milestone 6 implementation contract; live acceptance pending.** Generated types
-and deterministic authority tests do not by themselves establish a successful
-multi-agent demonstration.
+Station duties and permissions are enforced by the game server. See the
+[validation report](investigation-validation/README.md) for live role separation
+and independent-agent results.
 
 `CrewRole` is a reference-game duty, separate from the temporary calibration
 Coordinator/Technician assignment. All role types live in the `agents-arena`

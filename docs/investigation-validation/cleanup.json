@@ -1,0 +1,7 @@
+{
+  "schema": "actor.m6-owned-process-cleanup.v1",
+  "recorded_runtime_and_client_processes_checked": 106,
+  "owned_case_runtime_and_client_processes_remaining": 0,
+  "read_only_pid_identity_check": true,
+  "passed": true
+}

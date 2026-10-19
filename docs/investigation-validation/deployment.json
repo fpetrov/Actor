@@ -1,0 +1,23 @@
+{
+  "game_release": "20261019T194337Z-88a9df1",
+  "control_plane_release": "20261019T194337Z-88a9df1",
+  "versions": {
+    "gameVersion": "0.7.0",
+    "protocolVersion": "3",
+    "maxConcurrentGameServers": 5,
+    "defaultMaxPlayers": 8
+  },
+  "health": {
+    "status": "healthy"
+  },
+  "game_executable_sha256": "c9724c53ae3bc7a0ac1143ab71679b777055196707c1f2be3b65de355cd46e82",
+  "game_assembly_sha256": "7d4c2bf2d7175eb2315924e9787da6d69ceec7a173b973e9d4752b6ba94a785b",
+  "runtime_port_listening": false,
+  "client_executable_sha256": "028b3a35bb8cfb94b2246b6b25335c2c0d9c4ab73c5d3a19e2a5cc23bafa224a",
+  "client_assembly_sha256": "1968f47a19b3a33bc440faa147dab384a733717503e1e528559a405d9313ef00",
+  "client_build_source_commit": "73b8d13",
+  "server_authority_source_commit": "88a9df1",
+  "client_headless_target_frame_rate": 60,
+  "client_player_subtarget": true,
+  "final_health_and_binary_identity_reverified": true
+}

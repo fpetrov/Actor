@@ -1,0 +1,450 @@
+{
+  "acceptance": {
+    "both_cooling_restored": false,
+    "both_incidents_resolved": false,
+    "both_objectives_passed": false,
+    "both_reports_validated": false,
+    "client_runtime_identities_match": true,
+    "database_configuration_matches": true,
+    "distinct_accepted_session_ids": true,
+    "distinct_actor_ids": true,
+    "distinct_database_files": true,
+    "distinct_database_paths": true,
+    "distinct_runtime_endpoints": true,
+    "engineer_repair_confirmed": false,
+    "expected_distinct_duties": false,
+    "isolated_own_memory_profiles": true,
+    "launch_database_and_profiles_match": true,
+    "launch_ports_match_runtime_endpoints": true,
+    "recorded_distinct_bridge_credentials": true,
+    "recorded_four_distinct_processes": true,
+    "role_private_evidence_separation": false,
+    "same_nonempty_incident_id": false,
+    "sheriff_report_confirmed": false,
+    "sqlite_structural_redaction_passed": true
+  },
+  "agents": {
+    "engineer": {
+      "client": {
+        "elapsed_seconds": 145.17159125,
+        "errors": 0,
+        "max_pump_ms": 3.83,
+        "mean_fps": 59.47444624431641,
+        "mean_message_latency_ms": 275.0,
+        "messages_received": 1,
+        "receipts_client_received": 0,
+        "receipts_rejected": 0,
+        "receipts_server_accepted": 0,
+        "warnings": 0
+      },
+      "codex": {
+        "interrupted_turns": 0,
+        "turn_duration_seconds": {
+          "max": 11.818252707947977,
+          "mean": 6.06634413866171,
+          "median": 3.6728953330311924,
+          "p95": 11.818252707947977,
+          "samples": 3,
+          "total": 18.19903241598513
+        },
+        "turns_recorded": 3,
+        "unique_model_turns": 3,
+        "usage_totals": {
+          "cached_input_tokens": 39040,
+          "input_tokens": 79827,
+          "output_tokens": 404,
+          "total_tokens": 80231
+        }
+      },
+      "cognition": {
+        "cleanup_error_count": 0,
+        "context_bytes": {
+          "max": 9691,
+          "mean": 7771.333333333333,
+          "median": 7915,
+          "p95": 9691,
+          "samples": 3,
+          "total": 23314
+        },
+        "decision_duration_seconds": {
+          "max": 11.82191962498473,
+          "mean": 6.068968611323119,
+          "median": 3.6751021670061164,
+          "p95": 11.82191962498473,
+          "samples": 3,
+          "total": 18.20690583396936
+        },
+        "decisions_recorded": 3,
+        "pending_cleanup_tasks": 0
+      },
+      "completion_evidence": {
+        "source": "final_client",
+        "validation": "missing"
+      },
+      "identity": {
+        "actor_id": "e6b70ed7b6cf438f95603528705c7844",
+        "actor_matches_runtime": true,
+        "matching_runtime_sessions": 1,
+        "role": null,
+        "runtime_session_count": 1
+      },
+      "incident": {
+        "cooling_status": "Unspecified",
+        "diagnostic_evidence_count": 0,
+        "hypotheses_proposed_by_scripted_provider": null,
+        "incident_id": null,
+        "incidents_started": 0,
+        "own_diagnostic_present": false,
+        "own_security_present": false,
+        "repairs_completed": 0,
+        "report_validated": false,
+        "reports_rejected": 0,
+        "reports_validated": 0,
+        "security_evidence_count": 0,
+        "status": "Unspecified"
+      },
+      "input_errors": {
+        "client": null,
+        "runtime": null
+      },
+      "inputs": {
+        "client": {
+          "bytes": 2013,
+          "present": true,
+          "sha256": "67e98f5085b009fa5f873998c6cd74e7f0d714b79e4604c1b0e95389e47092b3"
+        },
+        "client_completed": {
+          "present": false
+        },
+        "client_investigation_completed": {
+          "present": false
+        },
+        "runtime": {
+          "bytes": 39326,
+          "present": true,
+          "sha256": "e9557180362bb0cb631fcdf20209f694f9b859fab06d84997db5bac539995f34"
+        }
+      },
+      "launch_metadata": {
+        "database_matches": true,
+        "present": true,
+        "profile_matches": true
+      },
+      "memory": {
+        "actors": 1,
+        "artifact": {
+          "bytes": 24576,
+          "present": true,
+          "sha256": "79249727c936ac185a1bd51463fa4eeecfcf82434fd28abcf82ec6899b6467a7"
+        },
+        "configured_path_matches_local_database": true,
+        "entries": 4,
+        "entries_by_kind": {
+          "objective_result": 1,
+          "observed_event": 0,
+          "observed_fact": 0,
+          "other": 0,
+          "skill_result": 3
+        },
+        "own_profile_entries": 4,
+        "profiles": 1,
+        "retention_audit": {
+          "invalid_content_rows": 0,
+          "oversized_content_rows": 0,
+          "private_payload_fields": 0,
+          "private_policy_nodes": 0,
+          "redacted_private_payload_fields": 0,
+          "redacted_secret_named_fields": 0,
+          "secret_named_fields": 0,
+          "unredacted_private_payload_fields": 0,
+          "unredacted_secret_named_fields": 0
+        },
+        "runtime_counters": {
+          "entries": 2,
+          "global_entries": 2,
+          "pending_operations": 1,
+          "retrieval_count": 3,
+          "retrieved_entries": 3
+        },
+        "sessions": 1,
+        "state": "read_only",
+        "structural_redaction_passed": true,
+        "wal_present": false
+      },
+      "objective": {
+        "decision_count": 3,
+        "duration_seconds": 143.19087233400205,
+        "passed": false,
+        "status": "cancelled"
+      },
+      "provider": "codex",
+      "rendering_mode": "headless",
+      "runtime": {
+        "command_result_rtt_ms": {
+          "max": 29.193750000558794,
+          "mean": 9.272374110407,
+          "median": 9.407000034116209,
+          "p95": 16.752916970290244,
+          "samples": 463,
+          "total": 4293.109213118441
+        },
+        "commands_sent": 463,
+        "cpu_percent_one_core": 4.700360070356549,
+        "cpu_seconds": 6.847404,
+        "elapsed_seconds": 145.6782862909604,
+        "errors": 0,
+        "events_received": 4,
+        "observation_frames": 1973,
+        "privacy": {
+          "private_data_observed": true,
+          "redaction_degraded": false,
+          "registered_secrets": 0
+        }
+      },
+      "skills": {
+        "by_id": {
+          "agents-arena.navigate-to-room": 1,
+          "agents-arena.select-role": 1,
+          "agents-arena.wait-for-incident": 1
+        },
+        "cancelled": 1,
+        "count": 3,
+        "duration_seconds": {
+          "max": 98.19801370799541,
+          "mean": 40.7222754166772,
+          "median": 23.737531749997288,
+          "p95": 98.19801370799541,
+          "samples": 3,
+          "total": 122.16682625003159
+        },
+        "failures": 0,
+        "statuses": {
+          "cancelled": 1,
+          "succeeded": 2
+        },
+        "successful_share_evidence_skill_calls": 0
+      }
+    },
+    "sheriff": {
+      "client": {
+        "elapsed_seconds": 147.949690792,
+        "errors": 0,
+        "max_pump_ms": 4.0554,
+        "mean_fps": 59.53375064759695,
+        "mean_message_latency_ms": 0.0,
+        "messages_received": 0,
+        "receipts_client_received": 1,
+        "receipts_rejected": 0,
+        "receipts_server_accepted": 1,
+        "warnings": 0
+      },
+      "codex": {
+        "interrupted_turns": 0,
+        "turn_duration_seconds": {
+          "max": 13.253807709028479,
+          "mean": 6.762605416995939,
+          "median": 4.809631416981574,
+          "p95": 13.253807709028479,
+          "samples": 3,
+          "total": 20.287816250987817
+        },
+        "turns_recorded": 3,
+        "unique_model_turns": 3,
+        "usage_totals": {
+          "cached_input_tokens": 55424,
+          "input_tokens": 79678,
+          "output_tokens": 461,
+          "total_tokens": 80139
+        }
+      },
+      "cognition": {
+        "cleanup_error_count": 0,
+        "context_bytes": {
+          "max": 7922,
+          "mean": 7137.333333333333,
+          "median": 7781,
+          "p95": 7922,
+          "samples": 3,
+          "total": 21412
+        },
+        "decision_duration_seconds": {
+          "max": 13.255274583003484,
+          "mean": 6.764271930675022,
+          "median": 4.811385000008158,
+          "p95": 13.255274583003484,
+          "samples": 3,
+          "total": 20.292815792025067
+        },
+        "decisions_recorded": 3,
+        "pending_cleanup_tasks": 0
+      },
+      "completion_evidence": {
+        "source": "final_client",
+        "validation": "missing"
+      },
+      "identity": {
+        "actor_id": "8caf1f67a51d4588ad6f54e992d9b204",
+        "actor_matches_runtime": true,
+        "matching_runtime_sessions": 1,
+        "role": null,
+        "runtime_session_count": 1
+      },
+      "incident": {
+        "cooling_status": "Unspecified",
+        "diagnostic_evidence_count": 0,
+        "hypotheses_proposed_by_scripted_provider": null,
+        "incident_id": null,
+        "incidents_started": 0,
+        "own_diagnostic_present": false,
+        "own_security_present": false,
+        "repairs_completed": 0,
+        "report_validated": false,
+        "reports_rejected": 0,
+        "reports_validated": 0,
+        "security_evidence_count": 0,
+        "status": "Unspecified"
+      },
+      "input_errors": {
+        "client": null,
+        "runtime": null
+      },
+      "inputs": {
+        "client": {
+          "bytes": 1943,
+          "present": true,
+          "sha256": "bf026942d452ea47fef82ca74d9c09a6d07a141e30c99a47cc09942c8005c680"
+        },
+        "client_completed": {
+          "present": false
+        },
+        "client_investigation_completed": {
+          "present": false
+        },
+        "runtime": {
+          "bytes": 24061,
+          "present": true,
+          "sha256": "5acebddd406de5f64bce38d4c9fbe223beb70a7c4f142287dbe325885c82d3f1"
+        }
+      },
+      "launch_metadata": {
+        "database_matches": true,
+        "present": true,
+        "profile_matches": true
+      },
+      "memory": {
+        "actors": 1,
+        "artifact": {
+          "bytes": 24576,
+          "present": true,
+          "sha256": "e49c4e5da77cecbb25b200e0adc677aa9b93581ea484a5f7601244712980bf28"
+        },
+        "configured_path_matches_local_database": true,
+        "entries": 4,
+        "entries_by_kind": {
+          "objective_result": 1,
+          "observed_event": 0,
+          "observed_fact": 0,
+          "other": 0,
+          "skill_result": 3
+        },
+        "own_profile_entries": 4,
+        "profiles": 1,
+        "retention_audit": {
+          "invalid_content_rows": 0,
+          "oversized_content_rows": 0,
+          "private_payload_fields": 4,
+          "private_policy_nodes": 2,
+          "redacted_private_payload_fields": 4,
+          "redacted_secret_named_fields": 0,
+          "secret_named_fields": 0,
+          "unredacted_private_payload_fields": 0,
+          "unredacted_secret_named_fields": 0
+        },
+        "runtime_counters": {
+          "entries": 2,
+          "global_entries": 2,
+          "pending_operations": 1,
+          "retrieval_count": 3,
+          "retrieved_entries": 3
+        },
+        "sessions": 1,
+        "state": "read_only",
+        "structural_redaction_passed": true,
+        "wal_present": false
+      },
+      "objective": {
+        "decision_count": 3,
+        "duration_seconds": 146.1109203750384,
+        "passed": false,
+        "status": "cancelled"
+      },
+      "provider": "codex",
+      "rendering_mode": "headless",
+      "runtime": {
+        "command_result_rtt_ms": {
+          "max": 15.92145801987499,
+          "mean": 12.754999993679425,
+          "median": 13.825416972395033,
+          "p95": 15.92145801987499,
+          "samples": 3,
+          "total": 38.26499998103827
+        },
+        "commands_sent": 3,
+        "cpu_percent_one_core": 4.459952604150986,
+        "cpu_seconds": 6.618811,
+        "elapsed_seconds": 148.40541116602253,
+        "errors": 0,
+        "events_received": 4,
+        "observation_frames": 2018,
+        "privacy": {
+          "private_data_observed": true,
+          "redaction_degraded": false,
+          "registered_secrets": 0
+        }
+      },
+      "skills": {
+        "by_id": {
+          "actor.send-message": 1,
+          "agents-arena.select-role": 1,
+          "agents-arena.wait-for-incident": 1
+        },
+        "cancelled": 1,
+        "count": 3,
+        "duration_seconds": {
+          "max": 119.95408575003967,
+          "mean": 40.14717249968089,
+          "median": 0.2568672079942189,
+          "p95": 119.95408575003967,
+          "samples": 3,
+          "total": 120.44151749904267
+        },
+        "failures": 0,
+        "statuses": {
+          "cancelled": 1,
+          "succeeded": 2
+        },
+        "successful_share_evidence_skill_calls": 0
+      }
+    }
+  },
+  "measurement_notes": [
+    "Success requires both Objectives passed+succeeded and matching public Resolved/Restored/report-validated state; FinishObjective alone is insufficient.",
+    "Only fully cleared final owner state may use a contemporaneous own-success/own-Resolved snapshot tied to its retained accepted session and exact Runtime actor. All final counters and private-view checks remain unchanged.",
+    "Recorded launch PIDs, ports, credential fingerprints and database paths are compared privately; no live process identity is inspected and those values are omitted.",
+    "Evidence counters describe authorized client receipts; private payloads, reference IDs, hypotheses and messages are never reproduced.",
+    "Successful share-evidence Skill calls and client ACK counts are separate metrics; neither claims a Brain understood a message or an exact reference count.",
+    "SQLite audit checks explicit private-policy/secret-key structure, not arbitrary paraphrases. Read after reports stop for reproducible artifact hashes.",
+    "RTT p95 is nearest-rank over retained samples; FPS is client mean; cross-host message latency is approximate wall-clock difference.",
+    "Headless clients have no graphics device: their frame rate is not a rendered-game performance measurement.",
+    "The optional case label is supplied only to this offline validator and is never forwarded to a Brain."
+  ],
+  "passed": false,
+  "processes": {
+    "actual_live_pids_verified": false,
+    "agents_expected": 2,
+    "recorded_launch_metadata_checked": true,
+    "runtime_and_unity_processes_expected": 4
+  },
+  "schema": "actor.investigation-summary.v1",
+  "validation_case": "manual-claim-navigation-failure"
+}

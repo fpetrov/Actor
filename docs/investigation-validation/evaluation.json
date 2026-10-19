@@ -1,0 +1,112 @@
+{
+  "schema": "actor.m6-development-evaluation.v1",
+  "scope": "All recorded development investigation attempts; not a frozen-version model benchmark",
+  "case_attempts": 13,
+  "strict_accepted_pairs": 6,
+  "strict_accepted_pair_fraction": 0.46153846153846156,
+  "recorded_terminal_investigator_objectives": 25,
+  "terminal_objective_counts": {
+    "succeeded": 14,
+    "failed": 7,
+    "cancelled": 4,
+    "not_recorded_terminal": 1
+  },
+  "objective_success_fraction": 0.56,
+  "includes_user_interrupted_fullscreen_attempt": true,
+  "includes_successful_objectives_with_failed_cleanup_measurement": true,
+  "intentional_fault_cases_included": false,
+  "auxiliary_crew_objectives_included": false,
+  "cases": [
+    {
+      "case": "mixed-codex-engineer-01",
+      "objectives": {
+        "engineer": "succeeded",
+        "sheriff": "succeeded"
+      }
+    },
+    {
+      "case": "mixed-codex-sheriff-01",
+      "objectives": {
+        "engineer": "failed",
+        "sheriff": "failed"
+      }
+    },
+    {
+      "case": "mixed-codex-sheriff-02",
+      "objectives": {
+        "engineer": "cancelled",
+        "sheriff": "failed"
+      }
+    },
+    {
+      "case": "mixed-codex-sheriff-03",
+      "objectives": {
+        "engineer": "succeeded",
+        "sheriff": "succeeded"
+      }
+    },
+    {
+      "case": "mixed-codex-sheriff-04",
+      "objectives": {
+        "engineer": "succeeded",
+        "sheriff": "succeeded"
+      }
+    },
+    {
+      "case": "scripted-manual-01",
+      "objectives": {
+        "engineer": "succeeded",
+        "sheriff": "succeeded"
+      }
+    },
+    {
+      "case": "scripted-mechanical-01",
+      "objectives": {
+        "engineer": "not_recorded_terminal",
+        "sheriff": "failed"
+      }
+    },
+    {
+      "case": "scripted-mechanical-02",
+      "objectives": {
+        "engineer": "failed",
+        "sheriff": "cancelled"
+      }
+    },
+    {
+      "case": "scripted-mechanical-03",
+      "objectives": {
+        "engineer": "failed",
+        "sheriff": "failed"
+      }
+    },
+    {
+      "case": "scripted-mechanical-04",
+      "objectives": {
+        "engineer": "succeeded",
+        "sheriff": "succeeded"
+      }
+    },
+    {
+      "case": "two-codex-manual-claim-01",
+      "objectives": {
+        "engineer": "cancelled",
+        "sheriff": "cancelled"
+      }
+    },
+    {
+      "case": "two-codex-manual-claim-02",
+      "objectives": {
+        "engineer": "succeeded",
+        "sheriff": "succeeded"
+      }
+    },
+    {
+      "case": "two-codex-mechanical-01",
+      "objectives": {
+        "engineer": "succeeded",
+        "sheriff": "succeeded"
+      }
+    }
+  ]
+}

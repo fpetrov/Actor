@@ -1,0 +1,17 @@
+{
+  "schema": "actor.investigation-live-process-proof.v1",
+  "actual_live_pids_verified": true,
+  "checks": {
+    "four_distinct_live_runtime_and_unity_processes": true,
+    "each_runtime_and_unity_has_own_launcher_parent": true,
+    "each_pair_has_own_launcher_process_group": true,
+    "distinct_pair_process_groups": true,
+    "ordinary_unity_player_executables": true,
+    "both_real_codex_provider_configured": true,
+    "distinct_live_codex_descendants": true,
+    "distinct_bridge_ports": true,
+    "distinct_ephemeral_bridge_credentials": true,
+    "distinct_memory_files": true
+  },
+  "passed": true
+}

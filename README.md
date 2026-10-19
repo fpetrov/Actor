@@ -166,8 +166,14 @@ With a matching 0.7.0 lobby/client, launch the Engineer and Sheriff:
 ```bash
 python3 scripts/launch-investigation-agents.py --room ABC123
 python3 scripts/launch-investigation-agents.py --room ABC123 \
-  --engineer-brain codex --sheriff-brain codex
+  --engineer-brain codex --sheriff-brain codex \
+  --config docs/investigation-config.json --headless-client --exit-on-complete
 ```
+
+These launchers open clients in 800×600 windows. `--headless-client` runs ordinary
+game clients without windows, capped at 60 FPS; a Human client can join separately.
+The example config bounds decision context and provider usage and contains no
+scenario information. See the [Milestone 6 validation report](docs/investigation-validation/README.md).
 
 The Engineer inspects private cooling symptoms, shares a bounded claim through
 the ordinary game-server direct-message path and repairs the equipment. The

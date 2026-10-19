@@ -1,0 +1,11 @@
+{
+  "schema": "actor.m6-navigation-failure.v1",
+  "crew_maintenance_status": "failed",
+  "crew_maintenance_reason": "route_failed",
+  "crew_maintenance_seconds": 38.685820291982964,
+  "crew_movement_commands": 350,
+  "authoritative_maintenance_action_performed": false,
+  "incident_started": false,
+  "own_fixture_cancelled": true,
+  "passed": false
+}

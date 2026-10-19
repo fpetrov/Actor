@@ -77,7 +77,13 @@ Cooling Control and its maintenance controls share one object and collider.
 
 The same physical capsule-center convention applies. The two Engineering poses
 leave separate positions for an Engineer and a maintenance operator; both reach
-the actual Cooling Control. `IncidentWorldBuilder.Validate` checks these three
+the actual Cooling Control. Investigation service Skills follow authored
+corridor lanes at x±0.3 and Hall staging at y=-3.3, going directly to these
+approaches instead of stopping on a shared room anchor. Lane changes in
+Engineering happen above the waiting position at y=-6. Fresh stopping and the
+authoritative room-transition event remain required. This is a bounded route
+for the reference game, not general dynamic-obstacle pathfinding.
+`IncidentWorldBuilder.Validate` checks these three
 capsules against static colliders and their terminal radii during preparation.
 These source checks require execution in Unity; their presence alone is not a
 new live passage or visual acceptance result.

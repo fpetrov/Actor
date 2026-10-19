@@ -1,0 +1,12 @@
+{
+  "context": {
+    "max_external_context_bytes": 16384,
+    "max_observations": 16,
+    "max_events": 8,
+    "max_memory_items": 3
+  },
+  "brain": {
+    "usage_warning_tokens": 200000,
+    "usage_limit_tokens": 500000
+  }
+}

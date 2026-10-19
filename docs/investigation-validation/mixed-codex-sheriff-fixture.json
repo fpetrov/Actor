@@ -1,0 +1,13 @@
+{
+  "scenario": "manual",
+  "claimant": false,
+  "agents_headless": true,
+  "human_observer_requested": false,
+  "human_observer_verified": false,
+  "pair_exit_code": 0,
+  "crew_objective_passed": true,
+  "actual_maintenance_verified": true,
+  "claimant_send_skill_succeeded": false,
+  "claimant_client_receipt_verified": false,
+  "passed": true
+}

@@ -1,0 +1,124 @@
+{
+  "schema": "actor.investigation-fault-summary.v1",
+  "passed": true,
+  "live_network_fixture": true,
+  "runtime_provider": "scripted",
+  "game_version": "0.7.0",
+  "admission_protocol": "3",
+  "cases": [
+    {
+      "case": "engineer-runtime",
+      "passed": true,
+      "source_artifact_sha256": "3d54095de98efb5b63c41841e1c20bb5c3a5a1306f8e14d63efdcb54d307f1df",
+      "created_at": "2026-10-19T19:58:11.146241+00:00",
+      "before_fault": {
+        "distinct_investigator_actors": true,
+        "same_active_incident": true
+      },
+      "fault_identity_verified": true,
+      "seconds_to_safe_terminal_sample": 0.992197,
+      "terminal_deadline_seconds": 15,
+      "existing_ngo_disconnect_timeout_seconds": null,
+      "after_fault": {
+        "engineer": {
+          "runtime_abruptly_killed": true,
+          "last_runtime_report_is_stale": true,
+          "client_state": "Error",
+          "stationary_with_keyboard_disabled": true,
+          "same_game_actor_preserved": true
+        },
+        "sheriff": {
+          "objective_status": "failed",
+          "objective_reason": "brain_reported_failure",
+          "foreground_skill_cleared": true,
+          "stationary_with_keyboard_disabled": true,
+          "client_state": "Connected",
+          "incident_status": "Cancelled",
+          "same_game_actor_preserved": true
+        }
+      },
+      "commands_stable_for_one_second": true,
+      "all_owned_processes_exited_after_cleanup": true,
+      "owned_server_terminated": true
+    },
+    {
+      "case": "sheriff-client",
+      "passed": true,
+      "source_artifact_sha256": "5b116db27dd9d6ce178ee043869e33c6c09ac8646f47ef25df308b17bab2fc69",
+      "created_at": "2026-10-19T20:00:13.636600+00:00",
+      "before_fault": {
+        "distinct_investigator_actors": true,
+        "same_active_incident": true
+      },
+      "fault_identity_verified": true,
+      "seconds_to_safe_terminal_sample": 30.733107,
+      "terminal_deadline_seconds": 45,
+      "existing_ngo_disconnect_timeout_seconds": 30,
+      "after_fault": {
+        "engineer": {
+          "objective_status": "failed",
+          "objective_reason": "brain_reported_failure",
+          "foreground_skill_cleared": true,
+          "stationary_with_keyboard_disabled": true,
+          "client_state": "Connected",
+          "incident_status": "Cancelled",
+          "same_game_actor_preserved": true
+        },
+        "sheriff": {
+          "client_abruptly_killed": true,
+          "last_client_report_is_stale": true,
+          "objective_status": "failed",
+          "objective_reason": "session_disconnected",
+          "foreground_skill_cleared": true
+        }
+      },
+      "commands_stable_for_one_second": true,
+      "all_owned_processes_exited_after_cleanup": true,
+      "owned_server_terminated": true
+    },
+    {
+      "case": "server",
+      "passed": true,
+      "source_artifact_sha256": "242829687ebe51046d73b6a8ae0042c4ec2da2f660aeb3ae538b2b99af12895b",
+      "created_at": "2026-10-19T20:01:41.456505+00:00",
+      "before_fault": {
+        "distinct_investigator_actors": true,
+        "same_active_incident": true
+      },
+      "fault_identity_verified": true,
+      "seconds_to_safe_terminal_sample": 3.532391,
+      "terminal_deadline_seconds": 45,
+      "existing_ngo_disconnect_timeout_seconds": 30,
+      "after_fault": {
+        "engineer": {
+          "objective_status": "failed",
+          "objective_reason": "session_disconnected",
+          "foreground_skill_cleared": true,
+          "stationary_with_keyboard_disabled": true,
+          "client_state": "Disconnected",
+          "game_actor_removed": true
+        },
+        "sheriff": {
+          "objective_status": "failed",
+          "objective_reason": "session_disconnected",
+          "foreground_skill_cleared": true,
+          "stationary_with_keyboard_disabled": true,
+          "client_state": "Disconnected",
+          "game_actor_removed": true
+        }
+      },
+      "commands_stable_for_one_second": true,
+      "all_owned_processes_exited_after_cleanup": true,
+      "owned_server_terminated": true
+    }
+  ],
+  "privacy_projection": "Explicit statuses, booleans, bounded timings and source SHA-256 only.",
+  "limitations": [
+    "No GUI, Unity process, network request or fault was launched during this offline evidence review.",
+    "Results come from three actual production Runtime/Unity/VPS fault reports and their recorded ownership guards.",
+    "Terminal claims concern the Engineer and Sheriff. Auxiliary Crew is not claimed terminal at the sampled instant.",
+    "A killed process leaves a stale last report; that report is not evidence that its foreground task or client stayed alive.",
+    "The one-second stable-command sample is bounded evidence, not a claim of indefinite behavior.",
+    "Safety convergence timing is not keyboard-to-render or movement response latency. Headless/rendered performance is not measured."
+  ]
+}
