@@ -40,7 +40,7 @@ namespace Actor.World
             GUI.Label(new Rect(28, 403, 310, 25), owner.LastAction, body);
             if (owner.Human)
             {
-                GUI.enabled = !owner.Role.SelectionLocked;
+                GUI.enabled = owner.HasOwnState && !owner.Role.SelectionLocked;
                 var roles = new[] { CrewRole.Crew, CrewRole.Engineer, CrewRole.Sheriff };
                 for (int i = 0; i < roles.Length; ++i)
                     if (GUI.Button(new Rect(28 + i * 102, 435, 98, 29), roles[i].ToString()))

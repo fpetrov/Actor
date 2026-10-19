@@ -14,8 +14,14 @@ ACTOR_REMOTE="$ACTOR_SSH_USER@$ACTOR_HOST"
 ACTOR_SSH=(ssh -i "$ACTOR_SSH_KEY" -o BatchMode=yes -o ConnectTimeout=15 "$ACTOR_REMOTE")
 ACTOR_RSYNC_SSH="ssh -i '$ACTOR_SSH_KEY' -o BatchMode=yes -o ConnectTimeout=15"
 "${ACTOR_SSH[@]}" "test -d /etc/actor && test -d /var/lib/actor && id actor >/dev/null && mkdir -p /opt/actor/control-plane/releases/$ACTOR_RELEASE /opt/actor/agents-arena/releases/$ACTOR_RELEASE /opt/actor/staging/$ACTOR_RELEASE"
-rsync -a -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/control-plane/" "$ACTOR_REMOTE:/opt/actor/control-plane/releases/$ACTOR_RELEASE/"
-rsync -a -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/agents-arena-server/" "$ACTOR_REMOTE:/opt/actor/agents-arena/releases/$ACTOR_RELEASE/"
+# Reuse unchanged files on the destination without linking mutable release
+# inodes. Unity's large native libraries rarely change between game milestones.
+# rsync still transfers changed content and preserves each rollback release.
+ACTOR_CP_BASIS=(); ACTOR_GAME_BASIS=()
+if "${ACTOR_SSH[@]}" "test -d /opt/actor/control-plane/current"; then ACTOR_CP_BASIS=(--copy-dest=/opt/actor/control-plane/current/); fi
+if "${ACTOR_SSH[@]}" "test -d /opt/actor/agents-arena/current"; then ACTOR_GAME_BASIS=(--copy-dest=/opt/actor/agents-arena/current/); fi
+rsync -a "${ACTOR_CP_BASIS[@]}" -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/control-plane/" "$ACTOR_REMOTE:/opt/actor/control-plane/releases/$ACTOR_RELEASE/"
+rsync -a "${ACTOR_GAME_BASIS[@]}" -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/agents-arena-server/" "$ACTOR_REMOTE:/opt/actor/agents-arena/releases/$ACTOR_RELEASE/"
 rsync -a -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/web/" "$ACTOR_REMOTE:/opt/actor/staging/$ACTOR_RELEASE/web/"
 scp -i "$ACTOR_SSH_KEY" -o BatchMode=yes "$ACTOR_ROOT/deploy/nginx/actor.conf" "$ACTOR_ROOT/deploy/systemd/actor-control-plane.service" "$ACTOR_REMOTE:/opt/actor/staging/$ACTOR_RELEASE/"
 "${ACTOR_SSH[@]}" bash -s -- "$ACTOR_RELEASE" "$ACTOR_HOST" <<'REMOTE'

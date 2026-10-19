@@ -19,16 +19,17 @@ namespace Actor.GameAdapter
         private ActorEventPublisher<InvestigationResultEvent> report;
         private ActorEventPublisher<IncidentActionResultEvent> action;
         internal AgentsArenaInvestigationBindings(AgentsArenaGameAdapter game) => this.game = game;
+        private bool Ready => game.HasFreshState && game.Investigation.HasOwnState;
         internal void Register(IActorExtensionRegistrar registry)
         {
             registry.RegisterObservation<OwnRoleObservation>("agents-arena.own-role", "Own server-assigned duty, independent of calibration assignment.",
-                _ => game.HasFreshState ? game.Investigation.Role.Clone() : null);
+                _ => Ready ? game.Investigation.Role.Clone() : null);
             registry.RegisterObservation<DutyRosterObservation>("agents-arena.duty-roster", "Public connected crew duties; no hidden alignment.",
-                _ => game.HasFreshState ? game.Investigation.Roster.Clone() : null);
+                _ => Ready ? game.Investigation.Roster.Clone() : null);
             registry.RegisterObservation<CoolingStateObservation>("agents-arena.cooling-state", "Public alarm and repair/report progress; no cause or private evidence.",
-                _ => game.HasFreshState ? game.Investigation.Cooling.Clone() : null);
+                _ => Ready ? game.Investigation.Cooling.Clone() : null);
             registry.RegisterObservation<OwnInvestigationViewObservation>("agents-arena.own-investigation-view", "Only the current owner's role-permitted short-lived source evidence, or an explicit empty view.",
-                _ => game.HasFreshState ? game.Investigation.CaptureOwnView() : null);
+                _ => Ready ? game.Investigation.CaptureOwnView() : null);
             registry.RegisterCommand<SelectRoleCommand>("agents-arena.select-role", "Request a public unique duty; locked during active investigations.", (_, c) => game.SubmitIncident(c), CommandDelivery.Ordered);
             registry.RegisterCommand<InspectCoolingCommand>("agents-arena.inspect-cooling", "Assigned nearby Engineer requests private diagnostic evidence.", (_, c) => game.SubmitIncident(c), CommandDelivery.Ordered);
             registry.RegisterCommand<InspectSecurityRecordsCommand>("agents-arena.inspect-security-records", "Assigned nearby Sheriff requests private security records.", (_, c) => game.SubmitIncident(c), CommandDelivery.Ordered);

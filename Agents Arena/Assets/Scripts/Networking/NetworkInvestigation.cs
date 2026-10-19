@@ -31,6 +31,11 @@ namespace Actor.Networking
         private double tokens = 8, tokenAt, nextUnavailable, serverUnavailableAt;
         internal bool Human => IsSpawned && IsClient && IsOwner && GetComponent<PlayerInputSource>().isActiveAndEnabled;
         private string Self => GetComponent<NetworkCharacter>().AuthoritativeActorId;
+        // NGO spawn and the first owner-targeted state RPC are independent.
+        // Never advertise empty placeholder payloads as usable observations.
+        internal bool HasOwnState => Role.ActorId == Self && Role.MatchId.Length > 0 && Role.Role != CrewRole.Unspecified
+            && Roster.MatchId == Role.MatchId && Cooling.MatchId == Role.MatchId
+            && view.MatchId == Role.MatchId && view.RecipientActorId == Self;
 
         public override void OnNetworkSpawn()
         {

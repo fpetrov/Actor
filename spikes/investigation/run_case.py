@@ -66,6 +66,12 @@ def stop_owned(processes):
                 except ProcessLookupError: pass
             else: process.kill()
             process.wait()
+    if os.name == "posix":
+        # A crashed launcher may already have exited while its children remain
+        # in the new process group created exclusively by this fixture.
+        for process in processes:
+            try: os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError: pass
 
 
 def main():
@@ -129,10 +135,17 @@ def main():
         # Its own completed objective is checked separately from pair acceptance.
         crew_report = output / "crew/runtime.json"
         crew_ok = False
-        try:
-            value = json.loads(crew_report.read_text())["objective"]
-            crew_ok = value["passed"] is True and value["result"]["status"] == "succeeded"
-        except (OSError, ValueError, KeyError, TypeError): pass
+        crew_deadline = time.monotonic() + 12
+        while time.monotonic() < crew_deadline:
+            try:
+                value = json.loads(crew_report.read_text())["objective"]
+                status = value["result"]["status"]
+                if status in ("succeeded", "failed", "cancelled"):
+                    crew_ok = value["passed"] is True and status == "succeeded"
+                    break
+            except (OSError, ValueError, KeyError, TypeError): pass
+            if crew.poll() is not None: break
+            time.sleep(.1)
         (output / "fixture-result.json").write_text(json.dumps(dict(scenario=args.scenario, claimant=args.claimant,
             human_observer=args.human_observer, pair_exit_code=pair_code, crew_objective_passed=crew_ok), indent=2) + "\n")
         return 0 if pair_code == 0 and crew_ok else 1
