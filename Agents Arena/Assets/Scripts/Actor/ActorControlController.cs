@@ -142,7 +142,8 @@ namespace Actor.GameAdapter
             if (owner != null && owner.IsSpawned && mode == ActorControlMode.Runtime)
             {
                 if (bridge == null && endpoint != null && configurationError == null && owner.HasAuthoritativeSnapshot
-                    && !string.IsNullOrEmpty(owner.AuthoritativeActorId)) BeginBridge();
+                    && !string.IsNullOrEmpty(owner.AuthoritativeActorId)
+                    && owner.GetComponent<NetworkInvestigation>() is { HasOwnState: true }) BeginBridge();
                 bridge?.Pump(Time.realtimeSinceStartupAsDouble);
                 if (bridge != null && bridge.State == ActorConnectionState.Error)
                 {
