@@ -2,6 +2,7 @@
 import asyncio
 from dataclasses import dataclass
 import json
+import threading
 from types import SimpleNamespace
 
 from google.protobuf.wrappers_pb2 import StringValue
@@ -113,6 +114,82 @@ def registry():
     for definition in skill_package():
         result.register(definition)
     return result
+
+
+async def test_pending_cold_sdk_import_keeps_real_bridge_heartbeat_alive(manifest, monkeypatch):
+    import grpc
+    import actor_codex.adapter as adapter_module
+    from actor_runtime.extensions import ExtensionRegistry
+    from actor_runtime.server import RuntimeServer
+    from test_grpc import TOKEN, handshake, open_call
+
+    sdk = FakeSDK()
+    entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+    def cold_loader():
+        entered.set()
+        try:
+            if not release.wait(timeout=4):
+                raise TimeoutError("Bounded synthetic cold SDK loader was not released")
+            return sdk
+        finally:
+            finished.set()
+    monkeypatch.setattr(adapter_module, "sdk_module", cold_loader)
+    adapter = OfficialCodexAdapter()
+    server = RuntimeServer(ExtensionRegistry.discover(), TOKEN, port=0)
+    startup = None
+    await server.start()
+    try:
+        async with grpc.aio.insecure_channel(f"127.0.0.1:{server.port}") as channel:
+            call = open_call(channel)
+            assert (await handshake(call, manifest)).hello.accepted
+            session = await server.next_session(timeout=1)
+            startup = asyncio.create_task(adapter.start_episode("Wait briefly", registry().catalog(session)))
+            assert await asyncio.wait_for(asyncio.to_thread(entered.wait, 1), timeout=1.2)
+            assert not finished.is_set()
+            reply = await asyncio.wait_for(call.read(), timeout=1.5)
+            assert reply.WhichOneof("body") == "heartbeat"
+            assert not finished.is_set() and not startup.done(), "Heartbeat must precede completion of the cold import"
+            assert not session.closed.is_set()
+            release.set()
+            await asyncio.wait_for(startup, timeout=1)
+            assert adapter.thread is not None and len(sdk.clients) == 1
+            call.cancel()
+    finally:
+        release.set()
+        if startup is not None:
+            await asyncio.gather(startup, return_exceptions=True)
+        await adapter.close()
+        await server.stop()
+    assert sdk.clients[0].closed
+
+
+async def test_cancelled_cold_sdk_import_cannot_later_create_provider_resources(monkeypatch):
+    import actor_codex.adapter as adapter_module
+    sdk = FakeSDK()
+    entered, release, finished = threading.Event(), threading.Event(), threading.Event()
+    def cold_loader():
+        entered.set()
+        try:
+            if not release.wait(timeout=2):
+                raise TimeoutError("Bounded synthetic cold SDK loader was not released")
+            return sdk
+        finally:
+            finished.set()
+    monkeypatch.setattr(adapter_module, "sdk_module", cold_loader)
+    adapter = OfficialCodexAdapter()
+    startup = asyncio.create_task(adapter.start_episode("Wait briefly", []))
+    try:
+        assert await asyncio.wait_for(asyncio.to_thread(entered.wait, .5), timeout=.7)
+        startup.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await asyncio.wait_for(startup, timeout=.5)
+        release.set()
+        assert await asyncio.wait_for(asyncio.to_thread(finished.wait, .5), timeout=.7)
+        assert adapter.client is None and adapter.workspace is None and not sdk.clients
+    finally:
+        release.set()
+        await asyncio.gather(startup, return_exceptions=True)
+        await adapter.close()
 
 
 async def test_game_injection_is_external_message_never_user_text(session, monkeypatch):

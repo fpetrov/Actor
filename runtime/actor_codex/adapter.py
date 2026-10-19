@@ -90,7 +90,10 @@ class OfficialCodexAdapter:
     async def start_episode(self, objective: str, catalog: list[dict]):
         if self.thread is not None:
             raise ActorError("codex_episode_busy", "A Codex objective episode is already active")
-        self.sdk = self.sdk or sdk_module()
+        if self.sdk is None:
+            # Cold SDK import builds many generated types. Keep that work off
+            # the bridge loop so its heartbeats and input reader stay live.
+            self.sdk = await asyncio.to_thread(sdk_module)
         self.turn_ids.clear()
         self.interrupted_turn_ids.clear()
         self.completed_turns.clear()
