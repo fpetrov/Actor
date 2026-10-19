@@ -89,9 +89,12 @@ class DiagnosticOutput(SkillModel):
     failure_window_start_unix_ms: int
     failure_window_end_unix_ms: int
     samples: list[PressureSample] = Field(min_length=2, max_length=8)
-    equipment_wear: float = Field(ge=0, le=1)
-    controller_revision_before: int = Field(ge=0)
-    controller_revision_after: int = Field(ge=0)
+    equipment_wear: float = Field(ge=0, le=1,
+        description="Wear and pressure loss can occur in both mechanical failure and manual interference; neither alone identifies origin.")
+    controller_revision_before: int = Field(ge=0,
+        description="Correlate this revision pair with the audit record. Physical valve adjustment does not rewrite controller configuration; R→R occurs for both origins.")
+    controller_revision_after: int = Field(ge=0,
+        description="An unchanged controller revision does not exclude a physical valve adjustment.")
     source_kind: Literal["own_authoritative_observation"] = "own_authoritative_observation"
 
 
@@ -101,9 +104,10 @@ class MaintenanceRecord(SkillModel):
     circuit_ref: str
     window_start_unix_ms: int
     window_end_unix_ms: int
-    action: int = Field(ge=0, le=4)
+    action: int = Field(ge=0, le=4,
+        description="0 Unspecified; 1 Access (panel visit); 2 Inspect (read-only inspection); 3 FlowAdjustment (observed physical valve actuation, without rewriting controller revision); 4 ControllerCheck (neutral automatic checkpoint). Access/Inspect alone do not establish manual interference.")
     actor_id: str
-    interaction_confirmed: bool
+    interaction_confirmed: bool = Field(description="Whether this specific recorded action was confirmed; panel presence alone is not a confirmed flow adjustment.")
     prior_controller_revision: int = Field(ge=0)
     resulting_controller_revision: int = Field(ge=0)
 
@@ -113,7 +117,8 @@ class SecurityOutput(SkillModel):
     records: list[MaintenanceRecord] = Field(max_length=6)
     coverage_window_start_unix_ms: int
     coverage_window_end_unix_ms: int
-    complete_for_listed_circuits: bool
+    complete_for_listed_circuits: bool = Field(
+        description="Complete only for circuit_refs within the coverage interval. A conclusive report requires coverage of the diagnostic failed circuit and entire failure window.")
     circuit_refs: list[str] = Field(max_length=2)
     source_kind: Literal["own_authoritative_observation"] = "own_authoritative_observation"
 
@@ -123,7 +128,8 @@ class RepairInput(IncidentInput):
 
 
 class ReportInput(IncidentInput):
-    proposed_origin: Literal["mechanical_failure", "manual_interference", "insufficient_evidence"]
+    proposed_origin: Literal["mechanical_failure", "manual_interference", "insufficient_evidence"] = Field(
+        description="Hypothesis from the received diagnostic claim plus own audit: manual_interference requires a confirmed matching physical FlowAdjustment (3); mechanical_failure requires complete matching coverage and a neutral check/read-only record without a matching actual flow adjustment. Pressure loss, wear and unchanged R→R revisions occur for both. Choose insufficient_evidence when joint support is incomplete; its acceptance does not validate or resolve the incident.")
     supporting_evidence_ids: list[str] = Field(min_length=3, max_length=3,
         description="Exactly the diagnostic EvidenceId, own security EvidenceId and one selected maintenance RecordId.")
     explanation: str = Field(default="", max_length=256)
@@ -138,7 +144,7 @@ class ReportInput(IncidentInput):
 
 class ReportOutput(SkillModel):
     incident_id: str
-    report_validated: bool
+    report_validated: bool = Field(description="Only true confirms a server-validated conclusive report. An accepted insufficient_evidence report returns false and does not resolve the incident.")
     incident_status: str
 
 
@@ -514,7 +520,7 @@ class ShareInvestigationEvidence(ActorSkill):
         text = diagnostic_claim(value)
         if len(text.encode("utf-8")) > 512:
             raise SkillError("evidence_claim_too_large", "The bounded diagnostic claim exceeds communication limits")
-        ttl_ms = min(60000, value.provenance.expires_at_unix_ms - int(time.time() * 1000))
+        ttl_ms = min(300000, value.provenance.expires_at_unix_ms - int(time.time() * 1000))
         if ttl_ms < 1000:
             raise SkillError("evidence_unavailable", "Inspect again before sharing evidence near its expiry")
         context.expire_result_at(value.provenance.expires_at_unix_ms)
@@ -544,11 +550,11 @@ def skill_package():
                 Requirement(DUTY_ROSTER, pb.DutyRosterObservation, "observation", 3),
                 command(MAINTENANCE_OVERRIDE, pb.MaintenanceOverrideCommand), event(INCIDENT_ACTION_RESULT, pb.IncidentActionResultEvent)),
             (LOCOMOTION, MAINTENANCE_OVERRIDE), timeout_seconds=300, context_fields=("circuit_ref",)),
-        SkillDefinition("agents-arena.inspect-cooling", "1.0.0", "Engineer: navigate to the cooling console and inspect private technical evidence. A diagnostic alone cannot establish origin.",
+        SkillDefinition("agents-arena.inspect-cooling", "1.0.0", "Engineer: navigate to the cooling console and inspect private failed-circuit, failure-window, pressure, wear and controller-revision evidence. Pressure loss, wear and R→R revisions occur for BOTH mechanical failure and manual interference; this view alone cannot identify origin. ShareInvestigationEvidence sends the bounded finding needed for joint correlation to the Sheriff.",
             IncidentInput, DiagnosticOutput, InspectCooling, (*terminal, view, command(INSPECT_COOLING, pb.InspectCoolingCommand),
                 event(DIAGNOSTIC_EVIDENCE, pb.DiagnosticEvidenceEvent)), (LOCOMOTION, INSPECT_COOLING), timeout_seconds=100,
                 result_policy="session_only", context_fields=("incident_id",)),
-        SkillDefinition("agents-arena.inspect-security-records", "1.0.0", "Sheriff: navigate to security records and inspect the bounded private audit view; correlate it with the Engineer's diagnostic claim.",
+        SkillDefinition("agents-arena.inspect-security-records", "1.0.0", "Sheriff: navigate to security records and inspect own bounded audit. Action 3 FlowAdjustment records physical valve actuation without changing controller revision; 4 ControllerCheck is a neutral automatic checkpoint; 1 Access/2 Inspect alone are not manual interference. Correlate the actual received Engineer finding's failed circuit, window and revision pair with ONE confirmed record inside complete audit coverage. That received finding plus own audit needs no extra Engineer acknowledgement.",
             IncidentInput, SecurityOutput, InspectSecurityRecords, (*terminal, view, command(INSPECT_SECURITY_RECORDS, pb.InspectSecurityRecordsCommand),
                 event(SECURITY_EVIDENCE, pb.SecurityEvidenceEvent)), (LOCOMOTION, INSPECT_SECURITY_RECORDS), timeout_seconds=100,
                 result_policy="session_only", context_fields=("incident_id",)),
@@ -556,7 +562,7 @@ def skill_package():
             RepairInput, IncidentOutput, RepairCooling, (*terminal, view, command(REPAIR_COOLING, pb.RepairCoolingCommand),
                 command(CANCEL_COOLING_REPAIR, pb.CancelCoolingRepairCommand), event(REPAIR_RESULT, pb.RepairResultEvent)),
             (LOCOMOTION, REPAIR_COOLING, CANCEL_COOLING_REPAIR), timeout_seconds=110, context_fields=("incident_id",)),
-        SkillDefinition("agents-arena.submit-investigation-report", "1.0.0", "Sheriff: cite exactly diagnostic EvidenceId, own security EvidenceId and ONE selected maintenance RecordId. Correlate circuit, time coverage, controller revisions, action and pressure; message text is a claim. Wrong submissions are bounded.",
+        SkillDefinition("agents-arena.submit-investigation-report", "1.0.0", "Sheriff: cite exactly diagnostic EvidenceId, own security EvidenceId and ONE actual matching maintenance RecordId. Use the diagnostic failed circuit/window/revision pair and complete audit coverage. Confirmed action 3 is physical FlowAdjustment even with R→R; action 4 is a neutral automatic ControllerCheck; Access 1/Inspect 2 alone do not establish manual interference. Pressure/wear/R→R occur in BOTH origins. The received bounded Engineer finding plus own audit is sufficient for correlation without an extra acknowledgement. Text remains a claim; server validation decides acceptance. An accepted insufficient_evidence report is not validated completion; wrong conclusive submissions are bounded.",
             ReportInput, ReportOutput, SubmitInvestigationReport, (*terminal, view, command(SUBMIT_INVESTIGATION_REPORT, pb.SubmitInvestigationReportCommand),
                 event(INVESTIGATION_RESULT, pb.InvestigationResultEvent)), (LOCOMOTION, SUBMIT_INVESTIGATION_REPORT), timeout_seconds=100,
                 result_policy="session_only", context_fields=("incident_id",)),
@@ -566,7 +572,7 @@ def skill_package():
             IncidentInput, IncidentOutput, CancelInvestigation, (*base, command(CANCEL_INVESTIGATION, pb.CancelInvestigationCommand),
                 event(INCIDENT_ACTION_RESULT, pb.IncidentActionResultEvent)), (CANCEL_INVESTIGATION,), timeout_seconds=3,
                 context_fields=("incident_id",)),
-        SkillDefinition("agents-arena.share-investigation-evidence", "1.0.0", "Engineer: send a compact diagnostic claim from own inspected view directly to the Sheriff. Await server acceptance; received text remains a claim.",
+        SkillDefinition("agents-arena.share-investigation-evidence", "1.0.0", "Engineer: send the complete bounded diagnostic finding for correlation: evidence/incident/match IDs, failed circuit, failure window, controller-revision pair and pressure delta. Uses own inspected view and direct delivery to the Sheriff, valid for at most 5 minutes and never beyond evidence expiry. Await server acceptance; the recipient's real received claim plus own audit requires no additional Engineer acknowledgement. Received text remains a player claim.",
             ShareInput, SendMessageOutput, ShareInvestigationEvidence, (*base, view, Requirement(DUTY_ROSTER, pb.DutyRosterObservation, "observation", 3),
                 Requirement(PEERS, CommunicationPeersObservation, "observation", 3), command(SEND_MESSAGE, SendMessageCommand),
                 event(MESSAGE_DELIVERY_RESULT, MessageDeliveryResultEvent)), (SEND_MESSAGE,), timeout_seconds=35,

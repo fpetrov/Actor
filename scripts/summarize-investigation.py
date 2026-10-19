@@ -82,6 +82,7 @@ def agent(directory, role):
             "incidents_started": BASE.count(client.get("incidentsStartedCount")),
             "hypotheses_proposed_by_scripted_provider": BASE.count(brain.get("hypotheses_proposed"))},
         "launch_metadata": launch_checks,
+        "rendering_mode": "headless" if launch.get("headless_client") is True else "windowed" if launch.get("headless_client") is False else "unspecified",
     }
     # Return private validation inputs separately; callers never serialize them.
     return report, base["identity"], launch
@@ -143,6 +144,7 @@ def summarize(directory, case_label=None):
             "Successful share-evidence Skill calls and client ACK counts are separate metrics; neither claims a Brain understood a message or an exact reference count.",
             "SQLite audit checks explicit private-policy/secret-key structure, not arbitrary paraphrases. Read after reports stop for reproducible artifact hashes.",
             "RTT p95 is nearest-rank over retained samples; FPS is client mean; cross-host message latency is approximate wall-clock difference.",
+            "Headless clients have no graphics device: their frame rate is not a rendered-game performance measurement.",
             "The optional case label is supplied only to this offline validator and is never forwarded to a Brain.",
         ]}
 

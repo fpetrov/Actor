@@ -33,6 +33,7 @@ def main():
     parser.add_argument("--decision-timeout", type=float, default=120)
     parser.add_argument("--objective-timeout", type=float, default=600)
     parser.add_argument("--max-decisions", type=int, default=16)
+    parser.add_argument("--headless-client", action="store_true", help="Run the ordinary Unity client without a graphics window for unattended acceptance")
     parser.add_argument("--output", type=Path, default=root / "build/cognitive-validation")
     parser.add_argument("--client", type=Path, default=root / "build/agents-arena-client/AgentsArena.app/Contents/MacOS/Agents Arena")
     args = parser.parse_args()
@@ -90,11 +91,14 @@ def main():
                     raise TimeoutError("Local Runtime did not start")
                 time.sleep(0.1)
         with (args.output / "client-stdout.log").open("w") as client_stdout:
-            client = subprocess.Popen([str(args.client), "--auto-room", args.room.upper(), "--player-name", args.player_name,
+            client_command = [str(args.client), "--auto-room", args.room.upper(), "--player-name", args.player_name,
                 "--control-mode", "actor", "--actor-endpoint", f"http://127.0.0.1:{args.port}",
                 "--actor-report", str(args.output / "client.json"),
                 "-screen-fullscreen", "0", "-screen-width", "800", "-screen-height", "600",
-                "-logFile", str(args.output / "client.log")],
+                "-logFile", str(args.output / "client.log")]
+            if args.headless_client:
+                client_command += ["-batchmode", "-nographics"]
+            client = subprocess.Popen(client_command,
                 cwd=root, env=environment, stdout=client_stdout, stderr=subprocess.STDOUT)
         processes.append(client)
         # Process/isolation evidence only; neither credential nor game payload
@@ -102,6 +106,7 @@ def main():
         (args.output / "launch.json").write_text(json.dumps({
             "launcher_pid": os.getpid(), "runtime_pid": server.pid, "client_pid": client.pid,
             "bridge_port": args.port, "brain": args.brain,
+            "headless_client": args.headless_client,
             "bridge_credential_sha256": hashlib.sha256(environment["ACTOR_BRIDGE_TOKEN"].encode()).hexdigest(),
             "memory_database": str(args.memory_database.resolve()) if args.memory_database else None,
             "agent_profile": args.agent_profile,

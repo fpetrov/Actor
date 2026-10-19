@@ -42,6 +42,8 @@ def plans(root: Path, args):
         for flag, value in (("--model", args.model), ("--client", args.client), ("--config", args.config)):
             if value is not None:
                 command += [flag, str(value)]
+        if getattr(args, "headless_client", False):
+            command += ["--headless-client"]
         launches.append((role, output, command))
     return launches
 
@@ -129,6 +131,7 @@ def arguments(argv=None):
     parser.add_argument("--timeout", type=float, default=600)
     parser.add_argument("--max-decisions", type=int, default=24)
     parser.add_argument("--exit-on-complete", action="store_true")
+    parser.add_argument("--headless-client", action="store_true", help="Run both ordinary Unity clients without graphics windows")
     args = parser.parse_args(argv)
     args.room = args.room.upper()
     if len(args.room) != 6 or not args.room.isascii() or not args.room.isalnum():

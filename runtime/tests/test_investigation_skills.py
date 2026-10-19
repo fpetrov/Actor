@@ -256,15 +256,20 @@ async def test_repair_rejection_never_claims_success_or_cancels_another_accepted
     assert zero.desired_move_x == zero.desired_move_y == 0
 
 
-async def test_share_uses_actual_direct_transport_receipt_and_bounded_claim(session):
-    value = diagnostic(); value.provenance.expires_at_unix_ms = now() + 30000
+@pytest.mark.parametrize("remaining_ms", [30000, 120000, 400000])
+async def test_share_uses_actual_direct_transport_receipt_and_bounded_claim(session, remaining_ms):
+    value = diagnostic(); value.provenance.expires_at_unix_ms = now() + remaining_ms
     await observe(session, evidence=value)
     owner = scheduler(session)
     running = asyncio.create_task(owner.run("agents-arena.share-investigation-evidence", {"incident_id": "incident-1"}))
     request = await command(session, SendMessageCommand)
     assert request.recipient_actor_id == "actor-2" and request.channel_id == "direct" and request.sensitive
     assert request.task_id == "incident-1" and len(request.text.encode("utf-8")) <= 512
-    assert 1000 <= request.ttl_ms <= 30000, "A shared claim must not outlive its inspected diagnostic evidence"
+    assert 1000 <= request.ttl_ms <= min(300000, remaining_ms), "A shared claim must not outlive its inspected diagnostic evidence or the five-minute transport bound"
+    if remaining_ms >= 120000:
+        assert request.ttl_ms > 60000, "Valid evidence must not be discarded after an artificial one-minute message lifetime"
+    if remaining_ms > 300000:
+        assert request.ttl_ms == 300000
     claim = json.loads(request.text)
     assert claim == {"kind": "diagnostic_claim", "evidence_id": "d" * 32, "incident_id": "incident-1", "match_id": "match-1",
         "circuit_ref": "alpha", "window": [value.failure_window_start_unix_ms, value.failure_window_end_unix_ms],
@@ -276,6 +281,14 @@ async def test_share_uses_actual_direct_transport_receipt_and_bounded_claim(sess
     result = await asyncio.wait_for(running, 1)
     assert result.status == "succeeded" and result.data_policy == "session_only"
     assert request.text not in str(owner.report()) and "cooling-console" not in str(owner.report())
+
+
+async def test_sharing_nearly_expired_evidence_does_not_extend_it_to_minimum_message_ttl(session):
+    value = diagnostic(); value.provenance.expires_at_unix_ms = now() + 500
+    await observe(session, evidence=value)
+    result = await scheduler(session).run("agents-arena.share-investigation-evidence", {"incident_id": "incident-1"})
+    assert result.status == "failed" and result.reason == "evidence_unavailable"
+    assert session.next_command_id == 0
 
 
 @pytest.mark.parametrize("refs", [["d", "s"], ["d", "s", "r", "extra"], ["d", "s", "s"]])

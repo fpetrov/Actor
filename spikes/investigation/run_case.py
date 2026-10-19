@@ -82,6 +82,7 @@ def main():
     parser.add_argument("--sheriff-brain", choices=("scripted", "codex"), default="scripted")
     parser.add_argument("--claimant", action="store_true")
     parser.add_argument("--human-observer", action="store_true")
+    parser.add_argument("--headless-agents", action="store_true", help="No graphics windows for agent clients; any Human observer remains windowed")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--config", type=Path)
     parser.add_argument("--base-port", type=int, default=50051)
@@ -131,16 +132,19 @@ def main():
                 "-screen-fullscreen", "0", "-screen-width", "800", "-screen-height", "600",
                 "-logFile", str(output / "human-client.log")], "human-stdout")
             wait_client(human_process, output / "human.json")
-        crew = launch([python, str(root / "scripts/launch-agent.py"), "--room", lobby["roomCode"],
+        crew_command = [python, str(root / "scripts/launch-agent.py"), "--room", lobby["roomCode"],
             "--brain", "investigation-claimant" if args.claimant else "maintenance-operator",
             "--objective", "Perform ordinary panel maintenance using circuit alpha, then observe the public incident lifecycle.",
             "--player-name", "Crew Operator", "--port", str(args.base_port + 2), "--output", str(output / "crew"),
-            "--objective-timeout", "600", "--max-decisions", "12"], "crew-launcher")
+            "--objective-timeout", "600", "--max-decisions", "12"]
+        if args.headless_agents: crew_command += ["--headless-client"]
+        crew = launch(crew_command, "crew-launcher")
         wait_client(crew, output / "crew/client.json", bridge=True)
         command = [python, str(root / "scripts/launch-investigation-agents.py"), "--room", lobby["roomCode"],
             "--engineer-brain", args.engineer_brain, "--sheriff-brain", args.sheriff_brain,
             "--base-port", str(args.base_port), "--output", str(output / "pair"), "--exit-on-complete"]
         if args.config: command += ["--config", str(args.config.resolve())]
+        if args.headless_agents: command += ["--headless-client"]
         pair = launch(command, "pair-launcher")
         pair_code = pair.wait(timeout=780)
         print("Investigator pair exit=" + str(pair_code), flush=True)
@@ -176,7 +180,7 @@ def main():
             and human.get("securityEvidenceCount") == 0 and human.get("ownDiagnosticPresent") is False
             and human.get("ownSecurityPresent") is False)
         passed = pair_code == 0 and crew_ok and maintenance_ok and (not args.claimant or claim_ack) and (not args.human_observer or human_ok)
-        (output / "fixture-result.json").write_text(json.dumps(dict(scenario=args.scenario, claimant=args.claimant,
+        (output / "fixture-result.json").write_text(json.dumps(dict(scenario=args.scenario, claimant=args.claimant, agents_headless=args.headless_agents,
             human_observer_requested=args.human_observer, human_observer_verified=human_ok,
             pair_exit_code=pair_code, crew_objective_passed=crew_ok, actual_maintenance_verified=maintenance_ok,
             claimant_send_skill_succeeded=claim_ok, claimant_client_receipt_verified=claim_ack, passed=passed), indent=2) + "\n")
