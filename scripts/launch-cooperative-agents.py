@@ -94,6 +94,23 @@ def main():
                                            start_new_session=os.name == "posix")
             processes.append((role, process))
             print(f"Started {role}: launcher PID={process.pid}, output={output}", flush=True)
+            if role == "technician":
+                # Startup ordering uses readiness metadata only, never another
+                # agent's assignment, messages, code or decision context.
+                ready_deadline = time.monotonic() + min(args.timeout, 120)
+                while True:
+                    if process.poll() is not None:
+                        raise RuntimeError("Technician launcher stopped before its bridge became ready")
+                    try:
+                        client_state = json.loads((output / "client.json").read_text())
+                        if client_state.get("state") == "Connected" and client_state.get("actorId"):
+                            break
+                    except (OSError, json.JSONDecodeError):
+                        pass
+                    if time.monotonic() >= ready_deadline:
+                        raise TimeoutError("Technician's game/bridge did not become ready")
+                    time.sleep(.2)
+                print("Technician game and independent local bridge ready.", flush=True)
         completed = False
         deadline = time.monotonic() + args.timeout + 60
         while True:
@@ -110,6 +127,24 @@ def main():
                 completed = True
                 print(f"Both objectives terminated; successful={all(results)}. Reports: {args.output}", flush=True)
                 if args.exit_on_complete or not all(results):
+                    if all(results):
+                        # Runtime completion can precede the next periodic game
+                        # report. Wait for each client's own authoritative state
+                        # before closing it; this barrier transfers no payload.
+                        state_deadline = time.monotonic() + 8
+                        while True:
+                            states = []
+                            for _, output, _ in launches:
+                                try:
+                                    state = json.loads((output / "client.json").read_text())
+                                    states.append((state.get("calibrationTaskId"), state.get("calibrationStatus")))
+                                except (OSError, json.JSONDecodeError):
+                                    pass
+                            if len(states) == 2 and states[0][0] and states[0] == states[1] and states[0][1] == "Completed":
+                                break
+                            if time.monotonic() >= state_deadline:
+                                raise TimeoutError("Successful objectives lack matching Completed game reports")
+                            time.sleep(.1)
                     return 0 if all(results) else 1
             if any(process.poll() is not None for _, process in processes):
                 raise RuntimeError("An agent launcher stopped; inspect its local report/log")

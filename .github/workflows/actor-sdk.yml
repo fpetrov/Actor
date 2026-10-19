@@ -24,7 +24,9 @@ jobs:
         run: python -m pip install -e 'runtime[dev]'
       - name: Cognitive providers remain optional for deterministic CI
         run: python -c 'import importlib.util; assert importlib.util.find_spec("openai_codex") is None; assert importlib.util.find_spec("typesafe_sdk") is None'
-      - name: Runtime, routing, memory, Skills, Brains and real loopback gRPC tests
-        run: python -m pytest runtime/tests -q
+      - name: Runtime, routing, memory, Skills, Brains, launch helpers and real loopback gRPC tests
+        run: python -m pytest runtime/tests scripts/tests -q -o asyncio_mode=auto
+      - name: Auth-free cooperative fault acceptance self-test
+        run: python spikes/cooperation/runtime_faults.py --self-test
       - name: Curated deterministic event-routing evaluation
         run: python scripts/evaluate-events.py

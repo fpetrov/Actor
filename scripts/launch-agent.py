@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 from pathlib import Path
 import secrets
@@ -93,6 +95,15 @@ def main():
                 "--actor-report", str(args.output / "client.json"), "-logFile", str(args.output / "client.log")],
                 cwd=root, env=environment, stdout=client_stdout, stderr=subprocess.STDOUT)
         processes.append(client)
+        # Process/isolation evidence only; neither credential nor game payload
+        # is recorded. Each launcher independently generates its own token.
+        (args.output / "launch.json").write_text(json.dumps({
+            "launcher_pid": os.getpid(), "runtime_pid": server.pid, "client_pid": client.pid,
+            "bridge_port": args.port, "brain": args.brain,
+            "bridge_credential_sha256": hashlib.sha256(environment["ACTOR_BRIDGE_TOKEN"].encode()).hexdigest(),
+            "memory_database": str(args.memory_database.resolve()) if args.memory_database else None,
+            "agent_profile": args.agent_profile,
+        }, indent=2) + "\n")
         print(f"Brain={args.brain}; client joining {args.room.upper()}; local bridge port={args.port}.", flush=True)
         while server.poll() is None:
             if client.poll() is not None:

@@ -87,9 +87,10 @@ match-scoped ActorId is not a stable memory profile.
 The reference game's channels are `direct` and `station`. Direct messages have
 an explicit recipient; station sends use an empty command recipient. The server
 filters recipients and each receiving event identifies its actual recipient.
-Text is limited to 512 UTF-8 bytes; actor IDs to 128 bytes, channel IDs to 32
-bytes, correlation/task/match/message IDs to 64 bytes. Message TTL is at most
-300,000 ms, with a 60,000 ms game default. Games validate bounds before allocating
+The reference server limits text to 512 UTF-8 bytes and actor/correlation/task/
+match/message identifiers to 64 characters. Its channel allowlist contains only
+the two names above. Message TTL is 1,000–300,000 ms, with a 60,000 ms Skill
+default. Games validate bounds before allocating
 reliable RPC work. Protobuf does not enforce length, visibility, rate or permission.
 
 Four outcomes are separate:
@@ -163,6 +164,13 @@ Core protocol **1.0**, Standard motion **0.1.0**, Standard communication **0.1.0
 
 Generated C#/Python files, descriptors and metadata are version controlled. Unity users do not need protoc. `scripts/generate-proto.sh --check` regenerates in a temporary output tree and compares artifacts; CI fails on stale generated sources. [Tooling and schema rules](../proto/README.md), [Unity SDK API](../packages/com.actor.sdk/README.md), [Python Runtime](python-runtime.md), [custom extensions](extensions.md), [actual gRPC spike](grpc-spike/README.md).
 
+`python scripts/verify-runtime-package.py` builds an actual wheel from a fixed
+source/test snapshot, creates a fresh environment outside the checkout, installs
+base and test dependencies, and checks resources, entry points and the complete
+Runtime suite. Codex/Jev extras and model authentication are absent. Its bounded
+summary is `build/milestone5-package.json`; this verifies packaging and local
+tests, not live multiplayer or model behavior.
+
 ## Current scope
 
-Runtime0.4.0 composes independently scoped sessions, communication Skills and game-specific cooperative actions above event routing, bounded context/memory and unchanged Core. Arena owns calibration permissions and outcomes; Standard communication owns typed addressing/delivery interfaces. Optional Jev remains a provider-neutral classifier. Generic navigation and package auto-download remain future layers.
+Runtime 0.4.0 composes independently scoped sessions, communication Skills and game-specific cooperative actions above event routing, bounded context/memory and unchanged Core. Arena owns calibration permissions and outcomes; Standard communication owns typed addressing/delivery interfaces. Optional Jev remains a provider-neutral classifier. Generic navigation and package auto-download remain future layers.
