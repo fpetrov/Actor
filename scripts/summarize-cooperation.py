@@ -252,6 +252,7 @@ def summarize_agent(directory, role):
                       "duration_seconds": number(result.get("duration_seconds")),
                       "decision_count": count(result.get("decision_count"))},
         "cognition": {"provider": token(brain.get("provider")), "decisions_recorded": len(decisions),
+            "replan_count": count(cognitive.get("replan_count")),
             "context_bytes": distribution(item.get("context_bytes") for item in decisions),
             "decision_duration_seconds": distribution(item.get("duration_seconds") for item in decisions),
             "cleanup_error_count": len(rows(cognitive.get("cleanup_errors"))),

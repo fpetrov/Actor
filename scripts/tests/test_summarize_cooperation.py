@@ -79,6 +79,15 @@ class CooperationSummaryTests(unittest.TestCase):
         self.assertEqual(report["agents"]["technician"]["memory"]["retention_audit"]["private_policy_nodes"], 1)
         self.assertFalse(report["processes"]["actual_pids_verified"])
 
+    def test_replan_count_preserves_numeric_measurement_and_rejects_bad_types(self):
+        path = self.directory / "coordinator/runtime.json"; original = path.read_text()
+        for raw, expected in ((0, 0), (7, 7), ("7", None), (True, None), (-1, None), (1.5, None)):
+            path.write_text(original)
+            self.modify("coordinator", "runtime.json", lambda value: value["cognitive"].update(replan_count=raw))
+            with self.subTest(raw=raw):
+                report = SUMMARY.summarize(self.directory)
+                self.assertEqual(report["agents"]["coordinator"]["cognition"]["replan_count"], expected)
+
     def test_finish_objective_without_server_completion_never_passes(self):
         self.modify("technician", "client.json", lambda value: value.update(calibrationStatus="AwaitingAuthorization"))
         report = SUMMARY.summarize(self.directory)
