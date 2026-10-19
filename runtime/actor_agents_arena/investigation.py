@@ -19,7 +19,7 @@ from . import (OWN_ROLE, DUTY_ROSTER, SELECT_ROLE, ROLE_RESULT, COOLING_STATE, O
     CANCEL_COOLING_REPAIR, CANCEL_INVESTIGATION, SUBMIT_INVESTIGATION_REPORT, REPAIR_RESULT,
     INVESTIGATION_RESULT, INCIDENT_ACTION_RESULT, MAINTENANCE_OVERRIDE)
 from .calibration import MOVEMENT_REQUIREMENTS
-from .skills import NavigateToRoom, NavigateToRoomInput, Waypoint
+from .skills import NavigateToRoom, Waypoint
 
 ROLES = {"crew": pb.CREW_ROLE_CREW, "engineer": pb.CREW_ROLE_ENGINEER, "sheriff": pb.CREW_ROLE_SHERIFF}
 ORIGINS = {"mechanical_failure": pb.PROPOSED_ORIGIN_MECHANICAL_FAILURE,
@@ -293,9 +293,7 @@ class MaintenanceOverride(ActorSkill):
 
     async def approach(self, context):
         navigation = NavigateToRoom()
-        await navigation.execute(context, NavigateToRoomInput(target_room_id="engineering"))
-        await navigation.waypoint(context, Waypoint(.3, -7.15))
-        await navigation.confirm_arrival(context, "engineering")
+        await navigation.execute_to_approach(context, "engineering", Waypoint(.3, -7.15), lane_x=.3)
     async def cleanup(self, context):
         await NavigateToRoom().cleanup(context)
 
@@ -320,9 +318,7 @@ class TerminalSkill(ActorSkill):
 
     async def approach(self, context):
         navigation = NavigateToRoom()
-        await navigation.execute(context, NavigateToRoomInput(target_room_id=self.room))
-        await navigation.waypoint(context, APPROACHES[self.room])
-        await navigation.confirm_arrival(context, self.room)
+        await navigation.execute_to_approach(context, self.room, APPROACHES[self.room], lane_x=-.3)
 
     async def cleanup(self, context):
         await NavigateToRoom().cleanup(context)

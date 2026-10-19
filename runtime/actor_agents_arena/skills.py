@@ -76,7 +76,7 @@ class NavigateToRoom(ActorSkill):
     def move(context: SkillContext, x: float = 0, y: float = 0):
         context.command(LOCOMOTION, Locomotion2DCommand(desired_move_x=x, desired_move_y=y))
 
-    async def waypoint(self, context: SkillContext, waypoint: Waypoint, timeout_seconds=18):
+    async def waypoint(self, context: SkillContext, waypoint: Waypoint, timeout_seconds=18, *, arrival_radius=0.12):
         deadline = context.now() + timeout_seconds
         distinct_stops = 0
         last_pair = None
@@ -85,7 +85,7 @@ class NavigateToRoom(ActorSkill):
             dx, dy = waypoint.x - transform.payload.x, waypoint.y - transform.payload.y
             distance = math.hypot(dx, dy)
             pair = (transform.sequence, motion.sequence)
-            if distance < 0.12:
+            if distance < arrival_radius:
                 self.move(context)
                 if not stopped(motion.payload):
                     distinct_stops = 0
@@ -124,12 +124,55 @@ class NavigateToRoom(ActorSkill):
     async def execute(self, context: SkillContext, arguments: NavigateToRoomInput) -> NavigateToRoomOutput:
         _, _, membership = control_state(context)
         source, target = membership.payload.room_id, arguments.target_room_id
+        route = tuple(WAYPOINTS[name] for name in ROOM_ROUTES.get((source, target), ()))
+        return await self._follow_route(context, source, target, route)
+
+    async def execute_to_approach(self, context: SkillContext, target: str, approach: Waypoint,
+                                  *, lane_x: float) -> NavigateToRoomOutput:
+        """Arena service access, without stopping on shared public room anchors.
+
+        The two authored corridor lanes pass a capsule waiting at (0,-7).
+        Lower Hall staging also avoids crossing the occupied spawn/anchor row.
+        This helper is composed by game Skills, not another public navigation API.
+        """
+        transform, _, membership = control_state(context)
+        source = membership.payload.room_id
+        if target not in ("main-hall", "engineering") or lane_x not in (-0.3, 0.3):
+            raise SkillError("target_not_found", "No installed service approach reaches this destination")
+        if not all(math.isfinite(value) for value in (approach.x, approach.y)):
+            raise SkillError("target_not_found", "Service approach must be finite")
+        x, y = transform.payload.x, transform.payload.y
+        if source == target and math.hypot(approach.x - x, approach.y - y) < 0.025:
+            route = ()
+        elif source == "main-hall":
+            route = (Waypoint(lane_x, -3.3),)
+            if target == "engineering":
+                route += (Waypoint(lane_x, -4.7), Waypoint(lane_x, -6))
+            route += (approach,)
+        else:
+            # Stay on the current side until above a possible waiting capsule.
+            # A diagonal lane switch through the Engineering anchor can block.
+            current_lane = -0.3 if x < -.05 else 0.3 if x > .05 else lane_x
+            route = ()
+            if target == "main-hall" or current_lane != lane_x:
+                if y < -6:
+                    route += (Waypoint(current_lane, -6),)
+                if current_lane != lane_x:
+                    route += (Waypoint(lane_x, -6),)
+            if target == "main-hall":
+                route += (Waypoint(lane_x, -4.7), Waypoint(lane_x, -3.3))
+            route += (approach,)
+        # A 0.12m generic arrival radius could accept x=0.19 for the 0.30m
+        # lane, leaving too little clearance from another 0.28m-wide capsule.
+        return await self._follow_route(context, source, target, route, arrival_radius=0.025)
+
+    async def _follow_route(self, context: SkillContext, source: str, target: str, route,
+                            *, arrival_radius=0.12) -> NavigateToRoomOutput:
         prior_events = context.events(ROOM_CHANGED, RoomChangedEvent)
         cursor = max((event.sequence for event in prior_events), default=0)
-        route = ROOM_ROUTES.get((source, target), ())
         reached = 0
-        for name in route:
-            await self.waypoint(context, WAYPOINTS[name])
+        for waypoint in route:
+            await self.waypoint(context, waypoint, arrival_radius=arrival_radius)
             reached += 1
         await self.confirm_arrival(context, target)
         confirmed = source == target or any(

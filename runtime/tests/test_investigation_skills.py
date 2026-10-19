@@ -18,6 +18,8 @@ from actor_standard_communication import (PEERS, MESSAGE_DELIVERY_RESULT, MESSAG
 from actor_standard_communication.skills import skill_package as communication_skills
 from conftest import envelope, extension_version, message
 
+_TERMINAL_SERVICE_APPROACH = TerminalSkill.approach
+
 
 def now():
     return int(time.time() * 1000)
@@ -487,3 +489,57 @@ async def test_private_inspection_results_and_events_are_omitted_from_sqlite(tmp
         assert entries and "cooling-console" not in str(entries) and value.provenance.evidence_id not in str(entries)
     raw = (tmp_path / "investigation.sqlite3").read_bytes()
     assert b"cooling-console" not in raw and value.provenance.evidence_id.encode() not in raw
+
+
+async def test_maintenance_requests_public_operation_only_after_right_lane_service_access(session, monkeypatch):
+    from actor_agents_arena.skills import NavigateToRoom
+    calls = []
+    async def service(self, context, target, approach, *, lane_x):
+        calls.append((target, approach.x, approach.y, lane_x))
+    async def forbidden_shared_anchor(self, *args, **kwargs):
+        pytest.fail("Maintenance must not first converge on the shared room anchor")
+    monkeypatch.setattr(NavigateToRoom, "execute_to_approach", service)
+    monkeypatch.setattr(NavigateToRoom, "execute", forbidden_shared_anchor)
+    await observe(session, role=pb.CREW_ROLE_CREW, incident="", status=pb.INCIDENT_STATUS_NONE)
+    sequence = session.last_received_sequence + 1
+    await session.accept(message(sequence, observation=core.ObservationFrame(revision=sequence, observations=[
+        envelope(DUTY_ROSTER, "agents-arena", pb.DutyRosterObservation(match_id="match-1", entries=[
+            pb.DutyRoleEntry(actor_id="actor-1", role=pb.CREW_ROLE_CREW),
+            pb.DutyRoleEntry(actor_id="engineer", role=pb.CREW_ROLE_ENGINEER),
+            pb.DutyRoleEntry(actor_id="sheriff", role=pb.CREW_ROLE_SHERIFF)]))])))
+    running = asyncio.create_task(scheduler(session).run("agents-arena.maintenance-override", {"circuit_ref": "alpha"}))
+    request = await command(session, pb.MaintenanceOverrideCommand)
+    assert calls == [("engineering", .3, -7.15, .3)]
+    assert request.circuit_ref == "alpha" and request.match_id == "match-1"
+    await event(session, INCIDENT_ACTION_RESULT, pb.IncidentActionResultEvent(correlation_id=request.correlation_id,
+        action=pb.INCIDENT_ACTION_MAINTENANCE_OVERRIDE, accepted=True, match_id="match-1"))
+    assert (await asyncio.wait_for(running, 1)).status == "succeeded"
+
+
+@pytest.mark.parametrize("role,skill,request_type,result_type,capability,target,x,y", [
+    (pb.CREW_ROLE_ENGINEER, "agents-arena.inspect-cooling", pb.InspectCoolingCommand,
+     pb.DiagnosticEvidenceEvent, DIAGNOSTIC_EVIDENCE, "engineering", -.3, -7.15),
+    (pb.CREW_ROLE_SHERIFF, "agents-arena.inspect-security-records", pb.InspectSecurityRecordsCommand,
+     pb.SecurityEvidenceEvent, SECURITY_EVIDENCE, "main-hall", -1.5, -1.9),
+])
+async def test_private_inspection_uses_own_service_access_before_typed_request(
+        session, monkeypatch, role, skill, request_type, result_type, capability, target, x, y):
+    from actor_agents_arena.skills import NavigateToRoom
+    calls = []
+    async def service(self, context, destination, approach, *, lane_x):
+        calls.append((destination, approach.x, approach.y, lane_x))
+    async def forbidden_shared_anchor(self, *args, **kwargs):
+        pytest.fail("Inspection must not first converge on the shared room anchor")
+    monkeypatch.setattr(TerminalSkill, "approach", _TERMINAL_SERVICE_APPROACH)
+    monkeypatch.setattr(NavigateToRoom, "execute_to_approach", service)
+    monkeypatch.setattr(NavigateToRoom, "execute", forbidden_shared_anchor)
+    await observe(session, role=role)
+    running = asyncio.create_task(scheduler(session).run(skill, {"incident_id": "incident-1"}))
+    request = await command(session, request_type)
+    assert calls == [(target, x, y, -.3)]
+    evidence = diagnostic() if role == pb.CREW_ROLE_ENGINEER else security()
+    await event(session, capability, result_type(correlation_id=request.correlation_id, accepted=True,
+        evidence=evidence, recipient_actor_id="actor-1", match_id="match-1",
+        expires_at_unix_ms=evidence.provenance.expires_at_unix_ms, server_revision=10))
+    await observe(session, role=role, evidence=evidence)
+    assert (await asyncio.wait_for(running, 1)).status == "succeeded"

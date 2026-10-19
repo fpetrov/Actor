@@ -1,5 +1,6 @@
 """Typed closed-loop game fixture plus authoritative arrival/freshness failure checks."""
 import asyncio
+from collections import deque
 from dataclasses import replace
 import time
 
@@ -8,7 +9,7 @@ from google.protobuf.any_pb2 import Any
 
 from actor.core.v1 import actor_pb2 as core
 from actor_runtime.skills import SkillRegistry, SkillScheduler
-from actor_agents_arena.skills import NavigateToRoom, skill_package
+from actor_agents_arena.skills import NavigateToRoom, Waypoint, skill_package
 from actor_standard import (TRANSFORM, MOTION, LOCOMOTION, Transform2DObservation,
                             Motion2DObservation, Locomotion2DCommand)
 from actor_agents_arena import ROOM_MEMBERSHIP, ROOM_CHANGED, RoomMembershipObservation, RoomChangedEvent
@@ -144,3 +145,176 @@ async def test_navigation_round_trip_uses_real_typed_session_and_authoritative_r
     finally:
         for task in tasks: task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
+
+
+class ServiceNavigation(NavigateToRoom):
+    def __init__(self, lane):
+        self.lane = lane
+
+    async def execute(self, context, arguments):
+        target = arguments.target_room_id
+        approach = Waypoint(self.lane, -7.15) if target == "engineering" else Waypoint(-1.5, -1.9)
+        return await self.execute_to_approach(context, target, approach, lane_x=self.lane)
+
+
+def service_registry(lane=.3, *, timeout=25):
+    return registry(replace(skill_package()[0], factory=lambda: ServiceNavigation(lane), timeout_seconds=timeout))
+
+
+class OccupiedAnchorsGame:
+    """Typed closed-loop fixture with real capsule-shaped stationary obstacles.
+
+    Shared room anchors are permanently occupied. A procedure that insists on
+    reaching either anchor cannot complete, while the authored side lanes pass.
+    Static-world clearance is separately covered by Unity capsule physics tests.
+    """
+    def __init__(self, session, x, y, *, transitions=True, speed=10.4, observation_delay=0):
+        self.session, self.x, self.y = session, x, y
+        self.room = "engineering" if y < -5.67 else "main-hall"
+        self.dx = self.dy = 0
+        self.sequence = 3
+        self.published_room = self.room
+        self.transitions = transitions
+        self.speed, self.observation_delay = speed, observation_delay
+        self.pending_samples = deque()
+        self.commands = []
+        self.trajectory = []
+        self.tasks = []
+
+    async def start(self):
+        await observe(self.session, self.sequence, x=self.x, y=self.y, room=self.room)
+        self.tasks = [asyncio.create_task(self.receive()), asyncio.create_task(self.game())]
+
+    async def close(self):
+        for task in self.tasks: task.cancel()
+        await asyncio.gather(*self.tasks, return_exceptions=True)
+
+    @staticmethod
+    def clear(x, y):
+        # Two vertical 0.28x0.81 capsules: their centerline segments are 0.53m.
+        return all((x - ox) ** 2 + max(0, abs(y - oy) - .53) ** 2 >= .28 ** 2
+                   for ox, oy in ((0, -1.4), (0, -7)))
+
+    async def receive(self):
+        async for outgoing in self.session.outgoing():
+            if outgoing.WhichOneof("body") == "command":
+                intent = Locomotion2DCommand()
+                assert outgoing.command.payload.Unpack(intent)
+                self.dx, self.dy = intent.desired_move_x, intent.desired_move_y
+                self.commands.append((self.dx, self.dy))
+
+    async def game(self):
+        while True:
+            await asyncio.sleep(.01)
+            old_x, old_y = self.x, self.y
+            # Speed up fixture time without bypassing the command/observation
+            # loop or moving through stationary capsule obstacles.
+            x, y = self.x + self.dx * self.speed * .01, self.y + self.dy * self.speed * .01
+            if self.clear(x, self.y): self.x = x
+            if self.clear(self.x, y): self.y = y
+            self.trajectory.append((self.x, self.y))
+            self.room = "engineering" if self.y < -5.67 else "main-hall"
+            clock = asyncio.get_running_loop().time()
+            self.pending_samples.append((clock + self.observation_delay, self.x, self.y, self.room,
+                                         (self.x - old_x) / .01, (self.y - old_y) / .01))
+            while self.pending_samples and self.pending_samples[0][0] <= clock:
+                _, x, y, new_room, vx, vy = self.pending_samples.popleft()
+                await self.publish(x, y, new_room, vx, vy)
+
+    async def publish(self, x, y, new_room, vx, vy):
+        if new_room != self.published_room:
+            previous, self.published_room = self.published_room, new_room
+            if self.transitions:
+                self.sequence += 1
+                packed = Any(); packed.Pack(RoomChangedEvent(previous_room_id=previous, current_room_id=new_room))
+                await self.session.accept(message(self.sequence, event=core.GameEventEnvelope(revision=self.sequence,
+                    capability_id=ROOM_CHANGED, extension_id="agents-arena", extension_version=extension_version("agents-arena"),
+                    entity_id="actor-1", payload=packed)))
+        self.sequence += 1
+        await observe(self.session, self.sequence, x=x, y=y, room=new_room, vx=vx, vy=vy)
+
+
+@pytest.mark.parametrize("lane", [-.3, .3])
+async def test_service_access_bypasses_occupied_hall_and_engineering_anchors(session, lane):
+    game = OccupiedAnchorsGame(session, -1.8, -1.4)
+    await game.start()
+    try:
+        result = await asyncio.wait_for(SkillScheduler(session, service_registry(lane)).run(
+            "agents-arena.navigate-to-room", {"target_room_id": "engineering"}), 15)
+        assert result.status == "succeeded", result.model_dump()
+        assert result.output["room_change_confirmed"] and result.output["waypoints_reached"] == 4
+        assert abs(game.x - lane) < .025 and abs(game.y + 7.15) < .025
+        assert all(game.clear(x, y) for x, y in game.trajectory)
+        await asyncio.sleep(.02); assert game.commands[-1] == (0, 0)
+    finally:
+        await game.close()
+
+
+async def test_sheriff_service_return_changes_lane_above_waiting_engineering_capsule(session):
+    game = OccupiedAnchorsGame(session, .3, -7.15)
+    await game.start()
+    try:
+        result = await asyncio.wait_for(SkillScheduler(session, service_registry(-.3)).run(
+            "agents-arena.navigate-to-room", {"target_room_id": "main-hall"}), 15)
+        assert result.status == "succeeded", result.model_dump()
+        assert result.output["room_change_confirmed"] and result.output["waypoints_reached"] == 5
+        assert abs(game.x + 1.5) < .025 and abs(game.y + 1.9) < .025
+        assert all(game.clear(x, y) for x, y in game.trajectory)
+        # Lane crossing is above the waiting capsule, not through its center.
+        assert all(y > -6.2 for x, y in game.trajectory if abs(x) < .2 and y < -5.67)
+    finally:
+        await game.close()
+
+
+async def test_service_same_room_still_reaches_its_actual_panel_approach(session):
+    game = OccupiedAnchorsGame(session, .3, -6.2)
+    await game.start()
+    try:
+        result = await asyncio.wait_for(SkillScheduler(session, service_registry()).run(
+            "agents-arena.navigate-to-room", {"target_room_id": "engineering"}), 10)
+        assert result.status == "succeeded", result.model_dump()
+        assert result.output["waypoints_reached"] == 1 and result.output["room_change_confirmed"]
+        assert abs(game.y + 7.15) < .025
+        assert any(dy < 0 for _, dy in game.commands), "Existing room membership is not panel arrival"
+    finally:
+        await game.close()
+
+
+async def test_service_cross_room_membership_without_transition_event_cannot_succeed(session):
+    game = OccupiedAnchorsGame(session, -1.8, -1.4, transitions=False)
+    await game.start()
+    try:
+        result = await asyncio.wait_for(SkillScheduler(session, service_registry()).run(
+            "agents-arena.navigate-to-room", {"target_room_id": "engineering"}), 15)
+        assert result.status == "failed" and result.reason == "route_failed"
+        await asyncio.sleep(.02); assert game.commands[-1] == (0, 0)
+    finally:
+        await game.close()
+
+
+async def test_service_cached_stop_and_cancel_cannot_leak_movement_or_false_arrival(session):
+    await observe(session, 3, x=.3, y=-7.15, room="engineering")
+    owner = SkillScheduler(session, service_registry(timeout=.25))
+    result = await owner.run("agents-arena.navigate-to-room", {"target_room_id": "engineering"})
+    assert result.status == "timed_out"; zero_pending(session)
+    await observe(session, 4, x=-1.8)
+    owner = SkillScheduler(session, service_registry())
+    previous_commands = session.next_command_id
+    running = asyncio.create_task(owner.run("agents-arena.navigate-to-room", {"target_room_id": "engineering"}))
+    while session.next_command_id <= previous_commands: await asyncio.sleep(0)
+    await owner.cancel()
+    assert (await running).status == "cancelled"; zero_pending(session)
+
+
+async def test_service_tight_stop_converges_with_150ms_authoritative_delay_at_actual_speed(session):
+    game = OccupiedAnchorsGame(session, .3, -6.85, speed=2.6, observation_delay=.15)
+    await game.start()
+    try:
+        result = await asyncio.wait_for(SkillScheduler(session, service_registry()).run(
+            "agents-arena.navigate-to-room", {"target_room_id": "engineering"}), 8)
+        assert result.status == "succeeded", result.model_dump()
+        assert abs(game.x - .3) < .025 and abs(game.y + 7.15) < .025
+        assert result.output["stopped"] and result.output["room_change_confirmed"]
+        await asyncio.sleep(.17); assert game.commands[-1] == (0, 0)
+    finally:
+        await game.close()
