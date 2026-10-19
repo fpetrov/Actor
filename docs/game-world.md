@@ -14,7 +14,7 @@ The existing game-specific route remains:
 (0,-1.4) → (0,-4.7) → (0,-6) → (0,-7)
 ```
 
-Returning uses the same centerline. Core protocol, Standard schemas and extension schemas do not change. The reference game version changes because its authoritative world/collisions change.
+Returning uses the same centerline. Movement/room boundaries remain stable in game0.6.0. Core protocol1.0 and the original Standard movement package are unchanged; cooperative gameplay adds separate typed capabilities.
 
 ## Human passage clearance
 
@@ -26,9 +26,46 @@ A safe side approach is `(0,-7.25) → (±0.9,-7.25) → (±1.5,-7.8)`. The larg
 
 Closed branches have visible amber seals. The real south corridor has directional room labels. Camera orthographic size3.4 and bounds(-4.16,-12.25)…(4.16,2.27) frame the unified atlas world while preserving the existing predicted-target follow and smoothing.
 
+## Cooperative terminals
+
+Game0.6.0 adds a Diagnostic Terminal in Main Hall and a Calibration Console
+mounted beside Engineering's north stem. Both use the existing white panel
+sprite, authored material and cyan/purple palette. They introduce no new room,
+atlas image, movement speed or prediction behaviour.
+
+| Object | Visual position | Physical interaction point | Radius |
+| --- | --- | --- | --- |
+| Diagnostic Terminal | `(1.3,-0.4)` | `(1,-0.65)` |1.6|
+| Calibration Console | `(0.8,-6)` | `(0.25,-6.54)` |1.25|
+
+Distances use the authoritative capsule center. The Coordinator's approach
+root pose `(0.9,-2.4)` gives capsule center `(0.9,-1.94)`, within diagnostic
+range while leaving the navigation centerline free for the Technician. The
+existing Engineering root anchor `(0,-7)` gives center `(0,-6.54)` and reaches
+the wall console. The Diagnostic base lies between the existing spawn columns;
+the Engineering base remains outside the walkable stem. The builder checks
+both ranges and three free capsule poses, then repeats all58 existing world
+geometry checks with the new objects present.
+
+Server interaction points follow the actual terminal transform and offset.
+Only active objects with the expected stable WorldEntity identity are eligible;
+destroying/disabling a terminal produces `terminal_unavailable`. Temporary
+Coordinator/Technician assignments and private diagnostic authorization belong
+to the server's cooperative task, not to the world's public room state.
+
+Human **E** selects a nearby interaction. If Signal Console and a cooperative
+terminal overlap in range, an explicit chooser activates one object. **T** opens
+communications; the recipient button cycles authorized connected peers, and
+station-wide is a separate selection. Text focus suppresses movement while
+typing; **Escape** closes the panels and returns keyboard movement. Agent mode
+provides a read-only message/task view and masks sensitive message text in that
+view. Only the assigned Human Coordinator can reveal diagnostic authorization
+at its own terminal panel. See [cooperative tasks](cooperative-tasks.md) and
+[communication](communication.md).
+
 ## Reproduce geometry verification
 
-Run **ACTOR → Prepare multiplayer assets** in Unity, or `Actor.Editor.MultiplayerBuild.Prepare` from the existing Unity CLI. It rebuilds only multiplayer assets from the authored offline scene and performs58 checks:
+Run **ACTOR → Prepare multiplayer assets** in Unity, or `Actor.Editor.MultiplayerBuild.Prepare` from the existing Unity CLI. It rebuilds only multiplayer assets from the authored offline scene and performs58 geometry checks plus Signal Console/cooperative terminal checks:
 
 - Room volumes and the shared authoritative boundary.
 - Swept authored capsules through the passage in both directions at x0, ±0.12, ±0.20 and ±0.30.

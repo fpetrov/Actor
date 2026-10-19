@@ -24,6 +24,8 @@ namespace Actor.World
         private bool opened;
         private double localReadyAt, noticeUntil;
         private GUIStyle title, body;
+        internal void OpenFromFocus() => opened = true;
+        internal void CloseFromFocus() => opened = false;
 #endif
         private void OnEnable() { if (Current == null) Current = this; }
         private void OnDisable() { if (Current == this) Current = null; }
@@ -58,7 +60,7 @@ namespace Actor.World
         private void Update()
         {
             if (!NearHuman(out _)) { opened = false; return; }
-            if (Application.isFocused && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) opened = !opened;
+            if (NetworkCooperation.LocalOwner == null && Application.isFocused && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) opened = !opened;
         }
         private void OnGUI()
         {
@@ -71,7 +73,7 @@ namespace Actor.World
             Vector3 screen = Camera.main.WorldToScreenPoint(transform.position + Vector3.up * .55f);
             if (screen.z > 0 && screen.x > 0 && screen.x < Screen.width && screen.y > 0 && screen.y < Screen.height)
                 GUI.Label(new Rect(screen.x - 80, Screen.height - screen.y - 14, 160, 26), "SIGNAL CONSOLE", GUI.skin.box);
-            if (NearHuman(out var owner))
+            if (NearHuman(out var owner) && (opened || NetworkCooperation.LocalOwner == null))
             {
                 float width = Mathf.Min(460, Screen.width - 32);
                 var area = new Rect((Screen.width - width) * .5f, Screen.height - (opened ? 198 : 54), width, opened ? 182 : 38);

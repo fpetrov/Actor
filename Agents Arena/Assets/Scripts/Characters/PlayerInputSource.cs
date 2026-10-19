@@ -7,6 +7,7 @@ namespace Actor.Characters
     {
         [SerializeField] private InputActionAsset actions;
         private InputAction move;
+        internal bool TextEntryFocused { get; set; }
 
         private void Awake()
         {
@@ -17,7 +18,7 @@ namespace Actor.Characters
         private void OnEnable() => move?.Enable();
         private void OnDisable() => move?.Disable();
         private void OnDestroy() => move?.Dispose();
-        public Vector2 ReadMovement() => isActiveAndEnabled && Application.isFocused
+        public Vector2 ReadMovement() => isActiveAndEnabled && Application.isFocused && !TextEntryFocused
             ? move.ReadValue<Vector2>() : Vector2.zero;
     }
 }

@@ -40,7 +40,7 @@ At up to 30 Hz the server sends only the owner a post-physics snapshot: position
 
 The server also replicates velocity, facing, ActorId and PlayerName. `ICharacterMotionState` lets animation observe the motor, predicted owner motion or replicated remote motion. It selects the original clips/mirroring without transmitting animation frames. Only the owner enables keyboard input and camera follow. `SetLocalInputSource` can later accept agent/replay commands without changing physics or presentation. `ActorCharacter.CaptureState()` retains the server-replicated root position.
 
-Movement snapshots were introduced in admission protocol 2 / game 0.2.1. The two-room reference world uses **admission protocol 3 / game 0.4.0**, independently of **ACTOR Core protocol 1.0**. Old clients fail version validation before connecting to the incompatible game server.
+Movement snapshots were introduced in admission protocol2/game0.2.1. The current cooperative reference game uses **admission protocol3/game0.6.0**, independently of **ACTOR Core protocol1.0**. Old clients fail version validation before connecting to an incompatible game server.
 
 The multiplayer scene is copied from the current Main Hall, preserving the user's collider/light changes. Its southern end cap opens into Engineering, assembled from existing map art and separate floor colliders. Server-written NetworkRoomMembership resolves physical capsule centers against stable RoomVolume2D IDs and replicates transitions. The original offline scene and character prefab remain available.
 
@@ -49,6 +49,60 @@ The multiplayer scene is copied from the current Main Hall, preserving the user'
 The Lobby scene contains one persistent NetworkManager/session, menu view/controller and a separate `LobbyApiClient`. Clients start in the menu, save their player name locally, refresh rooms, create a room or join by its six-character RoomCode. The server loads MainHallMultiplayer additively through NGO scene management and reports readiness only after the scene loads. Clients synchronize that scene before play. Leaving shuts down the client and unloads gameplay while retaining the lobby; disconnect despawns the server-owned player object.
 
 A dedicated build parses match/port/version arguments, reads its per-match secret from the environment, starts its transport, loads gameplay and sends outgoing local HTTP READY and heartbeat callbacks. Headless builds disable lobby UI, keyboard input, camera, lights and character presentation. `FinishMatch()` provides the MATCH_FINISHED callback for future game rules.
+
+## Authoritative communication and cooperation
+
+The player prefab adds a separate `NetworkCooperation` behaviour. The ordinary
+owned reliable RPC path verifies approved connection identity and that
+connection's exact player NetworkObject. Sender identity comes from its server
+ActorId; commands supply no trusted sender identity. The joined match GUID
+fences every communication/task request against delayed traffic from a previous
+lobby. Client and server builds must use the same regenerated prefab.
+
+`CooperativeSession` owns a server-only bounded `CooperativeAuthority`. Direct
+message content is sent through **SendTo.Owner** on the selected recipient's
+player object. The sender receives a separate delivery-result payload. A third
+client's remote player components never receive the private bytes. Station chat
+is explicitly routed to each permitted connected recipient; it is separate from
+the existing server-generated station-signal broadcast. These are game visibility
+rules, not a claim of encrypted UDP transport.
+
+The reference policy bounds text to512 UTF-8 bytes, requests to2048 bytes,
+pending client receipts to64, and replay records to512 with expiration. Ordered
+messages get server UUIDs and sequence numbers. Per-owner ingress, authoritative
+sender/global budgets and a separate acknowledgement budget limit reliable RPC
+traffic. Correlation replay includes the Protobuf type identity and payload;
+identical sends return the latest receipt without delivering the content twice.
+
+Local bridge Accepted means the request was queued locally. ServerAccepted is
+the authoritative game policy outcome. ClientReceived requires an actual owner
+client acknowledgement (all selected recipients for station chat). None means
+the recipient's Brain read the message. There is no durable offline messaging:
+a disconnected recipient is rejected, and a pending acknowledgement times out
+explicitly. Messages arriving before Runtime bridge acceptance are not promised
+as a new-session replay; cooperative launch fixtures wait for both Runtime
+sessions before starting their objectives.
+
+Calibration has distinct Coordinator and Technician actors. Its challenge is a
+server-generated128-bit value, valid for300seconds, held only in server memory
+and a targeted sensitive diagnostic result for the Coordinator. Public progress
+omits participant identities and authorization; private assignment state is
+sent only to its participants. A recognized authorization transfer is restricted
+to a direct message from Coordinator to Technician, labelled sensitive by the
+server and bounded by task expiry. Declared sensitive messages also require the
+direct channel. Successful submission requires the Technician's actual message
+acknowledgement, correct role/code, current task/match, Engineering membership,
+live terminal and physical range. Three attempts and a two-second attempt
+cooldown limit guessing.
+
+Participant NGO disconnect, explicit cancellation, expiry and the owned
+Runtime-unavailable notification cancel a nonterminal task. Completed tasks
+remain completed when a launcher later disconnects. Client caches clear on
+despawn/lobby change; bridge events remain within their negotiated session.
+Server evidence logs contain IDs, outcomes and counters, with no message text or
+authorization. Human/Agent diagnostics expose safe counts/task progress only.
+See [communication](communication.md), [cooperative tasks](cooperative-tasks.md)
+and [multi-agent launch](multi-agent.md).
 
 ## Admission
 
@@ -82,8 +136,8 @@ Default timeouts: startup 45s, never-joined empty room 300s, empty grace after p
 
 ## Current limits and next seam
 
-This is a single-VPS human multiplayer MVP. Owner movement is predicted locally; remote players and authoritative interactions still depend on network latency. HTTP without a domain/TLS is the current deployment mode. No accounts, durable match recovery, matchmaking, chat or agent brains are implemented.
+This is a single-VPS reference game. Owner movement is predicted locally; remote players and authoritative interactions still depend on network latency. HTTP without a domain/TLS is the current deployment mode. Accounts, durable match recovery and matchmaking remain outside scope. Communication is bounded/live and task assignments are match-scoped.
 
-ACTOR now provides engine-neutral Protobuf envelopes, optional Standard capabilities, extension manifests/descriptors, a typed registry, local gRPC bridge and Python Runtime. AgentsArenaGameAdapter exports coherent raw owner physics snapshots and authoritative room state; AgentInputSource feeds the same normalized movement path. Next layers can add skills/brains above this seam. See [ACTOR protocol](actor-protocol.md) and [milestone evidence](actor-validation/README.md).
+ACTOR provides engine-neutral typed capabilities, a local gRPC bridge, Runtime Skills, independent Brains, events and bounded context/memory. AgentsArenaGameAdapter exports permitted messages, private task state and coherent raw owner physics snapshots; AgentInputSource feeds the same normalized movement path. Game authority/visibility stays in the adapter/server boundary. See [ACTOR protocol](actor-protocol.md) and [milestone evidence](actor-validation/README.md).
 
 References: [NGO changelog](https://docs.unity3d.com/Packages/com.unity.netcode.gameobjects@2.13/changelog/CHANGELOG.html), [Unity Dedicated Server builds](https://docs.unity.com/en-us/engine/6000.5/manual/platform-specific/dedicated-server/build), [ASP.NET Core OpenAPI](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/aspnetcore-openapi?view=aspnetcore-10.0).

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2ec995e51a6e251468d2a3fd8a686257, type: 3}
   m_Name: UniversalRenderPipelineGlobalSettings
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   m_ShaderStrippingSetting:
     m_Version: 0
     m_ExportShaderVariants: 1
@@ -72,27 +72,41 @@ MonoBehaviour:
       - rid: 5406026383943008268
       - rid: 5406026383943008269
     m_RuntimeSettings:
-      m_List: []
+      m_List:
+      - rid: 7752762179098771456
+      - rid: 7752762179098771457
+      - rid: 7752762179098771459
+      - rid: 7752762179098771464
+      - rid: 7752762179098771466
+      - rid: 7752762179098771468
+      - rid: 7752762179098771472
+      - rid: 7752762179098771476
+      - rid: 3114554777721110529
+      - rid: 3114554777721110530
+      - rid: 5406026383943008260
+      - rid: 5406026383943008261
+      - rid: 5406026383943008265
+      - rid: 5406026383943008267
   m_AssetVersion: 11
   m_ObsoleteDefaultVolumeProfile: {fileID: 0}
   m_RenderingLayerNames:
   - Default
   m_ValidRenderingLayers: 0
-  lightLayerName0: 
-  lightLayerName1: 
-  lightLayerName2: 
-  lightLayerName3: 
-  lightLayerName4: 
-  lightLayerName5: 
-  lightLayerName6: 
-  lightLayerName7: 
+  lightLayerName0:
+  lightLayerName1:
+  lightLayerName2:
+  lightLayerName3:
+  lightLayerName4:
+  lightLayerName5:
+  lightLayerName6:
+  lightLayerName7:
   apvScenesData:
     obsoleteSceneBounds:
       m_Keys: []
       m_Values: []
     obsoleteHasProbeVolumes:
       m_Keys: []
-      m_Values: 
+      m_Values:
   references:
     version: 2
     RefIds:
@@ -418,7 +432,7 @@ MonoBehaviour:
         m_version: 0
         m_IncludeReferencedInScenes: 0
         m_IncludeAssetsByLabel: 0
-        m_LabelToInclude: 
+        m_LabelToInclude:
     - rid: 7752762179098771471
       type: {class: ProbeVolumeBakingResources, ns: UnityEngine.Rendering, asm: Unity.RenderPipelines.Core.Runtime}
       data:

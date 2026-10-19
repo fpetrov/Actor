@@ -30,6 +30,7 @@ namespace Actor.Networking
         public event Action Connected;
         public event Action<string> Disconnected;
         public string RoomCode => roomCode;
+        public string MatchId => matchId;
         public bool IsConnected => manager != null && manager.IsConnectedClient;
 
         private void Awake()
@@ -55,6 +56,7 @@ namespace Actor.Networking
         {
             if (manager.IsListening) throw new InvalidOperationException("A network session is already active.");
             roomCode = admission.roomCode;
+            matchId = admission.lobbyId;
             transport.SetConnectionData(admission.host, (ushort)admission.port);
             manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(admission.joinTicket);
             if (!manager.StartClient()) Disconnected?.Invoke("Could not start the network connection.");

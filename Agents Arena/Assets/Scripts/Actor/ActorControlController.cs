@@ -30,6 +30,11 @@ namespace Actor.GameAdapter
             public long managedHeapStart, managedHeapCurrent;
             public ulong stationSignals, lastSignalRevision;
             public string lastSignalId, lastSignalKind, lastSignalSourceActorId;
+            public long commReceivedCount, receiptsServerAcceptedCount, receiptsClientReceivedCount, receiptsRejectedCount, diagnosticResultsCount;
+            public string lastMessageId, lastMessageSenderActorId, lastMessageTaskId, calibrationTaskId, calibrationStatus, publicCalibrationStatus;
+            public ulong calibrationRevision;
+            public bool ownCalibrationAssignment;
+            public double meanMessageLatencyMs;
         }
         private NetworkCharacter owner;
         private PlayerInputSource keyboard;
@@ -207,6 +212,7 @@ namespace Actor.GameAdapter
         {
             var diagnostic = bridge?.Diagnostics;
             var console = SignalConsole.Current;
+            var cooperation = owner != null ? owner.GetComponent<NetworkCooperation>() : null;
             var signal = console != null ? console.LastReceivedSignal : null;
             double elapsed = Time.realtimeSinceStartupAsDouble - startedAt;
             var report = new Report
@@ -224,7 +230,14 @@ namespace Actor.GameAdapter
                 managedHeapStart = heapStart, managedHeapCurrent = GC.GetTotalMemory(false), errors = errors.ToArray(), warnings = warnings.ToArray(),
                 stationSignals = console != null ? console.ReceivedSignalCount : 0, lastSignalId = signal?.SignalId,
                 lastSignalKind = signal?.SignalKind.ToString(), lastSignalSourceActorId = signal?.SourceActorId,
-                lastSignalRevision = signal?.ServerRevision ?? 0
+                lastSignalRevision = signal?.ServerRevision ?? 0,
+                commReceivedCount = cooperation?.MessageCount ?? 0, receiptsServerAcceptedCount = cooperation?.ServerAcceptedCount ?? 0,
+                receiptsClientReceivedCount = cooperation?.ClientReceivedCount ?? 0, receiptsRejectedCount = cooperation?.RejectedCount ?? 0,
+                diagnosticResultsCount = cooperation?.DiagnosticCount ?? 0, lastMessageId = cooperation?.LastMessageId,
+                lastMessageSenderActorId = cooperation?.LastMessageSender, lastMessageTaskId = cooperation?.LastMessageTask,
+                meanMessageLatencyMs = cooperation?.MeanMessageLatencyMs ?? 0, calibrationTaskId = cooperation?.TaskState.TaskId,
+                calibrationStatus = cooperation?.TaskState.Status.ToString(), publicCalibrationStatus = cooperation?.Progress.Status.ToString(),
+                calibrationRevision = cooperation?.TaskState.ServerRevision ?? 0, ownCalibrationAssignment = cooperation != null && cooperation.TaskState.TaskId.Length > 0
             };
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath)));
             File.WriteAllText(reportPath, JsonUtility.ToJson(report, true));
