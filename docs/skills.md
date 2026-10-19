@@ -100,6 +100,39 @@ assignment and role, approach the installed terminals through the existing
 movement controller and await typed authoritative outcomes. Task state remains
 entirely server-owned. See [cooperative tasks](cooperative-tasks.md).
 
+Arena 0.4.0 adds the following game-specific investigation procedures through
+the same `actor.skills` plugin and dynamic catalog:
+
+| Skill ID suffix (`agents-arena.`) | Procedure |
+| --- | --- |
+| `select-role` | Request Crew/Engineer/Sheriff and await the correlated server result |
+| `wait-for-incident` | Await a public active case without model polling |
+| `maintenance-override` | Crew/Engineer approaches the real panel and adjusts public `alpha`/`beta` |
+| `inspect-cooling` | Engineer approaches Cooling Control and obtains its private diagnostic |
+| `inspect-security-records` | Sheriff approaches Security Records and obtains its own bounded audit slice |
+| `share-investigation-evidence` | Engineer sends a compact diagnostic claim to the assigned Sheriff through Standard direct communication |
+| `repair-cooling` | Engineer approaches the panel, starts the server-timed repair and awaits completion |
+| `submit-investigation-report` | Sheriff approaches its terminal and submits a hypothesis plus exactly three references |
+| `wait-for-incident-resolved` | Require restored cooling and validated report for the same incident |
+| `cancel-investigation` | Request bounded authoritative release of unfinished own-role work |
+
+Terminal procedures reuse the existing movement controller and own Locomotion2D
+while approaching. They validate fresh role, match, incident, permitted own
+evidence and private expiry; server checks remain the authority. Cleanup issues
+zero movement and cancels an unfinished repair where possible. Objective
+finalization uses the same scheduler and typed cancellation command, preserving
+an already resolved case.
+
+Inspection and sharing results use `session_only` policy. Working evidence
+reaches its authorized Brain; public diagnostics and SQLite retain safe metadata.
+A diagnostic claim received through communication remains untrusted player
+content. Sharing success establishes the correlated server receipt, while report
+authority separately requires actual receiving-client ACK. Neither stage proves
+that a Brain understood the claim. The Sheriff must correlate circuit, covered
+time window, controller context and observed action; merely naming a hypothesis
+or citing every record cannot complete the task. See [investigation](investigation.md)
+and [evidence](evidence.md).
+
 `SkillDefinition.result_policy` is `public`, `session_only` or `sensitive`.
 Authorized working results still reach the Brain; public diagnostics and SQLite
 use safe projections. Private output/details are withheld, known secrets are

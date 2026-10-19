@@ -33,7 +33,9 @@ namespace Actor.Networking
             if (manager == null || !manager.IsServer) return;
             var session = manager.GetComponent<MatchSession>();
             if (string.IsNullOrEmpty(session.MatchId)) return;
-            authority ??= new CooperativeAuthority(session.MatchId);
+            authority ??= new CooperativeAuthority(session.MatchId,
+                (actor, task) => IncidentSession.Current?.AllowsTaskMessage(actor, task) ?? false,
+                (actor, message) => IncidentSession.Current?.ValidateEvidenceMessage(actor, message) ?? "");
             CooperativeTerminal2D diagnostic = null, calibration = null;
             foreach (var terminal in FindObjectsByType<CooperativeTerminal2D>())
             {
@@ -68,6 +70,11 @@ namespace Actor.Networking
             foreach (var delivery in deliveries)
             {
                 if (!endpoints.TryGetValue(delivery.Recipient, out var target) || target == null || !target.IsSpawned) continue;
+                // Game-specific evidence citations use this same authorized
+                // communication path. Only an actual recipient ACK can grant a
+                // cross-role citation; prose never becomes a source observation.
+                if (delivery.Payload is MessageReceivedEvent accepted) IncidentSession.Current?.MessageAccepted(accepted);
+                else if (delivery.Payload is MessageDeliveryResultEvent receipt) IncidentSession.Current?.MessageReceipt(receipt);
                 target.Deliver(delivery.Payload);
                 // Privacy-safe evidence: no chat text, secret, diagnostic object
                 // dump or arbitrary exception contents enter server logs.

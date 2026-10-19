@@ -21,6 +21,17 @@ from extensions.agents_arena.v1.calibration_pb2 import (
     CALIBRATION_ACTION_SUBMIT, CALIBRATION_ACTION_CANCEL,
 )
 from actor_runtime.extensions import ExtensionPackage
+from extensions.agents_arena.v1 import incidents_pb2
+from extensions.agents_arena.v1.incidents_pb2 import (
+    CrewRole, CoolingStatus, IncidentStatus, CoolingSeverity, ProposedOrigin, AuditAction,
+    EvidenceVisibility, IncidentAction, OwnRoleObservation, DutyRoleEntry, DutyRosterObservation,
+    SelectRoleCommand, RoleResultEvent, CoolingStateObservation, IncidentStartedEvent, IncidentChangedEvent,
+    EvidenceProvenance, PressureSample, DiagnosticEvidence, MaintenanceRecord, SecurityEvidence,
+    OwnInvestigationViewObservation, InspectCoolingCommand, InspectSecurityRecordsCommand,
+    DiagnosticEvidenceEvent, SecurityEvidenceEvent, RepairCoolingCommand, CancelCoolingRepairCommand,
+    CancelInvestigationCommand, MaintenanceOverrideCommand, SubmitInvestigationReportCommand,
+    RepairResultEvent, InvestigationResultEvent, IncidentActionResultEvent,
+)
 
 ROOM_MEMBERSHIP = "agents-arena.room-membership"
 ROOM_CHANGED = "agents-arena.room-changed"
@@ -35,6 +46,26 @@ SUBMIT_CALIBRATION = "agents-arena.submit-calibration"
 CANCEL_CALIBRATION = "agents-arena.cancel-calibration"
 DIAGNOSTIC_RESULT = "agents-arena.diagnostic-result"
 CALIBRATION_RESULT = "agents-arena.calibration-result"
+OWN_ROLE = "agents-arena.own-role"
+DUTY_ROSTER = "agents-arena.duty-roster"
+SELECT_ROLE = "agents-arena.select-role"
+ROLE_RESULT = "agents-arena.role-result"
+COOLING_STATE = "agents-arena.cooling-state"
+INCIDENT_STARTED = "agents-arena.incident-started"
+INCIDENT_CHANGED = "agents-arena.incident-changed"
+OWN_INVESTIGATION_VIEW = "agents-arena.own-investigation-view"
+INSPECT_COOLING = "agents-arena.inspect-cooling"
+INSPECT_SECURITY_RECORDS = "agents-arena.inspect-security-records"
+DIAGNOSTIC_EVIDENCE = "agents-arena.diagnostic-evidence"
+SECURITY_EVIDENCE = "agents-arena.security-evidence"
+REPAIR_COOLING = "agents-arena.repair-cooling"
+CANCEL_COOLING_REPAIR = "agents-arena.cancel-cooling-repair"
+CANCEL_INVESTIGATION = "agents-arena.cancel-investigation"
+MAINTENANCE_OVERRIDE = "agents-arena.maintenance-override"
+SUBMIT_INVESTIGATION_REPORT = "agents-arena.submit-investigation-report"
+REPAIR_RESULT = "agents-arena.repair-result"
+INVESTIGATION_RESULT = "agents-arena.investigation-result"
+INCIDENT_ACTION_RESULT = "agents-arena.incident-action-result"
 
 
 def extension_package() -> ExtensionPackage:
@@ -46,5 +77,6 @@ def extension_package() -> ExtensionPackage:
          CalibrationTaskStateObservation, CalibrationProgressObservation,
          CalibrationAssignmentEvent, CalibrationTaskChangedEvent,
          StartCalibrationCommand, InspectDiagnosticCommand, SubmitCalibrationCommand, CancelCalibrationCommand,
-         DiagnosticResultEvent, CalibrationResultEvent),
+         DiagnosticResultEvent, CalibrationResultEvent,
+         *(getattr(incidents_pb2, name) for name in incidents_pb2.DESCRIPTOR.message_types_by_name)),
     )

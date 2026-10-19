@@ -35,6 +35,9 @@ namespace Actor.GameAdapter
             public ulong calibrationRevision;
             public bool ownCalibrationAssignment;
             public double meanMessageLatencyMs;
+            public string crewRole, incidentId, incidentStatus, coolingStatus;
+            public bool investigationReportValidated, ownDiagnosticPresent, ownSecurityPresent;
+            public long diagnosticEvidenceCount, securityEvidenceCount, repairCompletedCount, reportsValidatedCount, reportsRejectedCount, incidentsStartedCount;
         }
         private NetworkCharacter owner;
         private PlayerInputSource keyboard;
@@ -243,6 +246,8 @@ namespace Actor.GameAdapter
                 ? bridge.Diagnostics : lastAcceptedDiagnostics;
             var console = SignalConsole.Current;
             var cooperation = owner != null ? owner.GetComponent<NetworkCooperation>() : null;
+            var investigation = owner != null ? owner.GetComponent<NetworkInvestigation>() : null;
+            var ownView = investigation?.CaptureOwnView();
             var signal = console != null ? console.LastReceivedSignal : null;
             double elapsed = Time.realtimeSinceStartupAsDouble - startedAt;
             var report = new Report
@@ -269,7 +274,14 @@ namespace Actor.GameAdapter
                 lastMessageSenderActorId = cooperation?.LastMessageSender, lastMessageTaskId = cooperation?.LastMessageTask,
                 meanMessageLatencyMs = cooperation?.MeanMessageLatencyMs ?? 0, calibrationTaskId = cooperation?.TaskState.TaskId,
                 calibrationStatus = cooperation?.TaskState.Status.ToString(), publicCalibrationStatus = cooperation?.Progress.Status.ToString(),
-                calibrationRevision = cooperation?.TaskState.ServerRevision ?? 0, ownCalibrationAssignment = cooperation != null && cooperation.TaskState.TaskId.Length > 0
+                calibrationRevision = cooperation?.TaskState.ServerRevision ?? 0, ownCalibrationAssignment = cooperation != null && cooperation.TaskState.TaskId.Length > 0,
+                crewRole = investigation?.Role.Role.ToString(), incidentId = investigation?.Cooling.IncidentId,
+                incidentStatus = investigation?.Cooling.IncidentStatus.ToString(), coolingStatus = investigation?.Cooling.CoolingStatus.ToString(),
+                investigationReportValidated = investigation?.Cooling.ReportValidated ?? false,
+                ownDiagnosticPresent = ownView?.Diagnostic != null, ownSecurityPresent = ownView?.Security != null,
+                diagnosticEvidenceCount = investigation?.DiagnosticEvidenceCount ?? 0, securityEvidenceCount = investigation?.SecurityEvidenceCount ?? 0,
+                repairCompletedCount = investigation?.RepairCompletedCount ?? 0, reportsValidatedCount = investigation?.ReportsValidatedCount ?? 0,
+                reportsRejectedCount = investigation?.ReportsRejectedCount ?? 0, incidentsStartedCount = investigation?.IncidentsStartedCount ?? 0
             };
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(reportPath)));
             File.WriteAllText(reportPath, JsonUtility.ToJson(report, true));

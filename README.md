@@ -1,6 +1,6 @@
 # ACTOR
 
-ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone5 adds private server-authorized communication and a cooperative calibration task for independent agents, building on event-driven cognition, bounded contexts and local episodic memory.
+ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone6 adds station duties, private asymmetric investigation evidence, physical repair and a server-validated report for independent agents, preserving private communication and the earlier calibration task.
 
 ## What ACTOR is
 
@@ -34,9 +34,9 @@ Action pipeline: Brain → typed Skill → cleanup/ownership → Game
 
 - **ACTOR SDK** — local UPM `packages/com.actor.sdk`, engine-independent Core/Standard protocol and typed registration.
 - **gRPC transport** — local UPM `com.actor.transport.grpc`, Grpc.Net.Client + native YetAnotherHttpHandler.
-- **Python Runtime 0.4.0** — descriptors/plugins, state cache, typed Skills, bounded message inboxes, event routing, context, private-data retention policies, memory and ObjectiveRunner.
+- **Python Runtime 0.5.0** — descriptors/plugins, state cache, typed Skills, bounded message inboxes, event routing, context, private-data retention policies, memory and ObjectiveRunner.
 - **Brains** — deterministic SequenceBrain and optional official `openai-codex==0.162.1`; model decisions occur at Skill boundaries or justified strategic events, with one active turn.
-- **Agents Arena 0.6.0** — Unity 6000.6.4f1, Main Hall ↔ Engineering, station signals, private communication, cooperative terminals, server physics/rooms and responsive owner prediction.
+- **Agents Arena 0.7.0** — Unity 6000.6.4f1, Main Hall ↔ Engineering, station duties, cooling investigation, signals, private communication, cooperative terminals, server physics/rooms and responsive owner prediction.
 - **Control Plane** — .NET 10 Minimal APIs, SQLite admission/process lifecycle; static website via nginx.
 
 **Website:** http://5.181.134.236/
@@ -74,11 +74,13 @@ nginx → Minimal API → LobbyManager → IGameServerAllocator → Unity Dedica
 
 Client input sends only movement intent. Server `ActorCharacter → CharacterMotor2D → Rigidbody2D` owns acceleration, movement and collisions. Other players interpolate server transforms; the owned player predicts its presentation and reconciles server snapshots. Animation observes motion through `ICharacterMotionState`. Owner-only input and camera remain separate from simulation/presentation. Human keyboard and ACTOR AgentInputSource share that input path without duplicating movement logic.
 
-`ActorCharacter.CaptureState()` exposes ActorId, position, velocity, room, facing, moving, role and interaction state. Roles/interactions remain placeholders. `shared/com.actor.contracts` supplies engine-independent admission claims/HMAC; it references neither Unity nor NGO. **NGO belongs to Agents Arena, not the generic ACTOR SDK contract.**
+`ActorCharacter.CaptureState()` exposes ActorId, position, velocity, room, facing and moving state. Server-owned station duties and investigation state use separate typed Arena observations; they do not extend the movement snapshot. `shared/com.actor.contracts` supplies engine-independent admission claims/HMAC; it references neither Unity nor NGO. **NGO belongs to Agents Arena, not the generic ACTOR SDK contract.**
 
 The six original sheets provide 48 complete character poses. Twelve idle/walk clips preserve the previous directional setup; UpLeft/DownLeft mirror right diagonals, while Left has its own art. All original PNGs remain unchanged. The multiplayer scene preserves Main Hall walls, crystal, camera and the user's light/collider adjustments.
 
 ## Verification and limits
+
+Milestone 6 currently has local authority/protocol coverage: **162 SDK/bridge C# tests** and **52 schema-freshness checks** passed, including 40 incident-authority cases and 7 incident-protocol cases. Paired cases hold either role's complete evidence view equal, apart from opaque GUIDs, while the other view changes the supported origin; real maintenance occurs at different moments within the same completed controller cycle. This is local test evidence; new builds, live investigation, Human observation and fault acceptance are tracked separately in the [Milestone 6 report](docs/investigation-validation/README.md). See [investigation architecture](docs/investigation.md) for the implemented boundary.
 
 Milestone 5 verification passed **125 .NET tests** (107 SDK/bridge + 18 backend), **326 Python tests** (316 Runtime + 10 scripts, final rerun 41.56 seconds) and **50 schema-freshness checks**. The fault helper has 9 additional offline self-tests. Hosted Control Plane and SDK/Runtime CI both passed for functional-code commit `25402be`. All four real remote cooperation scenarios passed strict acceptance: two ScriptedBrains, both mixed Codex/scripted directions, and **two independent live CodexBrains**, with independent Runtimes/memories and matching authoritative completion.
 
@@ -156,3 +158,29 @@ WorldState, Brain/thread and database; the supervisor does not transfer game dat
 See [launch and isolation](docs/multi-agent.md),
 [communication and delivery](docs/communication.md) and
 [cooperative task authority](docs/cooperative-tasks.md).
+
+## Role-based investigation
+
+With a matching 0.7.0 lobby/client, launch the Engineer and Sheriff:
+
+```bash
+python3 scripts/launch-investigation-agents.py --room ABC123
+python3 scripts/launch-investigation-agents.py --room ABC123 \
+  --engineer-brain codex --sheriff-brain codex
+```
+
+The Engineer inspects private cooling symptoms, shares a bounded claim through
+the ordinary game-server direct-message path and repairs the equipment. The
+Sheriff inspects its own private audit slice, correlates circuit, fault window,
+controller context and actual action, then submits exactly three references.
+Only authoritative restored cooling plus a validated report resolves the case.
+Roles are locked while active; neither actor can perform both branches.
+
+Natural failures follow the trusted server clock. Crew/Engineer maintenance at
+the actual panel can affect a public `alpha` or `beta` circuit; a recent action
+alone does not establish cause. Both paths expose their alarm at the same
+controller-cycle boundary, after its bounded audit interval is complete. Public
+state and private evidence contain no answer field. Received findings remain
+another actor's claim. See
+[duties](docs/roles.md), [evidence](docs/evidence.md),
+[world terminals](docs/game-world.md) and [Skills](docs/skills.md).

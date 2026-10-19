@@ -19,37 +19,55 @@ namespace Actor.World
         private PlayerInputSource keyboard;
         private CooperativeTerminal2D[] terminals = Array.Empty<CooperativeTerminal2D>();
         private CooperativeTerminal2D opened;
+        private IncidentTerminal2D[] incidentTerminals = Array.Empty<IncidentTerminal2D>();
+        private IncidentTerminal2D openedIncident;
+        private IncidentClientUI investigation;
         private bool choosing, chat, station, sensitive;
         private bool clearFocus;
         private bool wasHuman;
-        private string recipient = "", text = "", code = "";
+        private string recipient = "", text = "", code = "", messageTaskScope = "";
         private GUIStyle heading, body;
         private Vector2 scroll;
-        private void Awake() { owner = GetComponent<NetworkCooperation>(); keyboard = GetComponent<PlayerInputSource>(); }
+        private void Awake() { owner = GetComponent<NetworkCooperation>(); keyboard = GetComponent<PlayerInputSource>(); investigation = GetComponent<IncidentClientUI>(); }
+        public void PrepareMessage(string recipientActor, string content, bool privateContent, string taskScope)
+        {
+            recipient = recipientActor; text = content; sensitive = privateContent; station = false;
+            messageTaskScope = taskScope; chat = true; clearFocus = true;
+        }
         private void Update()
         {
             if (!owner.IsSpawned || !owner.IsOwner) return;
             if (terminals.Length == 0) terminals = FindObjectsByType<CooperativeTerminal2D>();
+            if (incidentTerminals.Length == 0) incidentTerminals = FindObjectsByType<IncidentTerminal2D>();
             if (opened != null && !Near(opened)) opened = null;
+            if (openedIncident != null && !Near(openedIncident)) openedIncident = null;
             if (!owner.Human)
             {
-                if (wasHuman) { opened = null; choosing = chat = false; text = code = ""; clearFocus = true; }
+                if (wasHuman) { opened = null; openedIncident = null; choosing = chat = false; text = code = messageTaskScope = ""; clearFocus = true; }
                 wasHuman = false; keyboard.TextEntryFocused = false; return;
             }
             wasHuman = true;
             if (Keyboard.current == null || !Application.isFocused) return;
             if (!keyboard.TextEntryFocused && Keyboard.current.tKey.wasPressedThisFrame) { chat = !chat; clearFocus = true; }
-            if (Keyboard.current.escapeKey.wasPressedThisFrame) { chat = choosing = false; opened = null; SignalConsole.Current?.CloseFromFocus(); clearFocus = true; }
+            if (Keyboard.current.escapeKey.wasPressedThisFrame) { chat = choosing = false; opened = null; openedIncident = null; SignalConsole.Current?.CloseFromFocus(); clearFocus = true; }
             if (!keyboard.TextEntryFocused && Keyboard.current.eKey.wasPressedThisFrame)
             {
-                opened = null; SignalConsole.Current?.CloseFromFocus(); choosing = !choosing;
+                opened = null; openedIncident = null; SignalConsole.Current?.CloseFromFocus(); choosing = !choosing;
                 var near = terminals.Where(Near).ToArray();
-                if (choosing && near.Length == 1 && !NearSignal()) { opened = near[0]; choosing = false; }
-                else if (choosing && near.Length == 0 && NearSignal()) { SignalConsole.Current.OpenFromFocus(); choosing = false; }
+                var incidents = incidentTerminals.Where(Near).ToArray();
+                int total = near.Length + incidents.Length + (NearSignal() ? 1 : 0);
+                if (choosing && total == 1)
+                {
+                    if (near.Length == 1) opened = near[0];
+                    else if (incidents.Length == 1) openedIncident = incidents[0];
+                    else SignalConsole.Current.OpenFromFocus();
+                    choosing = false;
+                }
             }
         }
         private Vector2 Position => GetComponent<CapsuleCollider2D>().bounds.center;
         private bool Near(CooperativeTerminal2D terminal) => terminal != null && (Position - terminal.InteractionPoint).sqrMagnitude <= terminal.Radius * terminal.Radius;
+        private bool Near(IncidentTerminal2D terminal) => terminal != null && (Position - terminal.InteractionPoint).sqrMagnitude <= terminal.Radius * terminal.Radius;
         private bool NearSignal() => SignalConsole.Current != null && (Position - SignalConsole.Current.InteractionPosition).sqrMagnitude <= SignalConsole.InteractionRadius * SignalConsole.InteractionRadius;
         private string Self => GetComponent<NetworkCharacter>().AuthoritativeActorId;
         private string Correlation() => Guid.NewGuid().ToString("N");
@@ -64,23 +82,33 @@ namespace Actor.World
             string role = owner.TaskState.CoordinatorActorId == Self ? "Coordinator" : owner.TaskState.TechnicianActorId == Self ? "Technician" : "Observer";
             GUI.Label(new Rect(28, 237, 310, 40), role + "  ·  " + owner.LastAction, body);
             if (GUI.Button(new Rect(18, 290, 180, 28), chat ? "Close messages" : "T · Messages (" + owner.Inbox.Count + ")")) chat = !chat;
-            if (owner.Human && opened == null && !choosing && (NearSignal() || terminals.Any(Near)))
+            if (owner.Human && opened == null && openedIncident == null && !choosing && (NearSignal() || terminals.Any(Near) || incidentTerminals.Any(Near)))
                 if (GUI.Button(new Rect(Screen.width / 2f - 180, Screen.height - 54, 360, 36), "E · Nearby interactions")) choosing = true;
             if (choosing && owner.Human) DrawChooser();
             if (opened != null && owner.Human) DrawTerminal();
+            if (openedIncident != null && owner.Human)
+            {
+                investigation.DrawTerminal(openedIncident);
+                if (GUI.Button(new Rect(Screen.width / 2f + Mathf.Min(660, Screen.width - 36) / 2 - 46, Screen.height - Mathf.Min(580, Screen.height - 150) - 11, 30, 26), "×")) openedIncident = null;
+            }
             if (chat) DrawChat();
-            keyboard.TextEntryFocused = owner.Human && (GUI.GetNameOfFocusedControl() == "communication-text" || GUI.GetNameOfFocusedControl() == "calibration-code");
+            keyboard.TextEntryFocused = owner.Human && (GUI.GetNameOfFocusedControl() == "communication-text" || GUI.GetNameOfFocusedControl() == "calibration-code" || IncidentClientUI.TextFieldFocused);
         }
         private void DrawChooser()
         {
             var choices = terminals.Where(Near).ToArray();
-            var box = new Rect(Screen.width / 2f - 180, Screen.height - 230, 360, 210);
+            var incidents = incidentTerminals.Where(Near).ToArray();
+            int total = choices.Length + incidents.Length + (NearSignal() ? 1 : 0);
+            float height = 50 + Math.Max(1, total) * 40;
+            var box = new Rect(Screen.width / 2f - 180, Screen.height - height - 20, 360, height);
             GUI.Box(box, GUIContent.none); GUI.Label(new Rect(box.x + 12, box.y + 8, 330, 25), "Choose interaction", heading);
             int row = 0;
             foreach (var terminal in choices)
             {
                 if (GUI.Button(new Rect(box.x + 12, box.y + 40 + row++ * 40, 336, 34), terminal.DisplayName)) { opened = terminal; choosing = false; }
             }
+            foreach (var terminal in incidents)
+                if (GUI.Button(new Rect(box.x + 12, box.y + 40 + row++ * 40, 336, 34), terminal.DisplayName)) { openedIncident = terminal; choosing = false; }
             if (NearSignal() && GUI.Button(new Rect(box.x + 12, box.y + 40 + row * 40, 336, 34), "Signal Console"))
             { SignalConsole.Current.OpenFromFocus(); choosing = false; }
         }
@@ -107,7 +135,7 @@ namespace Actor.World
                     {
                         GUI.Label(new Rect(box.x + 12, box.y + 215, 476, 36), "Private: " + owner.PrivateDiagnostic.AuthorizationCode, body);
                         if (GUI.Button(new Rect(box.x + 242, box.y + 180, 246, 30), "Prepare private message"))
-                        { recipient = task.TechnicianActorId; text = owner.PrivateDiagnostic.AuthorizationCode; sensitive = true; station = false; chat = true; }
+                        PrepareMessage(task.TechnicianActorId, owner.PrivateDiagnostic.AuthorizationCode, true, task.TaskId);
                     }
                 }
             }
@@ -152,8 +180,8 @@ namespace Actor.World
             if (GUI.Button(new Rect(box.x + 12, y + 114, width - 24, 34), "Send · " + Encoding.UTF8.GetByteCount(text) + "/512 bytes"))
             {
                 owner.Submit(new SendMessageCommand { RecipientActorId = station ? "" : recipient, ChannelId = station ? "station" : "direct",
-                    Text = text, CorrelationId = Correlation(), TaskId = owner.TaskState.TaskId, Sensitive = sensitive, TtlMs = 300000, MatchId = owner.Peers.MatchId });
-                text = ""; GUI.FocusControl(null);
+                    Text = text, CorrelationId = Correlation(), TaskId = messageTaskScope.Length > 0 ? messageTaskScope : owner.TaskState.TaskId, Sensitive = sensitive, TtlMs = 300000, MatchId = owner.Peers.MatchId });
+                text = messageTaskScope = ""; GUI.FocusControl(null);
             }
         }
         private void OnDisable() { if (keyboard != null) keyboard.TextEntryFocused = false; }

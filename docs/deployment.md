@@ -47,7 +47,7 @@ Build outputs stay under ignored `build/`. Server build uses `StandaloneLinux64`
 
 ## Configuration
 
-See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight players, startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.5.0, ProtocolVersion=3.
+See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight players, startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.7.0, ProtocolVersion=3.
 
 The deployment script preserves an existing `/etc/actor/control-plane.env`; edit it deliberately before redeploying if the host or versions change. There is no persistent signing secret to configure: every allocated match gets a random environment-only key. Never print `/proc/.../environ`, full join tickets or private-key contents.
 
@@ -102,3 +102,27 @@ The relay adds 100±10 ms in each direction (about 200 ms additional round trip)
 Only the reference game server/Control Plane/static website are deployed to the VPS. ACTOR Runtime remains a local Python process on the client machine. It listens on loopback50051 (configurable), authenticates an ephemeral token and streams Protobuf over HTTP/2. No gRPC server, token, LLM or SDK brain service is deployed/publicly exposed on the VPS.
 
 Local play/bridge instructions: [Python Runtime](python-runtime.md), [protocol](actor-protocol.md), [SDK milestone evidence](actor-validation/README.md). The generic transport abstraction currently has the verified Grpc.Net.Client + YetAnotherHttpHandler implementation. A game0.5.0 client requires matching admission protocol3; rebuild old clients before joining current rooms.
+
+## Milestone 6 investigation conditions
+
+Game0.7.0 and Arena extension0.4.0 require matching new client/server builds;
+NGO admission protocol remains3. The Control Plane and local lobby settings
+use0.7.0. Runtime0.5.0 remains local; no Brain or evidence service is deployed
+to the VPS. The existing private internal heartbeat routes and loopback binding
+are unchanged.
+
+For reproducible acceptance, a trusted server administrator can install one
+match-scoped file `/etc/actor/incident-scenarios/<matchIdN>.json` before the
+first role command. The directory is root-owned, group `actor`, mode0750; files
+are root-owned, group `actor`, mode0640 and bounded to4096 bytes. Fields are
+`seed`, `naturalEnabled`, `naturalDelayMs`, `incidentTtlMs`, `repairDurationMs`
+and `activeCircuit` (`alpha` or `beta`). No cause setter or public debug endpoint
+exists. The ordinary Crew maintenance action must actually reach the server.
+Without a file, private server entropy and normal server timing apply. Invalid files
+fail role setup with a structured outcome and a content-free server error.
+
+`spikes/investigation/run_case.py` creates an ordinary room, installs these
+conditions over the authorized SSH connection and launches independent Runtime
+and Unity processes. Its case label and server configuration never enter an
+investigator Objective/context. Keep raw artifacts in ignored `build/`; publish
+only the explicit projection from `scripts/summarize-investigation.py`.

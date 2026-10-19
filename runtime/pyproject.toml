@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "actor-runtime"
-version = "0.4.0"
+version = "0.5.0"
 description = "Typed ACTOR game runtime with discoverable extensions, skills and interchangeable brains"
 requires-python = ">=3.12"
 dependencies = ["grpcio==1.82.2", "protobuf==7.36.2", "pydantic==2.14.1"]
@@ -29,19 +29,26 @@ agents-arena = "actor_agents_arena.scripted:run"
 builtins = "actor_runtime.builtin_skills:skill_package"
 agents-arena = "actor_agents_arena.skills:skill_package"
 communication = "actor_standard_communication.skills:skill_package"
+investigation = "actor_agents_arena.investigation:skill_package"
 
 [project.entry-points."actor.brains"]
 scripted = "actor_agents_arena.demo_brain:scripted_brain"
 codex = "actor_codex:brain_factory"
 calibration-coordinator = "actor_agents_arena.cooperative_brain:coordinator_brain"
 calibration-technician = "actor_agents_arena.cooperative_brain:technician_brain"
+investigation-engineer = "actor_agents_arena.investigation_brain:engineer_brain"
+investigation-sheriff = "actor_agents_arena.investigation_brain:sheriff_brain"
+maintenance-operator = "actor_agents_arena.investigation_brain:maintenance_brain"
+investigation-claimant = "actor_agents_arena.investigation_brain:claimant_brain"
 
 [project.entry-points."actor.event_rules"]
 agents-arena = "actor_agents_arena.events:event_rules"
 communication = "actor_standard_communication.events:event_rules"
+investigation = "actor_agents_arena.investigation_events:event_rules"
 
 [project.entry-points."actor.objective_finalizers"]
 agents-arena = "actor_agents_arena.calibration:finalize_objective"
+investigation = "actor_agents_arena.investigation:finalize_objective"
 
 [project.entry-points."actor.classifiers"]
 rules = "actor_runtime.classifiers:rules_factory"

@@ -7,7 +7,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomMembershipObservation",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.room-changed",
@@ -16,7 +16,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomChangedEvent",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.station-signal",
@@ -25,7 +25,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StationSignalEvent",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.calibration-state",
@@ -34,7 +34,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskStateObservation",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.calibration-progress",
@@ -43,7 +43,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationProgressObservation",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.calibration-assignment",
@@ -52,7 +52,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationAssignmentEvent",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.calibration-changed",
@@ -61,7 +61,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskChangedEvent",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.start-calibration",
@@ -71,7 +71,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StartCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.inspect-diagnostic",
@@ -81,7 +81,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectDiagnosticCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.submit-calibration",
@@ -91,7 +91,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SubmitCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.cancel-calibration",
@@ -101,7 +101,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.diagnostic-result",
@@ -110,7 +110,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DiagnosticResultEvent",
-      "version": "0.3.0"
+      "version": "0.4.0"
     },
     {
       "capability_id": "agents-arena.calibration-result",
@@ -119,12 +119,200 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationResultEvent",
-      "version": "0.3.0"
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.own-role",
+      "description": "Controlled actor's server-assigned public duty and role-selection lock.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.OwnRoleObservation",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.duty-roster",
+      "description": "Public station duties only; never hidden roles or affiliations.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DutyRosterObservation",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.select-role",
+      "command_delivery": "ordered",
+      "description": "Request a server-validated unique station duty while role selection is unlocked.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SelectRoleCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.role-result",
+      "description": "Private correlated authoritative result of duty selection.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoleResultEvent",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.cooling-state",
+      "description": "Public cooling and incident progress; contains no hidden origin or role-private evidence.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CoolingStateObservation",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.incident-started",
+      "description": "Public authoritative cooling incident alarm without a hidden-origin field.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentStartedEvent",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.incident-changed",
+      "description": "Public authoritative incident lifecycle; resolution requires both repair and validated investigation.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentChangedEvent",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.own-investigation-view",
+      "description": "Owner-only expiring evidence legitimately inspected by the controlled role; session-only data, explicit empty view clears old evidence.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.OwnInvestigationViewObservation",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.inspect-cooling",
+      "command_delivery": "ordered",
+      "description": "Engineer-only request for private cooling diagnostics at the authorized physical console.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectCoolingCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.inspect-security-records",
+      "command_delivery": "ordered",
+      "description": "Sheriff-only request for a bounded private authorized security-record view.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectSecurityRecordsCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.diagnostic-evidence",
+      "description": "Private correlated Engineer evidence with server provenance and expiry; never public diagnostics or durable raw evidence.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DiagnosticEvidenceEvent",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.security-evidence",
+      "description": "Private correlated Sheriff evidence with server provenance and expiry; bounded authorized records only.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SecurityEvidenceEvent",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.repair-cooling",
+      "command_delivery": "ordered",
+      "description": "Engineer-only request to begin a bounded server repair lease using current legitimately inspected evidence.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RepairCoolingCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.cancel-cooling-repair",
+      "command_delivery": "ordered",
+      "description": "Cancel the actor's active repair lease and release ongoing physical work.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelCoolingRepairCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.cancel-investigation",
+      "command_delivery": "ordered",
+      "description": "Request bounded cancellation of the actor's unfinished assigned incident, never erase a resolved incident.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelInvestigationCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.maintenance-override",
+      "command_delivery": "ordered",
+      "description": "Server-validated physical maintenance interaction on a public circuit control; cannot set a hidden incident cause.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.MaintenanceOverrideCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.submit-investigation-report",
+      "command_delivery": "ordered",
+      "description": "Sheriff-only bounded hypothesis submission with both legitimately issued and disclosed incident-scoped evidence references.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SubmitInvestigationReportCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.repair-result",
+      "description": "Private repair lease result; acceptance starts work, completed confirms physical restoration. Preserve both stages of one correlation.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RepairResultEvent",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.investigation-result",
+      "description": "Private report outcome without the correct hidden origin; report validation alone is not whole-incident resolution.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InvestigationResultEvent",
+      "version": "0.4.0"
+    },
+    {
+      "capability_id": "agents-arena.incident-action-result",
+      "description": "Private correlated maintenance/cancellation result from the authoritative incident policy.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentActionResultEvent",
+      "version": "0.4.0"
     }
   ],
   "descriptor_set": "agents_arena.v1.pb",
   "extension_id": "agents-arena",
-  "extension_version": "0.3.0",
-  "schema_hash": "dd472a4c427de6691de7c91259de1c129813da98b5ec235c1d4bd176adf804a6",
+  "extension_version": "0.4.0",
+  "schema_hash": "cc40698a9135d457ea1ff4d24c64fc5a8f7edb28a8adcb67319f88f8ab268fb6",
   "supported_protocol_major": 1
 }

@@ -142,7 +142,8 @@ def test_calibration_public_state_never_contains_diagnostic_secret_fields():
     registry = ExtensionRegistry()
     registry.register(arena_package())
     assert registry.decode(packed) == private
-    assert arena_package().version == "0.3.0"
+    from conftest import extension_version
+    assert arena_package().version == extension_version("agents-arena")
     with pytest.raises(ActorError, match="ExtensionVersionMismatch"):
         registry.negotiate([declaration(arena_package(), extension_version="0.2.0")])
 

@@ -11,14 +11,55 @@ supplies objectives, watches terminal status and owns process cleanup; it does n
 forward game data. A shared lobby code identifies the ordinary multiplayer lobby,
 not a shared agent memory.
 
-## Launch
+## Launch an investigation
 
-Build the matching game client, install the Runtime and create a 0.6.0 lobby from
+Build the matching game client, install the Runtime and create a 0.7.0 lobby from
 the website or Unity lobby. Install the optional Codex provider only if using it:
 
 ```bash
 build/runtime-venv/bin/python -m pip install -e 'runtime[dev,codex]'
 build/runtime-venv/bin/actor-runtime codex status
+python3 scripts/launch-investigation-agents.py --room ABC123
+```
+
+Select either or both independent Codex providers:
+
+```bash
+python3 scripts/launch-investigation-agents.py --room ABC123 \
+  --engineer-brain codex --sheriff-brain codex
+```
+
+The helper runs separate Engineer/Sheriff launchers with ports 50051/50052,
+ephemeral credentials, distinct profiles/databases and independent Brain threads.
+Its default output is a fresh timestamped directory under
+`build/investigation-validation/`. `--base-port`, `--output`, `--timeout` and
+`--max-decisions` bound the run; `--exit-on-complete` closes owned processes after
+completion. Shutdown permits normal Skill/provider cleanup before escalating
+only its own process groups. The launcher shares readiness metadata, not private
+findings or model context.
+
+The ordinary server grants duties. Both must be available before its controller
+cycle starts. The Engineer inspects Cooling Control and communicates a private
+diagnostic claim through Standard direct messaging. The Sheriff inspects Security
+Records and combines its own audit with that claim. Real receiving-client ACK
+permits the diagnostic reference as a report citation; it does not make quoted
+facts a foreign authoritative own observation. Report validation and physical
+repair must both complete for the same case.
+
+The strict helper checks two distinct actors, matching incident IDs, the expected
+duties, authoritative `Resolved`/`Restored`/report validation and successful Runtime
+objectives. A model's `FinishObjective` alone is insufficient. A third Human can
+observe public duties/progress without private views, and can make ordinary
+unscoped chat claims. Live acceptance and measurements are recorded in the
+[Milestone 6 report](investigation-validation/README.md), separately from local
+authority tests. See [investigation](investigation.md) and [evidence](evidence.md).
+
+## Launch the earlier calibration task
+
+The original cooperative calibration scenario remains available in the matching
+client/lobby:
+
+```bash
 python3 scripts/launch-cooperative-agents.py --room ABC123
 ```
 
@@ -67,6 +108,12 @@ profiles. Reconnection does not turn consumed messages into new arrivals. Closin
 a participant's Runtime/game control or its multiplayer connection cancels an
 unfinished cooperative task. Completed task evidence remains completed. A new
 lobby process starts fresh; there is no cross-lobby mailbox or task restoration.
+
+Engineer/Sheriff duty selection is fixed while an incident is active. Losing a
+required participant or its control cancels unfinished work and revokes repair
+and private views; a resolved case survives later disconnects. Pre-alarm duty
+loss resets controller preparation. An incident is a game-specific one-case-per-
+lobby lifecycle, not a persistent cross-lobby case archive.
 
 Ordinary chat is not a persistent social memory system. This milestone introduces
 neither shared cognition nor trust scores, beliefs, RAG or role progression.

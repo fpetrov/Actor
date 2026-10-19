@@ -18,6 +18,7 @@ namespace Actor.GameAdapter
         private readonly NetworkRoomMembership membership;
         private readonly SignalConsole signalConsole;
         internal readonly NetworkCooperation Cooperation;
+        internal readonly NetworkInvestigation Investigation;
         private readonly Func<bool> agentControlEnabled;
         private AgentsArenaActorExtension arenaExtension;
         public GameIdentity Identity { get; }
@@ -34,6 +35,7 @@ namespace Actor.GameAdapter
             membership = character.GetComponent<NetworkRoomMembership>();
             signalConsole = SignalConsole.Current;
             Cooperation = character.GetComponent<NetworkCooperation>();
+            Investigation = character.GetComponent<NetworkInvestigation>();
             Identity = new GameIdentity("agents-arena", gameVersion);
             SelfActorId = character.AuthoritativeActorId;
         }
@@ -47,6 +49,7 @@ namespace Actor.GameAdapter
             membership.RoomChanged += OnRoomChanged;
             if (signalConsole != null) signalConsole.SignalReceived += OnStationSignal;
             Cooperation.PermittedEvent += OnPermittedEvent;
+            Investigation.PermittedEvent += OnPermittedEvent;
         }
 
         internal Transform2DObservation CaptureTransform()
@@ -86,12 +89,19 @@ namespace Actor.GameAdapter
                 return CommandOutcome.Rejected("ActorNotControlled", "A fresh owned multiplayer actor is required.");
             return CommandOutcome.Accepted(); // Local queue acceptance, not server success.
         }
-        public void OnDisconnected() { if (input != null) input.Clear(); Cooperation?.RuntimeUnavailable(); }
+        internal CommandOutcome SubmitIncident(IMessage command)
+        {
+            if (!agentControlEnabled() || !HasFreshState || Investigation == null || !Investigation.Submit(command))
+                return CommandOutcome.Rejected("ActorNotControlled", "A fresh owned multiplayer actor is required.");
+            return CommandOutcome.Accepted();
+        }
+        public void OnDisconnected() { if (input != null) input.Clear(); Cooperation?.RuntimeUnavailable(); Investigation?.RuntimeUnavailable(); }
         public void Dispose()
         {
             if (membership != null) membership.RoomChanged -= OnRoomChanged;
             if (signalConsole != null) signalConsole.SignalReceived -= OnStationSignal;
             if (Cooperation != null) Cooperation.PermittedEvent -= OnPermittedEvent;
+            if (Investigation != null) Investigation.PermittedEvent -= OnPermittedEvent;
             OnDisconnected();
         }
 
@@ -138,8 +148,9 @@ namespace Actor.GameAdapter
         private ActorEventPublisher<CalibrationTaskChangedEvent> taskChanged;
         private ActorEventPublisher<DiagnosticResultEvent> diagnostic;
         private ActorEventPublisher<CalibrationResultEvent> calibration;
+        private readonly AgentsArenaInvestigationBindings investigation;
         public ExtensionPackage Package { get; } = AgentsArenaExtensionPackage.Create();
-        public AgentsArenaActorExtension(AgentsArenaGameAdapter game) => this.game = game;
+        public AgentsArenaActorExtension(AgentsArenaGameAdapter game) { this.game = game; investigation = new AgentsArenaInvestigationBindings(game); }
         public void Register(IActorExtensionRegistrar registry)
         {
             registry.RegisterObservation<RoomMembershipObservation>("agents-arena.room-membership",
@@ -159,6 +170,7 @@ namespace Actor.GameAdapter
             taskChanged = registry.RegisterEvent<CalibrationTaskChangedEvent>("agents-arena.calibration-changed", "Private authoritative task transition.");
             diagnostic = registry.RegisterEvent<DiagnosticResultEvent>("agents-arena.diagnostic-result", "Private sensitive short-lived diagnostic result. Never persist authorization.");
             calibration = registry.RegisterEvent<CalibrationResultEvent>("agents-arena.calibration-result", "Server-confirmed action acceptance or structured rejection.");
+            investigation.Register(registry);
         }
         public void Publish(string previous, string current, string actorId, uint revision)
             => changed.Publish(new RoomChangedEvent { PreviousRoomId = previous, CurrentRoomId = current }, actorId, revision);
@@ -170,6 +182,7 @@ namespace Actor.GameAdapter
             else if (value is CalibrationTaskChangedEvent t) taskChanged.Publish(t, game.SelfActorId, t.State.ServerRevision);
             else if (value is DiagnosticResultEvent d) diagnostic.Publish(d, game.SelfActorId, d.ServerRevision);
             else if (value is CalibrationResultEvent r) calibration.Publish(r, game.SelfActorId, r.ServerRevision);
+            else investigation.Publish(value);
         }
     }
 }

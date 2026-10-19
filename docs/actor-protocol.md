@@ -21,7 +21,7 @@ Dedicated Server: motor / physics / room membership
 | Core | `proto/actor/core/v1`, `actor.core.v1` | Session, identity, manifest, Any envelopes, ordering, heartbeat, command outcome, errors |
 | Standard motion | `proto/actor/standard/v1`, `actor.standard.v1` | Optional reusable Transform2D, Motion2D and Locomotion2D |
 | Standard communication | `proto/actor/standard/communication/v1`, `actor.standard.communication.v1` | Independently optional typed messages, server receipts and authorized peer roster |
-| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | RoomMembership, RoomChanged, StationSignal and cooperative calibration |
+| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | Rooms, station signals, calibration, station duties and cooling investigation |
 
 `com.actor.sdk` contains Core/Standard generated types, extension registration and generic bridge lifecycle. It has no Unity engine references, NGO dependency or room mechanics. `com.actor.transport.grpc` provides the concrete native HTTP/2 implementation. The Unity reference game's adapter binds these generic interfaces to its existing network player and input abstraction.
 
@@ -160,7 +160,7 @@ and lifecycle tests establish actual visibility.
 
 ## Versioning and generated sources
 
-Core protocol **1.0**, Standard motion **0.1.0**, Standard communication **0.1.0**, Arena package **0.3.0**, game **0.6.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
+Core protocol **1.0**, Standard motion **0.1.0**, Standard communication **0.1.0**, Arena package **0.4.0**, game **0.7.0**, Python Runtime **0.5.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
 
 Generated C#/Python files, descriptors and metadata are version controlled. Unity users do not need protoc. `scripts/generate-proto.sh --check` regenerates in a temporary output tree and compares artifacts; CI fails on stale generated sources. [Tooling and schema rules](../proto/README.md), [Unity SDK API](../packages/com.actor.sdk/README.md), [Python Runtime](python-runtime.md), [custom extensions](extensions.md), [actual gRPC spike](grpc-spike/README.md).
 
@@ -173,4 +173,52 @@ tests, not live multiplayer or model behavior.
 
 ## Current scope
 
-Runtime 0.4.0 composes independently scoped sessions, communication Skills and game-specific cooperative actions above event routing, bounded context/memory and unchanged Core. Arena owns calibration permissions and outcomes; Standard communication owns typed addressing/delivery interfaces. Optional Jev remains a provider-neutral classifier. Generic navigation and package auto-download remain future layers.
+Runtime 0.5.0 composes independently scoped sessions, communication and investigation Skills above event routing, bounded context/memory and unchanged Core. Arena owns calibration/investigation permissions and outcomes; Standard communication owns typed addressing/delivery interfaces. Optional Jev remains a provider-neutral classifier. Generic navigation and package auto-download remain future layers.
+
+## Game-specific investigation contract
+
+Arena 0.4.0 adds `incidents.proto` through the existing manifest-driven generator.
+`CrewRole` is a public station duty, independent of calibration assignments.
+`OwnRoleObservation`/`DutyRosterObservation` and correlated `RoleResultEvent`
+reflect server selection. An active incident binds distinct Engineer/Sheriff
+actors and locks role changes.
+
+`CoolingStateObservation` and typed lifecycle events expose public status,
+alarm/expiry times, repair deadline and report validation. They expose no origin,
+active circuit or evidence payload. `OwnInvestigationViewObservation` is targeted
+to the controlled actor and contains at most its own legitimately inspected
+diagnostic or security bundle. Inspection result events also carry explicit
+recipient, match, revision and expiry; rejection contains no evidence.
+
+Evidence provenance binds an opaque GUID to issuer/source, match, incident,
+recipient duty and expiry. The diagnostic includes pressure samples, wear,
+circuit, completed-cycle fault uncertainty window and controller revisions. The security slice has
+at most six records plus explicit complete coverage for its listed circuits and
+interval. Actual player actions use the server-derived actor identity; neutral
+controller history does not invent player identities.
+
+`RepairCoolingCommand` requires the Engineer's own diagnostic and an ongoing
+physical interaction lease. `SubmitInvestigationReportCommand` is Sheriff-only
+and cites exactly a diagnostic GUID, its own security GUID and one correlated
+record GUID. The diagnostic reference must have reached that Sheriff through
+the ordinary authorized direct-message path and actual client ACK. This permits
+citation; it does not convert the quoted message into an authoritative foreign
+observation or prove model understanding. Wrong reports are bounded and return
+no correct-origin answer. Both repair and validated report are required.
+
+The cycle starts when both duties are ready and defaults to 15 seconds. A real
+active-circuit adjustment can prepare a latent valve fault; a standby adjustment
+is benign. Independent natural generation and prepared manual faults are both
+evaluated at the same completed-cycle boundary. The source records at most one
+accepted adjustment per circuit in that cycle and publishes coarsened intervals
+that contain the real actions. Coverage ends at the completed deadline, never
+in the future. The hidden ordinary selector uses independent server entropy;
+observable controller revisions and wear do not derive it. Trusted fixtures can
+explicitly configure a selector without adding a client capability.
+
+These game commands use the existing owner RPC path and typed adapter registry.
+No second agent transport, generic Core role branch or Standard evidence schema
+is introduced. Terminal cleanup explicitly clears private own views. See
+[incident lifecycle](incidents.md), [evidence policy](evidence.md) and
+[investigation](investigation.md); live acceptance is recorded separately from
+schema and local authority tests.

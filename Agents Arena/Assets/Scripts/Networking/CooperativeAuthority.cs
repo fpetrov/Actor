@@ -45,6 +45,8 @@ namespace Actor.Networking
         private readonly Dictionary<string, Pending> pending = new();
         private readonly Dictionary<string, Bucket> buckets = new();
         private readonly string match;
+        private readonly Func<string, string, bool> additionalTaskScope;
+        private readonly Func<string, SendMessageCommand, string> additionalMessagePolicy;
         private readonly CalibrationTaskStateObservation task = new();
         private string challenge = "";
         private long nextAttempt, lastStart, globalAt;
@@ -62,10 +64,13 @@ namespace Actor.Networking
         internal void SetTerminals(bool diagnosticExists, double dx, double dy, bool calibrationExists, double cx, double cy)
         { diagnosticAvailable = diagnosticExists; diagnosticX = dx; diagnosticY = dy; calibrationAvailable = calibrationExists; calibrationX = cx; calibrationY = cy; }
 
-        internal CooperativeAuthority(string matchId)
+        internal CooperativeAuthority(string matchId, Func<string, string, bool> additionalTaskScope = null,
+            Func<string, SendMessageCommand, string> additionalMessagePolicy = null)
         {
             if (!Guid.TryParseExact(matchId, "N", out _)) throw new ArgumentException("Expected server match identity.");
             match = matchId; task.MatchId = match; task.Status = CalibrationStatus.Available;
+            this.additionalTaskScope = additionalTaskScope;
+            this.additionalMessagePolicy = additionalMessagePolicy;
         }
 
         internal List<Delivery> Refresh(IEnumerable<Participant> approved, long now)
@@ -179,7 +184,9 @@ namespace Actor.Networking
             else if (command.RecipientActorId.Length > 64 || command.TaskId.Length > 64) reason = "invalid_identifier";
             else if (command.Sensitive && command.ChannelId != "direct") reason = "sensitive_requires_direct";
             else if (pending.Count >= MaxPending) reason = "delivery_capacity";
-            else if (command.TaskId.Length > 0 && (command.TaskId != task.TaskId || !ParticipantOfTask(actor))) reason = "task_not_assigned";
+            else if (command.TaskId.Length > 0 && !(command.TaskId == task.TaskId && ParticipantOfTask(actor))
+                && !(additionalTaskScope?.Invoke(actor, command.TaskId) ?? false)) reason = "task_not_assigned";
+            if (reason.Length == 0) reason = additionalMessagePolicy?.Invoke(actor, command) ?? "";
             bool hasChallenge = challenge.Length > 0 && command.Text.IndexOf(challenge, StringComparison.OrdinalIgnoreCase) >= 0;
             if (hasChallenge && (command.ChannelId != "direct" || actor != task.CoordinatorActorId || command.RecipientActorId != task.TechnicianActorId))
                 reason = "authorization_requires_private_partner";

@@ -61,6 +61,33 @@ Private Skill outputs remain available in the receiving agent's working decision
 context; public report projections and SQLite records contain metadata only.
 Known-secret redaction also covers free-form result messages and nested details.
 
+## Investigation disclosure
+
+Arena 0.4.0 reuses this unchanged Standard contract for Engineer/Sheriff findings.
+An incident TaskId is accepted only for its two fixed participants while active;
+calibration associations retain their existing checks. Ordinary Crew prose can
+use ordinary unscoped chat and receives no investigation privilege from its text.
+
+Current private evidence GUIDs may be forwarded only as sensitive direct
+messages from their issuing duty to the assigned partner in the same incident.
+The Engineer's claim includes its diagnostic reference and selected facts. The
+Sheriff's own audit slice stays a separate legitimately inspected observation;
+receiving a quote cannot populate a foreign authoritative own view.
+
+The server's bounded accepted-message metadata links a real direct send to its
+recipient's actual ACK. Only then may its disclosure ledger permit the diagnostic
+GUID as a report citation. Server acceptance alone is insufficient. This uses
+the same owner RPCs, targeted delivery and receipt stages; it introduces no
+agent-to-agent socket or second evidence-sharing protocol. Cancellation/expiry
+revokes active incident scope and clears own private evidence. A known GUID is
+not a permission token outside its recipient, match, incident and lifetime.
+
+This controls the server's own payload distribution and recognized references.
+It does not prevent an authorized recipient from paraphrasing information, prove
+message truth, or make player prose a trusted instruction. Joint evidence and
+server report checks determine gameplay validation. See [evidence](evidence.md)
+and [investigation](investigation.md).
+
 ## Runtime integration
 
 The installed `actor_standard_communication` package registers typed bindings,
@@ -82,4 +109,4 @@ Codex receives other players' prose through `ExternalMessage`, alongside other
 game-originated state; it never becomes objective or developer instructions.
 
 See [multi-agent launch](multi-agent.md), [the cooperative task](cooperative-tasks.md)
-and [Skills](skills.md).
+and [investigation](investigation.md), plus [Skills](skills.md).

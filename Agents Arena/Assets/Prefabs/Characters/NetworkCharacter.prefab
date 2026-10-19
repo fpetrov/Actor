@@ -152,6 +152,8 @@ GameObject:
   - component: {fileID: 8041695005948336879}
   - component: {fileID: 3923768610757183594}
   - component: {fileID: 3161010153001430973}
+  - component: {fileID: 2626488094533056121}
+  - component: {fileID: 4273560026344180337}
   m_Layer: 0
   m_Name: NetworkCharacter
   m_TagString: Untagged
@@ -295,7 +297,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name:
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4049415240
+  GlobalObjectIdHash: 3610033282
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -451,3 +453,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed09f493cfef48b88c168ce50b65765a, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::Actor.World.CooperativeClientUI
+--- !u!114 &2626488094533056121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5363229347900180316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f11ac471dfe945d8b20249e8a939a70, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkInvestigation
+  ShowTopMostFoldoutHeaderGroup: 1
+--- !u!114 &4273560026344180337
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5363229347900180316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb0eff06226514552a1f23e32554822e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Actor.World.IncidentClientUI

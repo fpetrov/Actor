@@ -77,8 +77,10 @@ modules = [
     "actor_runtime.session", "actor_runtime.skills", "actor_runtime.privacy", "actor_runtime.inbox",
     "actor_standard", "actor_standard_communication", "actor_standard_communication.skills",
     "actor_agents_arena.calibration", "actor_agents_arena.cooperative_brain",
+    "actor_agents_arena.investigation", "actor_agents_arena.investigation_brain", "actor_agents_arena.investigation_events",
     "actor.core.v1.bridge_pb2_grpc", "actor.standard.communication.v1.communication_pb2",
-    "extensions.agents_arena.v1.calibration_pb2", "actor_codex.brain", "actor_jev.classifier",
+    "extensions.agents_arena.v1.calibration_pb2", "extensions.agents_arena.v1.incidents_pb2",
+    "actor_codex.brain", "actor_jev.classifier",
 ]
 for name in modules:
     module = importlib.import_module(name)
@@ -94,11 +96,20 @@ assert set(extensions.packages) == {"actor.standard", "actor.standard.communicat
 skills = SkillRegistry.discover()
 assert {"actor.wait", "actor.send-message", "actor.wait-for-message",
         "agents-arena.start-calibration", "agents-arena.inspect-diagnostic",
-        "agents-arena.submit-calibration", "agents-arena.wait-for-calibration"} <= set(skills.definitions)
+        "agents-arena.submit-calibration", "agents-arena.wait-for-calibration",
+        "agents-arena.select-role", "agents-arena.wait-for-incident", "agents-arena.inspect-cooling",
+        "agents-arena.inspect-security-records", "agents-arena.repair-cooling", "agents-arena.maintenance-override",
+        "agents-arena.share-investigation-evidence", "agents-arena.submit-investigation-report",
+        "agents-arena.wait-for-incident-resolved", "agents-arena.cancel-investigation"} <= set(skills.definitions)
 brains = BrainRegistry.discover()
-assert {"scripted", "codex", "calibration-coordinator", "calibration-technician"} <= set(brains.factories)
+assert {"scripted", "codex", "calibration-coordinator", "calibration-technician", "investigation-engineer",
+        "investigation-sheriff", "maintenance-operator", "investigation-claimant"} <= set(brains.factories)
 rules = EventRuleRegistry.discover()
-assert len(rules.rules) >= 4
+from actor_runtime.extensions import type_url
+from actor_agents_arena import OWN_INVESTIGATION_VIEW, OwnInvestigationViewObservation
+private_view_rule = rules.rules[(OWN_INVESTIGATION_VIEW, "agents-arena", type_url(OwnInvestigationViewObservation))]
+assert private_view_rule.data_policy == "session_only"
+assert private_view_rule.expiry_field == "expires_at_unix_ms"
 for package, basename in [("actor.metadata", "standard.v1"),
     ("actor.communication.metadata", "communication.v1"),
     ("extensions.agents_arena.metadata", "agents_arena.v1")]:
@@ -148,8 +159,11 @@ def verify(args, report):
                 "actor/communication/metadata/communication.v1.pb",
                 "actor/standard/communication/v1/communication_pb2.py",
                 "extensions/agents_arena/v1/calibration_pb2.py",
+                "extensions/agents_arena/v1/incidents_pb2.py",
                 "extensions/agents_arena/metadata/agents_arena.v1.pb",
                 "actor_standard_communication/skills.py", "actor_runtime/privacy.py", "actor_runtime/inbox.py",
+                "actor_agents_arena/investigation.py", "actor_agents_arena/investigation_brain.py",
+                "actor_agents_arena/investigation_events.py",
             }
             if not required <= names or any(".egg-info/" in name for name in names):
                 raise VerificationError("inspect wheel", "missing_or_invalid_package_files")
@@ -164,6 +178,8 @@ def verify(args, report):
             "--disable-pip-version-check", "--only-binary=:all:", str(wheel), *dev], cwd=outside, env=environment)
         output = command("isolated import/resources/plugin probe", [str(python), "-I", "-c", PROBE], cwd=outside, env=environment)
         report["isolated_probe"] = json.loads(output.strip())
+        if report["isolated_probe"]["runtime_version"] != specification["project"]["version"]:
+            raise VerificationError("installed wheel identity", "runtime_version_mismatch")
         # Copy fixtures only. No runtime source package, generated Python tree,
         # editable installation or checkout path is available to test imports.
         shutil.copytree(staged / "runtime/tests", outside / "runtime/tests", ignore=ignored)

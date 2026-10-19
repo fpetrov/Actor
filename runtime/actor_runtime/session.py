@@ -98,9 +98,12 @@ class RuntimeSession:
             frame = message.observation
             if len(frame.observations) > 256:
                 raise ActorError("FrameTooLarge", "Observation frame exceeds 256 envelopes")
-            observations = [self._decode(item, core.CAPABILITY_KIND_OBSERVATION,
-                                          message.sequence, frame.revision)
-                            for item in frame.observations]
+            # Installed typed payload policies also label private observations.
+            # Frames never enter event routing or invoke a classifier.
+            observations = [self.event_router.prepare_entry(self._decode(item,
+                core.CAPABILITY_KIND_OBSERVATION, message.sequence, frame.revision))
+                for item in frame.observations]
+            observations = [item for item in observations if item is not None]
             if self.world.apply_observations(observations, message.sequence, frame.revision):
                 self.observation_frames += 1
                 await self.world.notify()

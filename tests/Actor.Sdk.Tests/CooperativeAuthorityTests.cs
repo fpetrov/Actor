@@ -15,7 +15,8 @@ public sealed class CooperativeAuthorityTests
         internal readonly CooperativeAuthority.Participant A = new() { Id = "coordinator", Name = "A", Room = "main-hall", X = .9, Y = -1.94 };
         internal readonly CooperativeAuthority.Participant B = new() { Id = "technician", Name = "B", Room = "main-hall", X = 0, Y = -.94 };
         internal readonly CooperativeAuthority.Participant C = new() { Id = "observer", Name = "C", Room = "main-hall", X = -1.8, Y = -.94 };
-        internal Fixture() { Authority = new(Match); Refresh(Time); }
+        internal Fixture(Func<string, string, bool>? taskScope = null, Func<string, SendMessageCommand, string>? messagePolicy = null)
+        { Authority = new(Match, taskScope!, messagePolicy!); Refresh(Time); }
         internal List<CooperativeAuthority.Delivery> Refresh(long now) => Authority.Refresh(new[] { A, B, C }, now);
         internal SendMessageCommand Send(string text = "Hello", string correlation = "message", string recipient = "technician")
             => new() { Text = text, CorrelationId = correlation, RecipientActorId = recipient, ChannelId = "direct", MatchId = Match, TtlMs = 300000 };
@@ -367,5 +368,86 @@ public sealed class CooperativeAuthorityTests
         Assert.Equal("calibration_out_of_range", Payload<CalibrationResultEvent>(f.Submit(code, Fixture.Time + 3000, correlation: "old-position")).ReasonCode);
         f.B.X = 70; f.B.Y = 70; f.Refresh(Fixture.Time + 3500);
         Assert.True(Payload<CalibrationResultEvent>(f.Submit(code, Fixture.Time + 4000, correlation: "actual-position")).Accepted);
+    }
+
+    [Fact]
+    public void AdditionalTaskScopeIsBoundToApprovedSenderAndCurrentGamePermission()
+    {
+        bool allowed = false;
+        var calls = new List<(string Actor, string Task)>();
+        var f = new Fixture((actor, task) => { calls.Add((actor, task)); return allowed && actor == "coordinator" && task == "incident"; });
+        var first = f.Send(correlation: "before-permission"); first.TaskId = "incident";
+        var denied = f.Authority.Execute(f.A.Id, first, Fixture.Time);
+        Assert.Equal("task_not_assigned", Payload<MessageDeliveryResultEvent>(denied).ReasonCode);
+        Assert.DoesNotContain(denied, d => d.Payload is MessageReceivedEvent);
+        allowed = true;
+        var permitted = first.Clone(); permitted.CorrelationId = "after-permission";
+        var delivered = f.Authority.Execute(f.A.Id, permitted, Fixture.Time + 1000);
+        Assert.Equal(f.B.Id, delivered.Single(d => d.Payload is MessageReceivedEvent).Recipient);
+        Assert.Equal("incident", Payload<MessageReceivedEvent>(delivered).TaskId);
+        var impersonated = f.Send(correlation: "different-sender", recipient: f.C.Id); impersonated.TaskId = "incident";
+        Assert.Equal("task_not_assigned", Payload<MessageDeliveryResultEvent>(f.Authority.Execute(f.B.Id, impersonated, Fixture.Time + 1500)).ReasonCode);
+        allowed = false;
+        var revoked = first.Clone(); revoked.CorrelationId = "revoked";
+        Assert.Equal("task_not_assigned", Payload<MessageDeliveryResultEvent>(f.Authority.Execute(f.A.Id, revoked, Fixture.Time + 2000)).ReasonCode);
+        Assert.Contains((f.A.Id, "incident"), calls); Assert.Contains((f.B.Id, "incident"), calls);
+        Assert.Equal(CalibrationStatus.Available, f.Authority.Progress().Status);
+    }
+
+    [Theory]
+    [InlineData("channel", "channel_unavailable")]
+    [InlineData("recipient", "recipient_unavailable")]
+    [InlineData("self", "recipient_unavailable")]
+    [InlineData("text", "invalid_text")]
+    [InlineData("ttl", "invalid_ttl")]
+    [InlineData("match", "match_mismatch")]
+    public void AdditionalPoliciesCannotBypassMandatoryMessageValidation(string field, string expected)
+    {
+        int scopeCalls = 0, policyCalls = 0;
+        var f = new Fixture((_, _) => { ++scopeCalls; return true; }, (_, _) => { ++policyCalls; return ""; });
+        var command = f.Send(); command.TaskId = "external-incident";
+        if (field == "channel") command.ChannelId = "unknown";
+        else if (field == "recipient") command.RecipientActorId = "not-approved";
+        else if (field == "self") command.RecipientActorId = f.A.Id;
+        else if (field == "text") command.Text = new string('x', CooperativeAuthority.MaxTextBytes + 1);
+        else if (field == "ttl") command.TtlMs = 999;
+        else command.MatchId = Guid.NewGuid().ToString("N");
+        var output = f.Authority.Execute(f.A.Id, command, Fixture.Time);
+        Assert.Equal(expected, Payload<MessageDeliveryResultEvent>(output).ReasonCode);
+        Assert.DoesNotContain(output, d => d.Payload is MessageReceivedEvent);
+        Assert.Equal(0, scopeCalls); Assert.Equal(0, policyCalls);
+    }
+
+    [Fact]
+    public void AdditionalMessagePolicyRejectsBeforeDeliveryAndReplayRetainsActualAckOutcome()
+    {
+        bool permit = false;
+        var policyCallers = new List<string>();
+        var f = new Fixture((_, task) => task == "incident", (actor, command) =>
+        { policyCallers.Add(actor); return permit && command.Sensitive ? "" : "private_reference_requires_permission"; });
+        var command = f.Send("fixture-private-reference", "policy-denied"); command.TaskId = "incident"; command.Sensitive = true;
+        var rejected = f.Authority.Execute(f.A.Id, command, Fixture.Time);
+        Assert.Equal("private_reference_requires_permission", Payload<MessageDeliveryResultEvent>(rejected).ReasonCode);
+        Assert.DoesNotContain(rejected, d => d.Payload is MessageReceivedEvent);
+        permit = true;
+        Assert.Equal("private_reference_requires_permission", Payload<MessageDeliveryResultEvent>(f.Authority.Execute(f.A.Id, command, Fixture.Time + 100)).ReasonCode);
+        Assert.Single(policyCallers);
+        var fresh = command.Clone(); fresh.CorrelationId = "policy-permitted";
+        var accepted = f.Authority.Execute(f.A.Id, fresh, Fixture.Time + 1000);
+        var message = Payload<MessageReceivedEvent>(accepted);
+        Assert.Equal(f.B.Id, accepted.Single(d => d.Payload is MessageReceivedEvent).Recipient);
+        Assert.Equal(MessageDeliveryStage.ServerAccepted, Payload<MessageDeliveryResultEvent>(accepted).Stage);
+        var replay = f.Authority.Execute(f.A.Id, fresh, Fixture.Time + 1100);
+        Assert.DoesNotContain(replay, d => d.Payload is MessageReceivedEvent);
+        Assert.Equal(MessageDeliveryStage.ServerAccepted, Payload<MessageDeliveryResultEvent>(replay).Stage);
+        Assert.Empty(f.Authority.Acknowledge(f.C.Id, message.MessageId, f.Match, Fixture.Time + 1200));
+        var ack = f.Authority.Acknowledge(f.B.Id, message.MessageId, f.Match, Fixture.Time + 1300);
+        Assert.Equal(f.A.Id, ack.Single().Recipient);
+        Assert.Equal(MessageDeliveryStage.ClientReceived, Payload<MessageDeliveryResultEvent>(ack).Stage);
+        var finalReplay = f.Authority.Execute(f.A.Id, fresh, Fixture.Time + 1400);
+        Assert.DoesNotContain(finalReplay, d => d.Payload is MessageReceivedEvent);
+        Assert.Equal(MessageDeliveryStage.ClientReceived, Payload<MessageDeliveryResultEvent>(finalReplay).Stage);
+        Assert.Equal(new[] { f.A.Id, f.A.Id }, policyCallers);
+        Assert.Equal(CalibrationStatus.Available, f.Authority.Progress().Status);
     }
 }

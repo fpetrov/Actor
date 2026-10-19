@@ -57,6 +57,8 @@ namespace Actor.Editor
             player.AddComponent<NetworkStationSignals>();
             player.AddComponent<NetworkCooperation>();
             player.AddComponent<Actor.World.CooperativeClientUI>();
+            player.AddComponent<NetworkInvestigation>();
+            player.AddComponent<Actor.World.IncidentClientUI>();
             PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefab);
             UnityEngine.Object.DestroyImmediate(player);
             UnityEngine.Object.DestroyImmediate(source.gameObject);
@@ -65,6 +67,7 @@ namespace Actor.Editor
             EngineeringRoomBuilder.AddToCurrentMultiplayerScene();
             SignalConsoleBuilder.AddToCurrentMultiplayerScene();
             CooperativeWorldBuilder.AddToCurrentMultiplayerScene();
+            IncidentWorldBuilder.AddToCurrentMultiplayerScene();
             EngineeringRoomBuilder.ValidateCurrentMultiplayerScene();
             EditorSceneManager.SaveScene(original, GameplayScene);
 

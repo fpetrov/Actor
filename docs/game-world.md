@@ -14,7 +14,7 @@ The existing game-specific route remains:
 (0,-1.4) → (0,-4.7) → (0,-6) → (0,-7)
 ```
 
-Returning uses the same centerline. Movement/room boundaries remain stable in game0.6.0. Core protocol1.0 and the original Standard movement package are unchanged; cooperative gameplay adds separate typed capabilities.
+Returning uses the same centerline. Movement/room boundaries remain stable in game0.7.0. Core protocol1.0 and the original Standard movement package are unchanged; cooperative gameplay adds separate typed capabilities.
 
 ## Human passage clearance
 
@@ -63,9 +63,59 @@ view. Only the assigned Human Coordinator can reveal diagnostic authorization
 at its own terminal panel. See [cooperative tasks](cooperative-tasks.md) and
 [communication](communication.md).
 
+## Investigation terminals and duties
+
+Game 0.7.0 mirrors two small existing-palette terminals on the left side of the
+same rooms. `GatePanel.asset`, the authored material and cyan/blue accents are
+reused. The original offline scene, PNGs and character prefab are preserved.
+Cooling Control and its maintenance controls share one object and collider.
+
+| Object | Visual position | Physical interaction point | Radius | Approach root pose |
+| --- | --- | --- | --- | --- |
+| Security Records | `(-1.3,-0.4)` | `(-1,-0.65)` |1.6|Sheriff `(-1.5,-1.9)`|
+| Cooling Control / Maintenance | `(-0.8,-6)` | `(-0.25,-6.54)` |1.25|Engineer `(-0.3,-7.15)`; Crew `(0.3,-7.15)`|
+
+The same physical capsule-center convention applies. The two Engineering poses
+leave separate positions for an Engineer and a maintenance operator; both reach
+the actual Cooling Control. `IncidentWorldBuilder.Validate` checks these three
+capsules against static colliders and their terminal radii during preparation.
+These source checks require execution in Unity; their presence alone is not a
+new live passage or visual acceptance result.
+
+The owner HUD requests Crew, Engineer or Sheriff through normal server-validated
+role selection. Engineer/Sheriff are unique public station duties, separate from
+calibration Coordinator/Technician assignments. Selection locks for an active
+incident. Human **E** uses the existing nearby-object chooser to open the
+appropriate terminal; **T** continues to open ordinary private communications.
+Agent mode displays permitted status without exposing another actor's evidence.
+
+The Engineer inspects private cooling evidence, prepares a private claim for the
+Sheriff and starts/cancels physical repair. The Sheriff inspects its own security
+slice and submits a hypothesis with the received diagnostic reference, its own
+bundle and one selected record. Crew/Engineer may operate public `alpha`/`beta`
+maintenance controls at Cooling Control. Proximity and role checks are enforced
+by the server; UI availability does not grant permission.
+
+Both duties being ready starts a shared controller cycle, 15 seconds by default.
+An accepted active-circuit adjustment prepares a latent fault; standby work is
+benign. Natural mechanical generation follows the independent server clock.
+Both origins expose their alarm only at the common completed deadline. The
+bounded audit slice contains actual actions with coarsened intervals, and the
+diagnostic carries that cycle's uncertainty interval; it claims no complete
+future coverage. At most one adjustment per circuit is accepted per cycle.
+Pre-alarm loss/change of a required duty resets the preparation interlock.
+
+The default incident lasts 300 seconds and repair requires 2 seconds of continuous
+in-range presence. Report validation and physical restoration are independent
+branches; both must succeed for `Resolved`. Runtime/control loss, participant
+loss, cancellation or expiry terminates unfinished work, clears private views
+and unlocks duty selection. Resolved state survives later disconnects. A lobby
+hosts one investigation; a fresh lobby starts a fresh case. See
+[investigation](investigation.md) and [evidence](evidence.md).
+
 ## Reproduce geometry verification
 
-Run **ACTOR → Prepare multiplayer assets** in Unity, or `Actor.Editor.MultiplayerBuild.Prepare` from the existing Unity CLI. It rebuilds only multiplayer assets from the authored offline scene and performs58 geometry checks plus Signal Console/cooperative terminal checks:
+Run **ACTOR → Prepare multiplayer assets** in Unity, or `Actor.Editor.MultiplayerBuild.Prepare` from the existing Unity CLI. It rebuilds only multiplayer assets from the authored offline scene and performs58 geometry checks plus Signal Console/cooperative/investigation terminal checks:
 
 - Room volumes and the shared authoritative boundary.
 - Swept authored capsules through the passage in both directions at x0, ±0.12, ±0.20 and ±0.30.
