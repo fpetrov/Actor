@@ -77,6 +77,14 @@ The `scripted` reference factory belongs to
 outside Core. This Brain is a deterministic demonstration, rather than an
 interpreter for arbitrary natural-language objectives.
 
+Milestone5 adds separate `calibration-coordinator` and `calibration-technician`
+reference factories in `actor_agents_arena.cooperative_brain`. These deterministic
+providers consume only their own decision context and production Skill results;
+IDs and authorization are discovered dynamically, never copied between Python
+processes. They are test/reference providers. The real Codex provider remains
+catalog-driven and receives natural-language cooperative objectives without a
+predefined Skill sequence. See [independent agents](multi-agent.md).
+
 ## Objective lifecycle
 
 `Objective` contains an ID, user text, UTC creation time and status:
@@ -97,7 +105,7 @@ structured result. Objective success requires an explicit Finish(success),
 never a guess based on world text or a position.
 
 Defaults are a 120-second Brain decision deadline, a 600-second total episode
-deadline, at most 12 decisions and one repair per rejected decision point.
+deadline, at most 16 decisions and one repair per rejected decision point.
 Limits must be finite. Repair receives a machine-readable error; repeated bad
 decisions end with `brain_failure`. The total episode deadline applies during
 Skills too, and cancels their foreground execution before returning
@@ -110,6 +118,16 @@ cannot start another Skill. Explicit cancellation returns a structured Cancelled
 result. Closed episodes can be followed by another episode on the same Runner.
 Provider lifecycle errors become controlled failure diagnostics, rather than
 escaping and crashing Runtime.
+
+Extensions may register an async callable in `actor.objective_finalizers` with
+the signature `finalize_objective(*, session, objective, status, reason,
+scheduler)`. It runs for every terminal outcome after foreground Skill cleanup
+and before the EventRouter closes. The extension checks its negotiated
+capabilities and releases any remaining server resources by running a typed
+cleanup Skill on the supplied Scheduler. This also handles cancellation while
+the bridge remains connected. Core contains no game task semantics. All hooks
+share a two-second deadline; errors become cleanup diagnostics, and prevent a
+successful Objective result. Hooks must not retain work after returning.
 
 ## Strategic events and soft preemption
 

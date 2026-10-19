@@ -150,6 +150,7 @@ class NavigateToRoom(ActorSkill):
 
 
 def skill_package():
+    from .calibration import skill_package as calibration_skills
     return (SkillDefinition(skill_id="agents-arena.navigate-to-room", version="1.0.0",
         description="Navigate to engineering or main-hall through the installed reference-game doorway route. "
                     "Finish only after fresh authoritative RoomMembership confirms arrival and distinct Motion samples confirm stopping.",
@@ -160,4 +161,4 @@ def skill_package():
             CapabilityRequirement(LOCOMOTION, Locomotion2DCommand, "command"),
             CapabilityRequirement(ROOM_MEMBERSHIP, RoomMembershipObservation, "observation", 1.0),
             CapabilityRequirement(ROOM_CHANGED, RoomChangedEvent, "event"),
-        ), owned_command_capabilities=(LOCOMOTION,), timeout_seconds=80, cleanup_timeout_seconds=1),)
+        ), owned_command_capabilities=(LOCOMOTION,), timeout_seconds=80, cleanup_timeout_seconds=1), *calibration_skills())

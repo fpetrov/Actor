@@ -16,6 +16,7 @@ from .errors import ActorError
 from .extensions import ExtensionRegistry, type_url
 from .mailbox import OutboundMailbox
 from .world import CachedPayload, WorldState
+from .privacy import SessionPrivacy
 
 LOG = logging.getLogger("actor_runtime")
 
@@ -53,6 +54,10 @@ class RuntimeSession:
         self.events_received = 0
         self.errors = deque(maxlen=64)
         self.received_at = time.monotonic()
+        self.privacy = SessionPrivacy()
+
+    def register_known_secret(self, value, *, expires_at_unix_ms=None):
+        self.privacy.register_known_secret(value, expires_at_unix_ms=expires_at_unix_ms)
 
     async def accept(self, message: wire.GameToRuntime):
         if not message.session_id or len(message.session_id) > 128:
@@ -102,13 +107,18 @@ class RuntimeSession:
         elif body == "event":
             item = self._decode(message.event, core.CAPABILITY_KIND_EVENT,
                                 message.sequence, message.event.revision)
+            item = self.event_router.prepare_entry(item)
+            if item is None:
+                return True
+            if not self.world.retain_event(item):
+                return True
             # Live bounded ingress precedes the diagnostic historical ring.
             self.event_router.ingest(item)
-            self.world.apply_event(item)
+            self.world.apply_event(item, retained=True)
             self.events_received += 1
             LOG.info("Event capability=%s entity=%s revision=%s", item.capability_id,
                      item.entity_id, item.revision)
-            LOG.debug("Event payload=%s", str(item.payload)[:1000])
+            LOG.debug("Event payload content omitted capability=%s", item.capability_id)
             await self.world.notify()
         elif body == "command_result":
             pending = self.pending_commands.pop(message.command_result.command_id, None)
@@ -124,7 +134,7 @@ class RuntimeSession:
             pass
         elif body == "error":
             self.errors.append({"code": message.error.code, "message": message.error.message})
-            LOG.warning("Game error %s: %s", message.error.code, message.error.message)
+            LOG.warning("Game error code=%s", message.error.code)
         else:
             raise ActorError("MessageInvalid", "Stream message has no recognised body")
         return True
@@ -242,7 +252,7 @@ class RuntimeSession:
 
     def fail(self, error: ActorError):
         self.errors.append(error.as_dict())
-        LOG.error("Session error %s", error)
+        LOG.error("Session error %s", self.privacy.public(error.as_dict()))
         try:
             self.mailbox.terminate(wire.RuntimeToGame(error=wire_error(error)),
                                    wire.RuntimeToGame(disconnect=core.Disconnect(reason=error.code)))
@@ -286,7 +296,7 @@ class RuntimeSession:
                     error=core.ProtocolError(code="CommandResultTimeout", message="Game result deadline elapsed")))
 
     def summary(self):
-        return {"session_id": self.session_id,
+        return self.privacy.public({"session_id": self.session_id,
                 "game_id": self.manifest.game_id if self.manifest else "",
                 "game_version": self.manifest.game_version if self.manifest else "",
                 "protocol_version": ({"major": self.manifest.protocol_version.major,
@@ -300,7 +310,9 @@ class RuntimeSession:
                 "observation_frames": self.observation_frames, "events_received": self.events_received,
                 "last_received_sequence": self.last_received_sequence,
                 "last_sent_sequence": self.last_sent_sequence,
-                "command_result_rtt_ms": list(self.command_result_rtt_ms), "errors": list(self.errors)}
+                "command_result_rtt_ms": list(self.command_result_rtt_ms), "errors": list(self.errors),
+                "privacy": self.privacy.report(),
+                "inboxes": {cap: box.report() for cap, box in self.world.inboxes.items()} if self.world else {}})
 
     def close(self):
         self.mailbox.close()

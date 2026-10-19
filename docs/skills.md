@@ -87,6 +87,26 @@ Runtime diagnostics emit `SkillStarted`, `SkillSucceeded`, `SkillFailed`, `Skill
 
 `actor.wait` accepts `duration_seconds` from zero through 300. It uses a monotonic deadline and cancellation-aware sleep, owns no commands and contains no game assumptions.
 
+The optional Communication package adds `actor.send-message` and
+`actor.wait-for-message`. Sending awaits an authoritative correlated receipt;
+waiting uses a bounded deduplicated inbox with sender/task/correlation filters,
+including messages that arrived before the Skill started. Neither Skill calls
+the Brain while waiting. See [communication](communication.md).
+
+The Arena package also supplies Start/WaitAssignment/InspectDiagnostic/
+SubmitCalibration/WaitCalibration procedures. Their typed schemas enter the
+dynamic catalog through ordinary plugin discovery. They validate private
+assignment and role, approach the installed terminals through the existing
+movement controller and await typed authoritative outcomes. Task state remains
+entirely server-owned. See [cooperative tasks](cooperative-tasks.md).
+
+`SkillDefinition.result_policy` is `public`, `session_only` or `sensitive`.
+Authorized working results still reach the Brain; public diagnostics and SQLite
+use safe projections. Private output/details are withheld, known secrets are
+redacted recursively and free-form Objective outcome prose is withheld after
+private data was handled. `context_fields` explicitly opts safe input fields into
+relevance metadata; message text and authorization are never included there.
+
 `agents-arena.navigate-to-room` accepts `target_room_id` of `engineering` or `main-hall`. It requires decoded Transform2D, Motion2D, Locomotion2D, RoomMembership and RoomChanged capabilities, and owns Locomotion2D. Its small predefined reference-game graph routes through:
 
 ```text

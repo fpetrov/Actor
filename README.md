@@ -1,10 +1,12 @@
 # ACTOR
 
-ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone4 adds event-driven replanning, relevant bounded contexts and local episodic memory to the working typed Skill/Brain loop and deployed multiplayer reference game.
+ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone5 adds private server-authorized communication and a cooperative calibration task for independent agents, building on event-driven cognition, bounded contexts and local episodic memory.
 
 ## What ACTOR is
 
 **ACTOR does not prescribe a game's world model. Games expose capabilities through typed, versioned extensions.** Core handles sessions, discovery, envelopes, ordering and command outcomes. Reusable Standard packages are optional; game-specific concepts belong to game extensions. Agents Arena's rooms are an extension, not an ACTOR Core concept.
+
+ACTOR does not implement universal game logic. It provides typed and extensible communication, observation, action and cognitive orchestration interfaces. A game's authoritative server defines visibility, permissions and gameplay outcomes.
 
 ```text
                          USER OBJECTIVE
@@ -32,9 +34,9 @@ Action pipeline: Brain → typed Skill → cleanup/ownership → Game
 
 - **ACTOR SDK** — local UPM `packages/com.actor.sdk`, engine-independent Core/Standard protocol and typed registration.
 - **gRPC transport** — local UPM `com.actor.transport.grpc`, Grpc.Net.Client + native YetAnotherHttpHandler.
-- **Python Runtime 0.3.0** — descriptors/plugins, state cache, typed Skills, event routing, bounded context, memory and ObjectiveRunner.
+- **Python Runtime 0.4.0** — descriptors/plugins, state cache, typed Skills, bounded message inboxes, event routing, context, private-data retention policies, memory and ObjectiveRunner.
 - **Brains** — deterministic SequenceBrain and optional official `openai-codex==0.162.1`; model decisions occur at Skill boundaries or justified strategic events, with one active turn.
-- **Agents Arena 0.5.0** — Unity 6000.6.4f1, a common atlas for Main Hall ↔ Engineering, tested passages, authoritative station-signal console, server physics/rooms and responsive owner prediction.
+- **Agents Arena 0.6.0** — Unity 6000.6.4f1, Main Hall ↔ Engineering, station signals, private communication, cooperative terminals, server physics/rooms and responsive owner prediction.
 - **Control Plane** — .NET 10 Minimal APIs, SQLite admission/process lifecycle; static website via nginx.
 
 **Website:** http://5.181.134.236/
@@ -132,8 +134,21 @@ Developer guides: [events/plugins](docs/event-routing.md),
 [Context Builder](docs/context-builder.md), [memory](docs/memory.md),
 [classifiers](docs/classifiers.md), [Signal Console](docs/station-signals.md).
 
-## Next milestone
+## Cooperative agents
 
-Add useful game-native interaction capabilities and typed Skills, building on
-bounded event-driven cognition. Social memory, beliefs and richer task systems
-remain separate layers; game semantics stay in their extensions.
+Create a matching lobby, then launch the two deterministic reference agents:
+
+```bash
+python3 scripts/launch-cooperative-agents.py --room ABC123
+```
+
+Select independent real Codex providers with
+`--coordinator-brain codex --technician-brain codex`. The coordinator obtains a
+private diagnostic authorization in Main Hall and communicates it through the
+game server; the technician uses it at Engineering's calibration console. Both
+finish only after authoritative completion. Each process has its own bridge,
+WorldState, Brain/thread and database; the supervisor does not transfer game data.
+
+See [launch and isolation](docs/multi-agent.md),
+[communication and delivery](docs/communication.md) and
+[cooperative task authority](docs/cooperative-tasks.md).

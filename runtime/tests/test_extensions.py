@@ -25,7 +25,7 @@ def test_known_any_roundtrip(registry, value):
 
 
 def test_actual_installed_entry_point_discovery(registry):
-    assert set(registry.packages) == {"actor.standard", "agents-arena"}
+    assert set(registry.packages) == {"actor.standard", "actor.standard.communication", "agents-arena"}
 
 
 def test_discovery_loads_plugin_factory_without_game_branch():

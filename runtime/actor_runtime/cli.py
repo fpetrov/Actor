@@ -79,12 +79,15 @@ async def serve(args):
                 report["cognitive_config"] = config.model_dump(mode="json")
             if memory_report is not None:
                 report["memory"] = memory_report
+            if objective_runner is not None:
+                report = objective_runner.session.privacy.public(report)
             temporary = args.report.with_suffix(".tmp")
             temporary.write_text(json.dumps(report, indent=2) + "\n")
             temporary.replace(args.report)
 
     async def scripted():
         nonlocal outcome
+        session = None
         try:
             points = metadata.entry_points(group="actor.examples", name=args.example)
             if len(points) != 1:
@@ -93,10 +96,13 @@ async def serve(args):
             policy = next(iter(points)).load()
             session = await server.next_session(timeout=args.connect_timeout)
             outcome = await policy(session)
+            outcome = session.privacy.public(outcome)
             LOG.info("Scripted example completed: %s", outcome)
         except Exception as error:
             outcome = {"passed": False, "error": (error.as_dict() if isinstance(error, ActorError)
                                                    else {"code": type(error).__name__, "message": str(error)})}
+            if session is not None:
+                outcome = session.privacy.public(outcome)
             LOG.error("Scripted example failed: %s", outcome)
         finally:
             save_report()
@@ -119,6 +125,7 @@ async def serve(args):
 
     async def agent():
         nonlocal outcome, objective_runner, memory_store
+        session = None
         from .brains import BrainRegistry
         from .objectives import ObjectiveRunner
         from .skills import SkillRegistry
@@ -156,7 +163,7 @@ async def serve(args):
             objective_runner = ObjectiveRunner(session, SkillRegistry.discover(), brain,
                 config=config, event_router=router, memory=memory_store)
             result = await objective_runner.run(pending_objective)
-            outcome = {"passed": result.status == "succeeded", "result": result.model_dump(mode="json")}
+            outcome = session.privacy.public({"passed": result.status == "succeeded", "result": result.model_dump(mode="json")})
             LOG.info("Agent objective completed: %s", json.dumps(outcome))
         except asyncio.CancelledError:
             outcome = cancelled_outcome()
@@ -164,6 +171,8 @@ async def serve(args):
         except Exception as error:
             outcome = {"passed": False, "error": (error.as_dict() if isinstance(error, ActorError)
                                                    else {"code": type(error).__name__, "message": str(error)})}
+            if session is not None:
+                outcome = session.privacy.public(outcome)
             LOG.error("Agent objective failed: %s", json.dumps(outcome))
         finally:
             await refresh_memory_report()

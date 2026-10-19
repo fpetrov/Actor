@@ -22,6 +22,8 @@ from .errors import ActorError
 from .extensions import type_url
 from .session import RuntimeSession
 from .world import CachedPayload
+from .inbox import EventInbox
+from .privacy import DataPolicy, public_projection
 
 LOG = logging.getLogger("actor_runtime")
 T = TypeVar("T", bound=Message)
@@ -41,10 +43,19 @@ class SkillResult(SkillModel):
     duration_seconds: float = Field(default=0, ge=0)
     commands_sent: int = Field(default=0, ge=0)
     details: dict = Field(default_factory=dict)
+    data_policy: DataPolicy = "public"
+    expires_at_unix_ms: int = 0
+
+    def public(self):
+        return public_projection(self)
 
 
 class SkillError(ActorError):
     """Machine-readable failure; exception text never supplies semantic decisions."""
+
+
+class SkillTimeout(SkillError):
+    """A bounded asynchronous precondition/event wait reached its deadline."""
 
 
 @dataclass(frozen=True)
@@ -78,6 +89,8 @@ class SkillDefinition:
     owned_command_capabilities: tuple[str, ...] = ()
     timeout_seconds: float = 60
     cleanup_timeout_seconds: float = 1
+    result_policy: DataPolicy = "public"
+    context_fields: tuple[str, ...] = ()
 
 
 class SkillRegistry:
@@ -105,6 +118,10 @@ class SkillRegistry:
     def register(self, definition: SkillDefinition):
         if not isinstance(definition, SkillDefinition):
             raise SkillError("skill_definition_invalid", "Plugin must supply SkillDefinition instances")
+        if definition.result_policy not in ("public", "session_only", "sensitive"):
+            raise SkillError("skill_definition_invalid", "Unknown result retention policy")
+        if not set(definition.context_fields) <= set(getattr(definition.input_model, "model_fields", {})):
+            raise SkillError("skill_definition_invalid", "Context metadata must select declared input fields")
         if definition.skill_id in self.definitions:
             previous = self.definitions[definition.skill_id]
             code = "duplicate_skill" if previous.version == definition.version else "skill_version_conflict"
@@ -220,6 +237,7 @@ class _Lease:
     cancellation: asyncio.Event = field(default_factory=asyncio.Event)
     cancellation_reason: str = "cancelled"
     cancellation_details: dict = field(default_factory=dict)
+    private_until_unix_ms: int = 0
 
 
 _FOREGROUND: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
@@ -238,6 +256,17 @@ class SkillContext:
 
     def now(self) -> float:
         return self._clock()
+
+    def register_known_secret(self, value: str, *, expires_at_unix_ms=None):
+        self._session.register_known_secret(value, expires_at_unix_ms=expires_at_unix_ms)
+        if expires_at_unix_ms:
+            self.expire_result_at(expires_at_unix_ms)
+
+    def expire_result_at(self, expires_at_unix_ms):
+        if type(expires_at_unix_ms) is not int or expires_at_unix_ms <= 0:
+            raise SkillError("invalid_expiry", "Working result expiry must be a positive Unix millisecond timestamp")
+        old = self._lease.private_until_unix_ms
+        self._lease.private_until_unix_ms = min(old, expires_at_unix_ms) if old else expires_at_unix_ms
 
     @property
     def cancelled(self) -> bool:
@@ -282,6 +311,40 @@ class SkillContext:
                 copy = message_type(); copy.CopyFrom(event.payload)
                 result.append(CachedPayload(event.entity_id, event.capability_id, event.sequence, event.revision, copy, event.received_at))
         return result
+
+    async def wait_event(self, capability_id: str, message_type: type[T], *, predicate=None,
+                         timeout_seconds=30, consume=True, after_sequence=0) -> CachedPayload:
+        self._require(capability_id, message_type, "event")
+        if not math.isfinite(timeout_seconds) or timeout_seconds <= 0 or timeout_seconds > 3600:
+            raise SkillError("invalid_duration", "Event deadline must be finite and bounded")
+        world = self._session.world
+        inbox = world.inboxes.setdefault(capability_id, EventInbox())
+        deadline = self.now() + timeout_seconds
+        while True:
+            self._live()
+            if self.cancelled:
+                raise asyncio.CancelledError
+            entry = inbox.find(self.actor_id, message_type, predicate, consume=consume, after_sequence=after_sequence)
+            if entry is not None:
+                return entry
+            remaining = deadline - self.now()
+            if remaining <= 0:
+                raise SkillTimeout("event_timeout", "Expected authoritative event did not arrive before its deadline",
+                                   {"capability_id": capability_id})
+            revision = inbox.revision
+            async def changed():
+                async with world.changed:
+                    await world.changed.wait_for(lambda: inbox.revision != revision)
+            waiters = [asyncio.create_task(changed()), asyncio.create_task(self._session.closed.wait()),
+                       asyncio.create_task(self._lease.cancellation.wait())]
+            try:
+                done, _ = await asyncio.wait(waiters, timeout=remaining, return_when=asyncio.FIRST_COMPLETED)
+                if not done:
+                    raise SkillTimeout("event_timeout", "Expected authoritative event did not arrive before its deadline",
+                                       {"capability_id": capability_id})
+            finally:
+                for task in waiters: task.cancel()
+                await asyncio.gather(*waiters, return_exceptions=True)
 
     def command(self, capability_id: str, payload: Message, *, ttl_ms: int | None = None) -> int:
         self._require(capability_id, type(payload), "command")
@@ -334,22 +397,27 @@ class SkillScheduler:
         self._history = deque(maxlen=64)
         self._lifecycle = deque(maxlen=256)
         self._active_id = ""
+        self._active_arguments = {}
+
+    def current_skill_metadata(self):
+        return (self.session.privacy.public({"skill_id": self._active_id, "arguments": self._active_arguments})
+                if self._active_id else None)
 
     def report(self) -> dict:
-        return {"active_skill_id": self._active_id, "skills": list(self._history), "events": list(self._lifecycle),
+        return self.session.privacy.public({"active_skill_id": self._active_id, "skills": list(self._history), "events": list(self._lifecycle),
                 "skill_count": sum(item.get("started", False) for item in self._history),
-                "failed_skill_count": sum(item["status"] != "succeeded" for item in self._history)}
+                "failed_skill_count": sum(item["status"] != "succeeded" for item in self._history)})
 
     def _event(self, event: str, skill_id: str):
         self._lifecycle.append({"event": event, "skill_id": skill_id, "at_monotonic": self._clock()})
         LOG.info("%s skill=%s", event, skill_id)
 
     def _result(self, skill_id: str, status: SkillStatus, reason: str, *, version="", started=0.0,
-                output=None, commands=0, details=None, did_start=False) -> SkillResult:
+                output=None, commands=0, details=None, did_start=False, data_policy="public", expires_at_unix_ms=0) -> SkillResult:
         result = SkillResult(skill_id=skill_id, skill_version=version, status=status, reason=reason,
             output=output or {}, duration_seconds=max(0, self._clock() - started) if did_start else 0.0,
-            commands_sent=commands, details=details or {})
-        record = result.model_dump(mode="json"); record["started"] = did_start
+            commands_sent=commands, details=details or {}, data_policy=data_policy, expires_at_unix_ms=expires_at_unix_ms)
+        record = self.session.privacy.public(result); record["started"] = did_start
         self._history.append(record)
         return result
 
@@ -357,6 +425,8 @@ class SkillScheduler:
         try:
             typed = self.registry.validate_call(self.session, skill_id, arguments)
             definition = self.registry.definition(skill_id)
+            if definition.result_policy != "public":
+                self.session.privacy.mark_private()
             if self._task is not None and not self._task.done() or self.session in _FOREGROUND:
                 raise SkillError("command_ownership_conflict", "A foreground skill already owns this session")
             lease = _Lease()
@@ -368,12 +438,14 @@ class SkillScheduler:
             skill.preflight(context, typed)
         except SkillError as error:
             known = self.registry.definitions.get(skill_id)
-            return self._result(skill_id, "failed", error.code, version=known.version if known else "", details=error.details)
+            return self._result(skill_id, "failed", error.code, version=known.version if known else "", details=error.details,
+                                data_policy=known.result_policy if known else "public")
         except Exception as error:
             return self._result(skill_id, "failed", "skill_precondition_failed", details={"exception_type": type(error).__name__})
         lease.active = True
         _FOREGROUND[self.session] = lease
         self._lease, self._active_id = lease, skill_id
+        self._active_arguments = {key: typed.model_dump(mode="json")[key] for key in definition.context_fields}
         self._task = asyncio.create_task(self._perform(skill, definition, context, typed, lease))
         try:
             return await asyncio.shield(self._task)
@@ -412,6 +484,8 @@ class SkillScheduler:
             details.update(lease.cancellation_details)
             current = asyncio.current_task()
             if current is not None: current.uncancel()
+        except SkillTimeout as error:
+            status, reason, details = "timed_out", error.code, error.details
         except SkillError as error:
             status, reason, details = "failed", error.code, error.details
         except Exception as error:
@@ -442,10 +516,12 @@ class SkillScheduler:
             finally:
                 lease.cleanup_task = None
                 if _FOREGROUND.get(self.session) is lease: _FOREGROUND.pop(self.session, None)
-                if self._lease is lease: self._lease, self._active_id = None, ""
+                if self._lease is lease:
+                    self._lease, self._active_id, self._active_arguments = None, "", {}
         self._event({"succeeded": "SkillSucceeded", "failed": "SkillFailed", "cancelled": "SkillCancelled", "timed_out": "SkillTimedOut"}[status], definition.skill_id)
         return self._result(definition.skill_id, status, reason, version=definition.version, started=started,
-                            output=output, commands=lease.commands_sent, details=details, did_start=True)
+                            output=output, commands=lease.commands_sent, details=details, did_start=True,
+                            data_policy=definition.result_policy, expires_at_unix_ms=lease.private_until_unix_ms)
 
     async def cancel(self, *, reason="cancelled", details=None):
         if reason not in ("cancelled", "preempted_by_event"):

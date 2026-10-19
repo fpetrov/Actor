@@ -294,6 +294,8 @@ class MemoryStore:
 
     async def remember_event(self, event, *, summary=None, importance=None, tags=()):
         entry = getattr(event, "entry", event)
+        if getattr(entry, "data_policy", "public") != "public":
+            return None
         opaque = isinstance(entry.payload, OpaquePayload)
         url = entry.payload.type_url if opaque else type_url(type(entry.payload))
         content = {"opaque": True} if opaque else (
@@ -335,7 +337,8 @@ class MemoryStore:
                                    content_truncated=not opaque and entry.payload.ByteSize() > self.max_payload_bytes)
 
     async def remember_skill_result(self, result, *, objective_id=None):
-        value = result.model_dump(mode="json") if hasattr(result, "model_dump") else dict(result)
+        from .privacy import public_projection
+        value = public_projection(result)
         source = _json([self.session_id, objective_id, value])
         key = hashlib.sha256(source.encode()).hexdigest()
         return await self.remember(evidence_kind="skill_result", source_event_id=key,
@@ -344,7 +347,8 @@ class MemoryStore:
                                    tags=("skill_result", str(value.get("skill_id", ""))))
 
     async def remember_objective_result(self, result):
-        value = result.model_dump(mode="json") if hasattr(result, "model_dump") else dict(result)
+        from .privacy import public_projection
+        value = public_projection(result)
         key = _json([self.session_id, value.get("objective_id")])
         return await self.remember(evidence_kind="objective_result", source_event_id=key,
                                    content=value, summary=f"Objective: {value.get('status', '')}",

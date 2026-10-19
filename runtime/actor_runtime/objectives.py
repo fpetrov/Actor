@@ -9,6 +9,7 @@ import logging
 import math
 import json
 import inspect
+from importlib import metadata
 import time
 from uuid import uuid4
 
@@ -112,6 +113,8 @@ class ObjectiveRunner:
         self._recorded_skill_tasks = set()
         self._lifecycle = []
         self._started_at = 0.0
+        self._last_skill_metadata = None
+        self._finalizer_results = []
 
     def _log(self, event, **fields):
         record = {"event": event, "elapsed_seconds": round(time.monotonic() - self._started_at, 6), **fields}
@@ -154,12 +157,13 @@ class ObjectiveRunner:
         if callable(getattr(result, "model_dump", None)):
             self._skill_results.append(result.model_dump(mode="json"))
 
-    async def _cleanup_call(self, operation, name):
+    async def _cleanup_call(self, operation, name, *, timeout_seconds=None):
         task = asyncio.create_task(operation)
         succeeded = False
         try:
             try:
-                done, _ = await asyncio.wait((task,), timeout=self.cleanup_timeout_seconds)
+                done, _ = await asyncio.wait((task,), timeout=min(self.cleanup_timeout_seconds, timeout_seconds)
+                                             if timeout_seconds is not None else self.cleanup_timeout_seconds)
             except asyncio.CancelledError:
                 self.cancel_requested.set()
                 return
@@ -186,6 +190,34 @@ class ObjectiveRunner:
             if task.done():
                 self._consume_completed(task)
         return succeeded
+
+    async def _finalize_objective(self, status, reason):
+        """Let installed extensions release server resources through this Scheduler.
+
+        This trusted lifecycle hook runs after foreground ownership is revoked.
+        Extensions decide whether their negotiated capabilities need cleanup;
+        Core has no knowledge of game tasks or their cancellation commands.
+        """
+        points = sorted(metadata.entry_points(group="actor.objective_finalizers"), key=lambda point: point.name)
+        if len(points) > 16 or len({point.name for point in points}) != len(points):
+            raise ActorError("objective_finalizers_invalid", "Finalizer entry points must be unique and bounded")
+        for point in points:
+            record = {"name": point.name, "status": "running"}
+            self._finalizer_results.append(record)
+            try:
+                finalizer = point.load()
+                if not inspect.iscoroutinefunction(finalizer):
+                    raise ActorError("objective_finalizer_invalid", "Objective finalizers must be async functions")
+                await finalizer(session=self.session, objective=self.objective,
+                    status=status, reason=reason, scheduler=self.scheduler)
+                record["status"] = "completed"
+            except asyncio.CancelledError:
+                record["status"] = "cancelled"
+                raise
+            except Exception as error:
+                record["status"] = "failed"
+                self._cleanup_errors.append("objective_finalizer_failed")
+                LOG.error("Objective finalizer failed name=%s exception_type=%s", point.name, type(error).__name__)
 
     @staticmethod
     def _consume_completed(task):
@@ -357,7 +389,8 @@ class ObjectiveRunner:
             return
         for result in self._skill_results[self._persisted_skill_count:]:
             try:
-                await self._wait(self.memory.remember_skill_result(result, objective_id=self.objective.id), "memory")
+                await self._wait(self.memory.remember_skill_result(self.session.privacy.public(result),
+                    objective_id=self.objective.id), "memory")
             except ActorError as error:
                 raise _Terminal(ObjectiveStatus.FAILED, "memory_failure") from error
             self._persisted_skill_count += 1
@@ -365,7 +398,7 @@ class ObjectiveRunner:
     async def _context(self, catalog, index, previous, validation_error, reason):
         from .snapshots import build_decision_context
         router = self.event_router
-        current = self.scheduler.report().get("active_skill_id") or None
+        current = self.scheduler.current_skill_metadata() or self._last_skill_metadata
         memories = ()
         if self.memory is not None:
             try:
@@ -422,6 +455,8 @@ class ObjectiveRunner:
         self._decisions, self._skill_results, self._lifecycle = [], [], []
         self._recorded_skill_tasks = set()
         self._replans = self._persisted_skill_count = 0
+        self._last_skill_metadata = None
+        self._finalizer_results = []
         terminal_status, reason, message = ObjectiveStatus.FAILED, "brain_failure", None
         try:
             if self.session.closed.is_set():
@@ -431,7 +466,7 @@ class ObjectiveRunner:
             self._log("ObjectiveStarted", objective_id=objective.id)
             if self.event_router is not None:
                 await self._wait(self.event_router.start(self.objective,
-                    current_skill=lambda: self.scheduler.report().get("active_skill_id")), "router")
+                    current_skill=self.scheduler.current_skill_metadata), "router")
             await self._wait(self.brain.start(self.objective, catalog), "start", self.decision_timeout_seconds)
             validation_error = None
             repairs = 0
@@ -504,6 +539,9 @@ class ObjectiveRunner:
                     message = decision.reason
                     break
                 self._decisions[-1]["skill_id"] = decision.skill_id
+                definition = self.registry.definition(decision.skill_id)
+                self._last_skill_metadata = {"skill_id": decision.skill_id, "arguments": {
+                    key: decision.arguments[key] for key in definition.context_fields if key in decision.arguments}}
                 self._log("BrainDecision", kind="skill", skill_id=decision.skill_id)
                 prior_skill_count = len(self._skill_results)
                 try:
@@ -533,6 +571,11 @@ class ObjectiveRunner:
             LOG.error("Objective failed code=%s exception_type=%s", reason, type(error).__name__)
         finally:
             await self._cleanup_call(self.scheduler.cancel(), "skill_cancel")
+            await self._cleanup_call(self._finalize_objective(
+                ObjectiveStatus.CANCELLED if self.cancel_requested.is_set() else terminal_status,
+                "objective_cancelled" if self.cancel_requested.is_set() else reason),
+                "objective_finalizers", timeout_seconds=2)
+            await self._cleanup_call(self.scheduler.cancel(), "finalizer_skill_cancel")
             if self.event_router is not None:
                 await self._cleanup_call(self.event_router.close(), "event_router_close")
             await self._cleanup_call(self.brain.close(), "brain_close")
@@ -544,11 +587,14 @@ class ObjectiveRunner:
         self.result = ObjectiveResult(objective_id=objective.id, status=terminal_status, reason=reason,
             message=message, duration_seconds=time.monotonic() - self._started_at,
             decision_count=len(self._decisions), skill_results=self._skill_results)
+        projected = self.session.privacy.public(self.result)
+        self.result = self.result.model_copy(update={"message": projected["message"],
+                                                    "skill_results": projected["skill_results"]})
         if self.memory is not None:
             recorded_outcome = self.result
             async def persist_outcome():
                 for skill_result in self._skill_results[self._persisted_skill_count:]:
-                    await self.memory.remember_skill_result(skill_result, objective_id=self.objective.id)
+                    await self.memory.remember_skill_result(self.session.privacy.public(skill_result), objective_id=self.objective.id)
                     self._persisted_skill_count += 1
                 await self.memory.remember_objective_result(self.result.model_dump(mode="json"))
             memory_ok = await self._cleanup_call(persist_outcome(), "memory_finalize")
@@ -593,11 +639,13 @@ class ObjectiveRunner:
             brain_report = report_method() if callable(report_method) else {}
         except Exception:
             brain_report = {"telemetry_error": "brain_report_failed"}
-        return {"objective": self.objective.model_dump(mode="json") if self.objective else None,
+        return self.session.privacy.public({"objective": self.objective.model_dump(mode="json") if self.objective else None,
                 "result": self.result.model_dump(mode="json") if self.result else None,
                 "decisions": list(self._decisions), "skills": list(self._skill_results),
                 "lifecycle": list(self._lifecycle), "scheduler": self.scheduler.report(),
                 "brain": brain_report, "cleanup_errors": list(self._cleanup_errors),
+                "finalizers": list(self._finalizer_results),
                 "replan_count": self._replans, "cognitive_revision": self._revision(),
                 "event_router": self.event_router.report() if self.event_router is not None else None,
-                "pending_cleanup_tasks": sum(not task.done() for task in self._pending_cleanup_tasks)}
+                "pending_cleanup_tasks": sum(not task.done() for task in self._pending_cleanup_tasks),
+                "privacy": self.session.privacy.report()})

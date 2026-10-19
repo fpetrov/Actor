@@ -8,6 +8,8 @@ from typing import Literal, Protocol, Callable
 from pydantic import BaseModel, ConfigDict, Field
 
 from .errors import ActorError
+from .inbox import EventInboxPolicy
+from .privacy import DataPolicy
 
 
 class EventAssessment(BaseModel):
@@ -49,6 +51,12 @@ class EventRule:
     type_url: str
     hints: Callable
     assess: Callable
+    inbox_policy: EventInboxPolicy | None = None
+    data_policy: DataPolicy = "public"
+    secret_fields: tuple[str, ...] = ()
+    accept: Callable | None = None
+    context_priority: Callable | None = None
+    expiry_field: str | None = None
 
 
 class EventRuleRegistry:

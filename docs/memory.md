@@ -6,6 +6,13 @@ observations stay in WorldState; ordinary Transform/Motion frames are not
 automatically written to memory. EventRouter remembers selected observed events;
 ObjectiveRunner remembers SkillResults and objective outcomes.
 
+Communication content and short-lived authorization are working data, rather
+than automatic episodic evidence. Typed incoming events carry an installed
+`EventRule.data_policy`: `public`, `session_only` or `sensitive`. Router never
+persists either private policy, regardless of an advisory classifier's opinion.
+Ordinary chat therefore stays in its authorized recipient's session and bounded
+context. There is no shared inbox, WorldState or memory connection between agents.
+
 ## Scope and lifetime
 
 Default memory is an in-memory SQLite database, isolated to the current session.
@@ -79,6 +86,24 @@ their binary bytes. Oversized content becomes an explicit omission record with
 excluded defensively; callers must supply only observed evidence and public
 results. The store is not a general secret scanner for arbitrary prose. ACTOR
 does not pass API credentials, SDK items or hidden reasoning to this API.
+
+Skill authors declare `SkillDefinition(result_policy="sensitive")` for a private
+result, or `"session_only"` for ordinary received messages. `SkillResult` carries
+that explicit `data_policy`. The authorized Brain receives the working output;
+public reports and SQLite retain only status/timing/command metadata with output
+and details redacted. The store also enforces this projection when called
+directly. Sensitive nested dictionaries cannot bypass it. Free-form Objective
+completion prose is withheld after the session has handled private data, so a
+model cannot accidentally publish a quoted or paraphrased code in its summary.
+
+`context.register_known_secret(value, expires_at_unix_ms=...)` additionally
+protects known code strings throughout nested public diagnostics and errors.
+Expiry stops reuse of working event/result payloads; it never turns off redaction
+of old diagnostics. The secret registry is bounded. Overflow suppresses free-form
+values rather than publishing unknown content, while retaining machine field
+names and status enums. Ordinary chat is not entered into this registry;
+code-sized sensitive communication and explicitly registered game authorization
+are. No secret values or fingerprints appear in privacy counters.
 
 ## Bounds and retrieval
 

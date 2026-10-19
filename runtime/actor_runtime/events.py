@@ -10,6 +10,7 @@ from collections import Counter, OrderedDict, deque
 from dataclasses import dataclass, field
 import logging
 import time
+from dataclasses import replace
 
 from .classifiers import (ClassificationContext, EventAssessment, EventHints,
                           EventRuleRegistry, RuleBasedEventClassifier)
@@ -70,6 +71,42 @@ class EventRouter:
         self._audit = deque(maxlen=128)
         self._context_revision = 0
         self._in_flight_event = None
+        for rule in self.rules.rules.values():
+            if rule.inbox_policy is not None:
+                session.world.configure_inbox(rule.capability_id, rule.inbox_policy)
+
+    def prepare_entry(self, entry):
+        capability = self.session.capabilities[entry.capability_id]
+        url = entry.payload.type_url if isinstance(entry.payload, OpaquePayload) else type_url(type(entry.payload))
+        rule = self.rules.rules.get((entry.capability_id, capability.extension_id, url))
+        if rule is None:
+            return entry
+        if rule.accept is not None and not rule.accept(self.session, entry):
+            self._counts["events_rejected"] += 1
+            return None
+        expiry = getattr(entry.payload, rule.expiry_field, 0) if rule.expiry_field else 0
+        entry = replace(entry, data_policy=rule.data_policy, expires_at_unix_ms=expiry)
+        if rule.data_policy != "public":
+            self.session.privacy.mark_private()
+        for field in rule.secret_fields:
+            value = getattr(entry.payload, field, "")
+            if isinstance(value, str) and value:
+                self.session.register_known_secret(value, expires_at_unix_ms=getattr(entry.payload, "expires_at_unix_ms", None))
+        return entry
+
+    def context_priority(self, event, selection):
+        entry = getattr(event, "entry", event)
+        capability = self.session.capabilities.get(entry.capability_id)
+        if capability is None:
+            return 0
+        url = entry.payload.type_url if isinstance(entry.payload, OpaquePayload) else type_url(type(entry.payload))
+        rule = self.rules.rules.get((entry.capability_id, capability.extension_id, url))
+        if rule is None or rule.context_priority is None:
+            return 0
+        try:
+            return max(-100, min(100, float(rule.context_priority(selection, event))))
+        except Exception:
+            return 0
 
     def configure(self, *, config=None, classifier=None, memory=None,
                   policy_tags=(), classifier_config=None):
@@ -151,7 +188,7 @@ class EventRouter:
             payload = type(entry.payload)()
             payload.CopyFrom(entry.payload)
             event.entry = CachedPayload(entry.entity_id, entry.capability_id, entry.sequence,
-                                        entry.revision, payload, entry.received_at)
+                                        entry.revision, payload, entry.received_at, entry.data_policy, entry.expires_at_unix_ms)
         now = time.monotonic()
         if event.hints.aggregation_key and not event.hints.potentially_critical:
             for previous in reversed(self._pending.values()):
@@ -283,7 +320,7 @@ class EventRouter:
                                 assessment = assessment.model_copy(update={"should_request_brain_review": False,
                                     "should_interrupt_skill": False, "reason_code": "stale_event_buffered"})
                         self._apply(event, assessment)
-                    if event.assessment.should_remember and self.memory is not None:
+                    if self._needs_memory(event):
                         try:
                             stored = await self.memory.remember_event(event, tags=event.hints.tags)
                             event.remembered = stored is not None
@@ -390,6 +427,7 @@ class EventRouter:
 
     def _needs_memory(self, event):
         return (self.memory is not None and getattr(self.memory, "enabled", True)
+                and event.entry.data_policy == "public"
                 and event.assessment is not None and event.assessment.should_remember and not event.remembered)
 
     def report(self):

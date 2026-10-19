@@ -39,6 +39,8 @@ class PayloadSnapshot(BaseModel):
     extension_version: str | None = None
     assessment: dict[str, JsonValue] | None = None
     aggregate_count: int = 1
+    data_policy: str = "public"
+    expired: bool = False
 
 
 class MemorySnapshot(BaseModel):
@@ -153,6 +155,10 @@ def _record(source, now, max_payload_bytes, *, trigger=False, stale_after_second
             if _encoded_size(value) > max_payload_bytes:
                 value, truncated = _preview(value, max_payload_bytes) if trigger else None, True
     assessment = getattr(source, "assessment", None)
+    expiry = getattr(entry, "expires_at_unix_ms", 0)
+    expired = bool(expiry and expiry <= int(time.time() * 1000))
+    if expired:
+        value, truncated = None, True
     if assessment is not None:
         assessment = assessment.model_dump(mode="json") if hasattr(assessment, "model_dump") else dict(assessment)
         if _encoded_size(assessment) > 2048:
@@ -166,7 +172,8 @@ def _record(source, now, max_payload_bytes, *, trigger=False, stale_after_second
                            event_id=getattr(source, "id", None),
                            extension_id=getattr(source, "extension_id", None),
                            extension_version=getattr(source, "extension_version", None),
-                           assessment=assessment, aggregate_count=getattr(source, "aggregate_count", 1))
+                           assessment=assessment, aggregate_count=getattr(source, "aggregate_count", 1),
+                           data_policy=getattr(entry, "data_policy", "public"), expired=expired)
 
 
 def _identity(source):
@@ -212,6 +219,10 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
         raise ValueError("Decision snapshot time must be finite")
     max_event_payload_bytes = max_event_payload_bytes or max_payload_bytes
     world = session.world
+    if (previous_skill_result and previous_skill_result.get("data_policy") in ("session_only", "sensitive") and
+            previous_skill_result.get("expires_at_unix_ms", 0) and
+            previous_skill_result["expires_at_unix_ms"] <= int(time.time() * 1000)):
+        previous_skill_result = {**previous_skill_result, "output": {"expired": True}, "details": {"expired": True}}
     if isinstance(current_skill, str):
         current_skill = {"skill_id": current_skill}
     elif hasattr(current_skill, "model_dump"):
@@ -220,7 +231,7 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
     skill_id = (current_skill or previous_skill_result or {}).get("skill_id")
     skill = next((item for item in catalog if item.get("id") == skill_id), {})
     relevant_caps = set(skill.get("required_capabilities", ())) | set(skill.get("owned_command_capabilities", ()))
-    keywords = _words(objective.text) | _words(current_skill)
+    keywords = _words(objective.text) | _words(current_skill) | _words(previous_skill_result)
     def overlap(item):
         text = item.capability_id + " " + item.entity_id
         if not isinstance(item.payload, OpaquePayload) and item.payload.ByteSize() <= max_payload_bytes:
@@ -243,7 +254,11 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
     else:
         def event_priority(event):
             assessment = getattr(event, "assessment", None)
+            router = getattr(session, "event_router", None)
+            priority = router.context_priority(event, {"current_skill": current_skill,
+                "previous_skill_result": previous_skill_result}) if router is not None else 0
             return ({"routine": 0, "important": 1, "critical": 2}.get(getattr(assessment, "urgency", "routine"), 0),
+                    priority,
                     {"unrelated": 0, "uncertain": 1, "relevant": 2}.get(
                         getattr(assessment, "relevance", "uncertain"), 1),
                     overlap(event.entry), event.entry.sequence)

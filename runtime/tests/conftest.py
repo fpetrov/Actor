@@ -20,13 +20,14 @@ def registry():
 def manifest():
     result = core.CapabilityManifest(game_id="test-game", game_version="0.1.0", self_actor_id="actor-1",
                                     protocol_version=core.ProtocolVersion(major=1, minor=0))
-    for resource, name in (("actor.metadata", "standard.v1.json"),
-                           ("extensions.agents_arena.metadata", "agents_arena.v1.json")):
+    for resource, name, required in (("actor.metadata", "standard.v1.json", True),
+                           ("extensions.agents_arena.metadata", "agents_arena.v1.json", True),
+                           ("actor.communication.metadata", "communication.v1.json", False)):
         document = json.loads(resources.files(resource).joinpath(name).read_bytes())
         result.extensions.add(extension_id=document["extension_id"],
                               extension_version=document["extension_version"],
                               supported_protocol_major=document["supported_protocol_major"],
-                              schema_hash=document["schema_hash"], required=True)
+                              schema_hash=document["schema_hash"], required=required)
         for specification in document["capabilities"]:
             item = dict(specification)
             item["kind"] = {"observation": 1, "command": 2, "event": 3}[item["kind"]]
@@ -59,6 +60,7 @@ def extension_version(extension):
     resource, name = {
         "actor.standard": ("actor.metadata", "standard.v1.json"),
         "agents-arena": ("extensions.agents_arena.metadata", "agents_arena.v1.json"),
+        "actor.standard.communication": ("actor.communication.metadata", "communication.v1.json"),
     }[extension]
     return json.loads(resources.files(resource).joinpath(name).read_bytes())["extension_version"]
 

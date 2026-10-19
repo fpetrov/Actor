@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--port", type=int, default=50051)
     parser.add_argument("--decision-timeout", type=float, default=120)
     parser.add_argument("--objective-timeout", type=float, default=600)
+    parser.add_argument("--max-decisions", type=int, default=16)
     parser.add_argument("--output", type=Path, default=root / "build/cognitive-validation")
     parser.add_argument("--client", type=Path, default=root / "build/agents-arena-client/AgentsArena.app/Contents/MacOS/Agents Arena")
     args = parser.parse_args()
@@ -56,6 +57,7 @@ def main():
     runtime_args = [str(runtime), "agent", "--brain", args.brain, "--objective", args.objective,
         "--port", str(args.port), "--decision-timeout", str(args.decision_timeout),
         "--objective-timeout", str(args.objective_timeout), "--report", str(args.output / "runtime.json"),
+        "--max-decisions", str(args.max_decisions),
         "--measure-allocations", "--exit-on-complete"]
     if args.model:
         runtime_args += ["--model", args.model]

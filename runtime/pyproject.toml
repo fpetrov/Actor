@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "actor-runtime"
-version = "0.3.0"
+version = "0.4.0"
 description = "Typed ACTOR game runtime with discoverable extensions, skills and interchangeable brains"
 requires-python = ">=3.12"
 dependencies = ["grpcio==1.82.2", "protobuf==7.36.2", "pydantic==2.14.1"]
@@ -20,6 +20,7 @@ actor-runtime = "actor_runtime.cli:main"
 [project.entry-points."actor.extensions"]
 standard = "actor_standard:extension_package"
 agents-arena = "actor_agents_arena:extension_package"
+communication = "actor_standard_communication:extension_package"
 
 [project.entry-points."actor.examples"]
 agents-arena = "actor_agents_arena.scripted:run"
@@ -27,24 +28,32 @@ agents-arena = "actor_agents_arena.scripted:run"
 [project.entry-points."actor.skills"]
 builtins = "actor_runtime.builtin_skills:skill_package"
 agents-arena = "actor_agents_arena.skills:skill_package"
+communication = "actor_standard_communication.skills:skill_package"
 
 [project.entry-points."actor.brains"]
 scripted = "actor_agents_arena.demo_brain:scripted_brain"
 codex = "actor_codex:brain_factory"
+calibration-coordinator = "actor_agents_arena.cooperative_brain:coordinator_brain"
+calibration-technician = "actor_agents_arena.cooperative_brain:technician_brain"
 
 [project.entry-points."actor.event_rules"]
 agents-arena = "actor_agents_arena.events:event_rules"
+communication = "actor_standard_communication.events:event_rules"
+
+[project.entry-points."actor.objective_finalizers"]
+agents-arena = "actor_agents_arena.calibration:finalize_objective"
 
 [project.entry-points."actor.classifiers"]
 rules = "actor_runtime.classifiers:rules_factory"
 jev = "actor_jev:classifier_factory"
 
 [tool.setuptools]
-package-dir = {actor_runtime = "actor_runtime", actor_standard = "actor_standard", actor_agents_arena = "actor_agents_arena", actor_codex = "actor_codex", actor_jev = "actor_jev", actor = "../generated/python/actor", extensions = "../generated/python/extensions"}
-packages = ["actor_runtime", "actor_standard", "actor_agents_arena", "actor_codex", "actor_jev", "actor", "actor.core", "actor.core.v1", "actor.standard", "actor.standard.v1", "actor.metadata", "extensions", "extensions.agents_arena", "extensions.agents_arena.v1", "extensions.agents_arena.metadata"]
+package-dir = {actor_runtime = "actor_runtime", actor_standard = "actor_standard", actor_standard_communication = "actor_standard_communication", actor_agents_arena = "actor_agents_arena", actor_codex = "actor_codex", actor_jev = "actor_jev", actor = "../generated/python/actor", extensions = "../generated/python/extensions"}
+packages = ["actor_runtime", "actor_standard", "actor_standard_communication", "actor_agents_arena", "actor_codex", "actor_jev", "actor", "actor.core", "actor.core.v1", "actor.standard", "actor.standard.v1", "actor.standard.communication", "actor.standard.communication.v1", "actor.communication", "actor.communication.metadata", "actor.metadata", "extensions", "extensions.agents_arena", "extensions.agents_arena.v1", "extensions.agents_arena.metadata"]
 
 [tool.setuptools.package-data]
 "actor.metadata" = ["*.pb", "*.json"]
+"actor.communication.metadata" = ["*.pb", "*.json"]
 "extensions.agents_arena.metadata" = ["*.pb", "*.json"]
 
 [tool.pytest.ini_options]

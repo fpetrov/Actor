@@ -35,6 +35,12 @@ extension types. It contains no room, signal or inventory types.
   and recency. Their extension identity, assessment and aggregation count remain
   visible. Without routing, the previous event cursor and latest-event ordering
   preserve the earlier API behavior.
+- Installed optional event rules may provide a bounded `context_priority`
+  function. Communication uses this to prefer expected sender, task, channel and
+  correlation identifiers ahead of unrelated later messages. Skills explicitly
+  select safe input metadata through `SkillDefinition.context_fields`; message
+  text and authorization codes are excluded from that metadata. The previous
+  working Skill result remains available to the authorized Brain separately.
 - Trigger events have a separate collection. They survive the ordinary event
   count limit, decision cursor, historical ring eviction and duplicate inputs.
   A trigger is not repeated in recent events.
@@ -45,6 +51,14 @@ Each payload retains capability/entity/type identity, sequence, revision and its
 own receipt age. `stale=true` labels an older observation; unrelated fresh frames
 cannot refresh it. Stale nonrequired data ranks below fresh data. Unknown optional
 extensions expose `opaque=true`, identity and age without exporting binary bytes.
+
+Session-only/sensitive event values stay on this external authority surface.
+They never become developer instructions or the user's Objective. Explicit
+event expiry produces `expired=true` with no payload value. An expired private
+previous Skill result similarly retains its identity/status with an expired
+output marker. Secret redaction remains active for public diagnostics after
+expiry. Reports serialize safe projections; they do not serialize this raw
+working context or the private provider conversation.
 
 ## Budgets
 
