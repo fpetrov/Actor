@@ -91,11 +91,13 @@ class SkillDefinition:
     cleanup_timeout_seconds: float = 1
     result_policy: DataPolicy = "public"
     context_fields: tuple[str, ...] = ()
+    availability: Callable[[SkillContext], bool] | None = None
 
 
 class SkillRegistry:
     def __init__(self):
         self.definitions: dict[str, SkillDefinition] = {}
+        self.availability_filter = None
 
     @classmethod
     def discover(cls, entry_points=None) -> SkillRegistry:
@@ -120,6 +122,9 @@ class SkillRegistry:
             raise SkillError("skill_definition_invalid", "Plugin must supply SkillDefinition instances")
         if definition.result_policy not in ("public", "session_only", "sensitive"):
             raise SkillError("skill_definition_invalid", "Unknown result retention policy")
+        if definition.availability is not None and (not callable(definition.availability) or
+                inspect.iscoroutinefunction(definition.availability)):
+            raise SkillError("skill_definition_invalid", "Availability must be a synchronous read-only predicate")
         if not set(definition.context_fields) <= set(getattr(definition.input_model, "model_fields", {})):
             raise SkillError("skill_definition_invalid", "Context metadata must select declared input fields")
         if definition.skill_id in self.definitions:
@@ -203,6 +208,8 @@ class SkillRegistry:
         for skill_id, definition in sorted(self.definitions.items()):
             try:
                 self._compatible(session, definition)
+                self._available(session, definition)
+                self._policy_available(session, definition)
             except SkillError:
                 continue
             result.append({"id": skill_id, "version": definition.version, "description": definition.description,
@@ -213,9 +220,38 @@ class SkillRegistry:
                 "timeout_seconds": definition.timeout_seconds})
         return result
 
+    def _policy_available(self, session, definition):
+        if self.availability_filter is not None:
+            try:
+                allowed = self.availability_filter(session, definition)
+                if inspect.iscoroutine(allowed): allowed.close()
+                if allowed is not True:
+                    raise SkillError("skill_unavailable", "Execution policy does not permit this Skill now")
+            except SkillError:
+                raise
+            except Exception as error:
+                raise SkillError("skill_unavailable", "Execution policy could not establish availability") from error
+
+    @staticmethod
+    def _available(session, definition):
+        if definition.availability is None:
+            return
+        try:
+            available = definition.availability(SkillContext(session, definition, _Lease()))
+            if inspect.iscoroutine(available):
+                available.close()
+            if available is not True:
+                raise SkillError("skill_unavailable", "Skill is unavailable in the current permitted state")
+        except SkillError:
+            raise
+        except Exception as error:
+            raise SkillError("skill_unavailable", "Skill availability could not be established") from error
+
     def validate_call(self, session: RuntimeSession, skill_id: str, arguments: dict) -> BaseModel:
         definition = self.definition(skill_id)
         self._compatible(session, definition)
+        self._available(session, definition)
+        self._policy_available(session, definition)
         try:
             if not isinstance(arguments, dict):
                 raise TypeError("Arguments must be an object")
@@ -238,6 +274,7 @@ class _Lease:
     cancellation_reason: str = "cancelled"
     cancellation_details: dict = field(default_factory=dict)
     private_until_unix_ms: int = 0
+    command_guard: Callable[[], bool] | None = None
 
 
 _FOREGROUND: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
@@ -271,6 +308,24 @@ class SkillContext:
     @property
     def cancelled(self) -> bool:
         return self._lease.cancellation.is_set()
+
+    @property
+    def has_working_knowledge(self):
+        return getattr(self._session, "working_knowledge", None) is not None
+
+    def remember_hypothesis(self, statement, confidence, evidence_refs):
+        self._live()
+        if not self._lease.active or self.cancelled:
+            raise SkillError("command_ownership_lost", "Working knowledge updates require an active Skill")
+        if self._lease.command_guard is not None and self._lease.command_guard() is not True:
+            raise SkillError("execution_boundary_changed", "The execution boundary changed before this working update")
+        store = getattr(self._session, "working_knowledge", None)
+        if store is None:
+            raise SkillError("knowledge_unavailable", "This execution has no private working knowledge")
+        try:
+            return store.hypothesize(statement, confidence, evidence_refs)
+        except ActorError as error:
+            raise SkillError(error.code, error.message) from error
 
     def _live(self):
         if self._session.closed.is_set() or self._session.mailbox.closed:
@@ -352,6 +407,8 @@ class SkillContext:
         if (capability_id not in self._definition.owned_command_capabilities or
                 (not self._lease.active and not cleanup) or (self.cancelled and not cleanup)):
             raise SkillError("command_ownership_lost", "Skill does not own this command capability")
+        if not cleanup and self._lease.command_guard is not None and self._lease.command_guard() is not True:
+            raise SkillError("execution_boundary_changed", "The execution boundary changed before this command")
         self._live()
         try:
             result = self._session.command(capability_id, payload, ttl_ms=ttl_ms)
@@ -398,9 +455,14 @@ class SkillScheduler:
         self._lifecycle = deque(maxlen=256)
         self._active_id = ""
         self._active_arguments = {}
+        self.execution_guard = None
 
     def current_skill_metadata(self):
-        return (self.session.privacy.public({"skill_id": self._active_id, "arguments": self._active_arguments})
+        return self.session.privacy.public(self.working_skill_metadata())
+
+    def working_skill_metadata(self):
+        """Authorized cognitive metadata; public diagnostics use a projection."""
+        return (json.loads(json.dumps({"skill_id": self._active_id, "arguments": self._active_arguments}))
                 if self._active_id else None)
 
     def report(self) -> dict:
@@ -409,8 +471,9 @@ class SkillScheduler:
                 "failed_skill_count": sum(item["status"] != "succeeded" for item in self._history)})
 
     def _event(self, event: str, skill_id: str):
-        self._lifecycle.append({"event": event, "skill_id": skill_id, "at_monotonic": self._clock()})
-        LOG.info("%s skill=%s", event, skill_id)
+        identifier = self.session.privacy.activity_id(skill_id)
+        self._lifecycle.append({"event": event, "skill_id": identifier, "at_monotonic": self._clock()})
+        LOG.info("%s skill=%s", event, identifier)
 
     def _result(self, skill_id: str, status: SkillStatus, reason: str, *, version="", started=0.0,
                 output=None, commands=0, details=None, did_start=False, data_policy="public", expires_at_unix_ms=0) -> SkillResult:
@@ -429,13 +492,17 @@ class SkillScheduler:
                 self.session.privacy.mark_private()
             if self._task is not None and not self._task.done() or self.session in _FOREGROUND:
                 raise SkillError("command_ownership_conflict", "A foreground skill already owns this session")
-            lease = _Lease()
+            lease = _Lease(command_guard=self.execution_guard)
             context = SkillContext(self.session, definition, lease, self._clock)
             for requirement in definition.required_capabilities:
                 if requirement.kind == "observation":
                     context.observation_entry(requirement.capability_id, requirement.message_type)
             skill = self.registry.create(skill_id)
             skill.preflight(context, typed)
+            self.registry._available(self.session, definition)
+            self.registry._policy_available(self.session, definition)
+            if self.execution_guard is not None and self.execution_guard() is not True:
+                raise SkillError("execution_boundary_changed", "The execution boundary changed before lease acquisition")
         except SkillError as error:
             known = self.registry.definitions.get(skill_id)
             return self._result(skill_id, "failed", error.code, version=known.version if known else "", details=error.details,

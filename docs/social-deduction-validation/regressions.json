@@ -1,0 +1,37 @@
+{
+  "schema": "actor.m7-auth-free-regressions.v1",
+  "passed": true,
+  "source_and_wheel": "package.json",
+  "dotnet": {
+    "sdk": 232,
+    "control_plane": 23,
+    "failed": 0,
+    "skipped": 0,
+    "framework": "net10.0",
+    "full_solution": true
+  },
+  "final_helpers": {
+    "pytest": {
+      "scripts": 69,
+      "postgame_evaluator": 30,
+      "performance": 18,
+      "sandbox_regression": 6,
+      "total_tests": 123,
+      "subtests": 152,
+      "duration_seconds": 0.69
+    },
+    "transparent_threat_audit": 19,
+    "native_visibility_projection": 5,
+    "privacy_projection": 18,
+    "protocol_fixture_including_projection": 9,
+    "fault_helper": 32,
+    "lifecycle_helper": 13,
+    "exact_server_guard": 23,
+    "generated_protocol_artifacts": 54
+  },
+  "limits": [
+    "Source and installed-wheel tests exercise the same cases and are not additive independent tests.",
+    "Helper unit tests do not establish a live game/model/UI result. Actual runs have separate scoped evidence.",
+    "Optional threat/protocol plugins are test-only and are not part of the normal Runtime wheel."
+  ]
+}

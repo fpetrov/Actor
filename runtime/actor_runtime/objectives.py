@@ -61,7 +61,9 @@ class ObjectiveRunner:
     def __init__(self, session, skill_registry, brain, *, decision_timeout_seconds=120,
                  objective_timeout_seconds=600, cleanup_timeout_seconds=5,
                  max_decisions=12, repair_limit=1, scheduler=None,
-                 event_router=None, config=None, memory=None, max_replans=None):
+                 event_router=None, config=None, memory=None, max_replans=None,
+                 manage_router=True, run_finalizers=True, execution_guard=None,
+                 working_knowledge=None):
         if config is not None:
             decision_timeout_seconds = config.brain.decision_timeout
             objective_timeout_seconds = config.brain.objective_timeout
@@ -86,6 +88,9 @@ class ObjectiveRunner:
         self.scheduler = scheduler or SkillScheduler(session, skill_registry)
         self.event_router = event_router if event_router is not None else getattr(session, "event_router", None)
         self.config, self.memory = config, memory
+        self.manage_router, self.run_finalizers = manage_router, run_finalizers
+        self.execution_guard, self.working_knowledge = execution_guard, working_knowledge
+        self._cancel_reason = "objective_cancelled"
         self.max_replans = max_replans
         self._replans = 0
         self._decision_epoch = 0
@@ -117,6 +122,8 @@ class ObjectiveRunner:
         self._finalizer_results = []
 
     def _log(self, event, **fields):
+        if "skill_id" in fields:
+            fields["skill_id"] = self.session.privacy.activity_id(fields["skill_id"])
         record = {"event": event, "elapsed_seconds": round(time.monotonic() - self._started_at, 6), **fields}
         self._lifecycle.append(record)
         LOG.info("%s %s", event, fields)
@@ -264,7 +271,9 @@ class ObjectiveRunner:
         # can run there after its first epoch check; acceptance and Finish need
         # a final synchronous guard, just like deferred Skill dispatch.
         if self.cancel_requested.is_set():
-            raise _Terminal(ObjectiveStatus.CANCELLED, "objective_cancelled")
+            raise _Terminal(ObjectiveStatus.CANCELLED, self._cancel_reason)
+        if self.execution_guard is not None and self.execution_guard() is not True:
+            raise _Terminal(ObjectiveStatus.CANCELLED, "episode_superseded")
         if self.session.closed.is_set():
             raise _Terminal(ObjectiveStatus.FAILED, "session_disconnected")
         if self.event_router is not None and self.event_router.degraded:
@@ -310,10 +319,19 @@ class ObjectiveRunner:
                     self._record_skill(active)
 
     async def _wait(self, operation, phase, timeout=None, *, epoch=None):
+        if self.execution_guard is not None and phase in ("start", "brain", "skill"):
+            try:
+                permitted = self.execution_guard()
+            except BaseException:
+                operation.close()
+                raise
+            if permitted is not True:
+                operation.close()
+                raise _Terminal(ObjectiveStatus.CANCELLED, "episode_superseded")
         if self.cancel_requested.is_set() or self.session.closed.is_set():
             operation.close()
             raise _Terminal(ObjectiveStatus.CANCELLED if self.cancel_requested.is_set() else ObjectiveStatus.FAILED,
-                            "objective_cancelled" if self.cancel_requested.is_set() else "session_disconnected")
+                            self._cancel_reason if self.cancel_requested.is_set() else "session_disconnected")
         remaining = self._started_at + self.objective_timeout_seconds - time.monotonic()
         if remaining <= 0:
             operation.close()
@@ -334,7 +352,7 @@ class ObjectiveRunner:
                                          timeout=effective_timeout, return_when=asyncio.FIRST_COMPLETED)
             if self.cancel_requested.is_set():
                 await self._abort_active(interrupt=True)
-                raise _Terminal(ObjectiveStatus.CANCELLED, "objective_cancelled")
+                raise _Terminal(ObjectiveStatus.CANCELLED, self._cancel_reason)
             if self.session.closed.is_set():
                 await self._abort_active(interrupt=True)
                 raise _Terminal(ObjectiveStatus.FAILED, "session_disconnected")
@@ -353,7 +371,7 @@ class ObjectiveRunner:
                 await self._preempt_active(phase)
                 if self.cancel_requested.is_set():
                     await self._abort_active(interrupt=True)
-                    raise _Terminal(ObjectiveStatus.CANCELLED, "objective_cancelled")
+                    raise _Terminal(ObjectiveStatus.CANCELLED, self._cancel_reason)
                 if self.session.closed.is_set():
                     await self._abort_active(interrupt=True)
                     raise _Terminal(ObjectiveStatus.FAILED, "session_disconnected")
@@ -398,7 +416,7 @@ class ObjectiveRunner:
     async def _context(self, catalog, index, previous, validation_error, reason):
         from .snapshots import build_decision_context
         router = self.event_router
-        current = self.scheduler.current_skill_metadata() or self._last_skill_metadata
+        current = self.scheduler.working_skill_metadata() or self._last_skill_metadata
         memories = ()
         if self.memory is not None:
             try:
@@ -427,7 +445,8 @@ class ObjectiveRunner:
                 stale_after_seconds=bounds.stale_observation_seconds)
         context = build_decision_context(self.session, self.objective, catalog,
             decision_index=index, event_cursor=self._event_cursor,
-            previous_skill_result=previous, validation_error=validation_error, **options)
+            previous_skill_result=previous, validation_error=validation_error,
+            working_knowledge=self.working_knowledge.context() if self.working_knowledge is not None else (), **options)
         self._event_cursor = max((event.sequence for event in self.session.world.events), default=self._event_cursor)
         included = list(dict.fromkeys(event.event_id for event in (
             *getattr(context, "trigger_events", ()), *context.recent_events) if event.event_id))
@@ -439,6 +458,8 @@ class ObjectiveRunner:
     async def run(self, objective: Objective) -> ObjectiveResult:
         if self._running:
             raise ActorError("objective_busy", "An Objective is already running")
+        if self.manage_router and getattr(self.session, "participation_controller", None) is not None:
+            raise ActorError("objective_scope_busy", "A participation already owns this session's cognition")
         if any(not task.done() for task in self._pending_cleanup_tasks):
             raise ActorError("cleanup_pending", "Provider cleanup is still pending; use a fresh provider")
         if objective.status != ObjectiveStatus.PENDING:
@@ -450,6 +471,7 @@ class ObjectiveRunner:
         self._interrupt_requested = False
         self.objective = objective.model_copy(update={"status": ObjectiveStatus.RUNNING})
         self.cancel_requested.clear()
+        self._cancel_reason = "objective_cancelled"
         self._started_at = time.monotonic()
         self._event_cursor = 0
         self._decisions, self._skill_results, self._lifecycle = [], [], []
@@ -465,8 +487,11 @@ class ObjectiveRunner:
             build_decision_schema(catalog)
             self._log("ObjectiveStarted", objective_id=objective.id)
             if self.event_router is not None:
-                await self._wait(self.event_router.start(self.objective,
-                    current_skill=self.scheduler.current_skill_metadata), "router")
+                if self.manage_router:
+                    await self._wait(self.event_router.start(self.objective,
+                        current_skill=self.scheduler.working_skill_metadata), "router")
+                else:
+                    self.event_router.update_context(self.objective, self.scheduler.working_skill_metadata)
             await self._wait(self.brain.start(self.objective, catalog), "start", self.decision_timeout_seconds)
             validation_error = None
             repairs = 0
@@ -563,7 +588,7 @@ class ObjectiveRunner:
         except asyncio.CancelledError:
             self.cancel_requested.set()
             await self._abort_active(interrupt=True)
-            terminal_status, reason = ObjectiveStatus.CANCELLED, "objective_cancelled"
+            terminal_status, reason = ObjectiveStatus.CANCELLED, self._cancel_reason
         except Exception as error:
             await self._abort_active(interrupt=True)
             reason = "brain_failure"
@@ -571,18 +596,19 @@ class ObjectiveRunner:
             LOG.error("Objective failed code=%s exception_type=%s", reason, type(error).__name__)
         finally:
             await self._cleanup_call(self.scheduler.cancel(), "skill_cancel")
-            await self._cleanup_call(self._finalize_objective(
-                ObjectiveStatus.CANCELLED if self.cancel_requested.is_set() else terminal_status,
-                "objective_cancelled" if self.cancel_requested.is_set() else reason),
-                "objective_finalizers", timeout_seconds=2)
+            if self.run_finalizers:
+                await self._cleanup_call(self._finalize_objective(
+                    ObjectiveStatus.CANCELLED if self.cancel_requested.is_set() else terminal_status,
+                    self._cancel_reason if self.cancel_requested.is_set() else reason),
+                    "objective_finalizers", timeout_seconds=2)
             await self._cleanup_call(self.scheduler.cancel(), "finalizer_skill_cancel")
-            if self.event_router is not None:
+            if self.event_router is not None and self.manage_router:
                 await self._cleanup_call(self.event_router.close(), "event_router_close")
             await self._cleanup_call(self.brain.close(), "brain_close")
         if self._cleanup_errors and terminal_status == ObjectiveStatus.SUCCEEDED:
             terminal_status, reason = ObjectiveStatus.FAILED, "cleanup_failed"
         if self.cancel_requested.is_set():
-            terminal_status, reason = ObjectiveStatus.CANCELLED, "objective_cancelled"
+            terminal_status, reason = ObjectiveStatus.CANCELLED, self._cancel_reason
         self.objective = self.objective.model_copy(update={"status": terminal_status})
         self.result = ObjectiveResult(objective_id=objective.id, status=terminal_status, reason=reason,
             message=message, duration_seconds=time.monotonic() - self._started_at,
@@ -601,7 +627,7 @@ class ObjectiveRunner:
             if not memory_ok and terminal_status != ObjectiveStatus.CANCELLED:
                 terminal_status, reason = ObjectiveStatus.FAILED, "memory_failure"
             if self.cancel_requested.is_set():
-                terminal_status, reason = ObjectiveStatus.CANCELLED, "objective_cancelled"
+                terminal_status, reason = ObjectiveStatus.CANCELLED, self._cancel_reason
             self.objective = self.objective.model_copy(update={"status": terminal_status})
             self.result = self.result.model_copy(update={"status": terminal_status, "reason": reason})
             # A cancellation can arrive after the SQLite worker committed the
@@ -615,7 +641,7 @@ class ObjectiveRunner:
                 await self._cleanup_call(self.memory.remember_objective_result(
                     recorded_outcome.model_dump(mode="json")), "memory_reconcile")
                 if self.cancel_requested.is_set() and terminal_status != ObjectiveStatus.CANCELLED:
-                    terminal_status, reason = ObjectiveStatus.CANCELLED, "objective_cancelled"
+                    terminal_status, reason = ObjectiveStatus.CANCELLED, self._cancel_reason
                     self.objective = self.objective.model_copy(update={"status": terminal_status})
                     self.result = self.result.model_copy(update={"status": terminal_status, "reason": reason})
         self._log({ObjectiveStatus.SUCCEEDED: "ObjectiveSucceeded", ObjectiveStatus.FAILED: "ObjectiveFailed",
@@ -626,7 +652,11 @@ class ObjectiveRunner:
         self._finished.set()
         return self.result
 
-    async def cancel(self):
+    async def cancel(self, *, reason="objective_cancelled"):
+        if not isinstance(reason, str) or not reason or len(reason) > 128:
+            raise ValueError("Cancellation reason must be a bounded nonempty code")
+        if not self.cancel_requested.is_set():
+            self._cancel_reason = reason
         self.cancel_requested.set()
         if self._running:
             await self._abort_active(interrupt=True)

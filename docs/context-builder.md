@@ -1,5 +1,12 @@
 # Decision context
 
+Match episodes may also include bounded `working_knowledge`: explicitly dated
+historical observations, unverified player claims and hypotheses, each retaining
+its own source references and expiry. These records stay on the external-state
+surface and never become trusted instructions or current visible positions.
+`knowledge_omitted` reports records removed to satisfy the total byte budget.
+See [match lifecycle](match-lifecycle.md).
+
 `actor_runtime.snapshots.build_decision_context` selects a bounded view of the
 existing session `WorldState`. It neither owns another cache nor changes the
 observations/events it reads. Skills still validate their own authoritative

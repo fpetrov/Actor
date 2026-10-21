@@ -143,7 +143,7 @@ build-backend = "setuptools.build_meta"
 name = "actor-my-game-mana"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["actor-runtime==0.1.0"]
+dependencies = ["actor-runtime==0.6.0"]
 
 [project.entry-points."actor.extensions"]
 my-game-mana = "my_game_mana:extension_package"

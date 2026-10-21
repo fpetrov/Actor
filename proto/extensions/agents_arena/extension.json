@@ -1,9 +1,15 @@
 {
   "extension_id": "agents-arena",
-  "extension_version": "0.4.0",
+  "extension_version": "0.5.0",
   "supported_protocol_major": 1,
   "generation": {
-    "sources": ["extensions/agents_arena/v1/rooms.proto", "extensions/agents_arena/v1/station_signals.proto", "extensions/agents_arena/v1/calibration.proto", "extensions/agents_arena/v1/incidents.proto"],
+    "sources": [
+      "extensions/agents_arena/v1/rooms.proto",
+      "extensions/agents_arena/v1/station_signals.proto",
+      "extensions/agents_arena/v1/calibration.proto",
+      "extensions/agents_arena/v1/incidents.proto",
+      "extensions/agents_arena/v1/social.proto"
+    ],
     "csharp_output": "Agents Arena/Assets/Scripts/Actor/Generated",
     "helper_namespace": "AgentsArena.ActorProtocol.V1",
     "helper_name": "AgentsArenaExtensionPackage",
@@ -11,38 +17,368 @@
     "artifact_name": "agents-arena"
   },
   "capabilities": [
-    { "capability_id": "agents-arena.room-membership", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.RoomMembershipObservation", "description": "Authoritative room containing the actor." },
-    { "capability_id": "agents-arena.room-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.RoomChangedEvent", "description": "Authoritative room membership changed." },
-    { "capability_id": "agents-arena.station-signal", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.StationSignalEvent", "description": "Server-validated station-wide training console signal; explicit audience and stable signal identity." },
-    { "capability_id": "agents-arena.calibration-state", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.CalibrationTaskStateObservation", "description": "Controlled actor's private task assignment and authoritative state; empty when unassigned, never contains diagnostic secrets." },
-    { "capability_id": "agents-arena.calibration-progress", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.CalibrationProgressObservation", "description": "Public station calibration progress without participant assignments or authorization secrets." },
-    { "capability_id": "agents-arena.calibration-assignment", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.CalibrationAssignmentEvent", "description": "Private server-created assignment for one task participant." },
-    { "capability_id": "agents-arena.calibration-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.CalibrationTaskChangedEvent", "description": "Authoritative task lifecycle delivered only to assigned participants." },
-    { "capability_id": "agents-arena.start-calibration", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.StartCalibrationCommand", "command_delivery": "ordered", "description": "Request a cooperative calibration with a distinct technician; the server assigns both participants." },
-    { "capability_id": "agents-arena.inspect-diagnostic", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.InspectDiagnosticCommand", "command_delivery": "ordered", "description": "Request private short-lived diagnostic authorization; the server checks Coordinator role and terminal proximity." },
-    { "capability_id": "agents-arena.submit-calibration", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.SubmitCalibrationCommand", "command_delivery": "ordered", "description": "Submit task-scoped authorization; the server checks Technician role, console proximity, expiry and code." },
-    { "capability_id": "agents-arena.cancel-calibration", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.CancelCalibrationCommand", "command_delivery": "ordered", "description": "Request cancellation of the caller's active cooperative task." },
-    { "capability_id": "agents-arena.diagnostic-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.DiagnosticResultEvent", "description": "Private requesting-Coordinator interaction result; sensitive short-lived code must never be persisted or publicly reported." },
-    { "capability_id": "agents-arena.calibration-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.CalibrationResultEvent", "description": "Private authoritative action acceptance/rejection for the requesting actor; separate from local bridge CommandResult." },
-    { "capability_id": "agents-arena.own-role", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.OwnRoleObservation", "description": "Controlled actor's server-assigned public duty and role-selection lock." },
-    { "capability_id": "agents-arena.duty-roster", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.DutyRosterObservation", "description": "Public station duties only; never hidden roles or affiliations." },
-    { "capability_id": "agents-arena.select-role", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.SelectRoleCommand", "command_delivery": "ordered", "description": "Request a server-validated unique station duty while role selection is unlocked." },
-    { "capability_id": "agents-arena.role-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.RoleResultEvent", "description": "Private correlated authoritative result of duty selection." },
-    { "capability_id": "agents-arena.cooling-state", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.CoolingStateObservation", "description": "Public cooling and incident progress; contains no hidden origin or role-private evidence." },
-    { "capability_id": "agents-arena.incident-started", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.IncidentStartedEvent", "description": "Public authoritative cooling incident alarm without a hidden-origin field." },
-    { "capability_id": "agents-arena.incident-changed", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.IncidentChangedEvent", "description": "Public authoritative incident lifecycle; resolution requires both repair and validated investigation." },
-    { "capability_id": "agents-arena.own-investigation-view", "kind": "observation", "message_type": "actor.extensions.agents_arena.v1.OwnInvestigationViewObservation", "description": "Owner-only expiring evidence legitimately inspected by the controlled role; session-only data, explicit empty view clears old evidence." },
-    { "capability_id": "agents-arena.inspect-cooling", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.InspectCoolingCommand", "command_delivery": "ordered", "description": "Engineer-only request for private cooling diagnostics at the authorized physical console." },
-    { "capability_id": "agents-arena.inspect-security-records", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.InspectSecurityRecordsCommand", "command_delivery": "ordered", "description": "Sheriff-only request for a bounded private authorized security-record view." },
-    { "capability_id": "agents-arena.diagnostic-evidence", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.DiagnosticEvidenceEvent", "description": "Private correlated Engineer evidence with server provenance and expiry; never public diagnostics or durable raw evidence." },
-    { "capability_id": "agents-arena.security-evidence", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.SecurityEvidenceEvent", "description": "Private correlated Sheriff evidence with server provenance and expiry; bounded authorized records only." },
-    { "capability_id": "agents-arena.repair-cooling", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.RepairCoolingCommand", "command_delivery": "ordered", "description": "Engineer-only request to begin a bounded server repair lease using current legitimately inspected evidence." },
-    { "capability_id": "agents-arena.cancel-cooling-repair", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.CancelCoolingRepairCommand", "command_delivery": "ordered", "description": "Cancel the actor's active repair lease and release ongoing physical work." },
-    { "capability_id": "agents-arena.cancel-investigation", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.CancelInvestigationCommand", "command_delivery": "ordered", "description": "Request bounded cancellation of the actor's unfinished assigned incident, never erase a resolved incident." },
-    { "capability_id": "agents-arena.maintenance-override", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.MaintenanceOverrideCommand", "command_delivery": "ordered", "description": "Server-validated physical maintenance interaction on a public circuit control; cannot set a hidden incident cause." },
-    { "capability_id": "agents-arena.submit-investigation-report", "kind": "command", "message_type": "actor.extensions.agents_arena.v1.SubmitInvestigationReportCommand", "command_delivery": "ordered", "description": "Sheriff-only bounded hypothesis submission with both legitimately issued and disclosed incident-scoped evidence references." },
-    { "capability_id": "agents-arena.repair-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.RepairResultEvent", "description": "Private repair lease result; acceptance starts work, completed confirms physical restoration. Preserve both stages of one correlation." },
-    { "capability_id": "agents-arena.investigation-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.InvestigationResultEvent", "description": "Private report outcome without the correct hidden origin; report validation alone is not whole-incident resolution." },
-    { "capability_id": "agents-arena.incident-action-result", "kind": "event", "message_type": "actor.extensions.agents_arena.v1.IncidentActionResultEvent", "description": "Private correlated maintenance/cancellation result from the authoritative incident policy." }
+    {
+      "capability_id": "agents-arena.room-membership",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.RoomMembershipObservation",
+      "description": "Authoritative room containing the actor."
+    },
+    {
+      "capability_id": "agents-arena.room-changed",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.RoomChangedEvent",
+      "description": "Authoritative room membership changed."
+    },
+    {
+      "capability_id": "agents-arena.station-signal",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.StationSignalEvent",
+      "description": "Server-validated station-wide training console signal; explicit audience and stable signal identity."
+    },
+    {
+      "capability_id": "agents-arena.calibration-state",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.CalibrationTaskStateObservation",
+      "description": "Controlled actor's private task assignment and authoritative state; empty when unassigned, never contains diagnostic secrets."
+    },
+    {
+      "capability_id": "agents-arena.calibration-progress",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.CalibrationProgressObservation",
+      "description": "Public station calibration progress without participant assignments or authorization secrets."
+    },
+    {
+      "capability_id": "agents-arena.calibration-assignment",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.CalibrationAssignmentEvent",
+      "description": "Private server-created assignment for one task participant."
+    },
+    {
+      "capability_id": "agents-arena.calibration-changed",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.CalibrationTaskChangedEvent",
+      "description": "Authoritative task lifecycle delivered only to assigned participants."
+    },
+    {
+      "capability_id": "agents-arena.start-calibration",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.StartCalibrationCommand",
+      "command_delivery": "ordered",
+      "description": "Request a cooperative calibration with a distinct technician; the server assigns both participants."
+    },
+    {
+      "capability_id": "agents-arena.inspect-diagnostic",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.InspectDiagnosticCommand",
+      "command_delivery": "ordered",
+      "description": "Request private short-lived diagnostic authorization; the server checks Coordinator role and terminal proximity."
+    },
+    {
+      "capability_id": "agents-arena.submit-calibration",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SubmitCalibrationCommand",
+      "command_delivery": "ordered",
+      "description": "Submit task-scoped authorization; the server checks Technician role, console proximity, expiry and code."
+    },
+    {
+      "capability_id": "agents-arena.cancel-calibration",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.CancelCalibrationCommand",
+      "command_delivery": "ordered",
+      "description": "Request cancellation of the caller's active cooperative task."
+    },
+    {
+      "capability_id": "agents-arena.diagnostic-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.DiagnosticResultEvent",
+      "description": "Private requesting-Coordinator interaction result; sensitive short-lived code must never be persisted or publicly reported."
+    },
+    {
+      "capability_id": "agents-arena.calibration-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.CalibrationResultEvent",
+      "description": "Private authoritative action acceptance/rejection for the requesting actor; separate from local bridge CommandResult."
+    },
+    {
+      "capability_id": "agents-arena.own-role",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.OwnRoleObservation",
+      "description": "Controlled actor's server-assigned public duty and role-selection lock."
+    },
+    {
+      "capability_id": "agents-arena.duty-roster",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.DutyRosterObservation",
+      "description": "Public station duties only; never hidden roles or affiliations."
+    },
+    {
+      "capability_id": "agents-arena.select-role",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SelectRoleCommand",
+      "command_delivery": "ordered",
+      "description": "Request a server-validated unique station duty while role selection is unlocked."
+    },
+    {
+      "capability_id": "agents-arena.role-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.RoleResultEvent",
+      "description": "Private correlated authoritative result of duty selection."
+    },
+    {
+      "capability_id": "agents-arena.cooling-state",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.CoolingStateObservation",
+      "description": "Public cooling and incident progress; contains no hidden origin or role-private evidence."
+    },
+    {
+      "capability_id": "agents-arena.incident-started",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.IncidentStartedEvent",
+      "description": "Public authoritative cooling incident alarm without a hidden-origin field."
+    },
+    {
+      "capability_id": "agents-arena.incident-changed",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.IncidentChangedEvent",
+      "description": "Public authoritative incident lifecycle; resolution requires both repair and validated investigation."
+    },
+    {
+      "capability_id": "agents-arena.own-investigation-view",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.OwnInvestigationViewObservation",
+      "description": "Owner-only expiring evidence legitimately inspected by the controlled role; session-only data, explicit empty view clears old evidence."
+    },
+    {
+      "capability_id": "agents-arena.inspect-cooling",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.InspectCoolingCommand",
+      "command_delivery": "ordered",
+      "description": "Engineer-only request for private cooling diagnostics at the authorized physical console."
+    },
+    {
+      "capability_id": "agents-arena.inspect-security-records",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.InspectSecurityRecordsCommand",
+      "command_delivery": "ordered",
+      "description": "Sheriff-only request for a bounded private authorized security-record view."
+    },
+    {
+      "capability_id": "agents-arena.diagnostic-evidence",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.DiagnosticEvidenceEvent",
+      "description": "Private correlated Engineer evidence with server provenance and expiry; never public diagnostics or durable raw evidence."
+    },
+    {
+      "capability_id": "agents-arena.security-evidence",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SecurityEvidenceEvent",
+      "description": "Private correlated Sheriff evidence with server provenance and expiry; bounded authorized records only."
+    },
+    {
+      "capability_id": "agents-arena.repair-cooling",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.RepairCoolingCommand",
+      "command_delivery": "ordered",
+      "description": "Engineer-only request to begin a bounded server repair lease using current legitimately inspected evidence."
+    },
+    {
+      "capability_id": "agents-arena.cancel-cooling-repair",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.CancelCoolingRepairCommand",
+      "command_delivery": "ordered",
+      "description": "Cancel the actor's active repair lease and release ongoing physical work."
+    },
+    {
+      "capability_id": "agents-arena.cancel-investigation",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.CancelInvestigationCommand",
+      "command_delivery": "ordered",
+      "description": "Request bounded cancellation of the actor's unfinished assigned incident, never erase a resolved incident."
+    },
+    {
+      "capability_id": "agents-arena.maintenance-override",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.MaintenanceOverrideCommand",
+      "command_delivery": "ordered",
+      "description": "Server-validated physical maintenance interaction on a public circuit control; cannot set a hidden incident cause."
+    },
+    {
+      "capability_id": "agents-arena.submit-investigation-report",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SubmitInvestigationReportCommand",
+      "command_delivery": "ordered",
+      "description": "Sheriff-only bounded hypothesis submission with both legitimately issued and disclosed incident-scoped evidence references."
+    },
+    {
+      "capability_id": "agents-arena.repair-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.RepairResultEvent",
+      "description": "Private repair lease result; acceptance starts work, completed confirms physical restoration. Preserve both stages of one correlation."
+    },
+    {
+      "capability_id": "agents-arena.investigation-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.InvestigationResultEvent",
+      "description": "Private report outcome without the correct hidden origin; report validation alone is not whole-incident resolution."
+    },
+    {
+      "capability_id": "agents-arena.incident-action-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.IncidentActionResultEvent",
+      "description": "Private correlated maintenance/cancellation result from the authoritative incident policy."
+    },
+    {
+      "capability_id": "agents-arena.social-match",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialMatchStateObservation",
+      "description": "Public phase, task progress and terminal result; no hidden life or kill counters."
+    },
+    {
+      "capability_id": "agents-arena.social-own-state",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialOwnStateObservation",
+      "description": "Owner-only alignment, duty, life and action permissions."
+    },
+    {
+      "capability_id": "agents-arena.social-visible-world",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialVisibleWorldObservation",
+      "description": "Complete replacement of currently visible entities, restricted by authoritative radius and line of sight."
+    },
+    {
+      "capability_id": "agents-arena.social-meeting",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialMeetingObservation",
+      "description": "Public meeting rollcall and resolved tally, plus only the recipient ballot."
+    },
+    {
+      "capability_id": "agents-arena.social-tasks",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialOwnTasksObservation",
+      "description": "Owner-only physical task assignment and progress."
+    },
+    {
+      "capability_id": "agents-arena.social-emergency",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialEmergencyStateObservation",
+      "description": "Public emergency deadline and repair location without initiator."
+    },
+    {
+      "capability_id": "agents-arena.social-postgame",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialPostgameObservation",
+      "description": "Explicit empty before GameOver; authoritative bounded final summary after termination."
+    },
+    {
+      "capability_id": "agents-arena.social-ready",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialReadyCommand",
+      "description": "Set readiness in the waiting phase.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-kill",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialKillCommand",
+      "description": "Request a nearby visible target interaction; server validates private permission and all physical constraints.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-report-body",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialReportBodyCommand",
+      "description": "Report an actually visible nearby body.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-call-meeting",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialCallMeetingCommand",
+      "description": "Request a bounded emergency meeting at the physical console.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-cast-vote",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialCastVoteCommand",
+      "description": "Submit one final ballot or skip for the current meeting.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-work-task",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialWorkTaskCommand",
+      "description": "Begin a continuous physical work lease; accepted and completed are separate results.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-sabotage",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialSabotageCommand",
+      "description": "Request a physically validated emergency interaction.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-repair-emergency",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialRepairEmergencyCommand",
+      "description": "Begin a continuous physical emergency repair lease.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-cancel-work",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialCancelWorkCommand",
+      "description": "Cancel the caller work lease.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-action-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialActionResultEvent",
+      "description": "Private correlated server result; local bridge acceptance does not complete work."
+    },
+    {
+      "capability_id": "agents-arena.social-match-changed",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialMatchChangedEvent",
+      "description": "Public authoritative phase or task progress transition."
+    },
+    {
+      "capability_id": "agents-arena.social-own-state-changed",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialOwnStateChangedEvent",
+      "description": "Owner-only life and permission transition."
+    },
+    {
+      "capability_id": "agents-arena.social-meeting-changed",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialMeetingChangedEvent",
+      "description": "Recipient-permitted meeting transition."
+    },
+    {
+      "capability_id": "agents-arena.social-emergency-changed",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialEmergencyChangedEvent",
+      "description": "Public emergency state without initiator."
+    },
+    {
+      "capability_id": "agents-arena.social-visible-attack",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialVisibleAttackEvent",
+      "description": "Personal attack witness; recipient saw both participants at the instant of attack."
+    },
+    {
+      "capability_id": "agents-arena.social-visible-activity",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialVisibleActivityEvent",
+      "description": "Personally visible external activity; real and fake work have identical representation."
+    },
+    {
+      "capability_id": "agents-arena.social-match-ended",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialMatchEndedEvent",
+      "description": "Postgame-only final alignments, individual outcomes and bounded server replay."
+    }
   ]
 }

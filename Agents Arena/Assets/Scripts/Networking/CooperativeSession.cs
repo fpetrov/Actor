@@ -30,7 +30,7 @@ namespace Actor.Networking
         private void Refresh()
         {
             var manager = NetworkManager.Singleton;
-            if (manager == null || !manager.IsServer) return;
+            if (manager == null || !manager.IsServer || SocialVisibilitySystem.IsSocial(manager)) return;
             var session = manager.GetComponent<MatchSession>();
             if (string.IsNullOrEmpty(session.MatchId)) return;
             authority ??= new CooperativeAuthority(session.MatchId,
@@ -60,7 +60,7 @@ namespace Actor.Networking
             Dispatch(authority.Refresh(participants, Now));
         }
         internal void Request(string actorId, IMessage command)
-        { Refresh(); if (authority != null) Dispatch(authority.Execute(actorId, command, Now)); }
+        { if (SocialVisibilitySystem.IsSocial(NetworkManager.Singleton)) return; Refresh(); if (authority != null) Dispatch(authority.Execute(actorId, command, Now)); }
         internal void Acknowledge(string actorId, string messageId, string matchId)
         { if (authority != null) Dispatch(authority.Acknowledge(actorId, messageId, matchId, Now)); }
         internal void ControlUnavailable(string actorId)

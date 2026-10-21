@@ -2,7 +2,7 @@
 
 The Runtime is a local process that handles typed protocol exchange, extension
 discovery, a deterministic latest-observation cache, typed Skill execution and
-Objective orchestration through interchangeable Brains. Core has no Unity/NGO,
+Objective orchestration and bounded match participation through interchangeable Brains. Core has no Unity/NGO,
 provider or game ontology. Standard, Agents Arena and optional Codex semantics
 live in separately registered Python plugin modules. Event routing and bounded SQLite memory extend this same lifecycle; generic
 navigation remains outside Core.
@@ -12,9 +12,12 @@ navigation remains outside Core.
 Python 3.12+ is required. Protobuf and gRPC versions are pinned in
 `runtime/pyproject.toml`; generated sources and descriptor artifacts are checked
 in. Generation is needed only after changing schemas.
-Runtime0.3.0 adds `actor.event_rules` and `actor.classifiers`, bounded context,
-SQLite episodic memory and soft replanning to the existing Pydantic/Skill/Brain APIs;
-Core wire protocol remains 1.0. Codex is optional via `runtime[codex]`.
+Runtime 0.6.0 includes `actor.event_rules` and `actor.classifiers`, bounded
+context, SQLite episodic memory, soft replanning and an installed
+`actor.match_policies` lifecycle above the Pydantic/Skill/Brain APIs. Match
+episodes use fresh providers with shared session resources and private bounded
+working knowledge. Core wire protocol remains 1.0. Codex is optional via
+`runtime[codex]`.
 
 ```bash
 python3 -m venv build/runtime-venv
@@ -47,6 +50,13 @@ For the Brain → Skill objective flow, use `actor-runtime agent --brain ...
 [Brains](brains.md) and [Codex setup/launch](codex.md). The old scripted example
 continues to run through `actor.examples`.
 
+For a full match, use `actor-runtime match --brain <installed-provider>
+--match-policy agents-arena`, with the same preconfigured client/token, or the
+ordinary [multi-agent launcher](multi-agent.md). `match` requires an explicit
+Brain and defaults to the common role-agnostic objective. A provider's Finish
+ends one bounded episode; only received authoritative terminal state completes
+participation. See [match lifecycle](match-lifecycle.md) for budgets and ownership.
+
 The server always binds `127.0.0.1`. It rejects invalid tokens before creating a
 session and limits gRPC messages to 1 MiB. A five-second missing-peer deadline
 ends an unresponsive stream. A rejected manifest returns a structured Core
@@ -64,8 +74,12 @@ are normal Python packaging metadata; Core does not branch on game IDs.
 The repository includes these registered plugins:
 
 - `actor_standard`: Transform2D, Motion2D and Locomotion2D.
-- `actor_agents_arena`: RoomMembership, RoomChanged and authoritative StationSignal; the route example is an
-  `actor.examples` entry point, also outside Runtime Core.
+- `actor_standard_communication`: independently optional addressing, authorized
+  peers, received messages and server/client delivery receipts.
+- `actor_agents_arena`: rooms and mode-specific Sandbox calibration/investigation
+  or Social Deduction observations/events/commands. The negotiated manifest
+  selects the actual capabilities. The route example and game-specific Skills,
+  rules and lifecycle policy also remain outside Runtime Core.
 
 The registry verifies exact SHA-256 fingerprints of generated descriptor
 artifacts, loads all imports into an isolated descriptor pool, and compares
@@ -102,6 +116,11 @@ target the actor controlled by that connection. TTL is explicit; commands carry
 `issued_at_unix_ms`, and the writer discards expired unsent values. Unity checks
 expiration again on dispatch, while the input source independently zeros stale
 movement on stream failure or missing updates.
+
+This is the low-level protocol API for integrations and policy examples.
+Brain-driven actions use `SkillContext.command()` through the Scheduler so
+foreground ownership, command-capability leases and execution-boundary checks
+remain enforced.
 
 The cache keys observations by entity and capability, returns typed copies, and
 keeps at most 512 entries and 64 recent events. A new connection has a new cache.
@@ -160,7 +179,7 @@ transform frames are not logged.
 ## Event-driven cognition configuration
 
 `agent --classifier rules --memory sqlite` is the local default. Use `--config`
-for a validated JSON CognitiveConfig (Router, Classifier, Context, Memory and Brain
+for a validated JSON CognitiveConfig (Router, Classifier, Context, Memory, Brain and Participation
 limits). `--no-event-routing` retains the previous Skill-boundary loop for
 comparison. Persistent memory requires `--agent-profile` and `--memory-database`;
 otherwise SQLite is session-local. `memory stats/clear` scopes administration

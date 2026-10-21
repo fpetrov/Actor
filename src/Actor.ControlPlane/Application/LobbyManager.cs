@@ -8,16 +8,16 @@ using Microsoft.Extensions.Options;
 
 namespace Actor.ControlPlane.Application;
 
-public sealed record CreateLobbyRequest(string DisplayName, int? MaxPlayers, string GameVersion, string ProtocolVersion);
+public sealed record CreateLobbyRequest(string DisplayName, int? MaxPlayers, string GameVersion, string ProtocolVersion, string GameMode = "Sandbox");
 public sealed record JoinLobbyRequest(string PlayerName, string GameVersion, string ProtocolVersion);
-public sealed record JoinLobbyResult(string LobbyId, string RoomCode, string Host, int Port, string JoinTicket, DateTimeOffset ExpiresAt);
+public sealed record JoinLobbyResult(string LobbyId, string RoomCode, string Host, int Port, string JoinTicket, DateTimeOffset ExpiresAt, string GameMode = "Sandbox");
 public sealed record GameServerHeartbeat(int CurrentPlayers, string ServerState, string[]? ConnectedNonces);
 public sealed record LobbySummary(string LobbyId, string RoomCode, string DisplayName, string Status, DateTimeOffset CreatedAt,
-    string GameVersion, string ProtocolVersion, string PublicHost, int GamePort, int CurrentPlayers, int MaxPlayers)
+    string GameVersion, string ProtocolVersion, string PublicHost, int GamePort, int CurrentPlayers, int MaxPlayers, string GameMode = "Sandbox")
 {
     public static LobbySummary From(Lobby lobby) => new(lobby.LobbyId.ToString("N"), lobby.RoomCode, lobby.DisplayName,
         lobby.Status.ToString(), lobby.CreatedAt, lobby.GameVersion, lobby.ProtocolVersion, lobby.PublicHost,
-        lobby.GamePort, lobby.CurrentPlayers, lobby.MaxPlayers);
+        lobby.GamePort, lobby.CurrentPlayers, lobby.MaxPlayers, lobby.GameMode);
 }
 
 public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocator allocator, PortAllocator ports,
@@ -70,8 +70,14 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
         string name = request.DisplayName?.Trim() ?? "";
         if (name.Length < 2 || name.Length > 48 || name.Any(char.IsControl))
             throw new LobbyException(400, "invalid_room_name", "Room name must contain 2–48 characters.");
-        int maxPlayers = request.MaxPlayers ?? settings.DefaultMaxPlayers;
+        string mode = request.GameMode ?? "Sandbox";
+        if (mode is not ("Sandbox" or "SocialDeduction"))
+            throw new LobbyException(400, "invalid_game_mode", "Choose Sandbox or SocialDeduction.");
+        bool social = mode == "SocialDeduction";
+        int maxPlayers = request.MaxPlayers ?? (social ? settings.SocialDeduction.MaxPlayers : settings.DefaultMaxPlayers);
         if (maxPlayers is < 2 or > 16) throw new LobbyException(400, "invalid_capacity", "Room capacity must be between 2 and 16.");
+        if (social && (maxPlayers < settings.SocialDeduction.MinPlayers || maxPlayers > settings.SocialDeduction.MaxPlayers))
+            throw new LobbyException(400, "invalid_capacity", "Social Deduction requires a capacity of 4–6 within the server limits.");
         await gate.WaitAsync(cancellationToken);
         try
         {
@@ -85,7 +91,8 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
                 LobbyId = id, RoomCode = NewRoomCode(), DisplayName = name, Status = LobbyStatus.Starting,
                 CreatedAt = now, LastEmptyAt = now, GameVersion = settings.GameVersion,
                 ProtocolVersion = settings.ProtocolVersion, PublicHost = settings.PublicGameHost,
-                GamePort = port, MaxPlayers = maxPlayers
+                GamePort = port, MaxPlayers = maxPlayers, GameMode = mode,
+                SocialConfiguration = social ? settings.SocialDeduction with { MaxPlayers = maxPlayers } : null
             };
             var match = new Match(lobby, RandomNumberGenerator.GetBytes(32));
             matches.Add(id, match);
@@ -138,7 +145,7 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
             };
             string ticket = tickets.Issue(claims, match.Secret);
             match.PendingTickets.Add(newNonce, expires);
-            return new JoinLobbyResult(claims.lobbyId, lobby.RoomCode, lobby.PublicHost, lobby.GamePort, ticket, expires);
+            return new JoinLobbyResult(claims.lobbyId, lobby.RoomCode, lobby.PublicHost, lobby.GamePort, ticket, expires, lobby.GameMode);
         }
         finally { gate.Release(); }
     }

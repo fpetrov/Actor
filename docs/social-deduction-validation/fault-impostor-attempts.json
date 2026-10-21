@@ -1,0 +1,22 @@
+{
+  "schema": "actor.social-fixed-slot-impostor-loss-batch.v1",
+  "passed": true,
+  "fixed_public_participant": 1,
+  "maximum_attempts": 5,
+  "attempts_started": 1,
+  "strict_passed_attempts": 1,
+  "postgame_impostor_attempts": 1,
+  "owned_processes_remaining": 0,
+  "attempts": [
+    {
+      "attempt": 1,
+      "executed": true,
+      "passed": true,
+      "selected_postgame_alignment": "IMPOSTOR",
+      "terminal_reason": "impostors_eliminated",
+      "owned_processes_remaining": 0,
+      "failure_code": null
+    }
+  ],
+  "scope": "No live Alignment selection, seed, forced winner or hidden game facts; every fixed-slot attempt and strict failure retained."
+}

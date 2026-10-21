@@ -33,7 +33,7 @@ namespace Actor.Networking
         // event identity is accepted, and there is no diagnostic interaction bypass.
         internal void Request(StationSignalKind kind)
         {
-            if (!IsHumanOwner || !Application.isFocused) return;
+            if (SocialVisibilitySystem.IsSocial(NetworkManager) || !IsHumanOwner || !Application.isFocused) return;
             InteractionStatus = "Waiting for station confirmation…";
             RequestSignalRpc((byte)kind);
         }
@@ -41,7 +41,7 @@ namespace Actor.Networking
         [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Owner)]
         private void RequestSignalRpc(byte requestedKind, RpcParams rpc = default)
         {
-            if (!IsServer || !IsSpawned) return;
+            if (!IsServer || !IsSpawned || SocialVisibilitySystem.IsSocial(NetworkManager)) return;
             ulong sender = rpc.Receive.SenderClientId;
             var session = NetworkManager.GetComponent<MatchSession>();
             bool approved = sender == OwnerClientId && NetworkManager.ConnectedClients.TryGetValue(sender, out var client)

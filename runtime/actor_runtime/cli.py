@@ -21,7 +21,7 @@ from .config import CognitiveConfig
 LOG = logging.getLogger("actor_runtime")
 
 
-async def serve(args):
+async def serve(args, *, server_factory=None):
     config = CognitiveConfig.load(getattr(args, "config", None))
     changes = {}
     for argument, field in (("decision_timeout", "decision_timeout"),
@@ -44,7 +44,8 @@ async def serve(args):
         config = config.model_copy(update={"router": config.router.model_copy(update={"enabled": False})})
     config = CognitiveConfig.model_validate(config.model_dump())
     registry = ExtensionRegistry.discover()
-    server = RuntimeServer(registry, os.environ.get("ACTOR_BRIDGE_TOKEN", ""),
+    factory = RuntimeServer if server_factory is None else server_factory
+    server = factory(registry, os.environ.get("ACTOR_BRIDGE_TOKEN", ""),
                            port=args.port, command_timeout_ms=args.command_timeout_ms)
     stopping = asyncio.Event()
     loop = asyncio.get_running_loop()
@@ -59,11 +60,16 @@ async def serve(args):
     pending_objective = None
     memory_store = None
     memory_report = None
-    if args.operation == "agent":
+    if args.operation in ("agent", "match"):
         from .objectives import Objective
         pending_objective = Objective(text=args.objective)
 
     def cancelled_outcome():
+        if args.operation == "match":
+            return {"passed": False, "result": {"scope_id": "", "status": "cancelled",
+                "reason": "runtime_shutdown", "authoritative_terminal": False, "outcome": {},
+                "duration_seconds": server.report()["elapsed_seconds"], "episodes": 0,
+                "decisions": 0, "measured_tokens": 0}}
         return {"passed": False, "result": {"objective_id": pending_objective.id,
             "status": "cancelled", "reason": "runtime_shutdown", "message": None,
             "duration_seconds": server.report()["elapsed_seconds"], "decision_count": 0, "skill_results": []}}
@@ -73,7 +79,7 @@ async def serve(args):
             args.report.parent.mkdir(parents=True, exist_ok=True)
             report = {"runtime": server.report()}
             if outcome is not None:
-                report["objective" if args.operation == "agent" else "scripted"] = outcome
+                report["match" if args.operation == "match" else "objective" if args.operation == "agent" else "scripted"] = outcome
             if objective_runner is not None:
                 report["cognitive"] = objective_runner.report()
                 report["cognitive_config"] = config.model_dump(mode="json")
@@ -147,7 +153,8 @@ async def serve(args):
                 options.update(max_turns=config.brain.max_decisions,
                     usage_warning_tokens=config.brain.usage_warning_tokens,
                     usage_limit_tokens=config.brain.usage_limit_tokens)
-            brain = BrainRegistry.discover().create(args.brain, **options)
+            brains = BrainRegistry.discover()
+            brain_factory = lambda: brains.create(args.brain, **options)
             from .classifiers import ClassifierRegistry
             from .memory import MemoryStore
             memory_store = MemoryStore.from_config(config.memory, session)
@@ -160,10 +167,19 @@ async def serve(args):
                 args.brain, config.classifier.provider, "sqlite" if config.memory.enabled else "disabled",
                 config.memory.profile or "session-isolated", sorted(session.negotiated.available),
                 pending_objective.id, pending_objective.text)
-            objective_runner = ObjectiveRunner(session, SkillRegistry.discover(), brain,
-                config=config, event_router=router, memory=memory_store)
-            result = await objective_runner.run(pending_objective)
-            outcome = session.privacy.public({"passed": result.status == "succeeded", "result": result.model_dump(mode="json")})
+            if args.operation == "match":
+                from .episodes import MatchEpisodeController, MatchPolicyRegistry, EpisodeLimits
+                objective_runner = MatchEpisodeController(session, SkillRegistry.discover(), brain_factory,
+                    MatchPolicyRegistry.create(args.match_policy), config=config, event_router=router,
+                    memory=memory_store, limits=EpisodeLimits(**config.participation.model_dump()))
+                result = await objective_runner.run(pending_objective.text)
+                passed = result.status == "completed" and result.authoritative_terminal
+            else:
+                objective_runner = ObjectiveRunner(session, SkillRegistry.discover(), brain_factory(),
+                    config=config, event_router=router, memory=memory_store)
+                result = await objective_runner.run(pending_objective)
+                passed = result.status == "succeeded"
+            outcome = session.privacy.public({"passed": passed, "result": result.model_dump(mode="json")})
             LOG.info("Agent objective completed: %s", json.dumps(outcome))
         except asyncio.CancelledError:
             outcome = cancelled_outcome()
@@ -184,7 +200,7 @@ async def serve(args):
     reporter = asyncio.create_task(periodic_report())
     if args.operation == "scripted":
         script_task = asyncio.create_task(scripted())
-    elif args.operation == "agent":
+    elif args.operation in ("agent", "match"):
         script_task = asyncio.create_task(agent())
     try:
         await stopping.wait()
@@ -198,15 +214,15 @@ async def serve(args):
         await server.stop()
         if memory_store is not None:
             await memory_store.close()
-        if args.operation == "agent" and outcome is None:
+        if args.operation in ("agent", "match") and outcome is None:
             outcome = cancelled_outcome()
         save_report()
     return 1 if outcome and not outcome["passed"] else 0
 
 
-def main():
+def main(*, server_factory=None):
     parser = argparse.ArgumentParser(prog="actor-runtime")
-    parser.add_argument("operation", choices=("serve", "scripted", "agent", "codex", "memory"))
+    parser.add_argument("operation", choices=("serve", "scripted", "agent", "match", "codex", "memory"))
     parser.add_argument("example", nargs="?", help="Installed actor.examples entry point, or codex status/login")
     parser.add_argument("--port", type=int, default=int(os.environ.get("ACTOR_BRIDGE_PORT", "50051")))
     parser.add_argument("--command-timeout-ms", type=int, default=250)
@@ -216,8 +232,9 @@ def main():
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--measure-allocations", action="store_true",
                         help="Include traced Python memory in developer reports")
-    parser.add_argument("--brain", default="scripted", help="Installed actor.brains entry point")
+    parser.add_argument("--brain", help="Installed actor.brains entry point; match requires an explicit provider")
     parser.add_argument("--objective", help="User objective for the selected Brain")
+    parser.add_argument("--match-policy", default="agents-arena", help="Installed actor.match_policies lifecycle policy")
     parser.add_argument("--model", help="Optional provider model override; otherwise uses its configured default")
     parser.add_argument("--decision-timeout", type=float)
     parser.add_argument("--objective-timeout", type=float)
@@ -230,10 +247,17 @@ def main():
     parser.add_argument("--game-id", help="Memory administration scope")
     parser.add_argument("--no-event-routing", action="store_true", help="Compare the previous Skill-only cognitive loop")
     args = parser.parse_args()
+    if args.operation == "match" and args.objective is None:
+        from .episodes import TRUSTED_MATCH_OBJECTIVE
+        args.objective = TRUSTED_MATCH_OBJECTIVE
+    if args.operation == "match" and not args.brain:
+        parser.error("match requires an explicit installed --brain")
+    if args.operation == "agent" and args.brain is None:
+        args.brain = "scripted"
     if args.operation == "scripted" and not args.example:
         parser.error("scripted requires an installed example name")
-    if args.operation == "agent" and (not args.objective or not args.objective.strip() or len(args.objective) > 4096):
-        parser.error("agent requires a 1-4096 character --objective")
+    if args.operation in ("agent", "match") and (not args.objective or not args.objective.strip() or len(args.objective) > 4096):
+        parser.error("agent/match requires a 1-4096 character --objective")
     if args.operation == "codex" and args.example not in ("status", "login"):
         parser.error("codex requires status or login")
     if args.operation == "memory" and (args.example not in ("stats", "clear")
@@ -267,7 +291,7 @@ def main():
                 return 0
             result = asyncio.run(administer())
         else:
-            result = asyncio.run(serve(args))
+            result = asyncio.run(serve(args, server_factory=server_factory))
     except ActorError as error:
         LOG.error("%s", json.dumps(error.as_dict()))
         result = 1

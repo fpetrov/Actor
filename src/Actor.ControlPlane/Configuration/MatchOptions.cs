@@ -16,8 +16,9 @@ public sealed class MatchOptions
     public int EmptyLobbyGracePeriod { get; set; } = 60;
     public int HeartbeatTimeout { get; set; } = 20;
     public int JoinTicketLifetime { get; set; } = 45;
-    public string GameVersion { get; set; } = "0.7.0";
+    public string GameVersion { get; set; } = "0.8.0";
     public string ProtocolVersion { get; set; } = "3";
+    public SocialMatchOptions SocialDeduction { get; set; } = new();
 
     public bool IsValid() => MaxConcurrentGameServers > 0
         && GameServerPortStart >= 1024 && GameServerPortEnd <= 65535
@@ -27,5 +28,6 @@ public sealed class MatchOptions
         && HeartbeatTimeout >= 5 && JoinTicketLifetime is > 0 and <= 300
         && !string.IsNullOrWhiteSpace(PublicGameHost) && !string.IsNullOrWhiteSpace(UnityServerExecutable)
         && Uri.TryCreate(InternalApiBaseUrl, UriKind.Absolute, out var uri) && uri.IsLoopback
-        && !string.IsNullOrWhiteSpace(GameVersion) && !string.IsNullOrWhiteSpace(ProtocolVersion);
+        && !string.IsNullOrWhiteSpace(GameVersion) && !string.IsNullOrWhiteSpace(ProtocolVersion)
+        && SocialDeduction != null && SocialDeduction.IsValid();
 }

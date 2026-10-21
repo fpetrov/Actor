@@ -1,5 +1,11 @@
 # Brains and Objective episodes
 
+For long-lived matches, Runtime 0.6.0 coordinates fresh bounded Brain episodes
+through `MatchEpisodeController`; it preserves the session Scheduler, Router and
+private working knowledge. A model thread does not span the whole match.
+`FinishObjective` finishes one episode, while received authoritative state alone
+ends the participation. See [match lifecycle](match-lifecycle.md).
+
 A Brain chooses a high-level Runtime Skill at a decision point. The Skill then
 executes independently until its lifecycle and command cleanup finish. World
 frames and movement updates do not invoke the Brain. The EventRouter creates
@@ -104,8 +110,10 @@ Skill failure, timeout or cancellation reaches the next decision point as a
 structured result. Objective success requires an explicit Finish(success),
 never a guess based on world text or a position.
 
-Defaults are a 120-second Brain decision deadline, a 600-second total episode
-deadline, at most 16 decisions and one repair per rejected decision point.
+CLI/CognitiveConfig defaults are a 120-second Brain decision deadline, a
+600-second total episode deadline, at most 16 decisions and one repair per
+rejected decision point. Direct ObjectiveRunner construction defaults to 12
+decisions unless configured explicitly.
 Limits must be finite. Repair receives a machine-readable error; repeated bad
 decisions end with `brain_failure`. The total episode deadline applies during
 Skills too, and cancels their foreground execution before returning
@@ -115,9 +123,19 @@ Objective cancellation, external cancellation of the run task, or a disconnected
 session interrupts the Brain and awaits foreground Skill cleanup. Cancellation
 and disconnect win races with a newly completed decision, so a stale decision
 cannot start another Skill. Explicit cancellation returns a structured Cancelled
-result. Closed episodes can be followed by another episode on the same Runner.
+result. A new episode requires an open provider/router lifecycle; reusing a
+Runner does not automatically reopen a closed SDK thread or managed Router.
+The match coordinator constructs fresh Runner/Brain instances and owns their
+shared Router externally.
 Provider lifecycle errors become controlled failure diagnostics, rather than
 escaping and crashing Runtime.
+
+`brain_failure` is a broad terminal category, not proof of a token cap, provider
+service error or invalid output. Public match reports withhold private episode
+details until an authoritative terminal boundary. A cumulative token total over
+several episodes cannot establish which episode crossed a per-provider limit;
+timing alone cannot establish an HTTP/provider cause. Controlled cap probes must
+observe the original safe machine error code and real adapter counters.
 
 Extensions may register an async callable in `actor.objective_finalizers` with
 the signature `finalize_objective(*, session, objective, status, reason,

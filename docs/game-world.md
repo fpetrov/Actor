@@ -1,10 +1,20 @@
-# Agents Arena world and passage
+# Agents Arena worlds and passage
 
-The multiplayer reference world contains two rooms, Main Hall and Engineering. Both rooms and their connecting corridor now use the same unchanged `map.png` atlas at 50 pixels per unit. Separate authored silhouette masks remove neighboring atlas content and rectangular crop edges. These masks are generated from vector outlines by the Editor builder and serialized as ordinary SpriteMask assets; they do not alter the source PNG or allocate meshes during gameplay.
+Game 0.8.0 has two separate multiplayer modes. `Sandbox` retains Main Hall and
+Engineering in `MainHallMultiplayer.unity`, including the earlier investigation,
+calibration and signal terminals. `SocialDeduction.unity` contains Main Hall,
+Engineering, Security and Storage with an east-side connecting loop. One room
+selects one immutable mode on creation; the dedicated server loads its scene.
+
+Sandbox's two rooms and connecting corridor use the unchanged `map.png` atlas
+at 50 pixels per unit. Separate authored silhouette masks remove neighboring
+atlas content and rectangular crop edges. These masks are generated from vector
+outlines by the Editor builder and serialized as ordinary SpriteMask assets;
+they do not alter the source PNG or allocate meshes during gameplay.
 
 The original offline MainHall scene, original character prefab, source PNGs, character collider, motor and owner prediction remain unchanged. Multiplayer geometry is prepared independently from the current offline scene. Existing crystal/light overrides are retained.
 
-## Stable route and room identities
+## Sandbox route and room identities
 
 Room identities remain `main-hall` and `engineering`. Server membership still uses the physical capsule center, with the shared boundary at world y=-5.21. For the authored character capsule size0.28×0.81 and offset(0,0.46), this corresponds to root y=-5.67.
 
@@ -14,7 +24,7 @@ The existing game-specific route remains:
 (0,-1.4) → (0,-4.7) → (0,-6) → (0,-7)
 ```
 
-Returning uses the same centerline. Movement/room boundaries remain stable in game0.7.0. Core protocol1.0 and the original Standard movement package are unchanged; cooperative gameplay adds separate typed capabilities.
+Returning uses the same centerline. Sandbox retains its movement/room boundaries in game0.8.0. Core protocol1.0 and the original Standard movement package are unchanged; cooperative gameplay adds separate typed capabilities.
 
 ## Human passage clearance
 
@@ -28,8 +38,8 @@ Closed branches have visible amber seals. The real south corridor has directiona
 
 ## Cooperative terminals
 
-Game0.6.0 adds a Diagnostic Terminal in Main Hall and a Calibration Console
-mounted beside Engineering's north stem. Both use the existing white panel
+Introduced in Game 0.6.0, a Diagnostic Terminal in Main Hall and a Calibration Console
+mounted beside Engineering's north stem remain available in Sandbox. Both use the existing white panel
 sprite, authored material and cyan/purple palette. They introduce no new room,
 atlas image, movement speed or prediction behaviour.
 
@@ -65,8 +75,8 @@ at its own terminal panel. See [cooperative tasks](cooperative-tasks.md) and
 
 ## Investigation terminals and duties
 
-Game 0.7.0 mirrors two small existing-palette terminals on the left side of the
-same rooms. `GatePanel.asset`, the authored material and cyan/blue accents are
+Introduced in Game 0.7.0, two small existing-palette terminals remain on the left side of the
+same Sandbox rooms. `GatePanel.asset`, the authored material and cyan/blue accents are
 reused. The original offline scene, PNGs and character prefab are preserved.
 Cooling Control and its maintenance controls share one object and collider.
 
@@ -133,6 +143,43 @@ Run **ACTOR → Prepare multiplayer assets** in Unity, or `Actor.Editor.Multipla
 - Walls and reactor remain solid.
 
 [Accepted geometry report](world-validation/geometry.json) and [native Editor visual check](world-validation/README.md). Local regenerated output is ignored under `build/world-polish/`. These Editor physics checks supplement real VPS multiplayer tests; they do not substitute for the Human observer run.
+
+## Social Deduction layout
+
+The Social builder authors a separate four-room scene from the existing art.
+The east-side passage links Main Hall to Security and loops south toward Storage
+and the Engineering stem. Closed branches remain physical boundaries. Stable
+room IDs are `main-hall`, `engineering`, `security` and `storage`; the passage
+uses `east-corridor`. Room membership is authoritative physical state.
+
+The canonical `Agents Arena/Assets/World/SocialLayout.json` records authored
+floors, capsule geometry, root-position nodes, edges and terminal approaches.
+The Runtime packages its matching `actor_agents_arena/social_layout.json` for
+the game-specific `agents-arena.navigate-social-room` Skill. It is static map
+knowledge, not a feed of hidden actors. Terminal approaches include the Main
+Hall meeting console and task panel, Engineering life support and systems work,
+Security records and Storage inventory. Distances use the physical capsule
+center; navigation waypoints use the root pose.
+
+The navigation Skill follows this authored graph, requires fresh own motion
+and room-transition evidence, and stops before declaring arrival. If a reached
+edge becomes blocked, it can zero input, backtrack to its last reached node and
+try a bounded alternate route. A blocked initial anchor, final approach or route
+without an alternative fails explicitly. This is reference-game navigation;
+it neither tracks invisible actors nor changes server geometry.
+
+Social visibility combines configured radius and wall line of sight on the
+server. The same policy filters NGO actor/body observers and targeted visible
+world bundles; fog is presentation over that permission boundary. When an actor
+leaves sight, the current bundle removes it. A Runtime may retain its previous
+position only as a dated private historical observation. Meetings expose a
+rollcall rather than world poses. Body reporting and work require current
+physical visibility/proximity and server validation. See [visibility](visibility.md)
+and [Social Deduction](social-deduction.md).
+
+Social geometry/interest-management acceptance is recorded in the
+[Social validation report](social-deduction-validation/README.md). The earlier
+Sandbox geometry report above does not establish coverage for the new scene.
 
 ## Cognitive Human observer
 

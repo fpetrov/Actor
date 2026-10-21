@@ -1,0 +1,103 @@
+{
+  "schema": "actor.sandbox-public-acceptance.v1",
+  "attempt": "investigation",
+  "game_mode": "Sandbox",
+  "game_version": "0.8.0",
+  "admission_protocol": "3",
+  "headless": true,
+  "fullscreen": false,
+  "acceptance": {
+    "schema": "actor.sandbox-regression.v1",
+    "case": "investigation",
+    "executed": true,
+    "reason": "objective_failed",
+    "passed": false,
+    "owned_launchers_remaining": 0,
+    "owned_runtime_client_pids_checked": 4,
+    "owned_runtime_clients_remaining": 0,
+    "limitations": [
+      "Only the named case was run; no model intelligence or full M6 benchmark claim.",
+      "Prediction uses synthetic owned input on a headless client, not native keyboard/display response.",
+      "Raw local reports, plan and logs remain private; this acceptance publishes no authorization, chat, actor/session IDs or credentials."
+    ]
+  },
+  "agents": [
+    {
+      "role": "engineer",
+      "objective_passed": false,
+      "objective_status": "failed",
+      "objective_duration_seconds": 33.84463125001639,
+      "decision_count": 4,
+      "headless_mean_loop_fps": 59.094133111097335,
+      "errors": 0,
+      "warnings": 0,
+      "messages_received": 0,
+      "receipt_server_accepted": 0,
+      "receipt_client_received": 0,
+      "receipt_rejected": 0,
+      "diagnostic_results": 0,
+      "skills": [
+        {
+          "skill_id": "agents-arena.select-role",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 0.33469016704475507,
+          "commands_sent": 1
+        },
+        {
+          "skill_id": "agents-arena.wait-for-incident",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 15.04194154101424,
+          "commands_sent": 0
+        },
+        {
+          "skill_id": "agents-arena.inspect-cooling",
+          "status": "failed",
+          "reason": "route_failed",
+          "duration_seconds": 18.017289541952778,
+          "commands_sent": 344
+        }
+      ]
+    },
+    {
+      "role": "sheriff",
+      "objective_passed": false,
+      "objective_status": "failed",
+      "objective_duration_seconds": 36.62630570802139,
+      "decision_count": 4,
+      "headless_mean_loop_fps": 59.35561646153923,
+      "errors": 0,
+      "warnings": 0,
+      "messages_received": 0,
+      "receipt_server_accepted": 0,
+      "receipt_client_received": 0,
+      "receipt_rejected": 0,
+      "diagnostic_results": 0,
+      "skills": [
+        {
+          "skill_id": "agents-arena.select-role",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 0.5380267500295304,
+          "commands_sent": 1
+        },
+        {
+          "skill_id": "agents-arena.wait-for-incident",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 17.634755500010215,
+          "commands_sent": 0
+        },
+        {
+          "skill_id": "agents-arena.inspect-security-records",
+          "status": "failed",
+          "reason": "route_failed",
+          "duration_seconds": 18.017038999998476,
+          "commands_sent": 344
+        }
+      ]
+    }
+  ],
+  "retained_failure": "Both first inspection Skills stalled at the same southern Hall staging point and failed route_failed; safety cancelled the incident. Preserved, not passed or excluded."
+}

@@ -30,5 +30,16 @@ jobs:
         run: python spikes/cooperation/runtime_faults.py --self-test
       - name: Auth-free investigation fixture guard self-test
         run: python spikes/investigation/fault_cases.py --self-test
+      - name: Social visibility, privacy, protocol, fault and postgame acceptance guards
+        run: |
+          python spikes/visibility/run_probe.py --self-test
+          python spikes/social-privacy/test_probe.py
+          python spikes/social-protocol/verify_report.py --self-test
+          python spikes/social-protocol/test_fixture.py
+          python spikes/social-faults/test_faults.py
+          python spikes/social-faults/test_lifecycle.py
+          python spikes/social-faults/test_server_guard.py
+          python -m pytest spikes/social-validation spikes/sandbox-regression -q
+          python -m unittest discover -s spikes/social-threat -p 'test_*.py' -q
       - name: Curated deterministic event-routing evaluation
         run: python scripts/evaluate-events.py

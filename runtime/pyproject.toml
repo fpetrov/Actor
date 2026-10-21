@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "actor-runtime"
-version = "0.5.0"
+version = "0.6.0"
 description = "Typed ACTOR game runtime with discoverable extensions, skills and interchangeable brains"
 requires-python = ">=3.12"
 dependencies = ["grpcio==1.82.2", "protobuf==7.36.2", "pydantic==2.14.1"]
@@ -27,9 +27,12 @@ agents-arena = "actor_agents_arena.scripted:run"
 
 [project.entry-points."actor.skills"]
 builtins = "actor_runtime.builtin_skills:skill_package"
+knowledge = "actor_runtime.knowledge_skills:skill_package"
 agents-arena = "actor_agents_arena.skills:skill_package"
 communication = "actor_standard_communication.skills:skill_package"
 investigation = "actor_agents_arena.investigation:skill_package"
+social = "actor_agents_arena.social_skills:skill_package"
+social-navigation = "actor_agents_arena.social_navigation:skill_package"
 
 [project.entry-points."actor.brains"]
 scripted = "actor_agents_arena.demo_brain:scripted_brain"
@@ -40,11 +43,21 @@ investigation-engineer = "actor_agents_arena.investigation_brain:engineer_brain"
 investigation-sheriff = "actor_agents_arena.investigation_brain:sheriff_brain"
 maintenance-operator = "actor_agents_arena.investigation_brain:maintenance_brain"
 investigation-claimant = "actor_agents_arena.investigation_brain:claimant_brain"
+social-scripted = "actor_agents_arena.social_agent:scripted_brain"
+social-fixture-vote = "actor_agents_arena.social_fixtures:vote_brain"
+social-fixture-parity = "actor_agents_arena.social_fixtures:parity_brain"
+social-fixture-sabotage = "actor_agents_arena.social_fixtures:sabotage_brain"
+social-fixture-tasks = "actor_agents_arena.social_fixtures:tasks_brain"
+social-privacy-fixture = "actor_agents_arena.social_fixtures:privacy_brain"
+
+[project.entry-points."actor.match_policies"]
+agents-arena = "actor_agents_arena.social_agent:SocialMatchPolicy"
 
 [project.entry-points."actor.event_rules"]
 agents-arena = "actor_agents_arena.events:event_rules"
 communication = "actor_standard_communication.events:event_rules"
 investigation = "actor_agents_arena.investigation_events:event_rules"
+social = "actor_agents_arena.social_events:event_rules"
 
 [project.entry-points."actor.objective_finalizers"]
 agents-arena = "actor_agents_arena.calibration:finalize_objective"
@@ -62,6 +75,7 @@ packages = ["actor_runtime", "actor_standard", "actor_standard_communication", "
 "actor.metadata" = ["*.pb", "*.json"]
 "actor.communication.metadata" = ["*.pb", "*.json"]
 "extensions.agents_arena.metadata" = ["*.pb", "*.json"]
+"actor_agents_arena" = ["social_layout.json"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

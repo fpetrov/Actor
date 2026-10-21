@@ -16,7 +16,8 @@ namespace Actor.Networking
             public Vector2 Value;
             public float ReceivedAt = -100;
             public float Timeout;
-            public Vector2 ReadMovement() => Time.unscaledTime - ReceivedAt <= Timeout ? Value : Vector2.zero;
+            public System.Func<bool> Allowed;
+            public Vector2 ReadMovement() => (Allowed == null || Allowed()) && Time.unscaledTime - ReceivedAt <= Timeout ? Value : Vector2.zero;
         }
 
         [SerializeField, Range(10, 60)] private float inputSendRate = 30f;
@@ -46,6 +47,8 @@ namespace Actor.Networking
         private uint authoritativeSnapshotSequence;
         private float lastAuthoritativeSnapshotAt;
 
+        public bool CanMove => !SocialVisibilitySystem.IsSocial(NetworkManager)
+            || (IsServer ? SocialMatchSession.Current?.CanMove(AuthoritativeActorId) == true : GetComponent<NetworkSocialMatch>()?.CanMove == true);
         public string PlayerName => playerName.Value.ToString();
         public Vector2 Velocity => prediction != null ? prediction.Velocity : IsServer ? motor.Velocity : velocity.Value;
         public FacingDirection Facing => prediction != null ? prediction.Facing : IsServer ? motor.Facing : (FacingDirection)facing.Value;
@@ -81,7 +84,7 @@ namespace Actor.Networking
             localCommands = keyboard;
             if (IsServer)
             {
-                remoteCommands = new RemoteCommands { Timeout = staleInputTimeout };
+                remoteCommands = new RemoteCommands { Timeout = staleInputTimeout, Allowed = () => CanMove };
                 actor.SetInputSource(remoteCommands);
                 actorId.Value = new FixedString64Bytes(actor.ActorId);
                 var session = NetworkManager.GetComponent<MatchSession>();
@@ -117,7 +120,7 @@ namespace Actor.Networking
         private void Update()
         {
             if (!IsSpawned || !IsClient || !IsOwner) return;
-            Vector2 intent = localCommands?.ReadMovement() ?? Vector2.zero;
+            Vector2 intent = CanMove ? localCommands?.ReadMovement() ?? Vector2.zero : Vector2.zero;
             if (!float.IsFinite(intent.x) || !float.IsFinite(intent.y)) intent = Vector2.zero;
             intent = Vector2.ClampMagnitude(intent, 1f);
             float now = Time.unscaledTime;
@@ -143,7 +146,7 @@ namespace Actor.Networking
             hasSequence = true;
             lastSequence = inputSequence;
             lastAcceptedAt = Time.unscaledTime;
-            remoteCommands.Value = Vector2.ClampMagnitude(input, 1f);
+            remoteCommands.Value = CanMove ? Vector2.ClampMagnitude(input, 1f) : Vector2.zero;
             remoteCommands.ReceivedAt = lastAcceptedAt;
         }
 
@@ -153,12 +156,20 @@ namespace Actor.Networking
             // Tag the intent actually used by the upcoming physics step, not a newly arrived RPC.
             if (appliedSequence != lastSequence) { appliedSequence = lastSequence; appliedSeconds = 0; }
             appliedSeconds += Time.fixedDeltaTime;
-            motor.SetDesiredMovement(remoteCommands.ReadMovement());
+            if (!CanMove) motor.Halt();
+            else motor.SetDesiredMovement(remoteCommands.ReadMovement());
         }
 
         private void LateUpdate()
         {
             if (!IsSpawned) return;
+            if (SocialVisibilitySystem.IsSocial(NetworkManager))
+            {
+                bool eliminated = IsServer ? SocialMatchSession.Current?.Eliminated(AuthoritativeActorId) == true
+                    : IsOwner && GetComponent<NetworkSocialMatch>().Own.Life is AgentsArena.ActorProtocol.V1.SocialLife.Dead or AgentsArena.ActorProtocol.V1.SocialLife.Ejected or AgentsArena.ActorProtocol.V1.SocialLife.Disconnected or AgentsArena.ActorProtocol.V1.SocialLife.Spectator;
+                GetComponent<CapsuleCollider2D>().isTrigger = eliminated;
+                if (IsClient && IsOwner && visual != null) visual.gameObject.SetActive(!eliminated);
+            }
             if (!IsServer)
             {
                 if (prediction != null && visual != null)

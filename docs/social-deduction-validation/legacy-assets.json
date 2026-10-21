@@ -1,0 +1,115 @@
+{
+  "schema": "actor.social-legacy-assets-review.v1",
+  "passed": true,
+  "scope": "Read-only serialized source audit against pre-M7 HEAD; no Unity, model, lobby or live process launched.",
+  "checks": {
+    "legacy_scene_semantically_identical": true,
+    "existing_prefab_geometry_parameters_unchanged": true,
+    "common_physics_fields_and_collision_matrix_unchanged": true,
+    "owner_prediction_offline_scene_prefab_and_source_art_unchanged": true
+  },
+  "legacy_scene": {
+    "baseline_documents": 417,
+    "current_documents": 417,
+    "unique_semantic_keys": 417,
+    "semantic_objects_added": 0,
+    "semantic_objects_removed": 0,
+    "semantic_objects_changed": 0,
+    "counts": {
+      "game_objects": 132,
+      "transforms": 132,
+      "box_colliders_2d": 75,
+      "polygon_colliders_2d": 2,
+      "sprite_renderers": 46,
+      "mono_behaviours": 19
+    },
+    "all_semantic_documents_equal": true,
+    "method": "Parse all Unity YAML documents; map local file references to hierarchy/component/script identities, disambiguate duplicate sibling names by local transform, sort child/root references; compare full dictionaries. No ignored collider/transform/material/camera fields."
+  },
+  "network_prefab": {
+    "baseline_components": 23,
+    "current_components": 26,
+    "removed_documents": 0,
+    "added_behaviours": [
+      "Actor.Networking.SocialVisibilityMember",
+      "Actor.World.SocialClientUI",
+      "Actor.Networking.NetworkSocialMatch"
+    ],
+    "existing_changes_only_root_component_list_and_network_hash": true,
+    "capsule_unchanged": true,
+    "capsule_size": {
+      "x": 0.28,
+      "y": 0.81
+    },
+    "capsule_offset": {
+      "x": 0,
+      "y": 0.46
+    },
+    "max_speed": 2.6,
+    "acceleration": 22,
+    "input_send_rate": 30,
+    "stale_input_timeout": 0.25,
+    "note": "New Social behaviours and regenerated NGO prefab hash are intentional game0.8 network-contract changes; client/server builds must match. No claim that the full prefab is byte-identical."
+  },
+  "physics_migration": {
+    "baseline_serialized_version": 5,
+    "current_serialized_version": 11,
+    "unchanged_common_fields": 22,
+    "changed_common_runtime_fields": [],
+    "threshold_rename_same_value": true,
+    "threshold_value": 1,
+    "layer_collision_matrix_equal_ignoring_new_unsigned_suffix": true,
+    "simulation_mode": 0,
+    "contact_offset": 0.01,
+    "velocity_iterations": 8,
+    "position_iterations": 3,
+    "new_substepping_enabled": false,
+    "new_substep_contacts_enabled": false,
+    "new_simulation_layer_bits": 4294967295,
+    "new_contact_threshold": 0,
+    "note": "Serialization5\u219211 migration renames velocity/bounce threshold, adds explicit defaults and moves editor gizmo settings. Existing numeric/solver/matrix fields match; source comparison is not a replacement for live physics/prediction regression."
+  },
+  "player_settings": {
+    "changed_semantic_fields": [
+      "bundleVersion",
+      "preloadedAssets"
+    ],
+    "baseline_game_version": "0.7.0",
+    "current_game_version": "0.8.0",
+    "new_preloaded_input_asset_count": 1,
+    "note": "All other text changes are trailing whitespace. Root owns restoring preloadedAssets and whitespace; game version bump is intentional."
+  },
+  "preserved_sources": [
+    {
+      "file": "Agents Arena/Assets/Scripts/Networking/OwnerMovementPrediction.cs",
+      "byte_identical": true,
+      "sha256": "af4a9ca084242343365b767b8653cdac75db4b1b918eada0b272831728dabb72",
+      "baseline_comparison": "Direct baseline blob byte comparison."
+    },
+    {
+      "file": "Agents Arena/Assets/Scenes/MainHall.unity",
+      "byte_identical": true,
+      "sha256": "0d0c96df8032101c34355a149173e6cf3ca8984c45c3d664178855b2deedf18d",
+      "baseline_comparison": "Direct baseline blob byte comparison."
+    },
+    {
+      "file": "Agents Arena/Assets/Prefabs/Characters/ActorCharacter.prefab",
+      "byte_identical": true,
+      "sha256": "cfbcf8d43cb19b7d7de572b1d3868600ddabf44de253fa251580d7773de79941",
+      "baseline_comparison": "Direct baseline blob byte comparison."
+    },
+    {
+      "file": "Agents Arena/Assets/Sprites/map.png",
+      "byte_identical": true,
+      "sha256": "df91456bf8d5921274a5de4f6e9ddfab9f6b56a845b3a764f7bf876c0d715a84",
+      "baseline_comparison": "Materialized image SHA256 and length exactly match baseline Git LFS pointer, not pointer text bytes."
+    }
+  ],
+  "production_mutations_performed": false,
+  "live_sandbox_regression": "not_executed",
+  "limitations": [
+    "New social movement gates are mode-specific; Sandbox CanMove returns true. Their actual integration is verified separately in a live Sandbox run.",
+    "Root can restore the semantically identical regenerated scene and serializer churn after final builds; this report describes the inspected pre-cleanup files."
+  ],
+  "baseline_commit": "40f6331c4fb4e60841ef66a5408b0db70838edb7"
+}

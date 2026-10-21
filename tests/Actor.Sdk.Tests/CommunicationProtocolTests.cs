@@ -83,7 +83,7 @@ public sealed class CommunicationProtocolTests
         Assert.Throws<InvalidOperationException>(() => registry.RegisterExtension(new InvalidExtension()));
         Assert.Equal("0.1.0", ActorStandardExtensionPackage.Version);
         Assert.Equal("5188081ff451868991d0ba8cda56dc18d0a422794251c43216586996f7d9fb21", ActorStandardExtensionPackage.SchemaHash);
-        Assert.Equal("0.4.0", AgentsArenaExtensionPackage.Version);
+        Assert.Equal("0.5.0", AgentsArenaExtensionPackage.Version);
     }
 
     private sealed class InvalidExtension : IActorExtension

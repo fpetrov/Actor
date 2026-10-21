@@ -11,6 +11,7 @@ namespace Actor.Editor
     {
         private static readonly string Folder = Path.GetFullPath("Verification");
         private static double nextPoll;
+        private static string refreshedCommand;
         static MilestoneEditorCommands() => EditorApplication.update += Poll;
 
         private static void Poll()
@@ -20,7 +21,17 @@ namespace Actor.Editor
             string request = Path.Combine(Folder, "editor-command.txt");
             if (!File.Exists(request)) return;
             string command = File.ReadAllText(request).Trim();
+            // A background Editor may not import external edits until focused.
+            // Keep the request across import/domain reload, then execute on a
+            // later update with matching Editor and Player assembly layouts.
+            if (refreshedCommand != command)
+            {
+                refreshedCommand = command;
+                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                return;
+            }
             File.Delete(request);
+            refreshedCommand = null;
             try
             {
                 switch (command)
@@ -31,6 +42,9 @@ namespace Actor.Editor
                     case "preview-world-passage": EngineeringRoomBuilder.ShowPassagePreview(); break;
                     case "build-client": MultiplayerBuild.BuildMacClient(); break;
                     case "build-server": MultiplayerBuild.BuildLinuxDedicatedServer(); break;
+                    case "verify-social-world": SocialWorldBuilder.ValidateCurrentSocialScene(); break;
+                    case "render-social-world": SocialPresentationVerification.RenderWorld(); break;
+                    case "verify-visibility": SocialVisibilityVerification.Run(); break;
                     case "verify-prediction": MovementPredictionVerification.Run(); break;
                     case "status":
                         File.WriteAllText(Path.Combine(Folder, "status.txt"), PlayableMilestoneVerification.Status);

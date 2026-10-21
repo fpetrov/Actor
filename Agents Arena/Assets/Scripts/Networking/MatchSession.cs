@@ -36,10 +36,21 @@ namespace Actor.Networking
         public event Action<string> Disconnected;
         public string RoomCode => roomCode;
         public string MatchId => matchId;
+        public string GameMode { get; private set; } = "Sandbox";
+        private string GameplayScene => GameMode == "SocialDeduction" ? "SocialDeduction" : settings.gameplayScene;
+        internal int ApprovedJoinOrder(ulong clientId) => spawnSlots.TryGetValue(clientId, out int slot) ? slot : int.MaxValue;
         public bool IsConnected => manager != null && manager.IsConnectedClient;
 
         private void Awake()
         {
+            string apiOverride = Argument(Environment.GetCommandLineArgs(), "--api-url");
+            if (!string.IsNullOrEmpty(apiOverride))
+            {
+                if (!Uri.TryCreate(apiOverride, UriKind.Absolute, out var apiUri) || (apiUri.Scheme != "http" && apiUri.Scheme != "https")
+                    || apiUri.UserInfo.Length > 0 || apiUri.Query.Length > 0 || apiUri.Fragment.Length > 0)
+                    throw new ArgumentException("A plain absolute HTTP(S) API base URL is required.");
+                settings.apiBaseUrl = apiOverride.TrimEnd('/');
+            }
             manager = GetComponent<NetworkManager>();
             transport = GetComponent<UnityTransport>();
             manager.OnClientConnectedCallback += OnConnected;
@@ -65,6 +76,8 @@ namespace Actor.Networking
             Diagnostic("admission-received", $"host={DiagnosticHost(admission.host)} port={admission.port}");
             roomCode = admission.roomCode;
             matchId = admission.lobbyId;
+            GameMode = admission.gameMode == "SocialDeduction" ? "SocialDeduction" : "Sandbox";
+            SocialVisibilitySystem.Ensure(manager);
             transport.SetConnectionData(admission.host, (ushort)admission.port);
             manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(admission.joinTicket);
             bool started = manager.StartClient();
@@ -99,6 +112,9 @@ namespace Actor.Networking
             roomCode = Argument(args, "--room-code");
             gameVersion = Argument(args, "--game-version");
             protocolVersion = Argument(args, "--protocol-version");
+            GameMode = Argument(args, "--game-mode") ?? "Sandbox";
+            if (GameMode == "SocialDeduction") Application.targetFrameRate = 60;
+            SocialVisibilitySystem.Ensure(manager);
             internalApi = Environment.GetEnvironmentVariable("ACTOR_INTERNAL_API_URL");
             string encodedSecret = Environment.GetEnvironmentVariable("ACTOR_MATCH_SECRET");
             int port = 0;
@@ -106,6 +122,8 @@ namespace Actor.Networking
                 && int.TryParse(Argument(args, "--port"), out port) && port >= 1024 && port <= 65535
                 && int.TryParse(Argument(args, "--max-players"), out maxPlayers) && maxPlayers >= 2 && maxPlayers <= 16
                 && !string.IsNullOrEmpty(encodedSecret) && !string.IsNullOrEmpty(gameVersion) && !string.IsNullOrEmpty(protocolVersion)
+                && (GameMode == "Sandbox" || GameMode == "SocialDeduction")
+                && (GameMode != "SocialDeduction" || maxPlayers >= 4 && maxPlayers <= 6)
                 && Uri.TryCreate(internalApi, UriKind.Absolute, out var uri) && uri.IsLoopback;
             if (valid)
             {
@@ -128,7 +146,7 @@ namespace Actor.Networking
             }
             manager.SceneManager.SetClientSynchronizationMode(LoadSceneMode.Additive);
             ObserveSceneEvents();
-            var result = manager.SceneManager.LoadScene(settings.gameplayScene, LoadSceneMode.Additive);
+            var result = manager.SceneManager.LoadScene(GameplayScene, LoadSceneMode.Additive);
             if (result != SceneEventProgressStatus.Started)
             {
                 Debug.LogError("ACTOR: could not load the gameplay scene.");
@@ -166,7 +184,7 @@ namespace Actor.Networking
         private void OnSceneEvent(SceneEvent sceneEvent)
         {
             Diagnostic("scene-event", $"event={sceneEvent.SceneEventType} client={sceneEvent.ClientId} scene={DiagnosticLabel(sceneEvent.SceneName)} players={manager.ConnectedClientsIds.Count}");
-            if (!manager.IsServer || sceneEvent.SceneEventType != SceneEventType.LoadEventCompleted || sceneEvent.SceneName != settings.gameplayScene) return;
+            if (!manager.IsServer || sceneEvent.SceneEventType != SceneEventType.LoadEventCompleted || sceneEvent.SceneName != GameplayScene) return;
             gameplayLoaded = true;
 #if UNITY_SERVER
             foreach (Camera camera in FindObjectsByType<Camera>()) camera.enabled = false;

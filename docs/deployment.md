@@ -1,6 +1,6 @@
 # Deployment
 
-Current public site: **http://5.181.134.236/**. Source repository: **https://github.com/fpetrov/Actor** (private).
+Current public site: **http://5.181.134.236/**. Source repository: **https://github.com/fpetrov/Actor** (public).
 
 Production is Ubuntu 24.04 x86-64. nginx is installed as a system package; the .NET 10 Control Plane is a self-contained Linux x64 application running as the non-login system user `actor`. Unity Dedicated Servers are its child processes. No Unity Editor, Docker socket or container orchestrator is installed on the VPS.
 
@@ -47,7 +47,7 @@ Build outputs stay under ignored `build/`. Server build uses `StandaloneLinux64`
 
 ## Configuration
 
-See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight players, startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.7.0, ProtocolVersion=3.
+See `.env.example` and `src/Actor.ControlPlane/appsettings.json`. Required production values include PublicGameHost, UnityServerExecutable, DatabasePath, log directory and loopback InternalApiBaseUrl. Defaults: MaxConcurrentGameServers=5, ports 7777–7781, eight Sandbox players (SocialDeduction 4–6), startup 45s, empty lifetime 300s, empty grace 60s, heartbeat timeout 20s, ticket lifetime 45s, GameVersion=0.8.0, ProtocolVersion=3.
 
 The deployment script preserves an existing `/etc/actor/control-plane.env`; edit it deliberately before redeploying if the host or versions change. There is no persistent signing secret to configure: every allocated match gets a random environment-only key. Never print `/proc/.../environ`, full join tickets or private-key contents.
 
@@ -126,3 +126,28 @@ conditions over the authorized SSH connection and launches independent Runtime
 and Unity processes. Its case label and server configuration never enter an
 investigator Objective/context. Keep raw artifacts in ignored `build/`; publish
 only the explicit projection from `scripts/summarize-investigation.py`.
+
+## Milestone 7 SocialDeduction conditions
+
+Game0.8.0, Arena extension0.5.0 and local Runtime0.6.0 require matching
+client/server builds. Admission protocol remains3. New rooms explicitly choose
+`Sandbox` or `SocialDeduction`; Sandbox preserves the previous investigation and
+cooperation gameplay. A Social lobby owns one immutable match configuration and
+one server-authoritative result. Existing production environment overrides must
+be checked for an older `Match__GameVersion` before rollout.
+
+Social rules are trusted deployment settings under `Match__SocialDeduction__*`,
+validated and snapshotted when a lobby is created. Defaults: 4–6 players, one
+Impostor, 900 s match, 90 s Discussion, 60 s Voting, 30 s kill cooldown, 90 s
+sabotage cooldown, 150 s emergency, 4 s uninterrupted work and four Crew task
+completions. Public lobby creation cannot set assignments, seeds or these rules.
+The allocator passes the private snapshot to its dedicated child. Live hidden
+roles, chat, contexts, credentials and model conversations do not belong in
+public diagnostics. Bounded summary/performance files are written only after
+GameOver under the configured match-log directory's `social/` subdirectory.
+
+The reference map, interest management and privacy acceptance are documented in
+[social deduction](social-deduction.md), [visibility](visibility.md) and the
+[M7 report](social-deduction-validation/README.md). Raw local acceptance artifacts
+stay under ignored `build/`; Runtime and model credentials stay on the client.
+All long-running clients use headless mode; Human checks use an 800×600 window.

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "actor-social-protocol-fixture"
+version = "0.1.0"
+description = "Optional local ordinary-game protocol validation fixture"
+requires-python = ">=3.11"
+dependencies = ["actor-runtime==0.6.0"]
+
+[project.entry-points."actor.brains"]
+social-protocol-fixture = "actor_social_protocol:brain_factory"
+
+[project.entry-points."actor.skills"]
+social-protocol-fixture = "actor_social_protocol:skill_package"
+
+[project.entry-points."actor.match_policies"]
+social-protocol-fixture = "actor_social_protocol:ProtocolMatchPolicy"
+
+[tool.setuptools]
+py-modules = ["actor_social_protocol"]

@@ -1,3 +1,5 @@
+using Actor.ControlPlane.Configuration;
+
 namespace Actor.ControlPlane.Domain;
 
 public enum LobbyStatus { Starting, Ready, Running, Stopping, Finished, Failed }
@@ -7,6 +9,8 @@ public sealed class Lobby
     public Guid LobbyId { get; set; }
     public string RoomCode { get; set; } = "";
     public string DisplayName { get; set; } = "";
+    public string GameMode { get; init; } = "Sandbox";
+    public SocialMatchOptions? SocialConfiguration { get; init; }
     public LobbyStatus Status { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public string GameVersion { get; set; } = "";

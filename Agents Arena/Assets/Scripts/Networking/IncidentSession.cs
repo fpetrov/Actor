@@ -70,7 +70,7 @@ namespace Actor.Networking
         private void Refresh()
         {
             var manager = NetworkManager.Singleton;
-            if (manager == null || !manager.IsServer) return;
+            if (manager == null || !manager.IsServer || SocialVisibilitySystem.IsSocial(manager)) return;
             var session = manager.GetComponent<MatchSession>();
             if (session == null || string.IsNullOrEmpty(session.MatchId)) return;
             var participants = new List<IncidentAuthority.Participant>(); endpoints.Clear();
@@ -123,7 +123,7 @@ namespace Actor.Networking
         internal void Request(string actor, IMessage command)
         {
             var manager = NetworkManager.Singleton;
-            if (manager == null || !manager.IsServer) return;
+            if (manager == null || !manager.IsServer || SocialVisibilitySystem.IsSocial(manager)) return;
             Initialize(manager.GetComponent<MatchSession>().MatchId); Refresh();
             if (authority != null) { Dispatch(authority.Execute(actor, command, Now)); return; }
             if (command is SelectRoleCommand role && endpoints.TryGetValue(actor, out var endpoint))

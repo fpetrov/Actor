@@ -1,0 +1,54 @@
+{
+  "schema": "actor.social-protocol-supervision.v1",
+  "passed": true,
+  "protocol": {
+    "schema": "actor.social-protocol-fault-acceptance.v1",
+    "passed": true,
+    "checks": [
+      {
+        "name": "wrong_match_rejected",
+        "passed": true
+      },
+      {
+        "name": "expired_request_rejected",
+        "passed": true
+      },
+      {
+        "name": "stale_phase_kill_rejected",
+        "passed": true
+      },
+      {
+        "name": "self_target_kill_rejected",
+        "passed": true
+      },
+      {
+        "name": "identical_request_replayed",
+        "passed": true
+      },
+      {
+        "name": "cross_type_correlation_conflict_rejected",
+        "passed": true
+      },
+      {
+        "name": "final_ballot_not_overwritten",
+        "passed": true
+      },
+      {
+        "name": "cancel_before_start_ack_stops_work",
+        "passed": true
+      }
+    ],
+    "metrics": {
+      "requests_submitted": 10,
+      "matching_action_results": 11,
+      "probe_failures": 0,
+      "duration_seconds": 100.909094958
+    },
+    "scope": "Actual ordinary owned RPC and private authoritative outcomes. No game truth, IDs, poses or private payloads copied."
+  },
+  "ordinary_participations_completed": 4,
+  "same_authoritative_terminal_scope": true,
+  "independent_runtime_credentials_profiles_ports": true,
+  "owned_processes_remaining": 0,
+  "scope": "Optional local fixture plugin and ordinary owned RPC. No forced outcome, hidden roles, poses, IDs or payloads in this projection."
+}

@@ -1,0 +1,58 @@
+{
+  "passed": true,
+  "scope": "Hidden Playwright browser against rebuilt build/web; read-only GET proxy to staging. No rooms created, no POST, no game clients launched.",
+  "changes": [
+    "workspace grid children min-width:0",
+    "table-wrap position:relative contains absolute accessibility header"
+  ],
+  "build_web": "passed",
+  "game_version": "0.8.0",
+  "version_config": {
+    "sandbox_default_capacity": 4,
+    "social_max_capacity": 6,
+    "max_concurrent_rooms": 1
+  },
+  "capacity_scope": "GET configuration and create-handler source inspected; creation not executed. Production Sandbox may configure 8 independently.",
+  "modes": [
+    "Sandbox / Investigation",
+    "Social Deduction \u00b7 4\u20136 players"
+  ],
+  "mode_select_both_values": true,
+  "room_mode_label": "Social Deduction",
+  "room_mode_scope": "Actual public room observed before cleanup; final filled-table rendering locally replayed those earlier observed public presentation fields after staging became empty. It is not a current server roster claim.",
+  "mobile": {
+    "viewport_width": 390,
+    "viewport_height": 844,
+    "document_width_before": 521,
+    "document_width_after": 390,
+    "body_width_after": 390,
+    "card_width": 358,
+    "select_width": 312,
+    "table_container_width": 312,
+    "table_scroll_width": 459,
+    "table_scroll_left_max": 147,
+    "copy_button_reachable_by_local_scroll": true
+  },
+  "desktop": {
+    "viewport_width": 1365,
+    "viewport_height": 1000,
+    "document_width_after": 1365,
+    "body_width_after": 1365,
+    "workspace_width": 1180,
+    "columns": [
+      824,
+      330
+    ],
+    "table_container_width": 768
+  },
+  "console_errors": 0,
+  "console_warnings": 0,
+  "api_methods_observed": [
+    "GET"
+  ],
+  "limitations": [
+    "Visual layout and read-only data rendering; no room creation or admission exercised.",
+    "Local filled-table replay used only earlier observed public labels and counts; no synthetic authority or hidden state."
+  ],
+  "schema": "actor.social-web-visual-acceptance.v1"
+}

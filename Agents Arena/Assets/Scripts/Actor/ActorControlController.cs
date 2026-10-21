@@ -37,6 +37,11 @@ namespace Actor.GameAdapter
             public double meanMessageLatencyMs;
             public string crewRole, incidentId, incidentStatus, coolingStatus;
             public bool investigationReportValidated, ownDiagnosticPresent, ownSecurityPresent;
+            public string gameMode, socialMatchId, socialPhase, socialLife, socialWinningSide, socialWinReason, ownLastSocialAction;
+            public ulong socialPhaseRevision, socialPublicRevision, socialOwnRevision;
+            public bool socialAssigned, socialSummaryPresent;
+            public int visibleActorCount, visibleBodyCount;
+            public ulong visibilityGrants, visibilityRevocations, visibilityPolicyFailures;
             public long diagnosticEvidenceCount, securityEvidenceCount, repairCompletedCount, reportsValidatedCount, reportsRejectedCount, incidentsStartedCount;
         }
         private NetworkCharacter owner;
@@ -147,12 +152,14 @@ namespace Actor.GameAdapter
             {
                 if (bridge == null && endpoint != null && configurationError == null && owner.HasAuthoritativeSnapshot
                     && !string.IsNullOrEmpty(owner.AuthoritativeActorId)
-                    && owner.GetComponent<NetworkInvestigation>() is { HasOwnState: true }) BeginBridge();
+                    && (SocialVisibilitySystem.IsSocial(owner.NetworkManager)
+                        ? owner.GetComponent<NetworkSocialMatch>() is { HasOwnState: true }
+                        : owner.GetComponent<NetworkInvestigation>() is { HasOwnState: true })) BeginBridge();
                 bridge?.Pump(Time.realtimeSinceStartupAsDouble);
                 if (bridge != null && bridge.State == ActorConnectionState.Error)
                 {
                     agent.Clear();
-                    if (bridge.CanRetry && !retryScheduled)
+                    if (bridge.CanRetry && !retryScheduled && !SocialEnded)
                     { retryScheduled = true; reconnectAt = Time.realtimeSinceStartupAsDouble + Math.Min(5, 1 << Math.Min(reconnectAttempt++, 2)); }
                     if (retryScheduled && Time.realtimeSinceStartupAsDouble >= reconnectAt)
                     { retryScheduled = false; bridge.Abort(); _ = bridge.StartAsync(endpoint); }
@@ -222,6 +229,8 @@ namespace Actor.GameAdapter
         }
         private void Detach()
         { CloseBridge(); owner = null; keyboard = null; agent = null; retryScheduled = false; }
+        private bool SocialEnded => owner != null && SocialVisibilitySystem.IsSocial(owner.NetworkManager)
+            && owner.GetComponent<NetworkSocialMatch>().State.Phase == AgentsArena.ActorProtocol.V1.SocialPhase.GameOver;
         private void OnGUI()
         {
             var box = new Rect(Mathf.Max(12, Screen.width - 335), 12, 323, 108);
@@ -231,9 +240,9 @@ namespace Actor.GameAdapter
             if (GUILayout.Toggle(mode == ActorControlMode.Human, "Human", GUI.skin.button)) SetMode(ActorControlMode.Human);
             if (GUILayout.Toggle(mode == ActorControlMode.Runtime, "ACTOR Runtime", GUI.skin.button)) SetMode(ActorControlMode.Runtime);
             GUILayout.EndHorizontal();
-            string state = mode == ActorControlMode.Human ? "Disconnected" : configurationError != null ? "Error" : bridge?.State.ToString() ?? "Connecting";
+            string state = SocialEnded && mode == ActorControlMode.Runtime ? "Match ended" : mode == ActorControlMode.Human ? "Disconnected" : configurationError != null ? "Error" : bridge?.State.ToString() ?? "Connecting";
             GUILayout.Label("ACTOR Runtime: " + state);
-            string detail = mode == ActorControlMode.Runtime ? configurationError ?? bridge?.LastErrorMessage : "WASD / arrow keys";
+            string detail = SocialEnded ? "Authoritative result received." : mode == ActorControlMode.Runtime ? configurationError ?? bridge?.LastErrorMessage : "WASD / arrow keys";
             // Keep the IMGUI control topology identical during Layout/Repaint when async state changes.
             GUILayout.Label(detail ?? "");
             GUILayout.EndArea();
@@ -253,10 +262,26 @@ namespace Actor.GameAdapter
             var cooperation = owner != null ? owner.GetComponent<NetworkCooperation>() : null;
             var investigation = owner != null ? owner.GetComponent<NetworkInvestigation>() : null;
             var ownView = investigation?.CaptureOwnView();
+            var social = owner != null ? owner.GetComponent<NetworkSocialMatch>() : null;
+            bool socialMode = SocialVisibilitySystem.IsSocial(NetworkManager.Singleton);
+            var visible = social?.CaptureWorld();
+            var interest = NetworkManager.Singleton != null ? NetworkManager.Singleton.GetComponent<SocialVisibilitySystem>() : null;
             var signal = console != null ? console.LastReceivedSignal : null;
             double elapsed = Time.realtimeSinceStartupAsDouble - startedAt;
             var report = new Report
             {
+                gameMode = socialMode ? "SocialDeduction" : "Sandbox",
+                socialMatchId = socialMode ? social?.State.MatchId : "", socialPhase = socialMode ? social?.State.Phase.ToString() : "",
+                socialLife = socialMode ? social?.Own.Life.ToString() : "", socialAssigned = socialMode && social != null && social.Own.Assigned,
+                socialPhaseRevision = socialMode ? social?.State.PhaseRevision ?? 0 : 0,
+                socialPublicRevision = socialMode ? social?.State.ServerRevision ?? 0 : 0,
+                socialOwnRevision = socialMode && social?.State.Phase == AgentsArena.ActorProtocol.V1.SocialPhase.GameOver ? social.Own.ServerRevision : 0,
+                socialWinningSide = socialMode && social?.State.Phase == AgentsArena.ActorProtocol.V1.SocialPhase.GameOver ? social.State.WinningSide.ToString() : "",
+                socialWinReason = socialMode ? social?.State.WinReason : "", socialSummaryPresent = socialMode && social?.Postgame.Summary != null,
+                ownLastSocialAction = socialMode && social?.State.Phase == AgentsArena.ActorProtocol.V1.SocialPhase.GameOver ? social.LastAction : socialMode && !string.IsNullOrEmpty(social?.LastAction) ? "private_action" : "",
+                visibleActorCount = socialMode ? visible?.Actors.Count ?? 0 : 0, visibleBodyCount = socialMode ? visible?.Bodies.Count ?? 0 : 0,
+                visibilityGrants = interest?.ObserverGrants ?? 0, visibilityRevocations = interest?.ObserverRevocations ?? 0,
+                visibilityPolicyFailures = interest?.PolicyFailures ?? 0,
                 mode = mode.ToString(), state = bridge?.State.ToString() ?? "Disconnected", actorId = owner?.AuthoritativeActorId,
                 roomId = owner != null ? owner.GetComponent<NetworkRoomMembership>().CurrentRoomId : null,
                 sessionId = bridge?.SessionId, errorCode = bridge?.LastErrorCode, error = bridge?.LastErrorMessage,

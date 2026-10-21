@@ -35,7 +35,7 @@ function roomRow(room) {
     rows.set(room.roomCode, row); $('room-list').append(row);
   }
   row.children[0].children[0].textContent = room.displayName;
-  row.children[0].children[1].textContent = room.roomCode;
+  row.children[0].children[1].textContent = `${room.roomCode} · ${room.gameMode === 'SocialDeduction' ? 'Social Deduction' : 'Sandbox / Investigation'}`;
   row.children[1].textContent = `${room.currentPlayers}/${room.maxPlayers}`;
   row.children[2].firstElementChild.textContent = room.status;
   row.children[2].firstElementChild.className = `badge ${room.status.toLowerCase()}`;
@@ -78,7 +78,7 @@ $('create-form').addEventListener('submit', async event => {
   creating = true; $('create').disabled = true; $('create').textContent = 'Creating…';
   try {
     version ||= await api('/game/version');
-    const room = await api('/lobbies', { method: 'POST', body: JSON.stringify({ displayName: $('room-name').value.trim(), maxPlayers: version.defaultMaxPlayers || 8, gameVersion: version.gameVersion, protocolVersion: version.protocolVersion }) });
+    const room = await api('/lobbies', { method: 'POST', body: JSON.stringify({ displayName: $('room-name').value.trim(), gameMode: $('game-mode').value, maxPlayers: $('game-mode').value === 'SocialDeduction' ? (version.socialMaxPlayers || 6) : (version.defaultMaxPlayers || 8), gameVersion: version.gameVersion, protocolVersion: version.protocolVersion }) });
     $('created-code').textContent = room.roomCode; $('created').hidden = false;
     waitingForRoom = room.roomCode;
     $('copy-created').onclick = () => copyCode(room.roomCode);

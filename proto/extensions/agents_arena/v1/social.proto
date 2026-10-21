@@ -1,0 +1,285 @@
+syntax = "proto3";
+package actor.extensions.agents_arena.v1;
+option csharp_namespace = "AgentsArena.ActorProtocol.V1";
+import "extensions/agents_arena/v1/incidents.proto";
+
+// Game-specific state. Alignment and duty are NEVER fields on visible actors.
+enum SocialPhase {
+  SOCIAL_PHASE_UNSPECIFIED = 0;
+  SOCIAL_PHASE_WAITING_FOR_PLAYERS = 1;
+  SOCIAL_PHASE_ROLE_ASSIGNMENT = 2;
+  SOCIAL_PHASE_EXPLORATION = 3;
+  SOCIAL_PHASE_DISCUSSION = 4;
+  SOCIAL_PHASE_VOTING = 5;
+  SOCIAL_PHASE_VOTE_RESOLUTION = 6;
+  SOCIAL_PHASE_GAME_OVER = 7;
+}
+enum SocialAlignment {
+  SOCIAL_ALIGNMENT_UNSPECIFIED = 0;
+  SOCIAL_ALIGNMENT_CREW = 1;
+  SOCIAL_ALIGNMENT_IMPOSTOR = 2;
+}
+enum SocialLife {
+  SOCIAL_LIFE_UNSPECIFIED = 0;
+  SOCIAL_LIFE_ALIVE = 1;
+  SOCIAL_LIFE_DEAD = 2;
+  SOCIAL_LIFE_EJECTED = 3;
+  SOCIAL_LIFE_DISCONNECTED = 4;
+  SOCIAL_LIFE_SPECTATOR = 5;
+}
+enum SocialAction {
+  SOCIAL_ACTION_UNSPECIFIED = 0;
+  SOCIAL_ACTION_READY = 1;
+  SOCIAL_ACTION_KILL = 2;
+  SOCIAL_ACTION_REPORT_BODY = 3;
+  SOCIAL_ACTION_CALL_MEETING = 4;
+  SOCIAL_ACTION_CAST_VOTE = 5;
+  SOCIAL_ACTION_WORK_TASK = 6;
+  SOCIAL_ACTION_SABOTAGE = 7;
+  SOCIAL_ACTION_REPAIR_EMERGENCY = 8;
+  SOCIAL_ACTION_CANCEL_WORK = 9;
+}
+
+// Only public transitions advance server_revision here. Invisible physical
+// events MUST NOT alter this revision or add living/death/kill counters.
+message SocialMatchStateObservation {
+  string match_id = 1;
+  SocialPhase phase = 2;
+  uint64 phase_revision = 3;
+  uint64 server_revision = 4;
+  int64 started_at_unix_ms = 5;
+  int64 ends_at_unix_ms = 6;
+  int64 phase_ends_at_unix_ms = 7;
+  uint32 crew_tasks_completed = 8;
+  uint32 task_threshold = 9;
+  string mode = 10;
+  // Unspecified/empty until the irreversible terminal phase.
+  SocialAlignment winning_side = 11;
+  string win_reason = 12;
+  // Immutable public rules, independent of anyone's private alignment.
+  float kill_distance = 13;
+  float body_report_distance = 14;
+  float interaction_radius = 15;
+  float visibility_radius = 16;
+  uint32 kill_cooldown_ms = 17;
+}
+
+// Targeted owner-only, session-local information, never an Everyone NV.
+message SocialOwnStateObservation {
+  string match_id = 1;
+  string actor_id = 2;
+  SocialAlignment alignment = 3;
+  CrewRole duty = 4;
+  SocialLife life = 5;
+  bool assigned = 6;
+  bool ready = 7;
+  bool can_move = 8;
+  int64 kill_ready_at_unix_ms = 9;
+  int64 sabotage_ready_at_unix_ms = 10;
+  int64 emergency_ready_at_unix_ms = 11;
+  uint32 remaining_meetings = 12;
+  // Recipient-specific revision, not the hidden global action sequence.
+  uint64 server_revision = 13;
+}
+
+// Positions in Social observations are physical capsule centers, not an
+// omniscient entity feed. A full self-entity bundle replaces the previous view.
+message SocialVisibleActor {
+  string actor_id = 1;
+  string display_name = 2;
+  float x = 3;
+  float y = 4;
+  float velocity_x = 5;
+  float velocity_y = 6;
+  uint64 observed_revision = 7;
+}
+message SocialVisibleBody {
+  string body_id = 1;
+  string victim_actor_id = 2;
+  string victim_display_name = 3;
+  float x = 4;
+  float y = 5;
+  uint64 observed_revision = 6;
+  // No killer, alignment, hidden duty or hidden global death timestamp.
+}
+message SocialVisibleInteractable {
+  string entity_id = 1;
+  string kind = 2;
+  string room_id = 3;
+  float x = 4;
+  float y = 5;
+  float radius = 6;
+  // Authored safe actor-root pose; unlike x/y this is not a physical center.
+  float approach_x = 7;
+  float approach_y = 8;
+}
+message SocialVisibleWorldObservation {
+  string match_id = 1;
+  string recipient_actor_id = 2;
+  uint64 server_revision = 3;
+  int64 captured_at_unix_ms = 4;
+  float visibility_radius = 5;
+  repeated SocialVisibleActor actors = 6; // <= 6; current permitted only
+  repeated SocialVisibleBody bodies = 7; // <= 6; current permitted only
+  repeated SocialVisibleInteractable interactables = 8; // <= 16
+}
+
+message SocialMeetingParticipant {
+  string actor_id = 1;
+  string display_name = 2;
+  SocialLife life = 3; // A meeting roll-call is an explicit disclosure rule.
+}
+message SocialVoteTally {
+  string candidate_actor_id = 1; // Empty denotes Skip.
+  uint32 votes = 2;
+}
+message SocialMeetingObservation {
+  string match_id = 1;
+  string meeting_id = 2;
+  uint64 phase_revision = 3;
+  int64 discussion_ends_at_unix_ms = 4;
+  int64 voting_ends_at_unix_ms = 5;
+  repeated SocialMeetingParticipant participants = 6; // <= 6, no role/position
+  bool own_ballot_submitted = 7;
+  string own_candidate_actor_id = 8;
+  bool own_skip = 9;
+  // Populated only after authoritative vote resolution.
+  repeated SocialVoteTally result = 10;
+  string ejected_actor_id = 11;
+  string resolution = 12;
+}
+
+message SocialTask {
+  string task_id = 1;
+  string terminal_entity_id = 2;
+  string room_id = 3;
+  float x = 4;
+  float y = 5;
+  float approach_x = 6;
+  float approach_y = 7;
+  uint32 work_duration_ms = 8;
+  bool completed = 9;
+}
+message SocialOwnTasksObservation {
+  string match_id = 1;
+  string recipient_actor_id = 2;
+  repeated SocialTask tasks = 3; // <= 5, no performer-linked completion feed
+  bool contributes_to_crew_progress = 4; // Owner's own permission only.
+  uint64 server_revision = 5;
+}
+message SocialEmergencyStateObservation {
+  string match_id = 1;
+  string emergency_id = 2;
+  bool active = 3;
+  bool paused_for_meeting = 4;
+  int64 ends_at_unix_ms = 5;
+  int64 remaining_ms = 6;
+  string terminal_entity_id = 7;
+  string room_id = 8;
+  float approach_x = 9;
+  float approach_y = 10;
+  uint64 server_revision = 11;
+  // No initiating actor identity.
+}
+
+// A server checks identity, exact phase epoch, finite short expiry and bounded
+// correlation before any action. No caller identity or alignment is supplied.
+message SocialActionContext {
+  string match_id = 1;
+  uint64 phase_revision = 2;
+  string correlation_id = 3;
+  int64 expires_at_unix_ms = 4;
+}
+message SocialReadyCommand { SocialActionContext context = 1; bool ready = 2; }
+message SocialKillCommand { SocialActionContext context = 1; string target_actor_id = 2; }
+message SocialReportBodyCommand { SocialActionContext context = 1; string body_id = 2; }
+message SocialCallMeetingCommand { SocialActionContext context = 1; }
+message SocialCastVoteCommand {
+  SocialActionContext context = 1;
+  string meeting_id = 2;
+  string candidate_actor_id = 3;
+  bool skip = 4;
+}
+message SocialWorkTaskCommand { SocialActionContext context = 1; string task_id = 2; }
+message SocialSabotageCommand { SocialActionContext context = 1; string terminal_entity_id = 2; }
+message SocialRepairEmergencyCommand { SocialActionContext context = 1; string emergency_id = 2; }
+message SocialCancelWorkCommand { SocialActionContext context = 1; string work_id = 2; }
+
+// Acknowledging work is distinct from its continuously validated completion.
+message SocialActionResultEvent {
+  string match_id = 1;
+  string correlation_id = 2;
+  SocialAction action = 3;
+  bool accepted = 4;
+  bool completed = 5;
+  string reason_code = 6;
+  string work_id = 7;
+  uint64 phase_revision = 8;
+  int64 work_ends_at_unix_ms = 9;
+  // Deliberately no target position, hidden identity or actual alignment.
+}
+message SocialMatchChangedEvent { SocialMatchStateObservation state = 1; }
+message SocialOwnStateChangedEvent { SocialOwnStateObservation state = 1; }
+message SocialMeetingChangedEvent { SocialMeetingObservation state = 1; }
+message SocialEmergencyChangedEvent { SocialEmergencyStateObservation state = 1; }
+message SocialVisibleAttackEvent {
+  string match_id = 1;
+  string observer_actor_id = 2;
+  string attacker_actor_id = 3;
+  string victim_actor_id = 4;
+  float x = 5;
+  float y = 6;
+  int64 observed_at_unix_ms = 7;
+  uint64 observed_revision = 8;
+}
+// Real and fake work have the same visible representation. No contributes flag.
+message SocialVisibleActivityEvent {
+  string match_id = 1;
+  string observer_actor_id = 2;
+  string actor_id = 3;
+  string terminal_entity_id = 4;
+  string activity = 5;
+  int64 observed_at_unix_ms = 6;
+  uint64 observed_revision = 7;
+}
+
+// All fields below are available to participants ONLY after GameOver.
+message SocialFinalPlayer {
+  string actor_id = 1;
+  string display_name = 2;
+  SocialAlignment alignment = 3;
+  CrewRole duty = 4;
+  SocialLife life = 5;
+  int64 survival_ms = 6;
+  bool team_won = 7;
+  bool survived = 8;
+}
+message SocialReplayEntry {
+  uint64 sequence = 1;
+  int64 elapsed_ms = 2;
+  string kind = 3;
+  string actor_id = 4;
+  string target_id = 5;
+  string outcome = 6;
+}
+message SocialMatchSummary {
+  string match_id = 1;
+  string mode = 2;
+  SocialAlignment winning_side = 3;
+  string win_reason = 4;
+  int64 duration_ms = 5;
+  repeated SocialFinalPlayer players = 6; // <= 6
+  uint32 kills = 7;
+  uint32 body_reports = 8;
+  uint32 meetings = 9;
+  uint32 votes = 10;
+  uint32 crew_tasks_completed = 11;
+  uint32 sabotages = 12;
+  repeated SocialReplayEntry replay = 13; // <= 256; server-only until terminal
+  bool replay_truncated = 14;
+}
+message SocialMatchEndedEvent { SocialMatchSummary summary = 1; }
+message SocialPostgameObservation {
+  string match_id = 1;
+  SocialMatchSummary summary = 2; // Absent before GameOver, explicit clear.
+}

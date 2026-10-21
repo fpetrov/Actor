@@ -19,6 +19,8 @@ namespace Actor.GameAdapter
         private readonly SignalConsole signalConsole;
         internal readonly NetworkCooperation Cooperation;
         internal readonly NetworkInvestigation Investigation;
+        internal readonly NetworkSocialMatch Social;
+        internal bool IsSocial => SocialVisibilitySystem.IsSocial(character.NetworkManager);
         private readonly Func<bool> agentControlEnabled;
         private AgentsArenaActorExtension arenaExtension;
         public GameIdentity Identity { get; }
@@ -36,6 +38,7 @@ namespace Actor.GameAdapter
             signalConsole = SignalConsole.Current;
             Cooperation = character.GetComponent<NetworkCooperation>();
             Investigation = character.GetComponent<NetworkInvestigation>();
+            Social = character.GetComponent<NetworkSocialMatch>();
             Identity = new GameIdentity("agents-arena", gameVersion);
             SelfActorId = character.AuthoritativeActorId;
         }
@@ -47,9 +50,10 @@ namespace Actor.GameAdapter
             arenaExtension = new AgentsArenaActorExtension(this);
             registry.RegisterExtension(arenaExtension);
             membership.RoomChanged += OnRoomChanged;
-            if (signalConsole != null) signalConsole.SignalReceived += OnStationSignal;
+            if (!IsSocial && signalConsole != null) signalConsole.SignalReceived += OnStationSignal;
             Cooperation.PermittedEvent += OnPermittedEvent;
-            Investigation.PermittedEvent += OnPermittedEvent;
+            if (IsSocial) Social.PermittedEvent += OnPermittedEvent;
+            else Investigation.PermittedEvent += OnPermittedEvent;
         }
 
         internal Transform2DObservation CaptureTransform()
@@ -71,6 +75,8 @@ namespace Actor.GameAdapter
                 return CommandOutcome.Rejected("ActorNotControlled", "ACTOR control is not enabled for this owned actor.");
             if (!HasFreshState)
             { input.Clear(); return CommandOutcome.Rejected("AuthoritativeStateUnavailable", "A fresh game-server state is required for agent control."); }
+            if (!character.CanMove)
+            { input.Clear(); return CommandOutcome.Rejected("MovementUnavailable", "Movement is unavailable in the current authoritative state."); }
             return input.Apply(context, command);
         }
         private void OnRoomChanged(string previous, string current, uint revision)
@@ -95,13 +101,25 @@ namespace Actor.GameAdapter
                 return CommandOutcome.Rejected("ActorNotControlled", "A fresh owned multiplayer actor is required.");
             return CommandOutcome.Accepted();
         }
-        public void OnDisconnected() { if (input != null) input.Clear(); Cooperation?.RuntimeUnavailable(); Investigation?.RuntimeUnavailable(); }
+        internal CommandOutcome SubmitSocial(IMessage command)
+        {
+            if (!IsSocial || !agentControlEnabled() || !HasFreshState || Social == null || !Social.Submit(command))
+                return CommandOutcome.Rejected("ActorNotControlled", "A fresh owned social actor is required.");
+            return CommandOutcome.Accepted();
+        }
+        public void OnDisconnected()
+        {
+            if (input != null) input.Clear();
+            if (IsSocial) Social?.RuntimeUnavailable();
+            else { Cooperation?.RuntimeUnavailable(); Investigation?.RuntimeUnavailable(); }
+        }
         public void Dispose()
         {
             if (membership != null) membership.RoomChanged -= OnRoomChanged;
             if (signalConsole != null) signalConsole.SignalReceived -= OnStationSignal;
             if (Cooperation != null) Cooperation.PermittedEvent -= OnPermittedEvent;
             if (Investigation != null) Investigation.PermittedEvent -= OnPermittedEvent;
+            if (Social != null) Social.PermittedEvent -= OnPermittedEvent;
             OnDisconnected();
         }
 
@@ -149,13 +167,15 @@ namespace Actor.GameAdapter
         private ActorEventPublisher<DiagnosticResultEvent> diagnostic;
         private ActorEventPublisher<CalibrationResultEvent> calibration;
         private readonly AgentsArenaInvestigationBindings investigation;
+        private readonly AgentsArenaSocialBindings social;
         public ExtensionPackage Package { get; } = AgentsArenaExtensionPackage.Create();
-        public AgentsArenaActorExtension(AgentsArenaGameAdapter game) { this.game = game; investigation = new AgentsArenaInvestigationBindings(game); }
+        public AgentsArenaActorExtension(AgentsArenaGameAdapter game) { this.game = game; investigation = new AgentsArenaInvestigationBindings(game); social = new AgentsArenaSocialBindings(game); }
         public void Register(IActorExtensionRegistrar registry)
         {
             registry.RegisterObservation<RoomMembershipObservation>("agents-arena.room-membership",
                 "Server-determined room containing this actor.", _ => new RoomMembershipObservation { RoomId = game.CurrentRoom });
             changed = registry.RegisterEvent<RoomChangedEvent>("agents-arena.room-changed", "Authoritative room membership changed.");
+            if (game.IsSocial) { social.Register(registry); return; }
             stationSignal = registry.RegisterEvent<StationSignalEvent>("agents-arena.station-signal",
                 "Server-validated station-wide training console signal with explicit audience and stable signal identity.");
             registry.RegisterObservation<CalibrationTaskStateObservation>("agents-arena.calibration-state", "Private assignment state for this actor; no authorization secret.",
@@ -178,6 +198,7 @@ namespace Actor.GameAdapter
             => stationSignal.Publish(signal, signal.SourceActorId, signal.ServerRevision);
         public void Publish(IMessage value)
         {
+            if (game.IsSocial) { social.Publish(value); return; }
             if (value is CalibrationAssignmentEvent a) assignment.Publish(a, game.SelfActorId, a.ServerRevision);
             else if (value is CalibrationTaskChangedEvent t) taskChanged.Publish(t, game.SelfActorId, t.State.ServerRevision);
             else if (value is DiagnosticResultEvent d) diagnostic.Publish(d, game.SelfActorId, d.ServerRevision);

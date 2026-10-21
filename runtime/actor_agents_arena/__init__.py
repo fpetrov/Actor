@@ -22,6 +22,7 @@ from extensions.agents_arena.v1.calibration_pb2 import (
 )
 from actor_runtime.extensions import ExtensionPackage
 from extensions.agents_arena.v1 import incidents_pb2
+from extensions.agents_arena.v1 import social_pb2
 from extensions.agents_arena.v1.incidents_pb2 import (
     CrewRole, CoolingStatus, IncidentStatus, CoolingSeverity, ProposedOrigin, AuditAction,
     EvidenceVisibility, IncidentAction, OwnRoleObservation, DutyRoleEntry, DutyRosterObservation,
@@ -67,6 +68,16 @@ REPAIR_RESULT = "agents-arena.repair-result"
 INVESTIGATION_RESULT = "agents-arena.investigation-result"
 INCIDENT_ACTION_RESULT = "agents-arena.incident-action-result"
 
+# Social contracts remain game-specific; individual type names are also
+# accessible through social_pb2 for an unambiguous generated enum surface.
+for _name in social_pb2.DESCRIPTOR.message_types_by_name:
+    globals()[_name] = getattr(social_pb2, _name)
+for _suffix in ("match", "own-state", "visible-world", "meeting", "tasks", "emergency", "postgame",
+    "ready", "kill", "report-body", "call-meeting", "cast-vote", "work-task", "sabotage",
+    "repair-emergency", "cancel-work", "action-result", "match-changed", "own-state-changed",
+    "meeting-changed", "emergency-changed", "visible-attack", "visible-activity", "match-ended"):
+    globals()["SOCIAL_" + _suffix.upper().replace("-", "_")] = "agents-arena.social-" + _suffix
+
 
 def extension_package() -> ExtensionPackage:
     data = resources.files("extensions.agents_arena.metadata")
@@ -78,5 +89,8 @@ def extension_package() -> ExtensionPackage:
          CalibrationAssignmentEvent, CalibrationTaskChangedEvent,
          StartCalibrationCommand, InspectDiagnosticCommand, SubmitCalibrationCommand, CancelCalibrationCommand,
          DiagnosticResultEvent, CalibrationResultEvent,
-         *(getattr(incidents_pb2, name) for name in incidents_pb2.DESCRIPTOR.message_types_by_name)),
+         *(getattr(incidents_pb2, name) for name in incidents_pb2.DESCRIPTOR.message_types_by_name),
+         *(getattr(social_pb2, name) for name in social_pb2.DESCRIPTOR.message_types_by_name)),
+        # ExtensionRegistry validates each generated type against the packaged
+        # canonical descriptor, including this optional mode's messages.
     )

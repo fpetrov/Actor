@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text.Json;
 using Actor.ControlPlane.Configuration;
 using Actor.ControlPlane.Domain;
 using Microsoft.Extensions.Options;
@@ -26,10 +27,15 @@ public sealed class LocalProcessGameServerAllocator(IOptions<MatchOptions> optio
             Path.GetFullPath(Path.Combine(settings.GameServerLogDirectory, lobby.LobbyId.ToString("N") + ".log")),
             "--match-id", lobby.LobbyId.ToString("N"), "--room-code", lobby.RoomCode,
             "--port", lobby.GamePort.ToString(), "--max-players", lobby.MaxPlayers.ToString(),
-            "--game-version", lobby.GameVersion, "--protocol-version", lobby.ProtocolVersion })
+            "--game-version", lobby.GameVersion, "--protocol-version", lobby.ProtocolVersion, "--game-mode", lobby.GameMode })
             start.ArgumentList.Add(value);
         start.Environment["ACTOR_MATCH_SECRET"] = Convert.ToBase64String(secret);
         start.Environment["ACTOR_INTERNAL_API_URL"] = settings.InternalApiBaseUrl;
+        if (lobby.SocialConfiguration != null)
+        {
+            start.Environment["ACTOR_SOCIAL_CONFIG"] = JsonSerializer.Serialize(lobby.SocialConfiguration);
+            start.Environment["ACTOR_SOCIAL_SUMMARY_DIRECTORY"] = Path.GetFullPath(Path.Combine(settings.GameServerLogDirectory, "social"));
+        }
         var process = new Process { StartInfo = start, EnableRaisingEvents = true };
         process.OutputDataReceived += (_, args) => { if (args.Data != null) logger.LogDebug("GameServerOutput {LobbyId} {Line}", lobby.LobbyId, args.Data); };
         process.ErrorDataReceived += (_, args) => { if (args.Data != null) logger.LogDebug("GameServerError {LobbyId} {Line}", lobby.LobbyId, args.Data); };

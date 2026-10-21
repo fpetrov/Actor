@@ -7,7 +7,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomMembershipObservation",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.room-changed",
@@ -16,7 +16,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomChangedEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.station-signal",
@@ -25,7 +25,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StationSignalEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.calibration-state",
@@ -34,7 +34,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskStateObservation",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.calibration-progress",
@@ -43,7 +43,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationProgressObservation",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.calibration-assignment",
@@ -52,7 +52,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationAssignmentEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.calibration-changed",
@@ -61,7 +61,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskChangedEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.start-calibration",
@@ -71,7 +71,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StartCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.inspect-diagnostic",
@@ -81,7 +81,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectDiagnosticCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.submit-calibration",
@@ -91,7 +91,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SubmitCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.cancel-calibration",
@@ -101,7 +101,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.diagnostic-result",
@@ -110,7 +110,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DiagnosticResultEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.calibration-result",
@@ -119,7 +119,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationResultEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.own-role",
@@ -128,7 +128,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.OwnRoleObservation",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.duty-roster",
@@ -137,7 +137,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DutyRosterObservation",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.select-role",
@@ -147,7 +147,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SelectRoleCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.role-result",
@@ -156,7 +156,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoleResultEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.cooling-state",
@@ -165,7 +165,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CoolingStateObservation",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.incident-started",
@@ -174,7 +174,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentStartedEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.incident-changed",
@@ -183,7 +183,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentChangedEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.own-investigation-view",
@@ -192,7 +192,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.OwnInvestigationViewObservation",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.inspect-cooling",
@@ -202,7 +202,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectCoolingCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.inspect-security-records",
@@ -212,7 +212,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectSecurityRecordsCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.diagnostic-evidence",
@@ -221,7 +221,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DiagnosticEvidenceEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.security-evidence",
@@ -230,7 +230,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SecurityEvidenceEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.repair-cooling",
@@ -240,7 +240,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RepairCoolingCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.cancel-cooling-repair",
@@ -250,7 +250,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelCoolingRepairCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.cancel-investigation",
@@ -260,7 +260,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelInvestigationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.maintenance-override",
@@ -270,7 +270,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.MaintenanceOverrideCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.submit-investigation-report",
@@ -280,7 +280,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SubmitInvestigationReportCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.repair-result",
@@ -289,7 +289,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RepairResultEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.investigation-result",
@@ -298,7 +298,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InvestigationResultEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
     },
     {
       "capability_id": "agents-arena.incident-action-result",
@@ -307,12 +307,237 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentActionResultEvent",
-      "version": "0.4.0"
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-match",
+      "description": "Public phase, task progress and terminal result; no hidden life or kill counters.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMatchStateObservation",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-own-state",
+      "description": "Owner-only alignment, duty, life and action permissions.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnStateObservation",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-visible-world",
+      "description": "Complete replacement of currently visible entities, restricted by authoritative radius and line of sight.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleWorldObservation",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-meeting",
+      "description": "Public meeting rollcall and resolved tally, plus only the recipient ballot.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMeetingObservation",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-tasks",
+      "description": "Owner-only physical task assignment and progress.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnTasksObservation",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-emergency",
+      "description": "Public emergency deadline and repair location without initiator.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialEmergencyStateObservation",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-postgame",
+      "description": "Explicit empty before GameOver; authoritative bounded final summary after termination.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialPostgameObservation",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-ready",
+      "command_delivery": "ordered",
+      "description": "Set readiness in the waiting phase.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialReadyCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-kill",
+      "command_delivery": "ordered",
+      "description": "Request a nearby visible target interaction; server validates private permission and all physical constraints.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialKillCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-report-body",
+      "command_delivery": "ordered",
+      "description": "Report an actually visible nearby body.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialReportBodyCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-call-meeting",
+      "command_delivery": "ordered",
+      "description": "Request a bounded emergency meeting at the physical console.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialCallMeetingCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-cast-vote",
+      "command_delivery": "ordered",
+      "description": "Submit one final ballot or skip for the current meeting.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialCastVoteCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-work-task",
+      "command_delivery": "ordered",
+      "description": "Begin a continuous physical work lease; accepted and completed are separate results.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialWorkTaskCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-sabotage",
+      "command_delivery": "ordered",
+      "description": "Request a physically validated emergency interaction.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialSabotageCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-repair-emergency",
+      "command_delivery": "ordered",
+      "description": "Begin a continuous physical emergency repair lease.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialRepairEmergencyCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-cancel-work",
+      "command_delivery": "ordered",
+      "description": "Cancel the caller work lease.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialCancelWorkCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-action-result",
+      "description": "Private correlated server result; local bridge acceptance does not complete work.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialActionResultEvent",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-match-changed",
+      "description": "Public authoritative phase or task progress transition.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMatchChangedEvent",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-own-state-changed",
+      "description": "Owner-only life and permission transition.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnStateChangedEvent",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-meeting-changed",
+      "description": "Recipient-permitted meeting transition.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMeetingChangedEvent",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-emergency-changed",
+      "description": "Public emergency state without initiator.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialEmergencyChangedEvent",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-visible-attack",
+      "description": "Personal attack witness; recipient saw both participants at the instant of attack.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleAttackEvent",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-visible-activity",
+      "description": "Personally visible external activity; real and fake work have identical representation.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleActivityEvent",
+      "version": "0.5.0"
+    },
+    {
+      "capability_id": "agents-arena.social-match-ended",
+      "description": "Postgame-only final alignments, individual outcomes and bounded server replay.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMatchEndedEvent",
+      "version": "0.5.0"
     }
   ],
   "descriptor_set": "agents_arena.v1.pb",
   "extension_id": "agents-arena",
-  "extension_version": "0.4.0",
-  "schema_hash": "cc40698a9135d457ea1ff4d24c64fc5a8f7edb28a8adcb67319f88f8ab268fb6",
+  "extension_version": "0.5.0",
+  "schema_hash": "98fba1c617a26d25dd838848af29a4f4f4e1df4dbb0ad447dbdebfe32e540166",
   "supported_protocol_major": 1
 }

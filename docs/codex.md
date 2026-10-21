@@ -44,7 +44,7 @@ build/runtime-venv/bin/actor-runtime agent --brain codex \
 
 `--model` optionally overrides the provider model; otherwise SDK uses its
 configured default. Defaults: `--decision-timeout 120`, `--objective-timeout 600`,
-`--max-decisions 12`. `--exit-on-complete` ends Runtime after the objective.
+`--max-decisions 16`. `--exit-on-complete` ends Runtime after the objective.
 Initial frame warmup is optional/bounded; conditional or other-entity sensors
 cannot prevent a capability-free Skill such as Wait from executing.
 
@@ -142,8 +142,17 @@ token warning and 200,000 measured total-token limit. Central CLI
 limit rejects the next decision with `codex_usage_limit`; `max_turns` rejects it
 with `codex_turn_limit`. A completed decision remains valid when its usage
 crosses the threshold, so this bounds further calls rather than promising an
-exact provider-side token cap. A single turn may exceed it. There is no automatic
-thread compaction/rollover in this milestone.
+exact provider-side token cap. A single turn may exceed it. A thread is not
+silently compacted or continued beyond its Objective budget.
+
+Runtime 0.6.0's `actor-runtime match --brain codex --match-policy agents-arena`
+coordinates bounded Objectives over a match. Each episode closes the old SDK
+instance/thread before constructing a fresh Brain; the Session, Scheduler,
+EventRouter and scoped memory span episodes. Finishing an Objective ends that
+episode, while the game alone determines GameOver. Death suspends model calls.
+This is explicit episode lifecycle, not unbounded continuation of one provider
+conversation. See [match lifecycle](match-lifecycle.md) and
+[independent launch](multi-agent.md).
 
 ## Cancellation, diagnostics and tests
 

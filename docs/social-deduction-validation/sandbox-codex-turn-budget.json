@@ -1,0 +1,52 @@
+{
+  "schema": "actor.social-lifecycle-acceptance.v1",
+  "case": "codex-turn-budget",
+  "passed": true,
+  "checks": {
+    "ordinary_live_owned_client": true,
+    "foreground_released": true,
+    "bounded_cleanup_complete": true,
+    "no_commands_after_cleanup": true,
+    "owned_client_cleanup": true,
+    "actual_official_model_turn": true,
+    "actual_codex_turn_limit": true,
+    "first_real_wait_completed": true,
+    "controlled_failure": true,
+    "singleflight_no_tools": true,
+    "bridge_remained_connected": true
+  },
+  "result_status": "failed",
+  "result_reason": "brain_failure",
+  "cleanup_seconds": null,
+  "stale_to_terminal_seconds": null,
+  "commands_at_cleanup": 0,
+  "commands_later": 0,
+  "model_turns": 1,
+  "server_mutation_performed": false,
+  "model_provider_requested": true,
+  "limits": [
+    "Controlled lifecycle objective, not autonomous match intelligence or a match win.",
+    "Server-loss observer requires separate exact-match SSH fault identity evidence; it never kills a server.",
+    "Headless client loop rate is not display FPS or keyboard latency.",
+    "Public projection omits actor/session/match IDs, chat, contexts, prompts and reasoning; private build evidence retains identity binding."
+  ],
+  "game_mode": "Sandbox",
+  "game_version": "0.8.0",
+  "admission_protocol": "3",
+  "scope": "Actual ordinary headless Sandbox client and local Runtime; controlled generic lifecycle Objective, not Social match acceptance",
+  "official_provider_evidence": {
+    "unique_model_turns": 1,
+    "sdk_version": "0.162.1",
+    "sandbox": "read-only",
+    "ephemeral": true,
+    "denials": [
+      "codex_turn_limit"
+    ],
+    "configured_max_turns": 1,
+    "provider_decisions": 1,
+    "attempts": 2,
+    "max_active": 1,
+    "active": 0,
+    "tool_calls": 0
+  }
+}

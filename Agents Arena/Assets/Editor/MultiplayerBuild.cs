@@ -20,6 +20,8 @@ namespace Actor.Editor
     {
         public const string LobbyScene = "Assets/Scenes/Lobby.unity";
         public const string GameplayScene = "Assets/Scenes/MainHallMultiplayer.unity";
+        public const string SocialScene = "Assets/Scenes/SocialDeduction.unity";
+        public const string BodyPrefab = "Assets/Prefabs/Characters/SocialBody.prefab";
         public const string PlayerPrefab = "Assets/Prefabs/Characters/NetworkCharacter.prefab";
 
         [MenuItem("ACTOR/Prepare multiplayer assets")]
@@ -52,6 +54,9 @@ namespace Actor.Editor
             transform.PositionThreshold = 0.001f;
             player.AddComponent<NetworkRigidbody2D>();
             player.AddComponent<NetworkCharacter>();
+            player.AddComponent<SocialVisibilityMember>();
+            player.AddComponent<NetworkSocialMatch>();
+            player.AddComponent<Actor.World.SocialClientUI>();
             player.AddComponent<NetworkNameplate>();
             player.AddComponent<NetworkRoomMembership>();
             player.AddComponent<NetworkStationSignals>();
@@ -60,6 +65,17 @@ namespace Actor.Editor
             player.AddComponent<NetworkInvestigation>();
             player.AddComponent<Actor.World.IncidentClientUI>();
             PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefab);
+            var corpse = new GameObject("Social Body");
+            corpse.AddComponent<NetworkObject>();
+            corpse.AddComponent<SocialVisibilityMember>().Configure(SocialVisibilityKind.Body);
+            corpse.AddComponent<SocialBody>();
+            var corpseView = new GameObject("Body Visual"); corpseView.transform.SetParent(corpse.transform, false);
+            var corpseRenderer = corpseView.AddComponent<SpriteRenderer>();
+            var characterRenderer = player.GetComponentInChildren<SpriteRenderer>();
+            corpseRenderer.sprite = characterRenderer.sprite; corpseRenderer.sharedMaterial = characterRenderer.sharedMaterial;
+            corpseRenderer.color = new Color(.6f,.65f,.7f); corpseRenderer.sortingOrder = 2;
+            corpseView.transform.rotation = Quaternion.Euler(0,0,90);
+            PrefabUtility.SaveAsPrefabAsset(corpse, BodyPrefab); UnityEngine.Object.DestroyImmediate(corpse);
             UnityEngine.Object.DestroyImmediate(player);
             UnityEngine.Object.DestroyImmediate(source.gameObject);
             var camera = UnityEngine.Object.FindObjectsByType<Camera>().Single();
@@ -70,6 +86,12 @@ namespace Actor.Editor
             IncidentWorldBuilder.AddToCurrentMultiplayerScene();
             EngineeringRoomBuilder.ValidateCurrentMultiplayerScene();
             EditorSceneManager.SaveScene(original, GameplayScene);
+            EditorSceneManager.SaveScene(original, SocialScene);
+            SocialWorldBuilder.AddToCurrentSocialScene();
+            File.Copy("Assets/World/SocialLayout.json", "../runtime/actor_agents_arena/social_layout.json", true);
+            var social = new GameObject("Social Match Authority").AddComponent<SocialMatchSession>();
+            Set(social, "bodyPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(BodyPrefab));
+            EditorSceneManager.SaveScene(original, SocialScene);
 
             string settingsPath = "Assets/Settings/LobbyClient.asset";
             var settings = AssetDatabase.LoadAssetAtPath<LobbyClientSettings>(settingsPath);
@@ -82,6 +104,7 @@ namespace Actor.Editor
             if (string.IsNullOrWhiteSpace(apiUrl) && File.Exists("Verification/client-api-url.txt"))
                 apiUrl = File.ReadAllText("Verification/client-api-url.txt").Trim();
             if (!string.IsNullOrWhiteSpace(apiUrl)) settings.apiBaseUrl = apiUrl;
+            settings.gameVersion = "0.8.0";
             EditorUtility.SetDirty(settings);
             string listPath = "Assets/Settings/NetworkPrefabs.asset";
             var list = AssetDatabase.LoadAssetAtPath<NetworkPrefabsList>(listPath);
@@ -89,6 +112,7 @@ namespace Actor.Editor
             foreach (var existing in list.PrefabList.ToArray()) list.Remove(existing);
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefab);
             list.Add(new NetworkPrefab { Prefab = prefab });
+            list.Add(new NetworkPrefab { Prefab = AssetDatabase.LoadAssetAtPath<GameObject>(BodyPrefab) });
             EditorUtility.SetDirty(list);
 
             var lobby = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -119,7 +143,7 @@ namespace Actor.Editor
             root.AddComponent<MultiplayerProbe>();
             root.AddComponent<ActorObserverProbe>();
             EditorSceneManager.SaveScene(lobby, LobbyScene);
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(LobbyScene, true), new EditorBuildSettingsScene(GameplayScene, true) };
+            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(LobbyScene, true), new EditorBuildSettingsScene(GameplayScene, true), new EditorBuildSettingsScene(SocialScene, true) };
             PlayerSettings.runInBackground = true;
             PlayerSettings.bundleVersion = settings.gameVersion;
             PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
@@ -140,7 +164,7 @@ namespace Actor.Editor
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Server, ScriptingImplementation.Mono2x);
             Build(new BuildPlayerOptions
             {
-                scenes = new[] { LobbyScene, GameplayScene }, target = BuildTarget.StandaloneLinux64,
+                scenes = new[] { LobbyScene, GameplayScene, SocialScene }, target = BuildTarget.StandaloneLinux64,
                 subtarget = (int)StandaloneBuildSubtarget.Server,
                 locationPathName = Output("../build/agents-arena-server/AgentsArenaServer"),
                 options = BuildOptions.None
@@ -151,7 +175,7 @@ namespace Actor.Editor
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
             Build(new BuildPlayerOptions
             {
-                scenes = new[] { LobbyScene, GameplayScene }, target = BuildTarget.StandaloneOSX,
+                scenes = new[] { LobbyScene, GameplayScene, SocialScene }, target = BuildTarget.StandaloneOSX,
                 subtarget = (int)StandaloneBuildSubtarget.Player,
                 locationPathName = Output("../build/agents-arena-client/AgentsArena.app"),
                 options = BuildOptions.Development

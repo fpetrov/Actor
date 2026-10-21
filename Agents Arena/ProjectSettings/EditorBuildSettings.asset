@@ -11,5 +11,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/MainHallMultiplayer.unity
     guid: 09570e4302dbe472e8205f8734c836d8
+  - enabled: 1
+    path: Assets/Scenes/SocialDeduction.unity
+    guid: f25fa10cdcee5497689bb4da2bbc453b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}

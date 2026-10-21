@@ -15,8 +15,9 @@ public sealed class CooperativeAuthorityTests
         internal readonly CooperativeAuthority.Participant A = new() { Id = "coordinator", Name = "A", Room = "main-hall", X = .9, Y = -1.94 };
         internal readonly CooperativeAuthority.Participant B = new() { Id = "technician", Name = "B", Room = "main-hall", X = 0, Y = -.94 };
         internal readonly CooperativeAuthority.Participant C = new() { Id = "observer", Name = "C", Room = "main-hall", X = -1.8, Y = -.94 };
-        internal Fixture(Func<string, string, bool>? taskScope = null, Func<string, SendMessageCommand, string>? messagePolicy = null)
-        { Authority = new(Match, taskScope!, messagePolicy!); Refresh(Time); }
+        internal Fixture(Func<string, string, bool>? taskScope = null, Func<string, SendMessageCommand, string>? messagePolicy = null,
+            Func<string, string, string, bool>? recipientPolicy = null)
+        { Authority = new(Match, taskScope!, messagePolicy!, recipientPolicy!); Refresh(Time); }
         internal List<CooperativeAuthority.Delivery> Refresh(long now) => Authority.Refresh(new[] { A, B, C }, now);
         internal SendMessageCommand Send(string text = "Hello", string correlation = "message", string recipient = "technician")
             => new() { Text = text, CorrelationId = correlation, RecipientActorId = recipient, ChannelId = "direct", MatchId = Match, TtlMs = 300000 };
@@ -140,6 +141,38 @@ public sealed class CooperativeAuthorityTests
         Assert.Equal(MessageDeliveryStage.ClientReceived, Payload<MessageDeliveryResultEvent>(f.Authority.Acknowledge(f.C.Id, id, f.Match, Fixture.Time + 30)).Stage);
     }
     [Fact]
+    public void RecipientFilteredBroadcastDoesNotExposeHiddenTrafficThroughSequenceGaps()
+    {
+        bool observerVisible = false;
+        var f = new Fixture(recipientPolicy: (_, recipient, _) => recipient != "observer" || observerVisible);
+        var hidden = f.Authority.Execute(f.A.Id, f.Send(correlation: "hidden-first"), Fixture.Time);
+        Assert.Equal(1ul, Payload<MessageReceivedEvent>(hidden).ServerSequence);
+        Assert.DoesNotContain(hidden, d => d.Recipient == f.C.Id);
+        var request = f.Send(correlation: "filtered"); request.ChannelId = "proximity"; request.RecipientActorId = "";
+        var filtered = f.Authority.Execute(f.A.Id, request, Fixture.Time + 1000);
+        var permitted = filtered.Where(d => d.Payload is MessageReceivedEvent).ToArray();
+        Assert.Equal(new[] { f.A.Id, f.B.Id }, permitted.Select(d => d.Recipient).Order());
+        Assert.DoesNotContain(filtered, d => d.Recipient == f.C.Id);
+        var moreHidden = f.Authority.Execute(f.A.Id, f.Send(correlation: "hidden-second"), Fixture.Time + 2000);
+        Assert.Equal(3ul, Payload<MessageReceivedEvent>(moreHidden).ServerSequence);
+        Assert.DoesNotContain(moreHidden, d => d.Recipient == f.C.Id);
+
+        observerVisible = true;
+        var visible = request.Clone(); visible.CorrelationId = "observer-now-visible";
+        var received = f.Authority.Execute(f.A.Id, visible, Fixture.Time + 3000)
+            .Where(d => d.Payload is MessageReceivedEvent).ToArray();
+        Assert.Equal(new[] { f.A.Id, f.C.Id, f.B.Id }.Order(), received.Select(d => d.Recipient).Order());
+        Assert.Equal(1ul, ((MessageReceivedEvent)received.Single(d => d.Recipient == f.C.Id).Payload).ServerSequence);
+        Assert.Equal(2ul, ((MessageReceivedEvent)received.Single(d => d.Recipient == f.A.Id).Payload).ServerSequence);
+        Assert.Equal(4ul, ((MessageReceivedEvent)received.Single(d => d.Recipient == f.B.Id).Payload).ServerSequence);
+        foreach (var delivery in permitted.Concat(received))
+        {
+            var message = (MessageReceivedEvent)delivery.Payload;
+            Assert.Equal(delivery.Recipient, message.RecipientActorId);
+            Assert.Equal(f.A.Id, message.SenderActorId); Assert.Equal(f.Match, message.MatchId);
+        }
+    }
+    [Fact]
     public void ReplayNeverDuplicatesPayloadAndConflictingTypesCannotAlias()
     {
         var f = new Fixture(); var command = f.Send(); var first = f.Authority.Execute(f.A.Id, command, Fixture.Time);
@@ -157,12 +190,22 @@ public sealed class CooperativeAuthorityTests
     [InlineData(false)] [InlineData(true)]
     public void ReceiptReplayRetainsTimeoutOrDisconnectedOutcome(bool disconnect)
     {
-        var f = new Fixture(); var request = f.Send(); f.Authority.Execute(f.A.Id, request, Fixture.Time);
+        var f = new Fixture(); var request = f.Send();
+        var message = Payload<MessageReceivedEvent>(f.Authority.Execute(f.A.Id, request, Fixture.Time));
         if (disconnect) f.Authority.Refresh(new[] { f.A, f.C }, Fixture.Time + 500);
         else f.Authority.Tick(Fixture.Time + 10001);
         var replay = Payload<MessageDeliveryResultEvent>(f.Authority.Execute(f.A.Id, request, Fixture.Time + 11000));
         Assert.Equal(MessageDeliveryStage.Rejected, replay.Stage);
         Assert.Equal(disconnect ? "recipient_disconnected" : "client_ack_timeout", replay.ReasonCode);
+        Assert.Empty(f.Authority.Acknowledge(f.B.Id, message.MessageId, f.Match, Fixture.Time + 11100));
+        f.Authority.Refresh(new[] { f.A, f.C }, Fixture.Time + 11200);
+        var rejoined = new CooperativeAuthority.Participant { Id = f.B.Id, Name = "B rejoined", Room = f.B.Room, X = f.B.X, Y = f.B.Y };
+        f.Authority.Refresh(new[] { f.A, rejoined, f.C }, Fixture.Time + 11300);
+        Assert.Empty(f.Authority.Acknowledge(rejoined.Id, message.MessageId, f.Match, Fixture.Time + 11400));
+        var afterLateAck = f.Authority.Execute(f.A.Id, request, Fixture.Time + 11500);
+        Assert.Equal(f.A.Id, Assert.Single(afterLateAck).Recipient);
+        Assert.DoesNotContain(afterLateAck, d => d.Payload is MessageReceivedEvent);
+        Assert.Equal(replay, Payload<MessageDeliveryResultEvent>(afterLateAck));
     }
     [Fact]
     public void ExpiryDisconnectAndRuntimeLossCancelActiveButPreserveCompleted()

@@ -103,6 +103,7 @@ class MemoryStore:
         self.administration = administration
         self.state = "ready" if enabled else "disabled"
         self.error_code = None
+        self.scope_id = None
         self._connection = None
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="actor-memory")
         self._pending = 0
@@ -119,6 +120,17 @@ class MemoryStore:
         values = config.model_dump() if hasattr(config, "model_dump") else dict(config)
         return cls(game_id=session.manifest.game_id, session_id=session.session_id,
                    actor_id=session.world.self_actor_id, **values)
+
+    def bind_scope(self, scope_id):
+        """Restrict one participation's retrieval; legacy stores remain unscoped."""
+        if not isinstance(scope_id, str) or not scope_id or len(scope_id) > 128:
+            raise ValueError("Memory scope must be a bounded nonempty identity")
+        if self.scope_id is not None and self.scope_id != scope_id:
+            raise ActorError("memory_scope_mismatch", "Use a fresh memory handle for another participation")
+        self.scope_id = scope_id
+
+    def _scope_tag(self):
+        return "scope:" + hashlib.sha256(self.scope_id.encode()).hexdigest()[:48] if self.scope_id else None
 
     async def _call(self, operation, *args):
         if self._closed:
@@ -248,6 +260,9 @@ class MemoryStore:
         if oversized:
             content = {"payload_omitted": True, "original_bytes": size}
         identity = _json([self.profile, self.game_id, evidence_kind, source_event_id])
+        if self.scope_id:
+            identity = _json([self.scope_id, identity])
+            tags = (*tags, self._scope_tag())
         now = float(self._clock())
         entry = MemoryEntry(id=hashlib.sha256(identity.encode()).hexdigest(),
                             agent_profile_id=self.profile, game_id=self.game_id,
@@ -256,7 +271,9 @@ class MemoryStore:
                             capability_id=capability_id[:256], type_url=type_url[:512],
                             extension_id=extension_id[:160], extension_version=extension_version[:80],
                             summary=str(summary)[:256], content=content, content_truncated=truncated,
-                            importance=float(importance), tags=sorted({str(tag)[:64] for tag in tags})[:16],
+                            importance=float(importance), tags=(
+                                sorted({str(tag)[:64] for tag in tags if tag != self._scope_tag()})[:15] + [self._scope_tag()]
+                                if self.scope_id else sorted({str(tag)[:64] for tag in tags})[:16]),
                             created_at=now, expires_at=now + self.ttl_seconds)
         return await self._call(self._remember, entry, replace_existing)
 
@@ -362,7 +379,7 @@ class MemoryStore:
         query = objective.text if hasattr(objective, "text") else str(objective)
         skill = current_skill.model_dump(mode="json") if hasattr(current_skill, "model_dump") else current_skill
         result = await self._call(self._retrieve, query, skill, set(capability_ids), set(type_urls),
-                                  set(tags), limit)
+                                  set(tags) | ({self._scope_tag()} if self.scope_id else set()), limit)
         return result or []
 
     def _retrieve(self, objective, current_skill, capabilities, urls, tags, limit):
@@ -372,8 +389,12 @@ class MemoryStore:
         now, keywords = self._clock(), _words(objective) | _words(_json(current_skill))
         def score(row):
             overlap = len(keywords & _words(row["summary"] + " " + row["content"] + " " + row["tags"]))
+            row_tags = set(json.loads(row["tags"]))
+            scope_tag = self._scope_tag()
+            requested_tags = tags - ({scope_tag} if scope_tag else set())
             filter_match = (not capabilities or row["capability"] in capabilities) and (
-                not urls or row["type_url"] in urls) and (not tags or tags.intersection(json.loads(row["tags"])))
+                not urls or row["type_url"] in urls) and (not requested_tags or requested_tags.intersection(row_tags)) and (
+                scope_tag is None or scope_tag in row_tags)
             recency = 1 / (1 + max(0, now - row["created"]) / 86400)
             return filter_match, overlap * 2 + row["importance"] * 2 + recency, row["created"], row["id"]
         # A large explicitly configured history must not be copied wholesale

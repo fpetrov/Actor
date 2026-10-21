@@ -1,5 +1,13 @@
 # Local episodic memory
 
+Runtime 0.6.0 participation binds durable public evidence to an additional
+`scope_id`. Retrieval from a match excludes other matches even with the same
+explicit profile/game. Legacy unscoped administration and Objective use remain
+available. Private `WorkingKnowledge` is a separate bounded in-process lifetime:
+it retains legitimate last-seen observations, received claims and explicitly
+unverified hypotheses across fresh episodes, and never writes their contents
+to SQLite. See [match lifecycle](match-lifecycle.md).
+
 `actor_runtime.memory.MemoryStore` retains past evidence in bounded SQLite.
 It is independent of Brain providers and is not another WorldState. Latest
 observations stay in WorldState; ordinary Transform/Motion frames are not

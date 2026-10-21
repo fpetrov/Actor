@@ -1,6 +1,6 @@
 # ACTOR
 
-ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone6 adds station duties, private asymmetric investigation evidence, physical repair and a server-validated report for independent agents, preserving private communication and the earlier calibration task.
+ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone 7 adds a separate Social Deduction mode with authoritative visibility, hidden affiliations, meetings and match-long agent participation. Sandbox preserves the station duties, asymmetric investigation, calibration and private communication from earlier milestones.
 
 ## What ACTOR is
 
@@ -34,10 +34,12 @@ Action pipeline: Brain → typed Skill → cleanup/ownership → Game
 
 - **ACTOR SDK** — local UPM `packages/com.actor.sdk`, engine-independent Core/Standard protocol and typed registration.
 - **gRPC transport** — local UPM `com.actor.transport.grpc`, Grpc.Net.Client + native YetAnotherHttpHandler.
-- **Python Runtime 0.5.0** — descriptors/plugins, state cache, typed Skills, bounded message inboxes, event routing, context, private-data retention policies, memory and ObjectiveRunner.
+- **Python Runtime 0.6.0** — descriptors/plugins, state cache, typed Skills, bounded message inboxes, event routing, context, private-data retention policies, memory, ObjectiveRunner and a generic match-episode coordinator.
 - **Brains** — deterministic SequenceBrain and optional official `openai-codex==0.162.1`; model decisions occur at Skill boundaries or justified strategic events, with one active turn.
-- **Agents Arena 0.7.0** — Unity 6000.6.4f1, Main Hall ↔ Engineering, station duties, cooling investigation, signals, private communication, cooperative terminals, server physics/rooms and responsive owner prediction.
+- **Agents Arena 0.8.0** — Unity 6000.6.4f1; Sandbox's Main Hall ↔ Engineering and a separate four-room Social Deduction scene, with server physics, permitted observations and responsive owner prediction.
 - **Control Plane** — .NET 10 Minimal APIs, SQLite admission/process lifecycle; static website via nginx.
+
+Game 0.8.0, Arena extension 0.5.0, Runtime 0.6.0, ACTOR Core 1.0 and multiplayer admission protocol 3 are independent versions. Both Standard packages remain 0.1.0.
 
 **Website:** http://5.181.134.236/
 
@@ -46,6 +48,8 @@ Action pipeline: Brain → typed Skill → cleanup/ownership → Game
 ## Play
 
 Open `Agents Arena/` in Unity and `Assets/Scenes/Lobby.unity`, then press Play. Enter a player name and join a room from the list, enter a six-character RoomCode, or create a room. The macOS client is built at ignored `build/agents-arena-client/AgentsArena.app`. Move with WASD/arrow keys or a gamepad; use Leave room to return to the lobby.
+
+Choose `Sandbox` for the existing investigation/calibration world or `SocialDeduction` for a social match. A room's mode is immutable. Social rules come from validated deployment configuration copied by the Control Plane to its dedicated server; players choose neither hidden assignments nor a scenario seed. See [Social Deduction](docs/social-deduction.md).
 
 The website creates/lists rooms and copies their codes; gameplay runs in the Unity client. Central client URL/version configuration lives in `Assets/Settings/LobbyClient.asset`. The original offline `MainHall.unity` scene and character prefab remain available, including the user's subsequent scene edits.
 
@@ -76,15 +80,21 @@ Client input sends only movement intent. Server `ActorCharacter → CharacterMot
 
 `ActorCharacter.CaptureState()` exposes ActorId, position, velocity, room, facing and moving state. Server-owned station duties and investigation state use separate typed Arena observations; they do not extend the movement snapshot. `shared/com.actor.contracts` supplies engine-independent admission claims/HMAC; it references neither Unity nor NGO. **NGO belongs to Agents Arena, not the generic ACTOR SDK contract.**
 
+Social mode adds server-side radius/line-of-sight filtering and recipient-specific views before data reaches the SDK. Hidden actors and bodies are not globally replicated and then concealed only by UI fog. An agent receives its own alignment, duty and tasks; another player's statements remain unverified claims. No Core, Runtime or launcher role oracle supplies hidden game truth.
+
+`MatchEpisodeController` keeps one session, Scheduler, Router and scoped memory across bounded Objectives. Each episode creates a fresh Brain/provider thread. Arena's installed policy interprets phase/life changes and conditional Skills; Core contains no role, meeting or win-condition branches. Death suspends cognition, and only an authoritative terminal result completes participation. [Match lifecycle](docs/match-lifecycle.md) describes ownership, budgets and private working knowledge.
+
 The six original sheets provide 48 complete character poses. Twelve idle/walk clips preserve the previous directional setup; UpLeft/DownLeft mirror right diagonals, while Left has its own art. All original PNGs remain unchanged. The multiplayer scene preserves Main Hall walls, crystal, camera and the user's light/collider adjustments.
 
 ## Verification and limits
 
-Milestone 6 currently has local authority/protocol coverage: **162 SDK/bridge C# tests** and **52 schema-freshness checks** passed, including 40 incident-authority cases and 7 incident-protocol cases. Paired cases hold either role's complete evidence view equal, apart from opaque GUIDs, while the other view changes the supported origin; real maintenance occurs at different moments within the same completed controller cycle. This is local test evidence; new builds, live investigation, Human observation and fault acceptance are tracked separately in the [Milestone 6 report](docs/investigation-validation/README.md). See [investigation architecture](docs/investigation.md) for the implemented boundary.
+The final Milestone 7 Runtime source passed **491 Python tests**. A fresh Runtime 0.6.0 wheel also passed all **491 tests outside the checkout**, with generated resources and installed plugins, without Codex/Jev extras or model authentication. This verifies local Runtime behavior and packaging; it does not establish deployment, NGO privacy, Human acceptance or model intelligence. Actual runs, failures and exclusions belong to the [Social Deduction validation report](docs/social-deduction-validation/README.md).
+
+Historical Milestone 6 local authority/protocol coverage included **162 SDK/bridge C# tests** and **52 schema-freshness checks**, including 40 incident-authority cases and 7 incident-protocol cases. Paired cases hold either role's complete evidence view equal, apart from opaque GUIDs, while the other view changes the supported origin. See the [Milestone 6 report](docs/investigation-validation/README.md) and [investigation architecture](docs/investigation.md) for its separate evidence and limits.
 
 Milestone 5 verification passed **125 .NET tests** (107 SDK/bridge + 18 backend), **326 Python tests** (316 Runtime + 10 scripts, final rerun 41.56 seconds) and **50 schema-freshness checks**. The fault helper has 9 additional offline self-tests. Hosted Control Plane and SDK/Runtime CI both passed for functional-code commit `25402be`. All four real remote cooperation scenarios passed strict acceptance: two ScriptedBrains, both mixed Codex/scripted directions, and **two independent live CodexBrains**, with independent Runtimes/memories and matching authoritative completion.
 
-A third Human verified public completion without private access; native Human chat sending/receiving through composition paste and Send, plus text-focus movement suppression, passed. All four actual faults passed: Objective cancellation, Runtime bridge loss, abrupt participant loss and isolated match-server loss. The final client passed **13/13 prediction/control checks**, with a 23.4 ms first presentation sample; this is not native keyboard-to-render latency. Matching macOS/Linux builds from `c289e1a` succeeded; the VPS uses atomic release `20261019T1804Z-c289e1a` without restarting the Control Plane or interrupting healthy rooms. See the [Milestone 5 report and safe evidence](docs/cooperative-validation/README.md) and [latest main CI runs](https://github.com/fpetrov/Actor/actions?query=branch%3Amain).
+A third Human verified public completion without private access; native Human chat sending/receiving through composition paste and Send, plus text-focus movement suppression, passed. All four actual faults passed: Objective cancellation, Runtime bridge loss, abrupt participant loss and isolated match-server loss. That milestone's client passed **13/13 prediction/control checks**, with a 23.4 ms first presentation sample; this is not native keyboard-to-render latency. Matching macOS/Linux builds from `c289e1a` succeeded; Milestone 5 deployed atomic release `20261019T1804Z-c289e1a` without restarting the Control Plane or interrupting healthy rooms. This is historical deployment evidence. See the [Milestone 5 report and safe evidence](docs/cooperative-validation/README.md) and [main CI runs](https://github.com/fpetrov/Actor/actions?query=branch%3Amain).
 
 Historical Milestone 4 verification passed 18 backend, 68 SDK/bridge and 255 Python tests; its real multiplayer evidence remains in [event validation](docs/event-validation/README.md). Earlier remote Editor/Standalone probes passed 9/8 checks without runtime errors/warnings, covering names, motion, collisions, disconnect/reconnect and local-transform correction. Five real servers used unique UDP ports 7777–7781 and the sixth room received 409. Empty-room cleanup, process crash handling and stale persisted state are covered by the earlier checks and subsequent regressions.
 
@@ -103,6 +113,8 @@ python3 scripts/launch-scripted-agent.py --room ROOMCODE
 ```
 
 The helper generates an ephemeral bridge credential, starts the local Runtime and launches an ACTOR-controlled Unity client. A separate Human client can join the same room and observe it. Client UI switches Human ↔ ACTOR Runtime; an absent Runtime produces a clear status and stationary agent input. Runtime configuration is local and the bridge is not deployed to the VPS.
+
+This route example and the objective/calibration/investigation examples below use `Sandbox` rooms. Social mode advertises its own permitted capability set and Skills.
 
 Developers: [protocol/architecture](docs/actor-protocol.md), [extension tutorial](docs/extensions.md), [Python CLI and plugins](docs/python-runtime.md), [Unity SDK](packages/com.actor.sdk/README.md), [gRPC compatibility spike](docs/grpc-spike/README.md). Generated artifacts are committed; validate with `scripts/generate-proto.sh --check`.
 
@@ -159,9 +171,9 @@ See [launch and isolation](docs/multi-agent.md),
 [communication and delivery](docs/communication.md) and
 [cooperative task authority](docs/cooperative-tasks.md).
 
-## Role-based investigation
+## Sandbox role-based investigation
 
-With a matching 0.7.0 lobby/client, launch the Engineer and Sheriff:
+With a matching 0.8.0 Sandbox lobby/client, launch the Engineer and Sheriff:
 
 ```bash
 python3 scripts/launch-investigation-agents.py --room ABC123
@@ -190,3 +202,17 @@ state and private evidence contain no answer field. Received findings remain
 another actor's claim. See
 [duties](docs/roles.md), [evidence](docs/evidence.md),
 [world terminals](docs/game-world.md) and [Skills](docs/skills.md).
+
+## Social match participants
+
+Create a `SocialDeduction` room with the server's configured minimum player count, then launch the same provider independently for every participant:
+
+```bash
+build/runtime-venv/bin/python scripts/launch-social-agents.py \
+  --room ABC123 --players 4 --brain social-scripted \
+  --output build/social-match
+```
+
+Use `--brain codex` after installing the optional provider to run independent model participants. Everyone receives the same trusted objective and learns its own assignment through the game. The supervisor supplies no roles or actions and checks matching authoritative terminal results. `--players` must match the room's configured minimum; it does not change server rules.
+
+The launcher defaults to ordinary headless clients. `--windowed` selects 800×600 windows for visual checks. Each participant has a separate process, bridge credential/port, database and provider thread; communication goes through the ordinary authoritative game server. A finished Objective ends one episode, not the match. Controlled `social-fixture-*` providers test mechanics and do not establish autonomous model performance. See [Social Deduction](docs/social-deduction.md), [match lifecycle](docs/match-lifecycle.md) and [multi-agent launch](docs/multi-agent.md).

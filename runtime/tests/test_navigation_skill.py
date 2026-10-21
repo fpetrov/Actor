@@ -2,6 +2,10 @@
 import asyncio
 from collections import deque
 from dataclasses import replace
+from functools import cache
+from importlib import resources
+import json
+import math
 import time
 
 import pytest
@@ -9,19 +13,21 @@ from google.protobuf.any_pb2 import Any
 
 from actor.core.v1 import actor_pb2 as core
 from actor_runtime.skills import SkillRegistry, SkillScheduler
+from actor_runtime.session import RuntimeSession
 from actor_agents_arena.skills import NavigateToRoom, Waypoint, skill_package
 from actor_standard import (TRANSFORM, MOTION, LOCOMOTION, Transform2DObservation,
                             Motion2DObservation, Locomotion2DCommand)
 from actor_agents_arena import ROOM_MEMBERSHIP, ROOM_CHANGED, RoomMembershipObservation, RoomChangedEvent
-from conftest import envelope, message, extension_version
+from conftest import envelope, message, extension_version, negotiate
 
 
 async def observe(session, sequence, x=0, y=-1.4, room="main-hall", vx=0, vy=0):
+    own = session.world.self_actor_id
     await session.accept(message(sequence, observation=core.ObservationFrame(revision=sequence,
-        observations=[envelope(TRANSFORM, "actor.standard", Transform2DObservation(x=x, y=y)),
+        observations=[envelope(TRANSFORM, "actor.standard", Transform2DObservation(x=x, y=y), entity=own),
                       envelope(MOTION, "actor.standard", Motion2DObservation(velocity_x=vx, velocity_y=vy,
-                                is_moving=abs(vx) + abs(vy) > 0)),
-                      envelope(ROOM_MEMBERSHIP, "agents-arena", RoomMembershipObservation(room_id=room))])))
+                                is_moving=abs(vx) + abs(vy) > 0), entity=own),
+                      envelope(ROOM_MEMBERSHIP, "agents-arena", RoomMembershipObservation(room_id=room), entity=own)])))
 
 
 def registry(definition=None):
@@ -123,7 +129,7 @@ async def test_navigation_round_trip_uses_real_typed_session_and_authoritative_r
                 room = next_room; sequence += 1
                 await session.accept(message(sequence, event=core.GameEventEnvelope(revision=sequence,
                     capability_id=ROOM_CHANGED, extension_id="agents-arena", extension_version=extension_version("agents-arena"),
-                    entity_id="actor-1", payload=packed)))
+                    entity_id=session.world.self_actor_id, payload=packed)))
             sequence += 1
             await observe(session, sequence, x=x, y=y, room=room, vx=dx * 10.4, vy=dy * 10.4)
 
@@ -229,7 +235,7 @@ class OccupiedAnchorsGame:
                 packed = Any(); packed.Pack(RoomChangedEvent(previous_room_id=previous, current_room_id=new_room))
                 await self.session.accept(message(self.sequence, event=core.GameEventEnvelope(revision=self.sequence,
                     capability_id=ROOM_CHANGED, extension_id="agents-arena", extension_version=extension_version("agents-arena"),
-                    entity_id="actor-1", payload=packed)))
+                    entity_id=self.session.world.self_actor_id, payload=packed)))
         self.sequence += 1
         await observe(self.session, self.sequence, x=x, y=y, room=new_room, vx=vx, vy=vy)
 
@@ -316,5 +322,102 @@ async def test_service_tight_stop_converges_with_150ms_authoritative_delay_at_ac
         assert abs(game.x - .3) < .025 and abs(game.y + 7.15) < .025
         assert result.output["stopped"] and result.output["room_change_confirmed"]
         await asyncio.sleep(.17); assert game.commands[-1] == (0, 0)
+    finally:
+        await game.close()
+
+
+@cache
+def hall_floor_points():
+    layout = json.loads(resources.files("actor_agents_arena").joinpath("social_layout.json").read_text())
+    polygon = next(item["physical_polygon"] for item in layout["floors"] if item["room_id"] == "main-hall")
+    return [(point["x"], point["y"]) for point in polygon]
+
+
+def hall_capsule_clear(x, y):
+    """Exact capsule/edge distance against the unchanged authored Hall floor."""
+    points = hall_floor_points()
+    a, b = (x, y + .46 - .265), (x, y + .46 + .265)
+
+    def inside(point):
+        px, py = point; result = False
+        for first, second in zip(points, points[1:] + points[:1]):
+            if (first[1] > py) != (second[1] > py):
+                crossing = first[0] + (second[0] - first[0]) * (py - first[1]) / (second[1] - first[1])
+                if px < crossing: result = not result
+        return result
+
+    def point_distance(point, first, second):
+        dx, dy = second[0] - first[0], second[1] - first[1]
+        length = dx * dx + dy * dy
+        t = max(0, min(1, ((point[0] - first[0]) * dx + (point[1] - first[1]) * dy) / length)) if length else 0
+        return math.hypot(point[0] - first[0] - t * dx, point[1] - first[1] - t * dy)
+
+    def cross(p, q, r):
+        return (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0])
+
+    if not inside(a) or not inside(b): return False
+    for c, d in zip(points, points[1:] + points[:1]):
+        if cross(a, b, c) * cross(a, b, d) < 0 and cross(c, d, a) * cross(c, d, b) < 0: return False
+        if min(point_distance(a, c, d), point_distance(b, c, d), point_distance(c, a, b), point_distance(d, a, b)) < .14 - 1e-6:
+            return False
+    return True
+
+
+class HallContactGame(OccupiedAnchorsGame):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.peers = []
+
+    def clear(self, x, y):
+        if not super().clear(x, y): return False
+        if y >= -3.4 and not hall_capsule_clear(x, y): return False
+        for peer in self.peers:
+            before = math.hypot(self.x - peer.x, max(0, abs(self.y - peer.y) - .53))
+            after = math.hypot(x - peer.x, max(0, abs(y - peer.y) - .53))
+            # Saved Unity contacts have a few mm solver overlap. Tangential
+            # sliding/separation is allowed; deeper overlap never is.
+            if after < .28 - 1e-8 and after < before - 1e-8: return False
+        return True
+
+
+@pytest.mark.parametrize("positions", [
+    ((-.85, -1.4), (-1.8, -1.4)),  # Actual ordinary slot1 Engineer / slot0 Sheriff.
+    ((-.102365993, -3.300001383), (-.378045350, -3.225148439)),  # Retained failed live run.
+])
+async def test_two_live_legacy_inspectors_separate_security_access_from_engineering_stem(session, registry, manifest, positions):
+    other = RuntimeSession(registry)
+    own_manifest = core.CapabilityManifest(); own_manifest.CopyFrom(manifest); own_manifest.self_actor_id = "actor-2"
+    await negotiate(other, own_manifest)
+    engineer = HallContactGame(session, *positions[0])
+    sheriff = HallContactGame(other, *positions[1])
+    engineer.peers = [sheriff]; sheriff.peers = [engineer]
+    await engineer.start(); await sheriff.start()
+    try:
+        results = await asyncio.wait_for(asyncio.gather(
+            SkillScheduler(session, service_registry(-.3)).run("agents-arena.navigate-to-room", {"target_room_id": "engineering"}),
+            SkillScheduler(other, service_registry(-.3)).run("agents-arena.navigate-to-room", {"target_room_id": "main-hall"}),
+        ), 15)
+        assert all(result.status == "succeeded" for result in results), [r.model_dump() for r in results]
+        assert engineer.room == "engineering" and sheriff.room == "main-hall"
+        assert results[0].output["room_change_confirmed"] and results[1].output["stopped"]
+        assert abs(sheriff.x + 1.5) < .025 and abs(sheriff.y + 1.9) < .025
+        assert min(y for _, y in sheriff.trajectory) > min(positions[1][1], -2.3) - .03
+        await asyncio.sleep(.03)
+        assert engineer.commands[-1] == sheriff.commands[-1] == (0, 0)
+    finally:
+        await engineer.close(); await sheriff.close(); other.close()
+
+
+async def test_same_hall_security_shelf_clears_occupied_anchor_and_real_floor_from_opposite_side(session):
+    game = HallContactGame(session, 1.8, -1.4)
+    await game.start()
+    try:
+        result = await asyncio.wait_for(SkillScheduler(session, service_registry(-.3)).run(
+            "agents-arena.navigate-to-room", {"target_room_id": "main-hall"}), 10)
+        assert result.status == "succeeded", result.model_dump()
+        assert result.output["waypoints_reached"] == 3 and result.output["room_change_confirmed"]
+        assert all(hall_capsule_clear(x, y) and OccupiedAnchorsGame.clear(x, y) for x, y in game.trajectory)
+        assert all(y < -2.26 for x, y in game.trajectory if abs(x) < .29)
+        assert abs(game.x + 1.5) < .025 and abs(game.y + 1.9) < .025
     finally:
         await game.close()

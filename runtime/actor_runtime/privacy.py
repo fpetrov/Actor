@@ -49,6 +49,11 @@ class SessionPrivacy:
         self._secrets = OrderedDict()
         self.has_private_data = False
         self.degraded = False
+        self.private_activity = False
+        self.activity_revealed = False
+
+    def activity_id(self, value):
+        return "[private_activity]" if self.private_activity and not self.activity_revealed and value else value
 
     def mark_private(self):
         self.has_private_data = True
@@ -82,7 +87,9 @@ class SessionPrivacy:
                     for secret in self._secrets:
                         if len(secret) >= 16:
                             public_key = public_key.replace(secret, "[redacted]")
-                    if self.degraded and key in ("output", "details", "value", "content", "arguments"):
+                    if self.private_activity and not self.activity_revealed and key in ("skill_id", "active_skill_id"):
+                        result[public_key] = self.activity_id(value)
+                    elif self.degraded and key in ("output", "details", "value", "content", "arguments"):
                         result[public_key] = {"redacted": True}
                     elif key == "status" and value in ("pending", "running", "succeeded", "failed", "cancelled", "timed_out"):
                         result[public_key] = value

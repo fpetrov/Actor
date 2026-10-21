@@ -1,0 +1,163 @@
+{
+  "schema": "actor.sandbox-public-acceptance.v1",
+  "attempt": "investigation-retry",
+  "game_mode": "Sandbox",
+  "game_version": "0.8.0",
+  "admission_protocol": "3",
+  "headless": true,
+  "fullscreen": false,
+  "acceptance": {
+    "schema": "actor.sandbox-regression.v1",
+    "case": "investigation",
+    "executed": true,
+    "reason": "authoritative_pair_completed",
+    "passed": true,
+    "both_objectives_passed": true,
+    "both_own_authoritative_terminal_and_same_scope": true,
+    "independent_processes_credentials_and_memory": true,
+    "scope": "Two ordinary investigation agents: same Resolved incident, Restored cooling, validated report and own Objective success. Natural mechanical clock; no manual-causation hard-negative claim.",
+    "owned_launchers_remaining": 0,
+    "owned_runtime_client_pids_checked": 4,
+    "owned_runtime_clients_remaining": 0,
+    "limitations": [
+      "Only the named case was run; no model intelligence or full M6 benchmark claim.",
+      "Prediction uses synthetic owned input on a headless client, not native keyboard/display response.",
+      "Raw local reports, plan and logs remain private; this acceptance publishes no authorization, chat, actor/session IDs or credentials."
+    ]
+  },
+  "agents": [
+    {
+      "role": "engineer",
+      "objective_passed": true,
+      "objective_status": "succeeded",
+      "objective_duration_seconds": 31.640251957986038,
+      "decision_count": 7,
+      "headless_mean_loop_fps": 59.048635075376865,
+      "errors": 0,
+      "warnings": 0,
+      "messages_received": 0,
+      "receipt_server_accepted": 1,
+      "receipt_client_received": 1,
+      "receipt_rejected": 0,
+      "diagnostic_results": 0,
+      "skills": [
+        {
+          "skill_id": "agents-arena.select-role",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 0.28898720897268504,
+          "commands_sent": 1
+        },
+        {
+          "skill_id": "agents-arena.wait-for-incident",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 15.179169457987882,
+          "commands_sent": 0
+        },
+        {
+          "skill_id": "agents-arena.inspect-cooling",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 12.975127584009897,
+          "commands_sent": 248
+        },
+        {
+          "skill_id": "agents-arena.share-investigation-evidence",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 0.2579298749915324,
+          "commands_sent": 1
+        },
+        {
+          "skill_id": "agents-arena.repair-cooling",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 2.598599832970649,
+          "commands_sent": 7
+        },
+        {
+          "skill_id": "agents-arena.wait-for-incident-resolved",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 0.0004965420230291784,
+          "commands_sent": 0
+        }
+      ],
+      "authoritative_completion": {
+        "observer": "readonly_completion_watcher",
+        "crewRole": "Engineer",
+        "incidentStatus": "Resolved",
+        "coolingStatus": "Restored",
+        "investigationReportValidated": true
+      }
+    },
+    {
+      "role": "sheriff",
+      "objective_passed": true,
+      "objective_status": "succeeded",
+      "objective_duration_seconds": 34.534419125004206,
+      "decision_count": 7,
+      "headless_mean_loop_fps": 59.28745259830156,
+      "errors": 0,
+      "warnings": 0,
+      "messages_received": 1,
+      "receipt_server_accepted": 0,
+      "receipt_client_received": 0,
+      "receipt_rejected": 0,
+      "diagnostic_results": 0,
+      "skills": [
+        {
+          "skill_id": "agents-arena.select-role",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 0.3411171249463223,
+          "commands_sent": 1
+        },
+        {
+          "skill_id": "agents-arena.wait-for-incident",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 18.063889832992572,
+          "commands_sent": 0
+        },
+        {
+          "skill_id": "agents-arena.inspect-security-records",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 7.9712485410273075,
+          "commands_sent": 152
+        },
+        {
+          "skill_id": "actor.wait-for-message",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 5.250173915992491,
+          "commands_sent": 0
+        },
+        {
+          "skill_id": "agents-arena.submit-investigation-report",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 0.4367846659733914,
+          "commands_sent": 7
+        },
+        {
+          "skill_id": "agents-arena.wait-for-incident-resolved",
+          "status": "succeeded",
+          "reason": "",
+          "duration_seconds": 2.130450833006762,
+          "commands_sent": 0
+        }
+      ],
+      "authoritative_completion": {
+        "observer": "readonly_completion_watcher",
+        "crewRole": "Sheriff",
+        "incidentStatus": "Resolved",
+        "coolingStatus": "Restored",
+        "investigationReportValidated": true
+      }
+    }
+  ],
+  "fix_scope": "Own-room Hall Security access uses the wide authored shelf at rootY-2.3 instead of the Engineering stem. Seven game-plugin lines; no Core, Unity geometry, motor or protocol change."
+}

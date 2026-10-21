@@ -35,7 +35,8 @@ public static class Endpoints
         api.MapPost("/lobbies/{roomCode}/join", async (string roomCode, JoinLobbyRequest request, LobbyManager manager, CancellationToken token)
             => Results.Ok(await manager.JoinAsync(roomCode, request, token))).RequireRateLimiting("join").WithName("JoinLobby");
         api.MapGet("/game/version", (IOptions<MatchOptions> options)
-            => Results.Ok(new { gameVersion = options.Value.GameVersion, protocolVersion = options.Value.ProtocolVersion, maxConcurrentGameServers = options.Value.MaxConcurrentGameServers, defaultMaxPlayers = options.Value.DefaultMaxPlayers })).WithName("GameVersion");
+            => Results.Ok(new { gameVersion = options.Value.GameVersion, protocolVersion = options.Value.ProtocolVersion, maxConcurrentGameServers = options.Value.MaxConcurrentGameServers, defaultMaxPlayers = options.Value.DefaultMaxPlayers,
+                gameModes = new[] { "Sandbox", "SocialDeduction" }, socialMinPlayers = options.Value.SocialDeduction.MinPlayers, socialMaxPlayers = options.Value.SocialDeduction.MaxPlayers })).WithName("GameVersion");
         app.MapGet("/health", async (ILobbyRepository repository, IOptions<MatchOptions> options, CancellationToken token)
             => options.Value.IsValid() && await repository.CheckHealthAsync(token)
                 ? Results.Ok(new { status = "healthy" }) : Results.Json(new { status = "unhealthy" }, statusCode: 503));

@@ -11,6 +11,7 @@ namespace Actor.Lobby
         public event Action DisconnectRequested;
         public string PlayerName = "Player";
         public string NewRoomName = "Main Hall";
+        public string GameMode = "Sandbox";
         public string DirectRoomCode = "";
         public string Status = "Fetching rooms…";
         public string ConnectedRoom = "";
@@ -18,7 +19,7 @@ namespace Actor.Lobby
         public bool Visible = true;
         public LobbyInfo[] Rooms = Array.Empty<LobbyInfo>();
 #if !UNITY_SERVER
-        private Vector2 scroll;
+        private Vector2 scroll, formScroll;
         private GUIStyle title, subtitle, label, button, input, status;
         private Texture2D backdrop, panel;
 
@@ -55,6 +56,7 @@ namespace Actor.Lobby
             var box = new Rect((Screen.width - width) / 2, (Screen.height - height) / 2, width, height);
             GUI.DrawTexture(box, panel);
             GUILayout.BeginArea(new Rect(box.x + 30, box.y + 22, box.width - 60, box.height - 44));
+            formScroll = GUILayout.BeginScrollView(formScroll);
             GUILayout.Label("Agents Arena", title);
             GUILayout.Label("ACTOR  /  MAIN HALL", subtitle);
             GUILayout.Space(20);
@@ -73,7 +75,7 @@ namespace Actor.Lobby
             {
                 GUILayout.BeginHorizontal(GUI.skin.box);
                 GUILayout.Label(room.roomCode, label, GUILayout.Width(110));
-                GUILayout.Label(room.displayName, label, GUILayout.MinWidth(130));
+                GUILayout.Label(room.displayName + " · " + (room.gameMode == "SocialDeduction" ? "Social" : "Sandbox"), label, GUILayout.MinWidth(130));
                 GUILayout.Label(room.currentPlayers + "/" + room.maxPlayers, label, GUILayout.Width(55));
                 GUILayout.Label(room.status, subtitle, GUILayout.Width(90));
                 GUI.enabled = !Busy && (room.status == "Ready" || room.status == "Running");
@@ -89,7 +91,11 @@ namespace Actor.Lobby
             if (GUILayout.Button("Join", button, GUILayout.Width(130), GUILayout.Height(44))) JoinRequested?.Invoke(DirectRoomCode);
             GUILayout.EndHorizontal();
             GUILayout.Space(14);
+            GUILayout.BeginHorizontal();
             GUILayout.Label("Create a room", label);
+            if (GUILayout.Button(GameMode == "Sandbox" ? "Sandbox / Investigation" : "Social Deduction · 4–6", button))
+                GameMode = GameMode == "Sandbox" ? "SocialDeduction" : "Sandbox";
+            GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             NewRoomName = GUILayout.TextField(NewRoomName, 48, input, GUILayout.Height(44));
             if (GUILayout.Button("Create room", button, GUILayout.Width(160), GUILayout.Height(44))) CreateRequested?.Invoke();
@@ -97,6 +103,7 @@ namespace Actor.Lobby
             GUI.enabled = true;
             GUILayout.Space(14);
             GUILayout.Label(Status, status);
+            GUILayout.EndScrollView();
             GUILayout.EndArea();
         }
         private void OnDestroy()

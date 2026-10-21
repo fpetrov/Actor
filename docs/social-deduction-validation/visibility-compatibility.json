@@ -1,0 +1,704 @@
+{
+  "test": "NGO2.13.3 native owner/spawn/observer compatibility",
+  "environment": {
+    "server": "Linux dedicated on existing VPS; isolated same Control Plane build; UDP7781",
+    "clients": "three independent macOS ordinary clients, headless, target60fps",
+    "game_version": "0.8.0",
+    "admission_protocol": "3"
+  },
+  "summary": {
+    "fixture": "ngo-2.13.3-visibility",
+    "passed": true,
+    "server_report_checked": true,
+    "clients": {
+      "A": true,
+      "B": true,
+      "C": true,
+      "server": true
+    },
+    "owned_clients_remaining": 0,
+    "scope": "Actual NGO observer/spawn/transform/owner compatibility; no Runtime, model, game outcome or raw packet payload claim."
+  },
+  "reports": {
+    "A": {
+      "fixture": "ngo-2.13.3-visibility",
+      "role": "A",
+      "completed": true,
+      "passed": true,
+      "preNetworkHookInstalled": true,
+      "stages": 30,
+      "duplicateSpawnWarnings": 0,
+      "initialForeignSpawns": 0,
+      "observerGrants": 0,
+      "observerRevocations": 0,
+      "policyFailures": 0,
+      "checks": [
+        {
+          "name": "stage_0_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_1_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_2_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_3_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_4_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_5_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_6_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_7_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_8_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_9_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_10_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_11_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_12_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_13_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_14_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_15_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_16_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_17_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_18_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_19_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_20_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_21_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_22_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_23_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_24_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_25_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_26_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_27_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_28_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_29_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "server_confirmed_all_client_stages",
+          "passed": true
+        }
+      ]
+    },
+    "B": {
+      "fixture": "ngo-2.13.3-visibility",
+      "role": "B",
+      "completed": true,
+      "passed": true,
+      "preNetworkHookInstalled": true,
+      "stages": 30,
+      "duplicateSpawnWarnings": 0,
+      "initialForeignSpawns": 0,
+      "observerGrants": 0,
+      "observerRevocations": 0,
+      "policyFailures": 0,
+      "checks": [
+        {
+          "name": "stage_0_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_1_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_2_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_3_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_4_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_5_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_6_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_7_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_8_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_9_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_10_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_11_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_12_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_13_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_14_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_15_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_16_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_17_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_18_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_19_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_20_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_21_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_22_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_23_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_24_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_25_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_26_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_27_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_28_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_29_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "server_confirmed_all_client_stages",
+          "passed": true
+        }
+      ]
+    },
+    "C": {
+      "fixture": "ngo-2.13.3-visibility",
+      "role": "C",
+      "completed": true,
+      "passed": true,
+      "preNetworkHookInstalled": true,
+      "stages": 30,
+      "duplicateSpawnWarnings": 0,
+      "initialForeignSpawns": 0,
+      "observerGrants": 0,
+      "observerRevocations": 0,
+      "policyFailures": 0,
+      "checks": [
+        {
+          "name": "stage_0_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_1_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_2_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_3_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_4_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_5_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_6_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_7_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_8_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_9_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_10_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_11_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_12_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_13_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_14_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_15_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_16_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_17_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_18_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_19_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_20_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_21_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_22_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_23_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_24_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_25_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_26_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_27_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_28_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "stage_29_spawned_set_and_owner",
+          "passed": true
+        },
+        {
+          "name": "server_confirmed_all_client_stages",
+          "passed": true
+        }
+      ]
+    },
+    "server": {
+      "fixture": "ngo-2.13.3-visibility",
+      "role": "server",
+      "completed": true,
+      "passed": true,
+      "preNetworkHookInstalled": true,
+      "stages": 30,
+      "duplicateSpawnWarnings": 0,
+      "initialForeignSpawns": 0,
+      "observerGrants": 83,
+      "observerRevocations": 74,
+      "policyFailures": 0,
+      "checks": [
+        {
+          "name": "stage_0_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_0_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_1_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_1_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_2_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_2_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_3_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_3_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_4_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_4_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_5_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_5_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_6_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_6_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_7_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_7_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_8_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_8_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_9_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_9_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_10_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_10_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_11_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_11_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_12_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_12_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_13_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_13_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_14_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_14_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_15_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_15_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_16_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_16_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_17_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_17_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_18_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_18_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_19_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_19_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_20_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_20_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_21_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_21_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_22_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_22_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_23_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_23_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_24_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_24_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_25_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_25_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_26_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_26_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_27_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_27_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_28_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_28_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "stage_29_server_observers",
+          "passed": true
+        },
+        {
+          "name": "stage_29_three_client_spawned_sets",
+          "passed": true
+        },
+        {
+          "name": "all_visibility_stages",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "limits": [
+    "No Python Runtime or Brain in this compatibility spike.",
+    "No claim of raw UDP payload inspection, gameplay outcome, reconnect or model intelligence."
+  ]
+}

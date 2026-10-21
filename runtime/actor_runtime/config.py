@@ -65,12 +65,22 @@ class BrainConfig(Settings):
         return self
 
 
+class ParticipationConfig(Settings):
+    duration_seconds: float = Field(default=1800, ge=1, le=14400)
+    max_episodes: int = Field(default=32, ge=1, le=256)
+    max_decisions: int = Field(default=160, ge=1, le=4096)
+    max_tokens: int = Field(default=1500000, ge=1000, le=20000000)
+    restart_cooldown_seconds: float = Field(default=2, ge=0.01, le=60)
+    terminal_grace_seconds: float = Field(default=1, ge=0, le=5)
+
+
 class CognitiveConfig(Settings):
     router: RouterConfig = Field(default_factory=RouterConfig)
     classifier: ClassifierConfig = Field(default_factory=ClassifierConfig)
     context: ContextConfig = Field(default_factory=ContextConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     brain: BrainConfig = Field(default_factory=BrainConfig)
+    participation: ParticipationConfig = Field(default_factory=ParticipationConfig)
     # Trusted, opt-in policy declarations; never inferred from game message text.
     policy_tags: tuple[str, ...] = ()
 

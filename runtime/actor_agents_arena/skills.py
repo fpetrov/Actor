@@ -45,7 +45,7 @@ ROOM_ROUTES = {
 }
 
 
-def control_state(context: SkillContext):
+def control_state(context: SkillContext, *, allowed_rooms=("main-hall", "engineering")):
     transform = context.observation_entry(TRANSFORM, Transform2DObservation)
     motion = context.observation_entry(MOTION, Motion2DObservation)
     membership = context.observation_entry(ROOM_MEMBERSHIP, RoomMembershipObservation)
@@ -56,7 +56,7 @@ def control_state(context: SkillContext):
         raise SkillError("stale_world_state", "Movement observations contain nonfinite values")
     if transform.sequence != motion.sequence:
         raise SkillError("stale_world_state", "Movement observations do not describe the same captured frame")
-    if membership.payload.room_id not in ("main-hall", "engineering"):
+    if membership.payload.room_id not in allowed_rooms:
         raise SkillError("route_failed", "Actor is outside the installed reference-game route graph")
     return transform, motion, membership
 
@@ -66,8 +66,13 @@ def stopped(motion: Motion2DObservation) -> bool:
 
 
 class NavigateToRoom(ActorSkill):
+    rooms = ("main-hall", "engineering")
+
+    def state(self, context):
+        return control_state(context, allowed_rooms=self.rooms)
+
     def preflight(self, context: SkillContext, arguments: NavigateToRoomInput):
-        _, _, membership = control_state(context)
+        _, _, membership = self.state(context)
         source = membership.payload.room_id
         if source != arguments.target_room_id and (source, arguments.target_room_id) not in ROOM_ROUTES:
             raise SkillError("target_not_found", "No installed route reaches this destination")
@@ -81,7 +86,7 @@ class NavigateToRoom(ActorSkill):
         distinct_stops = 0
         last_pair = None
         while context.now() < deadline:
-            transform, motion, _ = control_state(context)
+            transform, motion, _ = self.state(context)
             dx, dy = waypoint.x - transform.payload.x, waypoint.y - transform.payload.y
             distance = math.hypot(dx, dy)
             pair = (transform.sequence, motion.sequence)
@@ -107,7 +112,7 @@ class NavigateToRoom(ActorSkill):
         distinct_stops, last_samples = 0, None
         while context.now() < deadline:
             self.move(context)
-            transform, motion, membership = control_state(context)
+            transform, motion, membership = self.state(context)
             # A fresh unrelated membership update cannot count an old stopped Motion twice.
             samples = (transform.sequence, motion.sequence)
             if membership.payload.room_id == target and stopped(motion.payload):
@@ -122,7 +127,7 @@ class NavigateToRoom(ActorSkill):
         raise SkillError("route_failed", "Authoritative arrival and stop were not confirmed")
 
     async def execute(self, context: SkillContext, arguments: NavigateToRoomInput) -> NavigateToRoomOutput:
-        _, _, membership = control_state(context)
+        _, _, membership = self.state(context)
         source, target = membership.payload.room_id, arguments.target_room_id
         route = tuple(WAYPOINTS[name] for name in ROOM_ROUTES.get((source, target), ()))
         return await self._follow_route(context, source, target, route)
@@ -135,7 +140,7 @@ class NavigateToRoom(ActorSkill):
         Lower Hall staging also avoids crossing the occupied spawn/anchor row.
         This helper is composed by game Skills, not another public navigation API.
         """
-        transform, _, membership = control_state(context)
+        transform, _, membership = self.state(context)
         source = membership.payload.room_id
         if target not in ("main-hall", "engineering") or lane_x not in (-0.3, 0.3):
             raise SkillError("target_not_found", "No installed service approach reaches this destination")
@@ -144,6 +149,13 @@ class NavigateToRoom(ActorSkill):
         x, y = transform.payload.x, transform.payload.y
         if source == target and math.hypot(approach.x - x, approach.y - y) < 0.025:
             route = ()
+        elif source == target == "main-hall":
+            # The security approach is inside Hall. Going through the narrow
+            # southern stem makes it contend with an Engineer leaving Hall.
+            # Cross below the spawn row on the authored wide floor instead;
+            # the initial connector uses only the actor's fresh own position.
+            hall_x = max(-1.8, min(1.8, x))
+            route = (Waypoint(hall_x, -2.3), Waypoint(approach.x, -2.3), approach)
         elif source == "main-hall":
             route = (Waypoint(lane_x, -3.3),)
             if target == "engineering":

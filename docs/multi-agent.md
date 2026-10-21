@@ -1,9 +1,11 @@
 # Independent agents in one lobby
 
 Each agent has its own Python process, RuntimeSession, WorldState, EventRouter,
-SkillScheduler, ObjectiveRunner, Brain episode, bridge port/token, output directory
-and SQLite database. With Codex, each process creates its own official SDK client
-and thread. A game client connects only to its own loopback bridge.
+SkillScheduler, bridge port/token, output directory and SQLite database. A
+standalone objective has one ObjectiveRunner/Brain; match participation creates
+bounded Objective episodes with a fresh Brain and provider thread each time.
+The same participant retains its session, Scheduler, Router and scoped memory.
+A game client connects only to its own loopback bridge.
 
 The common game server is the only cooperation channel. Neither agent reads the
 other's reports, database, Python objects or model context. The launch supervisor
@@ -11,9 +13,63 @@ supplies objectives, watches terminal status and owns process cleanup; it does n
 forward game data. A shared lobby code identifies the ordinary multiplayer lobby,
 not a shared agent memory.
 
-## Launch an investigation
+## Launch Social Deduction participants
 
-Build the matching game client, install the Runtime and create a 0.7.0 lobby from
+Build the matching Game 0.8.0 client and install Runtime 0.6.0. Create a
+`SocialDeduction` room, then start 4–6 independent participants using its
+configured minimum count (four by default):
+
+```bash
+build/runtime-venv/bin/python -m pip install -e 'runtime[dev]'
+build/runtime-venv/bin/python scripts/launch-social-agents.py \
+  --room ABC123 --players 4 --brain social-scripted \
+  --output build/social-match
+```
+
+For independent official Codex providers, install `runtime[dev,codex]`, check
+`actor-runtime codex status`, then use `--brain codex`. `--brains` can choose one
+provider per numbered participant; it does not assign alignments or duties.
+Every participant receives the same trusted objective. The game server selects
+assignments, and each Runtime learns only its own permitted private state.
+
+The supervisor launches ordinary clients headlessly by default. Use `--windowed`
+for explicit 800×600 visual checks. Each numbered participant gets its own
+credential, consecutive port from `--base-port`, database/profile and fresh
+output directory. The supervisor reads readiness, process-isolation metadata
+and terminal proof, never live roles, positions, claims or model context. All
+communication uses the existing authoritative game-server message path.
+
+`--players` must equal the room's configured minimum; changing it does not
+change server rules. Social deployment settings are validated and copied into
+an immutable room snapshot at creation. Seeds and assignments are absent from
+the public room API and launcher. A room uses one match; it cannot switch modes.
+
+The launcher selects `actor-runtime match --brain ... --match-policy agents-arena`.
+The generic coordinator renews bounded episodes on the installed policy's phase,
+own-life and discovery boundaries. Finishing an Objective ends an episode;
+death suspends cognition while the endpoint waits for GameOver. Global time,
+episode, decision and token budgets still bound participation. A direct manual
+launch can use the same path with a distinct port/profile/output per actor:
+
+```bash
+python3 scripts/launch-agent.py --operation match --match-policy agents-arena \
+  --room ABC123 --brain social-scripted --player-name "Agent 01" \
+  --port 50051 --output build/social-agent-01 --headless-client \
+  --objective "Play autonomously using only information legitimately available to your character."
+```
+
+Completion requires matching authoritative GameOver, match identity, summary
+presence and winner/reason across distinct accepted actor sessions. Runtime
+completion means clean participation, not that every participant won. The
+supervisor closes only its owned launchers/clients after completion or bounded
+failure. Reports remain diagnostics, never a game-data IPC channel. Controlled
+`social-fixture-*` scenarios are mechanics tests, separate from autonomous model
+acceptance. See [Social Deduction](social-deduction.md), [match lifecycle](match-lifecycle.md)
+and the [validation report](social-deduction-validation/README.md).
+
+## Launch a Sandbox investigation
+
+Build the matching game client, install the Runtime and create a 0.8.0 Sandbox lobby from
 the website or Unity lobby. Install the optional Codex provider only if using it:
 
 ```bash
@@ -56,8 +112,8 @@ authority tests. See [investigation](investigation.md) and [evidence](evidence.m
 
 ## Launch the earlier calibration task
 
-The original cooperative calibration scenario remains available in the matching
-client/lobby:
+The original cooperative calibration scenario remains available in a matching
+Sandbox client/lobby:
 
 ```bash
 python3 scripts/launch-cooperative-agents.py --room ABC123
@@ -115,5 +171,11 @@ and private views; a resolved case survives later disconnects. Pre-alarm duty
 loss resets controller preparation. An incident is a game-specific one-case-per-
 lobby lifecycle, not a persistent cross-lobby case archive.
 
-Ordinary chat is not a persistent social memory system. This milestone introduces
-neither shared cognition nor trust scores, beliefs, RAG or role progression.
+Ordinary chat is not automatically durable social memory. Social participation
+can retain bounded private claims, last-seen observations and explicitly
+unverified hypotheses across its own episodes, with provenance and expiry.
+Scope binding prevents another match's memory from becoming current evidence.
+This provides neither shared cognition nor a hidden-role/truth oracle; private
+contents and live action identifiers stay out of automatic SQLite evidence and
+public diagnostics. Only legitimate terminal disclosure permits a postgame
+summary to become public memory.

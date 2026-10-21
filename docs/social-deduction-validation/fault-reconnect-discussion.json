@@ -1,0 +1,130 @@
+{
+  "schema": "actor.social-fault-acceptance.v1",
+  "case": "late-reconnect",
+  "requested_phase": "Discussion",
+  "executed": true,
+  "passed": true,
+  "checks": {
+    "owned_child_only_was_faulted": {
+      "status": "passed",
+      "passed": true
+    },
+    "fault_in_requested_public_phase": {
+      "status": "passed",
+      "passed": true
+    },
+    "remaining_clients_received_same_authoritative_terminal_summary": {
+      "status": "passed",
+      "passed": true
+    },
+    "selected_actor_irreversibly_forfeited_disconnected": {
+      "status": "passed",
+      "passed": true
+    },
+    "forfeit_has_no_kill_replay_or_observed_body": {
+      "status": "passed",
+      "passed": true
+    },
+    "legitimate_outcome_matches_postgame_alignment": {
+      "status": "passed",
+      "passed": true
+    },
+    "isolated_credentials_profiles_databases_and_pids": {
+      "status": "passed",
+      "passed": true
+    },
+    "all_owned_children_stopped": {
+      "status": "passed",
+      "passed": true
+    },
+    "runtime_loss_keeps_client_alive_stopped_without_keyboard": {
+      "status": "not_executed",
+      "passed": null
+    },
+    "fresh_ticket_actor_is_stationary_unassigned_spectator": {
+      "status": "passed",
+      "passed": true
+    },
+    "reconnect_observed_during_actual_discussion": {
+      "status": "passed",
+      "passed": true
+    }
+  },
+  "selected_participant": 1,
+  "selected_postgame_alignment": "CREW",
+  "postgame_winning_side": "IMPOSTOR",
+  "postgame_win_reason": "parity",
+  "forfeit_record_count": 1,
+  "legitimate_kills": 1,
+  "fault_to_gameover_seconds": 30.32041758298874,
+  "recovery": {
+    "completed": null,
+    "keyboard_disabled": null,
+    "client_alive": null,
+    "stopped": null,
+    "fps_above_30": null,
+    "error_state_observed": null,
+    "own_disconnected_observed": null,
+    "samples": null,
+    "seconds": null,
+    "max_speed": null,
+    "minimum_fps": null
+  },
+  "reconnect": {
+    "passed": true,
+    "alignment_unspecified": true,
+    "assigned": false,
+    "movement_permission": false,
+    "spectator_samples": 32,
+    "spectator_seconds": 2.2782220829976723,
+    "spectator_max_displacement": 0.0,
+    "spectator_max_speed": 0.0,
+    "commands_sent": 0,
+    "fresh_identity_verified": true,
+    "during_discussion_verified": true,
+    "discussion_samples": 32,
+    "discussion_seconds": 2.278221292013768
+  },
+  "client_metrics": [
+    {
+      "meanFps": 59.27628867929968,
+      "elapsedSeconds": 63.836655167,
+      "error_count": 0,
+      "warning_count": 0
+    },
+    {
+      "meanFps": 59.385976139301135,
+      "elapsedSeconds": 94.71933216699999,
+      "error_count": 0,
+      "warning_count": 0
+    },
+    {
+      "meanFps": 59.34123430649843,
+      "elapsedSeconds": 94.33575262500001,
+      "error_count": 0,
+      "warning_count": 0
+    },
+    {
+      "meanFps": 59.46721304435419,
+      "elapsedSeconds": 94.08545841600002,
+      "error_count": 0,
+      "warning_count": 0
+    }
+  ],
+  "owned_processes_started": 10,
+  "owned_processes_remaining": 0,
+  "not_executed_cases": [
+    "runtime-loss",
+    "client-loss",
+    "exploration-vs-meeting"
+  ],
+  "coverage": {
+    "exploration": false,
+    "discussion": true
+  },
+  "limits": [
+    "No global server-body enumeration: no-body check combines postgame Disconnected, complete kill replay and all permitted observed body victim IDs.",
+    "Spectator no-actions means zero commands plus authoritative no movement permission; this helper does not attempt forbidden actions.",
+    "One run covers one fault and one phase. Unit tests, another phase and server loss are not implied."
+  ]
+}

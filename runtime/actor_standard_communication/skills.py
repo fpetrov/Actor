@@ -12,13 +12,15 @@ from . import (SEND_MESSAGE, MESSAGE_RECEIVED, MESSAGE_DELIVERY_RESULT, PEERS,
 
 class SendMessageInput(SkillModel):
     recipient_actor_id: str = Field(default="", max_length=128,
-        description="An authorized peer actor ID for direct messages; empty for station broadcast.")
-    channel_id: str = Field(default="direct", min_length=1, max_length=32)
+        description="An authorized peer actor ID for direct messages; empty for an allowed broadcast channel.")
+    channel_id: str = Field(default="direct", min_length=1, max_length=32,
+        description="A channel currently advertised by the game, such as direct, proximity, discussion or station. Server permissions apply.")
     text: str = Field(min_length=1, max_length=512,
         description="At most 512 UTF-8 bytes. Private authorization should be sent directly with sensitive=true and task_id.")
     task_id: str = Field(default="", max_length=64)
     sensitive: bool = False
-    ttl_ms: int = Field(default=60000, ge=1000, le=300000)
+    ttl_ms: int = Field(default=60000, ge=1000, le=300000,
+        description="Message lifetime. Allow for the recipient's planning/decision delay, up to 300000ms; expiry also removes private working content.")
     timeout_seconds: float = Field(default=10.0, gt=0, le=30)
 
     @field_validator("text")
@@ -136,7 +138,7 @@ def skill_package():
     peers = CapabilityRequirement(PEERS, CommunicationPeersObservation, "observation", 3.0)
     return (
         SkillDefinition("actor.send-message", "1.0.0",
-            "Send a direct or station message through the game's authoritative server. Wait for server acceptance; "
+            "Send through a currently advertised game-authorized communication channel. Wait for server acceptance; "
             "this never asserts the recipient Brain read it. Use sensitive direct messages for task authorization.",
             SendMessageInput, SendMessageOutput, SendMessage,
             (peers, CapabilityRequirement(SEND_MESSAGE, SendMessageCommand, "command"),

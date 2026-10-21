@@ -70,3 +70,40 @@ async def test_shutdown_before_game_session_is_cancelled_not_false_success(cli_s
     result = json.loads((tmp_path / "runtime.json").read_text())["objective"]["result"]
     assert result["status"] == "cancelled" and result["reason"] == "runtime_shutdown"
     assert result["decision_count"] == 0 and result["skill_results"] == []
+
+
+async def test_match_cli_keeps_finished_episode_connected_until_generic_authoritative_terminal(cli_server, manifest, tmp_path, monkeypatch):
+    from actor_runtime.episodes import MatchPolicyRegistry, EpisodeDirective
+    class Policy:
+        def evaluate(self, session):
+            terminal = session.world.revision >= 2
+            return EpisodeDirective(scope_id="generic-participation", episode_key="episode",
+                state="terminal" if terminal else "active", reason="typed_terminal" if terminal else "active")
+    monkeypatch.setattr(MatchPolicyRegistry, "create", staticmethod(lambda name: Policy()))
+    ready, captured, _ = cli_server
+    options = arguments(tmp_path)
+    options.operation, options.match_policy = "match", "synthetic"
+    task = asyncio.create_task(cli.serve(options))
+    await ready.wait()
+    async with grpc.aio.insecure_channel(f"127.0.0.1:{captured['server'].port}") as channel:
+        call = bridge_pb2_grpc.ActorBridgeStub(channel).Connect(metadata=(("x-actor-bridge-token", TOKEN),))
+        await call.write(message(1, hello=core.GameHello(game_id=manifest.game_id, game_version=manifest.game_version,
+            self_actor_id=manifest.self_actor_id, protocol_version=manifest.protocol_version)))
+        await call.write(message(2, manifest=manifest))
+        assert (await call.read()).hello.accepted
+        await call.write(message(3, observation=core.ObservationFrame(revision=1)))
+        async with asyncio.timeout(3):
+            while True:
+                session = next(iter(captured["server"].sessions))
+                controller = getattr(session, "participation_controller", None)
+                if controller is not None and controller._reports:
+                    break
+                await asyncio.sleep(.01)
+        assert not task.done()
+        await call.write(message(4, observation=core.ObservationFrame(revision=2)))
+        assert await asyncio.wait_for(task, 3) == 0
+        call.cancel()
+    report = json.loads((tmp_path / "runtime.json").read_text())
+    assert report["match"]["result"]["status"] == "completed"
+    assert report["match"]["result"]["authoritative_terminal"]
+    assert report["cognitive"]["episode_count"] >= 1

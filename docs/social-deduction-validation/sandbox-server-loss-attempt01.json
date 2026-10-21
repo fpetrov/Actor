@@ -1,0 +1,41 @@
+{
+  "schema": "actor.social-lifecycle-acceptance.v1",
+  "case": "server-loss-observer",
+  "passed": false,
+  "checks": {
+    "ordinary_live_owned_client": true,
+    "foreground_released": false,
+    "bounded_cleanup_complete": false,
+    "no_commands_after_cleanup": false,
+    "owned_client_cleanup": true,
+    "observed_authoritative_motion_expiry": false,
+    "observed_bridge_disconnect": false,
+    "controlled_session_failure": false,
+    "client_survived_stopped": false,
+    "bounded_transport_loss": false
+  },
+  "result_status": null,
+  "result_reason": null,
+  "cleanup_seconds": null,
+  "stale_to_terminal_seconds": null,
+  "commands_at_cleanup": null,
+  "commands_later": null,
+  "model_turns": null,
+  "server_mutation_performed": false,
+  "model_provider_requested": false,
+  "limits": [
+    "Controlled lifecycle objective, not autonomous match intelligence or a match win.",
+    "Server-loss observer requires separate exact-match SSH fault identity evidence; it never kills a server.",
+    "Headless client loop rate is not display FPS or keyboard latency.",
+    "Public projection omits actor/session/match IDs, chat, contexts, prompts and reasoning; private build evidence retains identity binding."
+  ],
+  "game_mode": "Sandbox",
+  "game_version": "0.8.0",
+  "admission_protocol": "3",
+  "scope": "Actual ordinary Sandbox server-loss observer attempt; overall harness timeout, no accepted disconnect/cleanup proof and no Social match claim",
+  "failure_code": "harness_timeout",
+  "server_fault_verified_separately": true,
+  "reason": "harness_timeout",
+  "owned_local_clients_cleanup_complete": true,
+  "owned_local_clients_remaining": 0
+}

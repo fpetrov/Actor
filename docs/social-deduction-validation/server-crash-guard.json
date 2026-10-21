@@ -1,0 +1,56 @@
+{
+  "schema": "actor.staging-abrupt-server-guard-acceptance.v1",
+  "passed": true,
+  "inspection": {
+    "schema": "actor.staging-server-guard.v1",
+    "operation": "inspect",
+    "passed": true,
+    "scope": "Exact staging instance only; no gameplay/Runtime-loss acceptance implied.",
+    "checks": {
+      "fresh_exact_lobby": true,
+      "exact_staging_control_plane": true,
+      "exact_allocation_record": true,
+      "actor_owned_exact_server": true,
+      "current_control_plane_parent": true,
+      "exclusive_udp_owner": true,
+      "same_network_namespace": true,
+      "actual_ready_identity": true,
+      "same_inspected_instance": false,
+      "fresh_observer_ready": false
+    },
+    "signal": null,
+    "signal_issued": false,
+    "rejection_code": null,
+    "limits": [
+      "No lobby, PID, executable path, private state, log text or credential is published.",
+      "Successful signal dispatch is not proof of process exit or client cleanup; the independent observer supplies that evidence."
+    ]
+  },
+  "termination": {
+    "schema": "actor.staging-server-guard.v1",
+    "operation": "terminate",
+    "passed": true,
+    "scope": "Exact staging instance only; no gameplay/Runtime-loss acceptance implied.",
+    "checks": {
+      "fresh_exact_lobby": true,
+      "exact_staging_control_plane": true,
+      "exact_allocation_record": true,
+      "actor_owned_exact_server": true,
+      "current_control_plane_parent": true,
+      "exclusive_udp_owner": true,
+      "same_network_namespace": true,
+      "actual_ready_identity": true,
+      "same_inspected_instance": true,
+      "fresh_observer_ready": true
+    },
+    "signal": "SIGKILL",
+    "signal_issued": true,
+    "rejection_code": null,
+    "limits": [
+      "No lobby, PID, executable path, private state, log text or credential is published.",
+      "Successful signal dispatch is not proof of process exit or client cleanup; the independent observer supplies that evidence."
+    ]
+  },
+  "same_observer_scope_verified_privately": true,
+  "signal_classification": "abrupt SIGKILL; separate SIGTERM attempt is not a crash test"
+}

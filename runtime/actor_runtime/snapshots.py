@@ -77,6 +77,8 @@ class DecisionContext(BaseModel):
     decision_reason: str = "objective_started"
     cognitive_revision: int = 0
     current_skill: dict[str, JsonValue] | None = None
+    working_knowledge: list[dict[str, JsonValue]] = Field(default_factory=list)
+    knowledge_omitted: int = 0
 
     @property
     def external_bytes(self) -> int:
@@ -205,7 +207,8 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
                            max_payload_bytes=8192, max_external_bytes=65536,
                            trigger_events=(), routed_events=None, memories=(), decision_reason=None,
                            cognitive_revision=0, current_skill=None, max_memories=8,
-                           max_event_payload_bytes=None, stale_after_seconds=3.0) -> DecisionContext:
+                           max_event_payload_bytes=None, stale_after_seconds=3.0,
+                           working_knowledge=()) -> DecisionContext:
     if (not all(type(value) is int and value > 0 for value in (
             max_observations, max_events, max_payload_bytes, max_external_bytes)) or
             type(max_memories) is not int or max_memories < 0 or
@@ -295,6 +298,7 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
         decision_reason=(decision_reason or ("objective_started" if previous_skill_result is None else
             "skill_succeeded" if previous_skill_result.get("status") == "succeeded" else "skill_failed"))[:128],
         cognitive_revision=cognitive_revision, current_skill=current_skill,
+        working_knowledge=list(working_knowledge),
     )
     # Trigger data and the previous result survive ordinary budget pressure.
     # A budget unable to contain those mandatory facts fails explicitly.
@@ -312,6 +316,10 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
         if context.memories:
             context = context.model_copy(update={"memories": context.memories[:-1],
                                                   "memories_omitted": context.memories_omitted + 1})
+            continue
+        if context.working_knowledge:
+            context = context.model_copy(update={"working_knowledge": context.working_knowledge[:-1],
+                                                 "knowledge_omitted": context.knowledge_omitted + 1})
             continue
         candidates = [("observations", i, _encoded_size(item.value))
                       for i, item in enumerate(context.observations) if item.value is not None]

@@ -54,7 +54,7 @@ namespace Actor.Networking
 
         public bool Submit(IMessage command)
         {
-            if (!IsSpawned || !IsOwner || !IsClient || command == null || command.CalculateSize() > 2048) return false;
+            if (SocialVisibilitySystem.IsSocial(NetworkManager) || !IsSpawned || !IsOwner || !IsClient || command == null || command.CalculateSize() > 2048) return false;
             byte kind = command switch
             {
                 SelectRoleCommand _ => 1, InspectCoolingCommand _ => 2, InspectSecurityRecordsCommand _ => 3,
@@ -67,7 +67,7 @@ namespace Actor.Networking
 
         private bool Approved(RpcParams rpc)
         {
-            if (!IsServer || !IsSpawned || rpc.Receive.SenderClientId != OwnerClientId) return false;
+            if (SocialVisibilitySystem.IsSocial(NetworkManager) || !IsServer || !IsSpawned || rpc.Receive.SenderClientId != OwnerClientId) return false;
             var session = NetworkManager.GetComponent<MatchSession>();
             return session != null && session.TryGetApprovedPlayer(OwnerClientId, out _)
                 && NetworkManager.ConnectedClients.TryGetValue(OwnerClientId, out var client) && client.PlayerObject == NetworkObject;
@@ -111,6 +111,7 @@ namespace Actor.Networking
 
         internal void Deliver(IMessage payload)
         {
+            if (SocialVisibilitySystem.IsSocial(NetworkManager)) return;
             Kind kind = payload switch
             {
                 OwnRoleObservation _ => Kind.Role, DutyRosterObservation _ => Kind.Roster,

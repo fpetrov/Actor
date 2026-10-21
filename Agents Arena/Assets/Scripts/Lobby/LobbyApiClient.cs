@@ -14,9 +14,9 @@ namespace Actor.Lobby
             => Request("GET", "/api/v1/lobbies", null, success, failure);
         public IEnumerator Get(string code, Action<LobbyInfo> success, Action<string> failure)
             => Request("GET", "/api/v1/lobbies/" + Uri.EscapeDataString(code.Trim().ToUpperInvariant()), null, success, failure);
-        public IEnumerator Create(string displayName, Action<LobbyInfo> success, Action<string> failure)
+        public IEnumerator Create(string displayName, Action<LobbyInfo> success, Action<string> failure, string gameMode = "Sandbox")
             => Request("POST", "/api/v1/lobbies", JsonUtility.ToJson(new CreateLobbyBody
-            { displayName = displayName, gameVersion = settings.gameVersion, protocolVersion = settings.protocolVersion }), success, failure);
+            { displayName = displayName, gameMode = gameMode, maxPlayers = gameMode == "SocialDeduction" ? 6 : 8, gameVersion = settings.gameVersion, protocolVersion = settings.protocolVersion }), success, failure);
         public IEnumerator Join(string code, string name, Action<JoinInfo> success, Action<string> failure)
             => Request("POST", "/api/v1/lobbies/" + Uri.EscapeDataString(code.Trim().ToUpperInvariant()) + "/join",
                 JsonUtility.ToJson(new JoinLobbyBody { playerName = name.Trim(), gameVersion = settings.gameVersion, protocolVersion = settings.protocolVersion }), success, failure);

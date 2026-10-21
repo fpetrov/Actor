@@ -47,6 +47,12 @@ namespace Actor.Characters
             return (FacingDirection)((Mathf.RoundToInt(angle / 45f) + 8) % 8);
         }
 
+        public void Halt()
+        {
+            desiredMovement = Vector2.zero;
+            if (body != null) body.linearVelocity = Vector2.zero;
+        }
+
         private void OnDisable()
         {
             desiredMovement = Vector2.zero;

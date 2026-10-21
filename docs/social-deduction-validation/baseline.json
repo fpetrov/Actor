@@ -1,0 +1,10 @@
+{
+  "commit": "40f6331c4fb4e60841ef66a5408b0db70838edb7",
+  "runtime": 403,
+  "scripts": 47,
+  "sdk_csharp": 162,
+  "control_plane": 18,
+  "generated_protocol_artifacts": 52,
+  "python_duration_seconds": 58.82,
+  "python_subtests": 44
+}

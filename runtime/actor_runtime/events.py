@@ -251,6 +251,14 @@ class EventRouter:
             self._worker = asyncio.create_task(self._run(), name="actor-event-router")
             self._wake.set()
 
+    def update_context(self, objective, current_skill=None):
+        """Change the bounded episode without restarting a session-owned worker."""
+        if self._closed:
+            raise ActorError("event_router_closed", "A closed router cannot be reused")
+        self.objective = objective
+        if current_skill is not None:
+            self.current_skill = current_skill
+
     def _apply(self, event, assessment):
         # Provider opinion is input to policy, never direct actuator authority.
         if event.hints.mandatory_review:

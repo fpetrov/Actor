@@ -1,0 +1,182 @@
+{
+  "schema": "actor.social-match-evaluation.v1",
+  "passed": true,
+  "checks": {
+    "supervisor_completed": true,
+    "isolated_processes": true,
+    "owned_process_cleanup": true,
+    "client_runtime_terminal_agreement": true,
+    "all_participants_present": true,
+    "recorded_process_identities": true,
+    "independent_launches": true,
+    "independent_memory_database": true,
+    "independent_agent_profile": true,
+    "independent_bridge_credential_sha256": true,
+    "agent-01_terminal_identity": true,
+    "agent-01_postgame_identity": true,
+    "agent-01_no_cleanup_errors": true,
+    "agent-01_no_direct_model_tools": true,
+    "agent-01_provider_identity": true,
+    "agent-01_postgame_fields": true,
+    "agent-02_terminal_identity": true,
+    "agent-02_postgame_identity": true,
+    "agent-02_no_cleanup_errors": true,
+    "agent-02_no_direct_model_tools": true,
+    "agent-02_provider_identity": true,
+    "agent-02_postgame_fields": true,
+    "agent-03_terminal_identity": true,
+    "agent-03_postgame_identity": true,
+    "agent-03_no_cleanup_errors": true,
+    "agent-03_no_direct_model_tools": true,
+    "agent-03_provider_identity": true,
+    "agent-03_postgame_fields": true,
+    "agent-04_terminal_identity": true,
+    "agent-04_postgame_identity": true,
+    "agent-04_no_cleanup_errors": true,
+    "agent-04_no_direct_model_tools": true,
+    "agent-04_provider_identity": true,
+    "agent-04_postgame_fields": true,
+    "distinct_actor_sessions": true,
+    "identical_authoritative_summaries": true,
+    "composition": true,
+    "known_terminal_outcome": true,
+    "expected_authoritative_reason": true,
+    "bounded_ordered_terminal_replay": true,
+    "required_real_gameplay": true
+  },
+  "scope": "consistent dedicated-server postgame summaries, ordinary client terminal proofs and independent Runtime reports",
+  "headless_clients": true,
+  "winner": "SOCIAL_ALIGNMENT_CREW",
+  "reason": "impostors_eliminated",
+  "duration_ms": 32441,
+  "gameplay_counts": {
+    "kills": 1,
+    "body_reports": 1,
+    "meetings": 1,
+    "votes": 3,
+    "crew_tasks_completed": 0,
+    "sabotages": 0
+  },
+  "replay_kind_counts": {
+    "match_started": 1,
+    "phase": 6,
+    "kill": 1,
+    "meeting": 1,
+    "vote": 3,
+    "ejection": 1,
+    "match_ended": 1
+  },
+  "participants": [
+    {
+      "participant": "agent-01",
+      "brain": "social-fixture-vote",
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+      "life": "SOCIAL_LIFE_DEAD",
+      "survival_ms": 6760,
+      "team_won": true,
+      "survived": false,
+      "episodes": 2,
+      "decisions": 2,
+      "codex_turns": 0,
+      "codex_usage": {},
+      "model_tool_calls": 0,
+      "skills": {
+        "[private_activity]": 2
+      },
+      "turn_latency_seconds": {
+        "count": 0,
+        "mean": 0,
+        "max": 0
+      },
+      "headless_loop_rate": 59.10151946737295,
+      "grpc_bytes_sent": 1229774,
+      "grpc_bytes_received": 1737,
+      "delivered_messages_received": 0
+    },
+    {
+      "participant": "agent-02",
+      "brain": "social-fixture-vote",
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+      "life": "SOCIAL_LIFE_ALIVE",
+      "survival_ms": 32441,
+      "team_won": true,
+      "survived": true,
+      "episodes": 4,
+      "decisions": 5,
+      "codex_turns": 0,
+      "codex_usage": {},
+      "model_tool_calls": 0,
+      "skills": {
+        "[private_activity]": 5
+      },
+      "turn_latency_seconds": {
+        "count": 0,
+        "mean": 0,
+        "max": 0
+      },
+      "headless_loop_rate": 59.25217389158573,
+      "grpc_bytes_sent": 1432051,
+      "grpc_bytes_received": 2103,
+      "delivered_messages_received": 1
+    },
+    {
+      "participant": "agent-03",
+      "brain": "social-fixture-vote",
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_IMPOSTOR",
+      "life": "SOCIAL_LIFE_EJECTED",
+      "survival_ms": 32441,
+      "team_won": false,
+      "survived": false,
+      "episodes": 5,
+      "decisions": 9,
+      "codex_turns": 0,
+      "codex_usage": {},
+      "model_tool_calls": 0,
+      "skills": {
+        "[private_activity]": 7,
+        "agents-arena.cast-vote": 1,
+        "agents-arena.wait-for-match-event": 1
+      },
+      "turn_latency_seconds": {
+        "count": 0,
+        "mean": 0,
+        "max": 0
+      },
+      "headless_loop_rate": 59.09549859545177,
+      "grpc_bytes_sent": 1473815,
+      "grpc_bytes_received": 9144,
+      "delivered_messages_received": 1
+    },
+    {
+      "participant": "agent-04",
+      "brain": "social-fixture-vote",
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+      "life": "SOCIAL_LIFE_ALIVE",
+      "survival_ms": 32441,
+      "team_won": true,
+      "survived": true,
+      "episodes": 5,
+      "decisions": 9,
+      "codex_turns": 0,
+      "codex_usage": {},
+      "model_tool_calls": 0,
+      "skills": {
+        "[private_activity]": 6,
+        "agents-arena.cast-vote": 1,
+        "agents-arena.wait-for-match-event": 1
+      },
+      "turn_latency_seconds": {
+        "count": 0,
+        "mean": 0,
+        "max": 0
+      },
+      "headless_loop_rate": 59.348786035924405,
+      "grpc_bytes_sent": 1441780,
+      "grpc_bytes_received": 16335,
+      "delivered_messages_received": 1
+    }
+  ],
+  "real_codex_on_both_sides": false,
+  "display_fps_measured": false,
+  "privacy": "postgame outcomes and whitelisted aggregate counters only"
+}

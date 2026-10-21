@@ -1,0 +1,271 @@
+{
+  "schema": "actor.social-performance-acceptance.v1",
+  "passed": true,
+  "server": {
+    "measurement_scope": "server session initialization through GameOver",
+    "percentile_window": "latest 1024 samples; maximum covers all samples",
+    "payload_scope": "social protobuf payloads only; excludes RPC/NGO/UDP headers, transforms, spawn and Standard communication",
+    "elapsed_seconds": 244.61711811199999,
+    "physics_ticks": 12230,
+    "update_frames": 14615,
+    "visibility_samples": 19334,
+    "refresh_samples": 2355,
+    "observer_pair_samples": 19334,
+    "physics_ticks_per_second": 49.99650103963858,
+    "mean_update_rate": 59.74643194556973,
+    "visibility_p95_ms": 0.2872,
+    "visibility_max_ms": 6.144,
+    "refresh_p95_ms": 3.4791,
+    "refresh_max_ms": 37.277,
+    "mean_observer_pairs": 10.785559118651081,
+    "server_process_cpu_seconds": 19.59,
+    "server_cpu_percent_one_core": 8.008433813299426,
+    "server_peak_working_set_bytes": 150818816,
+    "social_payload_recipients": [
+      {
+        "recipient": "recipient01",
+        "bytes": 452448,
+        "messages": 1768,
+        "world_samples": 1734,
+        "visible_actor_total": 2849,
+        "visible_actor_max": 3,
+        "mean_visible_actors": 1.6430219146482121,
+        "mean_social_payload_bytes_per_second": 1849.6170811432867
+      },
+      {
+        "recipient": "recipient02",
+        "bytes": 706649,
+        "messages": 1767,
+        "world_samples": 1735,
+        "visible_actor_total": 4400,
+        "visible_actor_max": 3,
+        "mean_visible_actors": 2.5360230547550433,
+        "mean_social_payload_bytes_per_second": 2888.7961948617794
+      },
+      {
+        "recipient": "recipient03",
+        "bytes": 723235,
+        "messages": 1772,
+        "world_samples": 1735,
+        "visible_actor_total": 4400,
+        "visible_actor_max": 3,
+        "mean_visible_actors": 2.5360230547550433,
+        "mean_social_payload_bytes_per_second": 2956.600116876779
+      },
+      {
+        "recipient": "recipient04",
+        "bytes": 600331,
+        "messages": 1769,
+        "world_samples": 1736,
+        "visible_actor_total": 4369,
+        "visible_actor_max": 3,
+        "mean_visible_actors": 2.516705069124424,
+        "mean_social_payload_bytes_per_second": 2454.165941588493
+      }
+    ],
+    "social_payload_total_bytes": 2482663,
+    "social_payload_total_messages": 7076
+  },
+  "udp": {
+    "four_bidirectional_peers_measured": true,
+    "packet_span_seconds": 182.6679871082306,
+    "capture": {
+      "captured_packets": 82769,
+      "received_by_filter": 82770,
+      "kernel_drops": 0,
+      "received_not_written_at_capture_stop": 1,
+      "parsed_packets": 82769,
+      "trailing_blank_lines": 1
+    },
+    "peers": [
+      {
+        "peer": "peer01",
+        "client_to_server": {
+          "packets": 9305,
+          "udp_payload_bytes": 406179,
+          "active_packet_span_seconds": 182.22776699066162,
+          "mean_active_udp_payload_bytes_per_second": 2228.9632733128697
+        },
+        "server_to_client": {
+          "packets": 12063,
+          "udp_payload_bytes": 1944230,
+          "active_packet_span_seconds": 182.21217703819275,
+          "mean_active_udp_payload_bytes_per_second": 10670.14308046206
+        }
+      },
+      {
+        "peer": "peer02",
+        "client_to_server": {
+          "packets": 9304,
+          "udp_payload_bytes": 407002,
+          "active_packet_span_seconds": 182.38736820220947,
+          "mean_active_udp_payload_bytes_per_second": 2231.5251544655466
+        },
+        "server_to_client": {
+          "packets": 11900,
+          "udp_payload_bytes": 2026710,
+          "active_packet_span_seconds": 182.365797996521,
+          "mean_active_udp_payload_bytes_per_second": 11113.432574888104
+        }
+      },
+      {
+        "peer": "peer03",
+        "client_to_server": {
+          "packets": 9266,
+          "udp_payload_bytes": 404189,
+          "active_packet_span_seconds": 182.49492812156677,
+          "mean_active_udp_payload_bytes_per_second": 2214.795798219414
+        },
+        "server_to_client": {
+          "packets": 12066,
+          "udp_payload_bytes": 2068707,
+          "active_packet_span_seconds": 182.48139786720276,
+          "mean_active_udp_payload_bytes_per_second": 11336.536349340446
+        }
+      },
+      {
+        "peer": "peer04",
+        "client_to_server": {
+          "packets": 8495,
+          "udp_payload_bytes": 382924,
+          "active_packet_span_seconds": 182.305260181427,
+          "mean_active_udp_payload_bytes_per_second": 2100.4550259214725
+        },
+        "server_to_client": {
+          "packets": 10370,
+          "udp_payload_bytes": 1491548,
+          "active_packet_span_seconds": 182.2978389263153,
+          "mean_active_udp_payload_bytes_per_second": 8181.929137420455
+        }
+      }
+    ],
+    "aggregate": {
+      "client_to_server": {
+        "packets": 36370,
+        "udp_payload_bytes": 1600294,
+        "mean_udp_payload_bytes_per_capture_second": 8760.670248431803
+      },
+      "server_to_client": {
+        "packets": 46399,
+        "udp_payload_bytes": 7531195,
+        "mean_udp_payload_bytes_per_capture_second": 41228.87167710331
+      }
+    },
+    "scope": "Header-only IPv4 UDP payload lengths for one selected gameplay socket. Excludes IP/UDP/link headers; includes transport/NGO overhead and all captured gameplay traffic."
+  },
+  "participants": [
+    {
+      "participant": "participant01",
+      "unity": {
+        "headless_loop_rate": 57.467105670315235,
+        "elapsed_seconds": 183.11345033400002,
+        "managed_heap_start_bytes": 1806336,
+        "managed_heap_current_bytes": 5898240,
+        "grpc_bytes_sent": 8371933,
+        "grpc_bytes_received": 694779
+      },
+      "client_scope_binding": "client match field cleared on cleanup; exact actor and accepted Runtime session bound to Runtime match scope",
+      "runtime": {
+        "elapsed_seconds": 184.708698500006,
+        "cpu_seconds": 21.589291,
+        "cpu_percent_one_core": 11.688291442321704,
+        "python_traced_current_bytes": 3971460,
+        "python_traced_peak_bytes": 6836835,
+        "command_result_rtt_ms": {
+          "samples": 2048,
+          "median": 9.941707976395264,
+          "p95": 17.92895805556327,
+          "max": 41.10712499823421
+        }
+      }
+    },
+    {
+      "participant": "participant02",
+      "unity": {
+        "headless_loop_rate": 57.48974983411787,
+        "elapsed_seconds": 183.284846958,
+        "managed_heap_start_bytes": 1806336,
+        "managed_heap_current_bytes": 5783552,
+        "grpc_bytes_sent": 8537130,
+        "grpc_bytes_received": 695191
+      },
+      "client_scope_binding": "client match field cleared on cleanup; exact actor and accepted Runtime session bound to Runtime match scope",
+      "runtime": {
+        "elapsed_seconds": 184.3889233749942,
+        "cpu_seconds": 21.31584,
+        "cpu_percent_one_core": 11.560260567631655,
+        "python_traced_current_bytes": 3989322,
+        "python_traced_peak_bytes": 6873452,
+        "command_result_rtt_ms": {
+          "samples": 2048,
+          "median": 9.889645967632532,
+          "p95": 17.93875003932044,
+          "max": 33.12625002581626
+        }
+      }
+    },
+    {
+      "participant": "participant03",
+      "unity": {
+        "headless_loop_rate": 57.50727795429298,
+        "elapsed_seconds": 183.402873083,
+        "managed_heap_start_bytes": 1806336,
+        "managed_heap_current_bytes": 5357568,
+        "grpc_bytes_sent": 7478716,
+        "grpc_bytes_received": 7821
+      },
+      "client_scope_binding": "client match field cleared on cleanup; exact actor and accepted Runtime session bound to Runtime match scope",
+      "runtime": {
+        "elapsed_seconds": 183.93305450002663,
+        "cpu_seconds": 11.658501999999999,
+        "cpu_percent_one_core": 6.338448535903758,
+        "python_traced_current_bytes": 3247062,
+        "python_traced_peak_bytes": 3601387,
+        "command_result_rtt_ms": {
+          "samples": 1,
+          "median": 5.983833980280906,
+          "p95": 5.983833980280906,
+          "max": 5.983833980280906
+        }
+      }
+    },
+    {
+      "participant": "participant04",
+      "unity": {
+        "headless_loop_rate": 57.49596530862459,
+        "elapsed_seconds": 183.54331375,
+        "managed_heap_start_bytes": 1810432,
+        "managed_heap_current_bytes": 5328896,
+        "grpc_bytes_sent": 8399376,
+        "grpc_bytes_received": 12853
+      },
+      "client_scope_binding": "client match field cleared on cleanup; exact actor and accepted Runtime session bound to Runtime match scope",
+      "runtime": {
+        "elapsed_seconds": 183.59696866601007,
+        "cpu_seconds": 13.40692,
+        "cpu_percent_one_core": 7.302364574651101,
+        "python_traced_current_bytes": 3383973,
+        "python_traced_peak_bytes": 4034863,
+        "command_result_rtt_ms": {
+          "samples": 25,
+          "median": 13.204916031099856,
+          "p95": 19.073542032856494,
+          "max": 27.16958400560543
+        }
+      }
+    }
+  ],
+  "limits": [
+    "Performance measurements are not privacy proof and do not repair a failed kill/far-interval temporal correlation.",
+    "UDP peer, protobuf recipient and local participant labels are independent; this input does not prove socket-to-actor mapping.",
+    "UDP payload lengths exclude IP/UDP/link headers and differ from Social protobuf-only payload counts and local gRPC counters.",
+    "Per-direction active rates use that direction's first/last packet span; aggregate rates use the whole capture packet span, not session or match duration.",
+    "Packet headers show volume/directions only, not absence of secret payloads; kernel drops0 does not prove end-to-end delivery.",
+    "Server timing starts at metrics initialization and ends at GameOver; capture/client/Runtime windows differ and are not normalized.",
+    "An empty client match field after cleanup is accepted only with its exact actor/accepted bridge session in a Runtime report bound to the server match; this is performance binding, not terminal gameplay acceptance.",
+    "p95 visibility/refresh uses latest1024 samples; maxima cover all samples. Refresh cost is authority/session work, not a whole engine CPU tick.",
+    "Optional absent server CPU/peak fields remain null. Peak working set is process-lifetime high-water RSS, not incremental match allocation.",
+    "Unity meanFps is a headless loop rate here, not display FPS. Legacy comparison is only valid for similarly measured headless loops; no causal speedup is claimed.",
+    "Command-result RTT is local Unity/Runtime bridge round trip, not remote multiplayer RTT. Managed/traced heap counters are not process RSS."
+  ]
+}

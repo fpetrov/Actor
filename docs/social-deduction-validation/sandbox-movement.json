@@ -1,0 +1,36 @@
+{
+  "schema": "actor.sandbox-public-acceptance.v1",
+  "attempt": "movement",
+  "game_mode": "Sandbox",
+  "game_version": "0.8.0",
+  "admission_protocol": "3",
+  "headless": true,
+  "fullscreen": false,
+  "acceptance": {
+    "schema": "actor.sandbox-regression.v1",
+    "case": "movement",
+    "executed": true,
+    "reason": "probe_completed",
+    "passed": true,
+    "checks_passed": 13,
+    "checks_expected": 13,
+    "errors": 0,
+    "warnings": 0,
+    "metrics": {
+      "visualResponseMs": 28.014183044433594,
+      "authoritativeResponseMs": 345.76629638671875,
+      "releaseResponseMs": 112.41436004638672,
+      "idleError": 0.004837989807128906,
+      "maxSpeed": 2.5999999046325684
+    },
+    "input": "existing synthetic owned-input prediction probe; no physical keyboard or rendered-display claim",
+    "owned_launchers_remaining": 0,
+    "owned_runtime_client_pids_checked": 0,
+    "owned_runtime_clients_remaining": 0,
+    "limitations": [
+      "Only the named case was run; no model intelligence or full M6 benchmark claim.",
+      "Prediction uses synthetic owned input on a headless client, not native keyboard/display response.",
+      "Raw local reports, plan and logs remain private; this acceptance publishes no authorization, chat, actor/session IDs or credentials."
+    ]
+  }
+}

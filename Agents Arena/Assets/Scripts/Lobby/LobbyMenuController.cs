@@ -66,7 +66,7 @@ namespace Actor.Lobby
             view.Status = "Creating room…";
             LobbyInfo lobby = null;
             string error = null;
-            yield return api.Create(view.NewRoomName, result => lobby = result, message => error = message);
+            yield return api.Create(view.NewRoomName, result => lobby = result, message => error = message, view.GameMode);
             if (lobby == null) { Fail(error); yield break; }
             view.DirectRoomCode = lobby.roomCode;
             float deadline = Time.realtimeSinceStartup + 55;

@@ -30,6 +30,7 @@ namespace Actor.World
         }
         private void OnGUI()
         {
+            if (SocialVisibilitySystem.IsSocial(Unity.Netcode.NetworkManager.Singleton)) return;
             if (!owner.IsSpawned || !owner.IsOwner || !owner.IsClient) return;
             Styles();
             GUI.Box(new Rect(18, 328, 330, 148), GUIContent.none);

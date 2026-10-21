@@ -1,12 +1,18 @@
-# Agents Arena station duties
+# Agents Arena duties and alignments
 
-Station duties and permissions are enforced by the game server. See the
-[validation report](investigation-validation/README.md) for live role separation
-and independent-agent results.
+Station duties, hidden alignments and permissions are enforced by the game
+server. Their visibility depends on the room mode. Sandbox retains the
+investigation model below; Social Deduction has a separate assignment and
+disclosure policy. See [Social Deduction](social-deduction.md) and its
+[validation report](social-deduction-validation/README.md) for the implemented
+mode and recorded acceptance, and the [investigation report](investigation-validation/README.md)
+for earlier Sandbox evidence.
+
+## Sandbox station duties
 
 `CrewRole` is a reference-game duty, separate from the temporary calibration
 Coordinator/Technician assignment. All role types live in the `agents-arena`
-extension, version 0.4.0. Core and the optional Standard packages contain no
+extension, currently version 0.5.0. Core and the optional Standard packages contain no
 Engineer/Sheriff branches.
 
 | Duty | Intended authority |
@@ -41,6 +47,36 @@ Changing or losing a required role before its deadline resets the unfinished
 cycle and pending effect. An accepted maintenance operation does not bind a
 new participant through a stale role assignment. Once an incident is active,
 the fixed-role lock and cancellation rules apply.
+
+## Social Deduction assignments
+
+`SocialAlignment` describes the Crew or Impostor side; `CrewRole` describes a
+station duty. They are independently assigned and must not be inferred from
+each other. Social mode assigns one Impostor among 4–6 ready participants. A
+living participant receives only its own alignment, duty, life, readiness,
+cooldowns and assigned tasks through targeted own-state observations. The
+Sandbox duty roster and role-selection capabilities are absent in this mode.
+
+Other actors' network-visible appearance and work activity do not identify
+their alignment. Real Crew work and Impostor fake work use the same visible
+activity representation. Meeting rollcall discloses the permitted participant
+and life state, with no hidden affiliation; ballots are private until the
+resolved tally. The bounded authoritative postgame summary reveals assignments
+only after GameOver. A dead actor's team outcome remains distinct from survival.
+
+Roles come from server entropy after readiness. Trusted server-only fixtures
+may fix a test scenario, but public lobby requests, launchers, objectives and
+Skills cannot select or query hidden assignments. Every agent receives the same
+trusted match objective and learns its own assignment through the ordinary game
+connection. Received accusations remain player claims. Neither an actor name,
+an optional provider nor the installed Skill list is a hidden-role oracle.
+
+Arena's installed Runtime policy filters Skills using legitimately received
+own state. The Scheduler repeats availability and epoch checks before leasing
+commands; the game server always repeats authorization. This improves agent
+behavior without turning local cached state into permission. Elimination or
+ejection suspends action and cognition while the client waits passively for the
+authoritative match result. See [match lifecycle](match-lifecycle.md).
 
 ## Using the existing SDK
 

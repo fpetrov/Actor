@@ -1,0 +1,67 @@
+{
+  "schema": "actor.prediction-query-acceptance.v1",
+  "passed": true,
+  "scope": "actual Unity Editor isolated movement query checks; not native keyboard or displayed FPS",
+  "checks": [
+    {
+      "name": "Input moves presentation before any server snapshot",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Prediction cannot move the network body",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Swept capsule stops at static wall",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Wall contact preserves tangential movement",
+      "passed": true,
+      "detail": "(0.36, -0.64) velocity=(0.00, -1.84)"
+    },
+    {
+      "name": "Authoritative contact pose can slide on first frame",
+      "passed": true,
+      "detail": "(0.36, -0.41) velocity=(0.00, -1.80)"
+    },
+    {
+      "name": "Snapshot timeout freezes prediction",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Recovery removes visual lead",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Out-of-order snapshots cannot roll back the owner",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Unacknowledged input replays from server pose",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Snapshot sequence wrap accepts the next packet",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Sequence wrap still rejects old packets",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "Bounded replay preserves a recent release under high latency",
+      "passed": true,
+      "detail": ""
+    }
+  ]
+}

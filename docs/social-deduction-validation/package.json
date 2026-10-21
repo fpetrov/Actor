@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "scope": "Isolated real-wheel packaging and deterministic Runtime tests; no live multiplayer/model claim",
+  "source_tests": {
+    "passed": 491,
+    "tests": 491,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_seconds": 74.02
+  },
+  "tests": {
+    "duration_seconds": 74.55685237498255,
+    "errors": 0,
+    "failures": 0,
+    "model_authentication_used": false,
+    "passed": 491,
+    "skipped": 0,
+    "source": "copied fixtures, installed wheel imports only",
+    "tests": 491
+  },
+  "wheel": {
+    "bytes": 179212,
+    "required_generated_files_present": true,
+    "sha256": "c5268f364c9755f153608f49b670a0e94811d3ca1804b5d1612ca468fab0cf41",
+    "version": "0.6.0"
+  },
+  "model_authentication_used": false,
+  "provider_sdk_extras_installed": false,
+  "installed": {
+    "runtime_version": "0.6.0",
+    "extension_versions": {
+      "actor.standard": "0.1.0",
+      "actor.standard.communication": "0.1.0",
+      "agents-arena": "0.5.0"
+    },
+    "extension_schema_hashes": {
+      "actor.standard": "5188081ff451868991d0ba8cda56dc18d0a422794251c43216586996f7d9fb21",
+      "actor.standard.communication": "5a83afb7cd7116b6470b56fa1d3351e33a826a008c6246829430af3894ea49b6",
+      "agents-arena": "98fba1c617a26d25dd838848af29a4f4f4e1df4dbb0ad447dbdebfe32e540166"
+    },
+    "discovered_skills": 34,
+    "discovered_brains": 14,
+    "discovered_event_rules": 32,
+    "generated_resources_present": true,
+    "imports_from_installed_wheel": true,
+    "optional_sdk_modules_absent": true
+  }
+}

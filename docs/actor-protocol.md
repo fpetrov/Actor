@@ -3,7 +3,7 @@
 ACTOR Core does not prescribe a game's world model. It defines a typed, versioned extension mechanism through which a game declares observations, events, commands and supported capabilities. Rooms, health, weapons, inventories and game rules belong to optional capability packages or game extensions.
 
 ```text
-User Objective → Brain → Runtime Skill Engine
+User Objective → Match policy / bounded Objective → Brain → Runtime Skill Engine
                            ↓
 Python ACTOR Runtime: ExtensionRegistry / WorldState / RuntimeSession
                 ↕ one loopback HTTP/2 gRPC stream
@@ -21,7 +21,7 @@ Dedicated Server: motor / physics / room membership
 | Core | `proto/actor/core/v1`, `actor.core.v1` | Session, identity, manifest, Any envelopes, ordering, heartbeat, command outcome, errors |
 | Standard motion | `proto/actor/standard/v1`, `actor.standard.v1` | Optional reusable Transform2D, Motion2D and Locomotion2D |
 | Standard communication | `proto/actor/standard/communication/v1`, `actor.standard.communication.v1` | Independently optional typed messages, server receipts and authorized peer roster |
-| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | Rooms, station signals, calibration, station duties and cooling investigation |
+| Agents Arena | `proto/extensions/agents_arena/v1`, `actor.extensions.agents_arena.v1` | Rooms, signals, calibration, investigation and optional Social Deduction views/actions |
 
 `com.actor.sdk` contains Core/Standard generated types, extension registration and generic bridge lifecycle. It has no Unity engine references, NGO dependency or room mechanics. `com.actor.transport.grpc` provides the concrete native HTTP/2 implementation. The Unity reference game's adapter binds these generic interfaces to its existing network player and input abstraction.
 
@@ -61,7 +61,7 @@ Commands carry issue time and TTL as well as sequence/command IDs. Both peers sh
 
 Standard Transform2D/Motion2D come from a coherent raw owner post-physics server snapshot. They do not mix an interpolated root position with predicted velocity. Owner prediction continues to drive local sprites, animation, nameplates and camera for responsive controls.
 
-`NetworkRoomMembership` computes physical room membership on the dedicated server from stable RoomVolume2D identities. Its replicated state updates `ActorCharacter.RoomId` and produces game-specific RoomChanged events. External Runtime commands cannot set room membership. Main Hall and Engineering share one networked gameplay scene; the new art and colliders do not alter Core/Standard protocol schemas.
+`NetworkRoomMembership` computes physical room membership on the dedicated server from stable RoomVolume2D identities. Its replicated state updates `ActorCharacter.RoomId` and produces game-specific RoomChanged events. External Runtime commands cannot set room membership. Sandbox's Main Hall and Engineering share one networked gameplay scene; Social Deduction uses a separate four-room scene. Neither layout changes Core/Standard protocol schemas.
 
 ## Optional communication contract
 
@@ -84,12 +84,13 @@ actor and allocates the unique message ID and monotonically increasing server
 sequence. Match identity rejects messages queued for a previous lobby. A
 match-scoped ActorId is not a stable memory profile.
 
-The reference game's channels are `direct` and `station`. Direct messages have
-an explicit recipient; station sends use an empty command recipient. The server
+Sandbox channels are `direct` and `station`; Social Deduction uses `direct`,
+`proximity` and `discussion` with phase/life/visibility restrictions. Direct messages have
+an explicit recipient; permitted audience sends use an empty command recipient. The server
 filters recipients and each receiving event identifies its actual recipient.
 The reference server limits text to 512 UTF-8 bytes and actor/correlation/task/
-match/message identifiers to 64 characters. Its channel allowlist contains only
-the two names above. Message TTL is 1,000–300,000 ms, with a 60,000 ms Skill
+match/message identifiers to 64 characters. The game validates its mode-specific
+channel allowlist. Message TTL is 1,000–300,000 ms, with a 60,000 ms Skill
 default. Games validate bounds before allocating
 reliable RPC work. Protobuf does not enforce length, visibility, rate or permission.
 
@@ -134,7 +135,7 @@ work without communication Skills; unknown optional packages remain opaque.
 
 ## Game-specific calibration contract
 
-Arena package **0.3.0** adds `calibration.proto` without changing existing room
+Introduced in Arena package **0.3.0**, `calibration.proto` remains available in Sandbox without changing existing room
 or StationSignal field numbers. `CalibrationTaskStateObservation` contains the
 controlled actor's private assignment and authoritative state, empty when
 unassigned. `CalibrationProgressObservation` is separate public progress with
@@ -160,7 +161,7 @@ and lifecycle tests establish actual visibility.
 
 ## Versioning and generated sources
 
-Core protocol **1.0**, Standard motion **0.1.0**, Standard communication **0.1.0**, Arena package **0.4.0**, game **0.7.0**, Python Runtime **0.5.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
+Core protocol **1.0**, Standard motion **0.1.0**, Standard communication **0.1.0**, Arena package **0.5.0**, game **0.8.0**, Python Runtime **0.6.0** and multiplayer admission protocol **3** are independent versions. Never reuse Protobuf field numbers. Reserve removed numbers/names; prefer additive changes. A breaking schema changes its package/type identity (for example, `v2`). Exact schema hash validation is a package integrity/compatibility check, not a claim that arbitrary schema changes are semantically compatible.
 
 Generated C#/Python files, descriptors and metadata are version controlled. Unity users do not need protoc. `scripts/generate-proto.sh --check` regenerates in a temporary output tree and compares artifacts; CI fails on stale generated sources. [Tooling and schema rules](../proto/README.md), [Unity SDK API](../packages/com.actor.sdk/README.md), [Python Runtime](python-runtime.md), [custom extensions](extensions.md), [actual gRPC spike](grpc-spike/README.md).
 
@@ -168,16 +169,18 @@ Generated C#/Python files, descriptors and metadata are version controlled. Unit
 source/test snapshot, creates a fresh environment outside the checkout, installs
 base and test dependencies, and checks resources, entry points and the complete
 Runtime suite. Codex/Jev extras and model authentication are absent. Its bounded
-summary is `build/milestone5-package.json`; this verifies packaging and local
+summary can be selected with `--output build/milestone7-package.json`; this verifies packaging and local
 tests, not live multiplayer or model behavior.
 
 ## Current scope
 
-Runtime 0.5.0 composes independently scoped sessions, communication and investigation Skills above event routing, bounded context/memory and unchanged Core. Arena owns calibration/investigation permissions and outcomes; Standard communication owns typed addressing/delivery interfaces. Optional Jev remains a provider-neutral classifier. Generic navigation and package auto-download remain future layers.
+Runtime 0.6.0 adds generic match participation above the existing single-Objective API. One session, Scheduler, Router and scoped memory span bounded episodes; each episode creates and closes a fresh Brain/provider thread. Installed policies define episode epochs, suspension, terminal interpretation and Skill availability. A synchronous epoch guard runs before reasoning/dispatch and on each normal command lease; cleanup can still zero input and cancel owned work. Neither Core nor the coordinator knows an alignment or game phase enum. See [match lifecycle](match-lifecycle.md).
+
+Arena owns game permissions, visibility and outcomes; Standard communication owns typed addressing/delivery interfaces. Optional Jev remains a provider-neutral classifier. Authored navigation belongs to the reference game; generic navigation and package auto-download remain future layers.
 
 ## Game-specific investigation contract
 
-Arena 0.4.0 adds `incidents.proto` through the existing manifest-driven generator.
+Introduced in Arena 0.4.0, `incidents.proto` remains part of Arena 0.5.0 through the existing manifest-driven generator and is advertised in Sandbox.
 `CrewRole` is a public station duty, independent of calibration assignments.
 `OwnRoleObservation`/`DutyRosterObservation` and correlated `RoleResultEvent`
 reflect server selection. An active incident binds distinct Engineer/Sheriff
@@ -222,3 +225,33 @@ is introduced. Terminal cleanup explicitly clears private own views. See
 [incident lifecycle](incidents.md), [evidence policy](evidence.md) and
 [investigation](investigation.md); live acceptance is recorded separately from
 schema and local authority tests.
+
+## Game-specific Social Deduction contract
+
+Arena 0.5.0 adds `social.proto`. Its capabilities are advertised only in the
+matching mode, alongside permitted movement, room and Standard communication
+capabilities. No legacy cooling, diagnostic or public duty feed is exposed there.
+Room mode and validated rules are server configuration copied at allocation;
+there is no gameplay command for a seed, assignment, winner or mode change.
+
+`SocialMatchStateObservation` exposes phase, deadlines, public rule ranges and
+aggregate progress. `SocialOwnStateObservation` and own tasks are owner-only.
+The complete `SocialVisibleWorldObservation` replaces the previous bundle,
+including empty lists, and contains only physically visible actors, bodies and
+interactions. The game must filter NGO observers and targeted RPCs before the
+local adapter; a private Python context cannot repair leaked network bytes.
+
+Ready, kill, body report, meeting, vote, work, sabotage, repair and cancellation
+commands carry match ID, phase revision, correlation ID and expiry. The server
+derives the caller and rechecks phase, life, permission, visibility, proximity,
+cooldown and replay limits. A work-start acknowledgement is distinct from its
+later completion. Targeted phase/life/meeting/emergency/witness events can
+invalidate an episode; ordinary text never becomes a trusted interrupt or fact.
+
+Runtime retains bounded private historical observations, claims and hypotheses
+with actual provenance and expiry. A last-seen position is not a current pose.
+Live private payloads and action identifiers are excluded from public reports
+and automatic durable evidence. Only a validated GameOver boundary permits the
+authoritative postgame summary to become public memory. Death suspends model
+calls while the ordinary client waits for team outcome. See [Social Deduction](social-deduction.md),
+[visibility](visibility.md), [roles](roles.md) and [match lifecycle](match-lifecycle.md).

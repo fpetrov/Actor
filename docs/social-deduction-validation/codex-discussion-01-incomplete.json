@@ -1,0 +1,57 @@
+{
+  "schema": "actor.social-incomplete-model-run.v1",
+  "passed": false,
+  "supervisor_status": "runtime_match_failed",
+  "owned_process_cleanup_complete": true,
+  "completed_own_reports": 0,
+  "participants": [
+    {
+      "participant": "agent-01",
+      "status": "cancelled",
+      "reason": "participation_cancelled",
+      "authoritative_terminal": false,
+      "episodes": 5,
+      "decisions": 16,
+      "measured_tokens": 544156,
+      "received_message_events": 16
+    },
+    {
+      "participant": "agent-02",
+      "status": "cancelled",
+      "reason": "participation_cancelled",
+      "authoritative_terminal": false,
+      "episodes": 5,
+      "decisions": 17,
+      "measured_tokens": 560460,
+      "received_message_events": 15
+    },
+    {
+      "participant": "agent-03",
+      "status": "failed",
+      "reason": "brain_failure",
+      "authoritative_terminal": false,
+      "episodes": 5,
+      "decisions": 18,
+      "measured_tokens": 665657,
+      "received_message_events": 16
+    },
+    {
+      "participant": "agent-04",
+      "status": "cancelled",
+      "reason": "participation_cancelled",
+      "authoritative_terminal": false,
+      "episodes": 5,
+      "decisions": 19,
+      "measured_tokens": 669393,
+      "received_message_events": 14
+    }
+  ],
+  "public_meetings": 1,
+  "public_votes": 3,
+  "limits": [
+    "One Brain failed before authoritative match completion; exact provider cause was not retained.",
+    "Other participants were cancelled by the supervisor. No autonomous terminal match acceptance is claimed.",
+    "Server terminal after supervisor cleanup is excluded as autonomous winner evidence.",
+    "Only counts are published; no chat, context, prompts, private roles or error text."
+  ]
+}

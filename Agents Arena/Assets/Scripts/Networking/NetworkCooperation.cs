@@ -50,7 +50,7 @@ namespace Actor.Networking
             if (!IsSpawned || !IsOwner || !IsClient || command == null || command.CalculateSize() > 2048) return false;
             byte kind = command switch { SendMessageCommand _ => 1, StartCalibrationCommand _ => 2,
                 InspectDiagnosticCommand _ => 3, SubmitCalibrationCommand _ => 4, CancelCalibrationCommand _ => 5, _ => (byte)0 };
-            if (kind == 0) return false;
+            if (kind == 0 || SocialVisibilitySystem.IsSocial(NetworkManager) && kind != 1) return false;
             RequestRpc(kind, command.ToByteArray()); return true;
         }
         public void RuntimeUnavailable()
@@ -82,7 +82,12 @@ namespace Actor.Networking
                 IMessage command = kind switch { 1 => SendMessageCommand.Parser.ParseFrom(bytes), 2 => StartCalibrationCommand.Parser.ParseFrom(bytes),
                     3 => InspectDiagnosticCommand.Parser.ParseFrom(bytes), 4 => SubmitCalibrationCommand.Parser.ParseFrom(bytes),
                     5 => CancelCalibrationCommand.Parser.ParseFrom(bytes), _ => null };
-                if (command != null) CooperativeSession.Current?.Request(GetComponent<NetworkCharacter>().AuthoritativeActorId, command);
+                if (command != null)
+                {
+                    if (SocialVisibilitySystem.IsSocial(NetworkManager))
+                    { if (command is SendMessageCommand send) SocialMatchSession.Current?.RequestCommunication(GetComponent<NetworkCharacter>().AuthoritativeActorId, send); }
+                    else CooperativeSession.Current?.Request(GetComponent<NetworkCharacter>().AuthoritativeActorId, command);
+                }
             }
             catch (InvalidProtocolBufferException)
             {
@@ -96,14 +101,16 @@ namespace Actor.Networking
             double now = Time.realtimeSinceStartupAsDouble;
             ackTokens = Math.Min(32, ackTokens + Math.Max(0, now - ackAt) * 16); ackAt = now;
             if (ackTokens < 1) return; --ackTokens;
-            CooperativeSession.Current?.Acknowledge(GetComponent<NetworkCharacter>().AuthoritativeActorId, messageId, matchId);
+            if (SocialVisibilitySystem.IsSocial(NetworkManager)) SocialMatchSession.Current?.Acknowledge(GetComponent<NetworkCharacter>().AuthoritativeActorId, messageId, matchId);
+            else CooperativeSession.Current?.Acknowledge(GetComponent<NetworkCharacter>().AuthoritativeActorId, messageId, matchId);
         }
         [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Owner)]
         private void ControlUnavailableRpc(RpcParams rpc = default)
         {
             if (!Approved(rpc) || Time.realtimeSinceStartupAsDouble < serverUnavailableAt) return;
             serverUnavailableAt = Time.realtimeSinceStartupAsDouble + 1;
-            CooperativeSession.Current?.ControlUnavailable(GetComponent<NetworkCharacter>().AuthoritativeActorId);
+            if (SocialVisibilitySystem.IsSocial(NetworkManager)) SocialMatchSession.Current?.ControlUnavailable(GetComponent<NetworkCharacter>().AuthoritativeActorId);
+            else CooperativeSession.Current?.ControlUnavailable(GetComponent<NetworkCharacter>().AuthoritativeActorId);
         }
         internal void Deliver(IMessage payload)
         {

@@ -1,0 +1,17 @@
+{
+  "brain": {
+    "decision_timeout": 120,
+    "objective_timeout": 240,
+    "max_decisions": 24,
+    "usage_warning_tokens": 300000,
+    "usage_limit_tokens": 1000000
+  },
+  "participation": {
+    "duration_seconds": 420,
+    "max_episodes": 24,
+    "max_decisions": 96,
+    "max_tokens": 2000000,
+    "restart_cooldown_seconds": 2,
+    "terminal_grace_seconds": 1
+  }
+}

@@ -1,5 +1,12 @@
 # Runtime Skills
 
+Runtime 0.6.0 adds an optional synchronous `SkillDefinition.availability`
+predicate over its read-only typed context. Catalog construction, validated
+calls and the final check before lease acquisition all enforce it. Installed
+participation policies may additionally restrict permitted Skills. These are
+client safeguards; the game server independently checks permissions, phase epoch,
+expiry, range and visibility. See [match lifecycle](match-lifecycle.md).
+
 A Runtime Skill is a typed procedure over game capabilities. A Brain selects one Skill at a decision point; the Skill then executes independently for seconds without calling the Brain. It reads authoritative observations and issues typed commands through the existing RuntimeSession API.
 
 Runtime Skills are distinct from game-native `CapabilityKind.Skill` and from Codex SDK `SkillInput`. No Core Protobuf changes are needed. Core/Standard remain engine-neutral; Agents Arena navigation and its coordinates live only in `actor_agents_arena.skills`.

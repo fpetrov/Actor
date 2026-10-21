@@ -1,0 +1,29 @@
+{
+  "schema": "actor.social-human-visual-acceptance.v1",
+  "passed": true,
+  "scope": "Only listed actual native Human observations in first800x600 window; not complete UI or native keydown latency acceptance",
+  "checks": {
+    "native_window_800x600": true,
+    "ready_and_own_alignment_duty_hud_observed": true,
+    "native_wasd_displacement_observed": true,
+    "wall_shaped_fog_observed": true,
+    "chat_focus_blocked_movement_observed": true,
+    "utf8_800_bytes_send_disabled_observed": true,
+    "message_server_accepted_and_client_received": true,
+    "authoritative_gameover_summary_observed": true
+  },
+  "native_wasd_displacement_m": 0.930001,
+  "key_hold_ms": 400,
+  "native_render_loop_mean_fps": 119.31999944671199,
+  "terminal_reason": "match_timeout",
+  "not_executed": [
+    "native Discussion panel and manual final ballot",
+    "native death/ejection UI",
+    "keydown-to-first-frame timing measurement"
+  ],
+  "limits": [
+    "GUI screenshots and client private evidence stay under ignored build; no roles, identifiers, messages or poses published.",
+    "Native render loop count is not hardware display-presentation timing.",
+    "Later GUI attempts timed out or returned noWindowsAvailable and are not substituted for these listed checks."
+  ]
+}

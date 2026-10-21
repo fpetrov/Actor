@@ -36,6 +36,7 @@ namespace Actor.World
         }
         private void Update()
         {
+            if (SocialVisibilitySystem.IsSocial(Unity.Netcode.NetworkManager.Singleton)) return;
             if (!owner.IsSpawned || !owner.IsOwner) return;
             if (terminals.Length == 0) terminals = FindObjectsByType<CooperativeTerminal2D>();
             if (incidentTerminals.Length == 0) incidentTerminals = FindObjectsByType<IncidentTerminal2D>();
@@ -73,6 +74,7 @@ namespace Actor.World
         private string Correlation() => Guid.NewGuid().ToString("N");
         private void OnGUI()
         {
+            if (SocialVisibilitySystem.IsSocial(Unity.Netcode.NetworkManager.Singleton)) return;
             if (!owner.IsSpawned || !owner.IsOwner || !owner.IsClient) return;
             if (clearFocus) { GUI.FocusControl(null); clearFocus = false; }
             if (heading == null)

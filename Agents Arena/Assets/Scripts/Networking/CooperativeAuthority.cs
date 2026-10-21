@@ -47,6 +47,8 @@ namespace Actor.Networking
         private readonly string match;
         private readonly Func<string, string, bool> additionalTaskScope;
         private readonly Func<string, SendMessageCommand, string> additionalMessagePolicy;
+        private readonly Func<string, string, string, bool> recipientPolicy;
+        private readonly Dictionary<string, ulong> recipientSequences = new();
         private readonly CalibrationTaskStateObservation task = new();
         private string challenge = "";
         private long nextAttempt, lastStart, globalAt;
@@ -65,12 +67,14 @@ namespace Actor.Networking
         { diagnosticAvailable = diagnosticExists; diagnosticX = dx; diagnosticY = dy; calibrationAvailable = calibrationExists; calibrationX = cx; calibrationY = cy; }
 
         internal CooperativeAuthority(string matchId, Func<string, string, bool> additionalTaskScope = null,
-            Func<string, SendMessageCommand, string> additionalMessagePolicy = null)
+            Func<string, SendMessageCommand, string> additionalMessagePolicy = null,
+            Func<string, string, string, bool> recipientPolicy = null)
         {
             if (!Guid.TryParseExact(matchId, "N", out _)) throw new ArgumentException("Expected server match identity.");
             match = matchId; task.MatchId = match; task.Status = CalibrationStatus.Available;
             this.additionalTaskScope = additionalTaskScope;
             this.additionalMessagePolicy = additionalMessagePolicy;
+            this.recipientPolicy = recipientPolicy;
         }
 
         internal List<Delivery> Refresh(IEnumerable<Participant> approved, long now)
@@ -176,11 +180,12 @@ namespace Actor.Networking
         private List<Delivery> Send(string actor, SendMessageCommand command, long now)
         {
             string reason = "";
-            if (command.ChannelId != "direct" && command.ChannelId != "station") reason = "channel_unavailable";
+            if (recipientPolicy == null ? command.ChannelId != "direct" && command.ChannelId != "station"
+                : command.ChannelId != "direct" && command.ChannelId != "proximity" && command.ChannelId != "discussion") reason = "channel_unavailable";
             else if (string.IsNullOrWhiteSpace(command.Text) || Encoding.UTF8.GetByteCount(command.Text) > MaxTextBytes) reason = "invalid_text";
             else if (command.TtlMs < 1000 || command.TtlMs > 300000) reason = "invalid_ttl";
             else if (command.ChannelId == "direct" && (!actors.ContainsKey(command.RecipientActorId) || command.RecipientActorId == actor)) reason = "recipient_unavailable";
-            else if (command.ChannelId == "station" && command.RecipientActorId.Length > 0) reason = "invalid_recipient";
+            else if (command.ChannelId != "direct" && command.RecipientActorId.Length > 0) reason = "invalid_recipient";
             else if (command.RecipientActorId.Length > 64 || command.TaskId.Length > 64) reason = "invalid_identifier";
             else if (command.Sensitive && command.ChannelId != "direct") reason = "sensitive_requires_direct";
             else if (pending.Count >= MaxPending) reason = "delivery_capacity";
@@ -197,21 +202,25 @@ namespace Actor.Networking
             if (sensitive && taskId == task.TaskId && task.TaskId.Length > 0) expiry = Math.Min(expiry, task.ExpiresAtUnixMs);
             if (expiry <= now) return new List<Delivery> { new(actor, Rejection(command, command.CorrelationId, "authorization_expired", now)) };
             string messageId = Guid.NewGuid().ToString("N");
-            var recipients = command.ChannelId == "direct" ? new[] { command.RecipientActorId } : actors.Keys.ToArray();
+            var recipients = command.ChannelId == "direct" ? new[] { command.RecipientActorId }
+                : actors.Keys.Where(id => recipientPolicy == null || recipientPolicy(actor, id, command.ChannelId)).ToArray();
             var receipt = new MessageDeliveryResultEvent { CorrelationId = command.CorrelationId, MessageId = messageId,
                 AcceptedByServer = true, Stage = MessageDeliveryStage.ServerAccepted, ReasonCode = "server_accepted",
                 ServerUnixMs = now, RecipientActorId = command.RecipientActorId, TaskId = taskId, MatchId = match };
             var output = new List<Delivery> { new(actor, receipt) };
-            ulong serverSequence = ++sequence;
+            ulong serverSequence = recipientPolicy == null ? ++sequence : 0;
             foreach (string recipient in recipients)
                 output.Add(new Delivery(recipient, new MessageReceivedEvent { MessageId = messageId, SenderActorId = actor,
                     RecipientActorId = recipient, ChannelId = command.ChannelId, Text = command.Text, ServerUnixMs = now,
                     CorrelationId = command.CorrelationId, TaskId = taskId, Sensitive = sensitive,
-                    ExpiresAtUnixMs = expiry, MatchId = match, ServerSequence = serverSequence }));
+                    ExpiresAtUnixMs = expiry, MatchId = match, ServerSequence = recipientPolicy == null ? serverSequence : NextRecipientSequence(recipient) }));
             pending[messageId] = new Pending { Sender = actor, Correlation = command.CorrelationId, Task = taskId,
                 Recipients = new HashSet<string>(recipients), Receipt = receipt, Expires = Math.Min(expiry, now + 10000), Authorization = hasChallenge };
             return output;
         }
+
+        private ulong NextRecipientSequence(string actor)
+        { recipientSequences.TryGetValue(actor, out ulong previous); return recipientSequences[actor] = previous + 1; }
 
         internal List<Delivery> Acknowledge(string actor, string messageId, string matchId, long now)
         {

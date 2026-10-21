@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "actor-social-threat-audit"
+version = "0.1.0"
+description = "Opt-in transparent actual-Codex permitted-threat acceptance instrumentation"
+requires-python = ">=3.12"
+dependencies = ["actor-runtime==0.6.0"]
+
+[project.entry-points."actor.brains"]
+codex-threat-audit = "actor_social_threat:brain"
+
+[project.entry-points."actor.match_policies"]
+agents-arena-threat-audit = "actor_social_threat:policy"
+
+[tool.setuptools]
+packages = ["actor_social_threat"]
