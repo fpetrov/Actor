@@ -1,0 +1,133 @@
+{
+  "schema": "actor.controlled-crew-threat-batch.v1",
+  "passed": true,
+  "scope": "Additional controlled Crew coverage; separate from the accepted four-real-Codex match baseline.",
+  "denominator": {
+    "actual_live_model_attempts": 4,
+    "strict_accepted": 1,
+    "failed_before_terminal": 2,
+    "completed_without_target_coverage": 1,
+    "setup_failures_without_model_or_clients": 1,
+    "total_setup_invocations": 5
+  },
+  "fixed_model_public_slot": 1,
+  "providers": [
+    "codex-threat-audit",
+    "social-fixture-parity",
+    "social-fixture-parity",
+    "social-fixture-parity"
+  ],
+  "same_objective_profile_providers_and_slot_across_live_attempts": true,
+  "seed_configured": false,
+  "target_hint_configured": false,
+  "winner_forced": false,
+  "source_revision": "89c00dd1aa061ee0985b90e386567b945b1ab3f6",
+  "attempts": [
+    {
+      "live_model_attempt": 1,
+      "artifact": "crew-threat-01",
+      "strict_pass": false,
+      "authoritative_terminal": false,
+      "result_status": "failed",
+      "result_reason": "brain_failure",
+      "measured_tokens": 101210,
+      "owned_process_cleanup_complete": true,
+      "classification": "provider_exception_before_terminal",
+      "exception_type": "BrokenPipeError",
+      "official_terminal_turn_count": null,
+      "postgame_own_alignment": null
+    },
+    {
+      "live_model_attempt": 2,
+      "artifact": "crew-threat-02",
+      "strict_pass": false,
+      "authoritative_terminal": true,
+      "result_status": "completed",
+      "result_reason": "parity",
+      "measured_tokens": 72419,
+      "owned_process_cleanup_complete": true,
+      "classification": "crew_died_before_fresh_fact_coverage",
+      "official_terminal_turn_count": 3,
+      "postgame_own_alignment": "SOCIAL_ALIGNMENT_CREW",
+      "own_life": "SOCIAL_LIFE_DEAD",
+      "own_survival_ms": 45535,
+      "permitted_threat_reaction": {
+        "valid": true,
+        "fresh_threat_decisions": 0,
+        "selected_reactions": 0,
+        "dispatched_reactions": 0,
+        "succeeded_reactions": 0,
+        "server_confirmed_reactions": 0,
+        "completed_reactions": 0,
+        "discussion_communications_succeeded": 0,
+        "votes_succeeded": 0,
+        "full_participation_passed": false,
+        "passed": false,
+        "scope": "permitted threat preceded an actual Codex selection and dispatched Skill, completed locally or by exact own postgame phase-action proof; not proof of internal motivation or general intelligence"
+      }
+    },
+    {
+      "live_model_attempt": 3,
+      "artifact": "crew-threat-03",
+      "strict_pass": false,
+      "authoritative_terminal": false,
+      "result_status": "failed",
+      "result_reason": "session_disconnected",
+      "measured_tokens": 147675,
+      "owned_process_cleanup_complete": true,
+      "classification": "session_disconnected_before_terminal",
+      "official_terminal_turn_count": null,
+      "postgame_own_alignment": null,
+      "cause": "not_established"
+    },
+    {
+      "live_model_attempt": 4,
+      "artifact": "crew-threat-05",
+      "strict_pass": true,
+      "authoritative_terminal": true,
+      "result_status": "completed",
+      "result_reason": "parity",
+      "measured_tokens": 227797,
+      "owned_process_cleanup_complete": true,
+      "classification": "strict_crew_threat_discussion_vote_pass",
+      "official_terminal_turn_count": 9,
+      "postgame_own_alignment": "SOCIAL_ALIGNMENT_CREW",
+      "own_life": "SOCIAL_LIFE_DEAD",
+      "own_survival_ms": 182055,
+      "permitted_threat_reaction": {
+        "valid": true,
+        "fresh_threat_decisions": 1,
+        "selected_reactions": 1,
+        "dispatched_reactions": 1,
+        "succeeded_reactions": 0,
+        "server_confirmed_reactions": 1,
+        "completed_reactions": 1,
+        "discussion_communications_succeeded": 1,
+        "votes_succeeded": 1,
+        "full_participation_passed": true,
+        "passed": true,
+        "scope": "permitted threat preceded an actual Codex selection and dispatched Skill, completed locally or by exact own postgame phase-action proof; not proof of internal motivation or general intelligence"
+      }
+    }
+  ],
+  "setup_failure": {
+    "artifact": "crew-threat-04",
+    "reason_code": "local_tunnel_connection_refused",
+    "room_allocated": false,
+    "clients_started": false,
+    "model_started": false,
+    "scope": "Explains setup failure only; no asserted causal attribution to attempt03 disconnection."
+  },
+  "accepted_evidence": "crew-threat-pass.json",
+  "cleanup": {
+    "owned_live_processes": 0,
+    "optional_test_plugin_uninstalled": true,
+    "normal_discovery": {
+      "brains": 14,
+      "skills": 34,
+      "event_rules": 32
+    }
+  },
+  "validator": "spikes/social-validation/evaluate.py --require-crew-communication-vote",
+  "privacy": "No actor/session/match IDs, room codes, PID, poses, targets, arguments, chat, Context, prompt or reasoning."
+}

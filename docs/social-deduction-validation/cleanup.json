@@ -1,0 +1,12 @@
+{
+  "schema": "actor.m7-staging-cleanup.v1",
+  "passed": true,
+  "staging_active_rooms_before_stop": 0,
+  "exact_staging_control_plane_stopped_by_pidfd": true,
+  "staging_api5081_closed": true,
+  "udp7781_released": true,
+  "production_service_not_signalled": true,
+  "local_test_tunnel_closed": true,
+  "model_batch_cleanup": "crew-threat.json",
+  "production_smoke_cleanup": "production-smoke.json"
+}

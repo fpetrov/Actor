@@ -1,0 +1,32 @@
+{
+  "schema": "actor.m7-production-smoke.v1",
+  "passed": true,
+  "executed": true,
+  "scope": "One ordinary headless Human-mode client on deployed production: HTTP lobby allocation, UDP admission, owner spawn and typed WaitingForPlayers; not a second full match or Runtime/Brain acceptance.",
+  "game_version": "0.8.0",
+  "protocol_version": "3",
+  "checks": {
+    "ordinary_admission_and_owner_spawn": true,
+    "same_room_mode_and_waiting_phase": true,
+    "unassigned_before_minimum_ready": true,
+    "no_runtime_commands": true,
+    "no_unity_errors": true,
+    "no_unity_warnings": true,
+    "own_client_process_closed": true,
+    "own_room_released_normally": true
+  },
+  "headless": true,
+  "fullscreen": false,
+  "client_metrics": {
+    "elapsed_seconds": 11.652782375000001,
+    "headless_loop_hz": 58.87006020740175,
+    "errors": 0,
+    "warnings": 0
+  },
+  "remaining_owned_client_processes": 0,
+  "limits": [
+    "No Runtime/Brain was launched and no readiness/action was submitted.",
+    "Only this allocated room was observed for normal cleanup; no foreign process was signalled.",
+    "Headless loop frequency is not native display FPS."
+  ]
+}

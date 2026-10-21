@@ -151,3 +151,5 @@ The reference map, interest management and privacy acceptance are documented in
 [M7 report](social-deduction-validation/README.md). Raw local acceptance artifacts
 stay under ignored `build/`; Runtime and model credentials stay on the client.
 All long-running clients use headless mode; Human checks use an 800×600 window.
+
+M7 production release `20261021T193053Z-89c00dd` passed health/version/hash checks and an ordinary headless-client admission smoke. Both hosted CI workflows passed for functional commit `89c00dd`. The final zero-room guard preceded the restart; only the existing game-version override changed, with a private backup. Staging and its SSH tunnel are closed. See the [M7 release evidence](social-deduction-validation/deployment.json), [smoke](social-deduction-validation/production-smoke.json) and [cleanup](social-deduction-validation/cleanup.json).

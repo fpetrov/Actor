@@ -1,0 +1,24 @@
+{
+  "schema": "actor.m7-functional-ci.v1",
+  "passed": true,
+  "functional_commit": "89c00dd1aa061ee0985b90e386567b945b1ab3f6",
+  "runs": [
+    {
+      "conclusion": "success",
+      "databaseId": 39643626148,
+      "headSha": "89c00dd1aa061ee0985b90e386567b945b1ab3f6",
+      "status": "completed",
+      "url": "https://github.com/fpetrov/Actor/actions/runs/39643626148",
+      "workflowName": "ACTOR SDK and Runtime"
+    },
+    {
+      "conclusion": "success",
+      "databaseId": 39643626220,
+      "headSha": "89c00dd1aa061ee0985b90e386567b945b1ab3f6",
+      "status": "completed",
+      "url": "https://github.com/fpetrov/Actor/actions/runs/39643626220",
+      "workflowName": "Control Plane"
+    }
+  ],
+  "scope": "Hosted auth-free CI for functional code; live game/model/UI acceptance is separate."
+}

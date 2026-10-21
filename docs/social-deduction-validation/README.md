@@ -1,6 +1,6 @@
 # Milestone 7 — Social Deduction: реализация и проверка
 
-Реализованы отдельный SocialDeduction mode, серверные правила матча, ограниченная сетевой видимостью информация и match-lifetime Runtime. **Четыре настоящих scripted-матча прошли строгое terminal acceptance: голосование, parity, саботаж и задачи.** Приняты сквозной privacy-сценарий, Runtime-loss и новый вход Spectator после client-loss. Завершён первый настоящий матч четырёх Codex: Crew/tasks_completed за 72.021 s; Human visual acceptance выполнен частично: native WASD/Fog/chat/GameOver; Discussion/Voting/death требуют отдельной визуальной проверки. Ниже — 48 пунктов §82 с границами доказательств.
+Реализованы отдельный SocialDeduction mode, серверные правила матча, ограниченная сетевой видимостью информация и match-lifetime Runtime. **Четыре настоящих scripted-матча прошли строгое terminal acceptance: голосование, parity, саботаж и задачи.** Приняты сквозной privacy-сценарий, Runtime-loss и новый вход Spectator после client-loss. Завершён настоящий матч четырёх Codex: Crew/tasks_completed за72.021s. Дополнительный controlled Crew case строго подтвердил реакцию на видимое тело, Discussion message и ballot. Production0.8.0 опубликован и проверен. Human visual acceptance выполнен частично: native WASD/Fog/chat/GameOver; native Discussion/Voting/death не проверены. Ниже — 48 пунктов §82 с границами доказательств.
 
 Исходный baseline — [`40f6331`](baseline.json). Опубликованные safe evidence: [NGO compatibility](visibility-compatibility.json), [parity](parity.json), [vote](vote.json). JSON содержит postgame outcomes и агрегаты, без чатов, live Alignment, private prompts, credentials и chain-of-thought.
 
@@ -142,9 +142,13 @@ NGO interest management дополняется owner-targeted envelopes, recipie
 
 **Actual PASS — [codex-01.json](codex-01.json):** четыре настоящих CodexBrain с одинаковым общим Objective, независимыми процессами, SDK threads, profiles, credentials и SQLite memory. Сервер без заданного seed назначил три Crew и одного Impostor; матч завершился Crew/tasks_completed за 72.021 s. Crew сами выбирали perform-task и navigation. Impostor выбрал fake-task, два approach-visible-actor, попытку kill-visible-actor и call-meeting. Атака не стала подтверждённым убийством; Crew успели закончить задачи. Сообщений, meeting и ballots в этом матче не было; они проверяются отдельным controlled live сценарием. Первый длинный controlled прогон не принят: один Brain завершился brain_failure до общего terminal; supervisor отменил остальных и убрал процессы. В нём были 1 meeting, 3 ballots и входящие communication events, но итоговый server result после cleanup не засчитывается как автономный матч. [Неуспешный прогон сохранён](codex-discussion-01-incomplete.json). Точная provider cause не была удержана; причина не приписывается модели или игровым правилам без доказательства. Strict evaluator подтвердил обе стороны, terminal identity всех четырёх и cleanup; model direct tools = 0.
 
+**Дополнительный controlled model case PASS — [crew-threat-pass.json](crew-threat-pass.json):** один настоящий Codex в заранее фиксированном public slot1 и три обычных parity fixtures; одинаковый общий Objective всем, без seed/role/target/winner hints. Public rules: match240s, kill45s, Discussion60s, Voting60s, work30s, tasks5. Собственный fresh permitted факт предшествовал реальному provider decision и accepted dispatch report-body. Серверный postgame replay подтвердил собственный body_report; локальный Skill был cancelled из-за немедленной смены фазы, поэтому local succeeded остаётся0, server-confirmed completed1. Модель отдельно выполнила server-accepted Discussion send1 и ballot1. Это не доказательство чтения сообщения другим Brain, правильности обвинения или внутренней мотивации. Все четыре участия подтвердили один terminal; модель оказалась Crew только по postgame и погибла на182.055s. Итог Impostor/parity: реакция не объявляется выигрышной стратегией.
+
+[Честный denominator](crew-threat.json): четыре фактических model attempts — один strict PASS, два отказа до terminal (BrokenPipeError и session_disconnected), один завершённый матч без нужного факта: Crew погиб на45.535s. Ещё один setup отказал до создания комнаты/клиентов/модели из-за ConnectionRefused у локального SSH-туннеля. Причинная связь этого обрыва с session_disconnected не установлена. У ранних отказов official terminal turn count неизвестен, а не0. Все owned процессы закрыты; test-only plugin удалён, обычный discovery14Brains/34Skills/32Rules восстановлен. Независимый reviewer повторно запустил strict evaluator и подтвердил PASS.
+
 ### 35. Codex turns и usage
 
-Во всех четырёх принятых scripted кейсах Codex turns = **0**, measured Codex usage отсутствует, model tools = **0**. Parity: 10 episodes, 16 decisions, 15 Skill results; Vote: 16 episodes, 25 decisions, 24 Skill results. В настоящем codex-01: **24 turns**, input 527048, cached input 346496, output 3642, total 530690 tokens. По участникам turns 5/5/6/8; средняя latency 9.004/7.212/7.919/7.991 s, максимальная 20.261 s. Это фактические счётчики official SDK0.162.1, read-only ephemeral threads; cached input является частью input. Нули scripted runs не являются оценкой стоимости модели.
+Во всех четырёх принятых scripted кейсах Codex turns = **0**, measured Codex usage отсутствует, model tools = **0**. Parity: 10 episodes, 16 decisions, 15 Skill results; Vote: 16 episodes, 25 decisions, 24 Skill results. В настоящем codex-01: **24 turns**, input 527048, cached input 346496, output 3642, total 530690 tokens. По участникам turns 5/5/6/8; средняя latency 9.004/7.212/7.919/7.991 s, максимальная 20.261 s. Это фактические счётчики official SDK0.162.1, read-only ephemeral threads; cached input является частью input. Нули scripted runs не являются оценкой стоимости модели. В принятом controlled Crew case9official turns/0tools; input225680, cached123264, output2117, total227797 tokens; mean provider latency9.120s/max15.689s. Неуспешные попытки и неизвестные terminal counters перечислены отдельно в crew-threat.json и не заменены нулём.
 
 ### 36. Выживание каждого агента
 
@@ -164,16 +168,17 @@ NGO interest management дополняется owner-targeted envelopes, recipie
 | Codex-01 | 02 | Crew | Alive | 72.021 | Да | Да |
 | Codex-01 | 03 | Crew | Alive | 72.021 | Да | Да |
 | Codex-01 | 04 | Impostor | Alive | 72.021 | Нет | Да |
+| Controlled Crew-05 | 01 | Crew | Dead | 182.055 | Нет | Нет |
 
 ### 37. Победитель и причина завершения
 
-Приняты четыре scripted outcome: **Impostor/parity/12.689 s**, **Crew/impostors_eliminated/32.441 s**, **Impostor/sabotage_expired/55.201 s**, **Crew/tasks_completed/86.361 s**. У каждого совпадают dedicated-server summaries, Unity GameOver и Runtime terminal identities. Полные индивидуальные survival/outcome данные всех участников сохранены в соответствующих safe JSON. Настоящий codex-01 завершился **Crew/tasks_completed/72.021 s**; Impostor выжил, но проиграл командную цель.
+Приняты четыре scripted outcome: **Impostor/parity/12.689 s**, **Crew/impostors_eliminated/32.441 s**, **Impostor/sabotage_expired/55.201 s**, **Crew/tasks_completed/86.361 s**. У каждого совпадают dedicated-server summaries, Unity GameOver и Runtime terminal identities. Полные индивидуальные survival/outcome данные всех участников сохранены в соответствующих safe JSON. Настоящий codex-01 завершился **Crew/tasks_completed/72.021s**; Impostor выжил, но проиграл командную цель. Дополнительный controlled Crew-05 — **Impostor/parity/182.055s**; successful threat/discussion/vote coverage не равнозначно победе Crew.
 
 ### 38. Human visual checks
 
 **Actual [human-visual.json](human-visual.json) — перечисленный scope PASS:** окно800×600, Ready, own Alignment/Duty HUD, настоящий WASD (0.930m за400ms удержания, затем остановка), туман с физическими границами стен, подавление движения при фокусе чата. Для800UTF-8bytes Send выключен; короткое сообщение получило server-accepted и client-received receipt. Наблюдался настоящий draw/GameOver с четырьмя postgame rows, team result и survival. Native render loop119.32/s — не измерение аппаратного display FPS или keydown latency.
 
-Native Discussion/ballot/death visual ещё **PENDING**. Во втором запуске выбор QA окна завис на26min и матч истёк; следующий CUA input вернул noWindowsAvailable. Эти попытки не засчитываются. Все свои окна/процессы закрыты; серверные Voting/report/body rules и headless protocol8 проходят отдельно. Fullscreen не использовался. Веб-меню дополнительно [проверено](web-visual.json) на1365px и390px: исправлено переполнение мобильной grid/таблицы, errors0; толькоGET, без создания комнат.
+Native Discussion/ballot/death visual **не выполнены**. Во втором запуске выбор QA окна завис на26min и матч истёк; следующий CUA input вернул noWindowsAvailable. Эти попытки не засчитываются. Все свои окна/процессы закрыты; серверные Voting/report/body rules и headless protocol8 проходят отдельно. Fullscreen не использовался. Веб-меню дополнительно [проверено](web-visual.json) на1365px и390px: исправлено переполнение мобильной grid/таблицы, errors0; толькоGET, без создания комнат.
 
 ### 39. Fault/reconnect
 
@@ -209,7 +214,7 @@ Native Discussion/ballot/death visual ещё **PENDING**. Во втором за
 
 ### 41. FPS и сеть
 
-**Actual [performance-privacy-01.json](performance-privacy-01.json):** server physics 49.991 Hz, Update 59.629 Hz; visibility p95 0.277 ms/max 9.511 ms; Social authority refresh p95 2.861 ms/max 35.303 ms. Последнее не выдаётся за время всего Unity physics tick. Четыре клиента: 58.984–59.050 headless loops/s, **не display FPS**. Header-only capture: 56626 UDP packets, 0 kernel drops; C→S 1,060,406 payload bytes, S→C 4,690,299 за 122.450 s packet-active interval. IP/UDP headers исключены; Social protobuf counters считаются отдельно. Loopback gRPC RTT приведён отдельно от VPS RTT. Временной пробел privacy-01 не отменяет измерения производительности; невидимое убийство этим отчётом не доказывается. Display FPS ещё PENDING.
+**Actual [performance-privacy-01.json](performance-privacy-01.json):** server physics 49.991 Hz, Update 59.629 Hz; visibility p95 0.277 ms/max 9.511 ms; Social authority refresh p95 2.861 ms/max 35.303 ms. Последнее не выдаётся за время всего Unity physics tick. Четыре клиента: 58.984–59.050 headless loops/s, **не display FPS**. Header-only capture: 56626 UDP packets, 0 kernel drops; C→S 1,060,406 payload bytes, S→C 4,690,299 за 122.450 s packet-active interval. IP/UDP headers исключены; Social protobuf counters считаются отдельно. Loopback gRPC RTT приведён отдельно от VPS RTT. Временной пробел privacy-01 не отменяет измерения производительности; невидимое убийство этим отчётом не доказывается. Аппаратный display FPS не измерен.
 
 Второй независимый [performance-privacy-02.json](performance-privacy-02.json): server physics 49.997 Hz, Update 59.746 Hz, CPU **8.008% одного ядра**, peak RSS **150818816 bytes** (~143.83 MiB). Visibility p95 0.287 ms/max 6.144 ms; authority refresh p95 3.479 ms/max 37.277 ms. Серверное окно 244.617 s включает ожидание участников; UDP окно 182.668 s. Четыре bidirectional peers: 82769 захваченных пакетов, kernel drops 0; C→S 1,600,294 и S→C 7,531,195 UDP payload bytes. Метки peers, protobuf recipients и local participants независимы: socket-to-ActorId соответствие этим capture не установлено.
 
@@ -219,23 +224,25 @@ Arena добавляет [`social.proto`](../../proto/extensions/agents_arena/v1
 
 ### 43. Версии
 
-Game **0.8.0**, Arena extension **0.5.0**, Runtime **0.6.0**. Core protocol **1.0**, admission **3**, Standard motion extension **0.1.0**, Communication **0.1.0**. Fresh wheel проверил packaged descriptors/resources и discovery без optional Codex/Jev SDK. Финальный release hash фиксируется отдельно после commit/deploy acceptance.
+Game **0.8.0**, Arena extension **0.5.0**, Runtime **0.6.0**. Core protocol **1.0**, admission **3**, Standard motion extension **0.1.0**, Communication **0.1.0**. Fresh wheel проверил packaged descriptors/resources и discovery без optional Codex/Jev SDK. Проверенный production release20261021T193053Z-89c00dd привязан к functional commit89c00dd; хэши ниже.
 
 ### 44. VPS deployment
 
-Подтверждена работа isolated test Control Plane на loopback API5081 и отдельном UDP7781; compatibility/parity/vote используют actual Linux dedicated server. Обе текущие Unity сборки client/server завершились успешно после strict geometry prepare. **Production release deployment/health/version hashes PENDING**; тестовый сервер не объявляется production release, отсутствие вмешательства в чужие комнаты требует отдельного evidence.
+**Actual production PASS — [deployment.json](deployment.json):** release `20261021T193053Z-89c00dd` на5.181.134.236. Перед единственным disruptive stop после загрузки файлов повторно проверено0active rooms. Existing environment изменён только для GameVersion0.7→0.8, private0600 backup сохранён. Health healthy; game0.8.0/admission3; Sandbox capacity8, Social min4/max6, общая capacity5. Backend слушает только loopback5080; `/internal/` закрыт nginx. Remote executable/managed DLL/web hashes совпали с локальными проверенными build outputs; старые release directories сохранены.
+
+**[Production smoke PASS](production-smoke.json):** собственная ordinary Social комната дошла доReady, обычный headless Human-mode клиент прошёл HTTP/UDP admission и получил owner spawn/typed WaitingForPlayers без преждевременного назначения стороны.11.653s,0errors/0warnings, commands0. Клиент закрыт, комната освобождена штатно, финальные health healthy/active rooms0. Это smoke startup/admission, отдельный от полноценных staging матчей. **[Cleanup PASS](cleanup.json):** exact staging CP остановлен через pidfd только после0rooms и свободногоUDP; API5081 и собственный SSH tunnel закрыты, UDP7781 возвращён production. Все model/fixture процессы убраны, optional plugins удалены.
 
 ### 45. Git commits
 
-Baseline — [`40f6331`](baseline.json). Финальные M7 code/report commits и release mapping **PENDING** root-owned staging/commit/push. В отчёт не подставляется предполагаемый HEAD; raw local artifacts и private state не должны попасть в commit.
+Baseline — [`40f6331`](baseline.json). Functional M7 commit [`89c00dd`](https://github.com/fpetrov/Actor/commit/89c00dd1aa061ee0985b90e386567b945b1ab3f6) опубликован в public main.228 source/test/asset/safe-evidence files; build outputs, браузерные snapshots, raw runtime logs, SQLite и credentials исключены. Отдельный documentation commit содержит итоговые live/release/CI evidence; production binaries привязаны к functional hash89c00dd.
 
 ### 46. GitHub CI
 
-**PENDING** для финального M7 functional commit. Локальные green suites и прежний M6 CI не подменяют новые workflow runs. Root добавит точный commit и ссылки Control Plane / SDK+Runtime после push; текущий branch status не объявляется проверенным заранее.
+**PASS для functional commit89c00dd:** [Control Plane](https://github.com/fpetrov/Actor/actions/runs/39643626220) и [ACTOR SDK/Runtime](https://github.com/fpetrov/Actor/actions/runs/39643626148). Hosted Ubuntu24.04/.NET10/Python3.12 проверили C#, generated freshness, Runtime/scripts, auth-free Social/fault/privacy/threat helpers и deterministic event routing. [Machine-readable evidence](ci.json). CI не запускает модели, Unity-клиенты или VPS deployment; их actual evidence приведены отдельно.
 
 ### 47. Ограничения MVP
 
-Один матч на lobby, один Impostor, 4–6 игроков, bounded tasks/meetings/replay; timeout — draw. Нет authenticated reconnect identity, role handoff, rematch, spectator free-camera, vents, voice, inventory, training и статистического вывода о качестве social reasoning. Четыре принятых scripted матча, один четырёхмодельный матч и отдельные fault cases не являются статистическим benchmark. Неполные native visual проверки перечислены в§38; остальные результаты и неуспешные попытки имеют собственные evidence и scope.
+Один матч на lobby, один Impostor, 4–6 игроков, bounded tasks/meetings/replay; timeout — draw. Нет authenticated reconnect identity, role handoff, rematch, spectator free-camera, vents, voice, inventory, training и статистического вывода о качестве social reasoning. Четыре принятых scripted матча, один четырёхмодельный матч, один controlled Crew case и отдельные fault cases не являются статистическим benchmark. Неполные native visual проверки перечислены в§38; остальные результаты и неуспешные попытки имеют собственные evidence и scope.
 
 ### 48. Следующий рекомендуемый milestone
 

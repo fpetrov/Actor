@@ -1,0 +1,77 @@
+{
+  "schema": "actor.m7-production-remote-verification.v1",
+  "passed": true,
+  "release": "20261021T193053Z-89c00dd",
+  "version": {
+    "gameVersion": "0.8.0",
+    "protocolVersion": "3",
+    "maxConcurrentGameServers": 5,
+    "defaultMaxPlayers": 8,
+    "gameModes": [
+      "Sandbox",
+      "SocialDeduction"
+    ],
+    "socialMinPlayers": 4,
+    "socialMaxPlayers": 6
+  },
+  "health": {
+    "status": "healthy"
+  },
+  "active_lobbies_before_smoke": 0,
+  "checks": {
+    "release_pair_equal": true,
+    "release_functional_hash": true,
+    "healthy": true,
+    "game_version": true,
+    "admission_protocol_3": true,
+    "production_capacity_5": true,
+    "both_game_modes": true,
+    "social_min4_max6": true,
+    "private_env_backup_0600": true,
+    "versioned_web_assets": true,
+    "internal_routes_not_public": true,
+    "control_plane_loopback_only": true
+  },
+  "artifacts": {
+    "control_plane_executable": {
+      "sha256": "55478a3af2d7e76ba0cbacd8ab9aacccbc6ce17634bf90ba9febfd84dfca2b93",
+      "bytes": 78256
+    },
+    "control_plane_assembly": {
+      "sha256": "e3492e9cd5933fd69d3cd6add9c5427447b65edad0c8962f54846827470b56fc",
+      "bytes": 115712
+    },
+    "game_executable": {
+      "sha256": "c9724c53ae3bc7a0ac1143ab71679b777055196707c1f2be3b65de355cd46e82",
+      "bytes": 5152
+    },
+    "game_assembly": {
+      "sha256": "fbf562fea7e368483d5c7ec60c9c4c2cc1bf3244800915badc8da0a15f88c584",
+      "bytes": 694272
+    },
+    "web_index": {
+      "sha256": "425ad08404186e43140a46f638d2f58dfa0a8a076a45f36f736d6bdfaa677276",
+      "bytes": 3721
+    },
+    "web_script": {
+      "sha256": "6d5a48a0fd58a1f5548c2073dd6add4a129d9a53414a8e4a82e4125c0894e3ac",
+      "bytes": 5885
+    },
+    "web_styles": {
+      "sha256": "8d6d01d9cd6fd643670200738ea9fd43b3cfb17d14ffa8e5c54bffd11424752f",
+      "bytes": 6785
+    }
+  },
+  "local_build_hash_comparison": {
+    "control_plane_executable": true,
+    "control_plane_assembly": true,
+    "game_executable": true,
+    "game_assembly": true,
+    "web_index": true,
+    "web_script": true,
+    "web_styles": true
+  },
+  "functional_commit": "89c00dd1aa061ee0985b90e386567b945b1ab3f6",
+  "final_pre_stop_active_rooms": 0,
+  "scope": "Actual guarded production deployment and post-release health/version/hash verification. No active production rooms at final stop guard. Gameplay smoke is separate."
+}

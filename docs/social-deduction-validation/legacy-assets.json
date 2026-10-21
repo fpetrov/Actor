@@ -1,7 +1,7 @@
 {
   "schema": "actor.social-legacy-assets-review.v1",
   "passed": true,
-  "scope": "Read-only serialized source audit against pre-M7 HEAD; no Unity, model, lobby or live process launched.",
+  "scope": "Read-only serialized source audit against baseline40f6331, with final post-normalization byte comparisons; no game/model result inferred.",
   "checks": {
     "legacy_scene_semantically_identical": true,
     "existing_prefab_geometry_parameters_unchanged": true,
@@ -24,7 +24,8 @@
       "mono_behaviours": 19
     },
     "all_semantic_documents_equal": true,
-    "method": "Parse all Unity YAML documents; map local file references to hierarchy/component/script identities, disambiguate duplicate sibling names by local transform, sort child/root references; compare full dictionaries. No ignored collider/transform/material/camera fields."
+    "method": "Parse all Unity YAML documents; map local file references to hierarchy/component/script identities, disambiguate duplicate sibling names by local transform, sort child/root references; compare full dictionaries. No ignored collider/transform/material/camera fields.",
+    "final_byte_identical_to_baseline": true
   },
   "network_prefab": {
     "baseline_components": 23,
@@ -51,33 +52,14 @@
     "stale_input_timeout": 0.25,
     "note": "New Social behaviours and regenerated NGO prefab hash are intentional game0.8 network-contract changes; client/server builds must match. No claim that the full prefab is byte-identical."
   },
-  "physics_migration": {
-    "baseline_serialized_version": 5,
-    "current_serialized_version": 11,
-    "unchanged_common_fields": 22,
-    "changed_common_runtime_fields": [],
-    "threshold_rename_same_value": true,
-    "threshold_value": 1,
-    "layer_collision_matrix_equal_ignoring_new_unsigned_suffix": true,
-    "simulation_mode": 0,
-    "contact_offset": 0.01,
-    "velocity_iterations": 8,
-    "position_iterations": 3,
-    "new_substepping_enabled": false,
-    "new_substep_contacts_enabled": false,
-    "new_simulation_layer_bits": 4294967295,
-    "new_contact_threshold": 0,
-    "note": "Serialization5\u219211 migration renames velocity/bounce threshold, adds explicit defaults and moves editor gizmo settings. Existing numeric/solver/matrix fields match; source comparison is not a replacement for live physics/prediction regression."
-  },
   "player_settings": {
     "changed_semantic_fields": [
-      "bundleVersion",
-      "preloadedAssets"
+      "bundleVersion"
     ],
     "baseline_game_version": "0.7.0",
     "current_game_version": "0.8.0",
-    "new_preloaded_input_asset_count": 1,
-    "note": "All other text changes are trailing whitespace. Root owns restoring preloadedAssets and whitespace; game version bump is intentional."
+    "new_preloaded_input_asset_count": 0,
+    "note": "Final source retains only bundleVersion0.7\u21920.8; preloadedAssets and trailing whitespace restored to baseline."
   },
   "preserved_sources": [
     {
@@ -111,5 +93,54 @@
     "New social movement gates are mode-specific; Sandbox CanMove returns true. Their actual integration is verified separately in a live Sandbox run.",
     "Root can restore the semantically identical regenerated scene and serializer churn after final builds; this report describes the inspected pre-cleanup files."
   ],
-  "baseline_commit": "40f6331c4fb4e60841ef66a5408b0db70838edb7"
+  "baseline_commit": "40f6331c4fb4e60841ef66a5408b0db70838edb7",
+  "pre_normalization_physics_migration_review": {
+    "baseline_serialized_version": 5,
+    "current_serialized_version": 11,
+    "unchanged_common_fields": 22,
+    "changed_common_runtime_fields": [],
+    "threshold_rename_same_value": true,
+    "threshold_value": 1,
+    "layer_collision_matrix_equal_ignoring_new_unsigned_suffix": true,
+    "simulation_mode": 0,
+    "contact_offset": 0.01,
+    "velocity_iterations": 8,
+    "position_iterations": 3,
+    "new_substepping_enabled": false,
+    "new_substep_contacts_enabled": false,
+    "new_simulation_layer_bits": 4294967295,
+    "new_contact_threshold": 0,
+    "note": "Initial Unity serialization5\u219211 audit; root then restored the baseline file byte-for-byte. This is not the final serialized version."
+  },
+  "physics_final": {
+    "serialized_version": 5,
+    "byte_identical_to_baseline": true,
+    "normalization_removed_serialization_only_changes": true
+  },
+  "final_normalized_sources": [
+    {
+      "file": "Agents Arena/Assets/Scenes/MainHallMultiplayer.unity",
+      "byte_identical_to_baseline": true,
+      "sha256": "45b039af524643b4e014221c970c3d16020d1c7ad6596fc9aa77157b4fcb3329"
+    },
+    {
+      "file": "Agents Arena/Assets/Scenes/Lobby.unity",
+      "byte_identical_to_baseline": true,
+      "sha256": "ee01873c2c01f2398c049d14f8dc96e203bcda0f13510a8b06955d2a86311fd5"
+    },
+    {
+      "file": "Agents Arena/ProjectSettings/Physics2DSettings.asset",
+      "byte_identical_to_baseline": true,
+      "sha256": "50e61d70bc38c632cb0e6efe364a9c5bcfd9a8dbcf4e7b5ecfb06a2030c4518f"
+    }
+  ],
+  "lobby_semantic_review": {
+    "documents": 18,
+    "changes_before_normalization": [
+      "local fileID remapping",
+      "GameMode serialized as Sandbox, already the source initializer default"
+    ],
+    "final_byte_identical_to_baseline": true,
+    "transport_timeouts_and_tick_rate_unchanged": true
+  }
 }
