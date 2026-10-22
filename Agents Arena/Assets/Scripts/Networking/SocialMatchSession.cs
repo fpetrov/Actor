@@ -24,7 +24,7 @@ namespace Actor.Networking
         private readonly Dictionary<ulong, string> actors = new();
         private readonly Dictionary<string, SocialBody> bodyObjects = new();
         private SocialMatchAuthority.Configuration rules;
-        private double nextRefresh;
+        private BroadcastDeliveryCadence deliveryCadence = new();
         private bool refreshing, invalidConfiguration, summaryWritten;
         private long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         [Serializable] private sealed class ConfigurationFile
@@ -86,14 +86,17 @@ namespace Actor.Networking
             if (Current == this) Current = null;
             if (visibility != null) visibility.ObserverPolicy = null;
             authority = null; communication = null; endpoints.Clear(); actors.Clear(); bodyObjects.Clear();
+            deliveryCadence = new BroadcastDeliveryCadence();
         }
         private void Update()
         {
             var manager = NetworkManager.Singleton;
-            if (manager == null || !manager.IsServer || !SocialVisibilitySystem.IsSocial(manager)
-                || Time.realtimeSinceStartupAsDouble < nextRefresh) return;
-            nextRefresh = Time.realtimeSinceStartupAsDouble + .1;
-            Refresh();
+            if (manager == null || !manager.IsServer || !SocialVisibilitySystem.IsSocial(manager)) return;
+            var due = deliveryCadence.Take(Time.realtimeSinceStartupAsDouble);
+            if (due.Authority) Refresh();
+            // Observer-only physical poses do not refresh authority, enumerate
+            // terminals or triple the private player observation deliveries.
+            if (due.Observer && !refreshing && authority != null) PublishBroadcastViews();
         }
         private void Initialize(MatchSession session)
         {
@@ -296,8 +299,18 @@ namespace Actor.Networking
                         peers.Peers.Add(new CommunicationPeer { ActorId = other.Key, DisplayName = other.Value.GetComponent<NetworkCharacter>().PlayerName });
                 endpoint.GetComponent<NetworkCooperation>().Deliver(peers);
             }
-            var session = NetworkManager.Singleton.GetComponent<MatchSession>();
-            var broadcastActors = endpoints.Values.Select(p => p.GetComponent<NetworkCharacter>()).Concat(session.RetainedSocialPlayers)
+        }
+        private void PublishBroadcastViews()
+        {
+            var manager = NetworkManager.Singleton;
+            var broadcast = manager != null ? manager.GetComponent<BroadcastSession>() : null;
+            // In particular do not build arrays for zero authorized observers
+            // or while every transport owns its full eight-frame window.
+            if (authority == null || refreshing || broadcast == null || !broadcast.BeginObserverTick()) return;
+            var session = manager.GetComponent<MatchSession>();
+            if (session == null || session.MatchId != authority.MatchId) return;
+            var broadcastActors = endpoints.Values.Where(p => p != null && p.IsSpawned).Select(p => p.GetComponent<NetworkCharacter>()).Concat(session.RetainedSocialPlayers)
+                .Where(c => c != null && c.IsSpawned)
                 .GroupBy(c => c.AuthoritativeActorId).Select(g => g.First()).Select(character =>
             {
                 var center = character.GetComponent<CapsuleCollider2D>().bounds.center;
@@ -308,7 +321,7 @@ namespace Actor.Networking
             }).ToArray();
             var broadcastBodies = authority.BodyStates().Select(b => new BroadcastViewProjector.Body { Id = b.BodyId, Victim = b.VictimActorId,
                 Name = b.VictimDisplayName, X = b.X, Y = b.Y, Cosmetic = (uint)session.CosmeticIndexForActor(b.VictimActorId) }).ToArray();
-            NetworkManager.Singleton.GetComponent<BroadcastSession>()?.Publish(authority.State(), authority.Emergency(), authority.Meeting(""),
+            broadcast.Publish(authority.State(), authority.Emergency(), authority.Meeting(""),
                 broadcastActors, broadcastBodies, authority.IsTerminal ? authority.Summary() : null, Now);
         }
         private void SynchronizeBodies()
@@ -337,7 +350,9 @@ namespace Actor.Networking
             if (!string.IsNullOrEmpty(directory))
             {
                 try { Directory.CreateDirectory(directory); File.WriteAllText(Path.Combine(directory, authority.MatchId + ".json"), JsonFormatter.Default.Format(summary));
-                    SocialMatchMetrics.SavePostgame(directory, authority.MatchId); }
+                    SocialMatchMetrics.SavePostgame(directory, authority.MatchId);
+                    var broadcast = NetworkManager.Singleton?.GetComponent<BroadcastSession>();
+                    if (broadcast != null) File.WriteAllText(Path.Combine(directory, authority.MatchId + ".broadcast-performance.json"), JsonUtility.ToJson(broadcast.MotionDiagnostics(), true) + "\n"); }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException) { Debug.LogWarning("ACTOR_SOCIAL summary_write_failed"); }
             }
             Debug.Log("ACTOR_SOCIAL game_over winner=" + summary.WinningSide + " reason=" + summary.WinReason + " duration_ms=" + summary.DurationMs);

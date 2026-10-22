@@ -363,6 +363,7 @@ class PreparedNativeRun:
         env = child_environment(admitted, token)
         self.native_probe_path = self.directory / "native-presented.png"
         env["ACTOR_BROADCAST_PROBE_PNG"] = str(self.native_probe_path)
+        env["ACTOR_BROADCAST_MOTION_REPORT"] = str(self.directory / "motion.json")
         self.log = (self.directory / "process.log").open("xb")
         # Register the returned handle synchronously before any await/IO.
         self.process = d.spawn([str(client), *args, "--broadcast-observer"], env=env,

@@ -53,6 +53,45 @@ namespace Actor.Presentation
         private ulong applied, epoch;
         private int renderedFrame = -1;
         private bool capturePending;
+        private string motionReportPath;
+        private int motionForcedFrameRate;
+        private double motionStarted = -1;
+        private long nativeFrames, appliedFrames, ackAttempts, ackCompleted, rejectedRender, rejectedFog, rejectedSession;
+        private readonly MotionIntervals renderIntervals = new(), appliedIntervals = new(), presentedIntervals = new();
+        [Serializable] private sealed class MotionSummary
+        {
+            public long count, retained_count;
+            public double mean_ms, p50_ms, p95_ms, max_ms;
+        }
+        private sealed class MotionIntervals
+        {
+            private readonly double[] samples = new double[1024];
+            private long count; private double previous = -1, sum, maximum;
+            internal void Record(double now)
+            {
+                if (previous >= 0 && now >= previous)
+                {
+                    double ms = (now - previous) * 1000;
+                    samples[count++ % samples.Length] = ms; sum += ms; maximum = Math.Max(maximum, ms);
+                }
+                previous = now;
+            }
+            internal MotionSummary Summary()
+            {
+                int retained = (int)Math.Min(count, samples.Length);
+                var sorted = new double[retained]; Array.Copy(samples, sorted, retained); Array.Sort(sorted);
+                return new MotionSummary { count = count, retained_count = retained, mean_ms = count > 0 ? sum / count : 0, max_ms = maximum,
+                    p50_ms = retained > 0 ? sorted[(int)Math.Ceiling(retained * .5) - 1] : 0,
+                    p95_ms = retained > 0 ? sorted[(int)Math.Ceiling(retained * .95) - 1] : 0 };
+            }
+        }
+        [Serializable] private sealed class MotionRenderReport
+        {
+            public double elapsed_seconds;
+            public int forced_frame_rate, target_frame_rate, v_sync_count;
+            public long native_frames, applied_frames, ack_attempts, ack_completed, rejected_render, rejected_fog, rejected_session;
+            public MotionSummary render_intervals, applied_intervals, presented_intervals;
+        }
         internal BroadcastView Applied { get; private set; }
         public static BroadcastViewPresenter Current { get; private set; }
         internal bool Sight(out Vector2 eye, out float radius, out ulong viewEpoch)
@@ -68,8 +107,33 @@ namespace Actor.Presentation
             string requested = Environment.GetEnvironmentVariable("ACTOR_BROADCAST_PROBE_PNG");
             Environment.SetEnvironmentVariable("ACTOR_BROADCAST_PROBE_PNG", null);
             if (!string.IsNullOrEmpty(requested) && SafeProbePath(requested)) probePath = requested;
+            string motion = Environment.GetEnvironmentVariable("ACTOR_BROADCAST_MOTION_REPORT");
+            string motionFps = Environment.GetEnvironmentVariable("ACTOR_BROADCAST_MOTION_FPS");
+            Environment.SetEnvironmentVariable("ACTOR_BROADCAST_MOTION_REPORT", null);
+            Environment.SetEnvironmentVariable("ACTOR_BROADCAST_MOTION_FPS", null);
+            if (SafeProofPath(motion, ".json"))
+            {
+                motionReportPath = motion;
+                // Private acceptance can exercise real 30/60 FPS rendering.
+                // Ordinary observer runs retain the selected display pacing.
+                if (motionFps == "30" || motionFps == "60")
+                {
+                    motionForcedFrameRate = motionFps == "30" ? 30 : 60;
+                    QualitySettings.vSyncCount = 0; Application.targetFrameRate = motionForcedFrameRate;
+                }
+            }
         }
-        private void Rendered(ScriptableRenderContext _, Camera view) { if (view == camera) renderedFrame = Time.frameCount; }
+        private void Rendered(ScriptableRenderContext _, Camera view)
+        {
+            if (view != camera) return;
+            bool firstRender = renderedFrame != Time.frameCount; renderedFrame = Time.frameCount;
+            if (motionReportPath != null && firstRender && Applied != null && session != null && session.Fresh)
+            {
+                double now = Time.realtimeSinceStartupAsDouble;
+                if (motionStarted < 0) motionStarted = now;
+                nativeFrames++; renderIntervals.Record(now);
+            }
+        }
         private void LateUpdate()
         {
             if (Application.isBatchMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
@@ -81,6 +145,7 @@ namespace Actor.Presentation
             {
                 if (frame.Scope.ViewEpoch != epoch) Clear();
                 Apply(frame); applied = frame.Sequence; epoch = frame.Scope.ViewEpoch; Applied = frame.Clone();
+                if (motionReportPath != null) { appliedFrames++; appliedIntervals.Record(Time.realtimeSinceStartupAsDouble); }
             }
             AnimatePermitted();
             ArrangeLabels();
@@ -259,7 +324,10 @@ namespace Actor.Presentation
         }
         private IEnumerator AcknowledgeFrame(BroadcastView frame)
         {
-            capturePending = true; yield return null; yield return new WaitForEndOfFrame();
+            // Observe the render of this exact applied frame. Waiting until the
+            // next Update first can replace it at a 30 Hz observer cadence.
+            capturePending = true; yield return new WaitForEndOfFrame();
+            if (motionReportPath != null) ackAttempts++;
             if (this != null && isActiveAndEnabled && camera != null && camera.isActiveAndEnabled && renderedFrame == Time.frameCount
                 && !ArenaUI.InputCaptured && Applied != null && Applied.Sequence == frame.Sequence && Applied.Scope.Equals(frame.Scope))
             {
@@ -272,19 +340,24 @@ namespace Actor.Presentation
                         references.Add(new BroadcastEvidenceRef { EvidenceId = displayedFacts[i].EvidenceId, Version = displayedFacts[i].Version });
                     if (session.MarkPresented(frame, references, (ulong)Math.Max(1, Time.frameCount), Screen.width, Screen.height))
                     {
+                        if (motionReportPath != null) { ackCompleted++; presentedIntervals.Record(Time.realtimeSinceStartupAsDouble); }
                         foreach (var reference in references) confirmed[reference.EvidenceId] = reference.Version;
                         CaptureProbeOnce();
                     }
+                    else if (motionReportPath != null) rejectedSession++;
                 }
+                else if (motionReportPath != null) rejectedFog++;
             }
+            else if (motionReportPath != null) rejectedRender++;
             capturePending = false;
         }
-        private static bool SafeProbePath(string path)
+        private static bool SafeProbePath(string path) => SafeProofPath(path, ".png");
+        private static bool SafeProofPath(string path, string extension)
         {
             try
             {
-                if (path.Length > 1024 || !Path.IsPathRooted(path) || Path.GetFullPath(path) != path
-                    || Path.GetExtension(path).ToLowerInvariant() != ".png" || File.Exists(path) || Directory.Exists(path)) return false;
+                if (string.IsNullOrEmpty(path) || path.Length > 1024 || !Path.IsPathRooted(path) || Path.GetFullPath(path) != path
+                    || Path.GetExtension(path).ToLowerInvariant() != extension || File.Exists(path) || Directory.Exists(path)) return false;
                 var directory = new DirectoryInfo(Path.GetDirectoryName(path));
                 if (!directory.Exists) return false;
                 for (var parent = directory; parent != null; parent = parent.Parent)
@@ -292,6 +365,27 @@ namespace Actor.Presentation
                 return true;
             }
             catch (Exception) { return false; }
+        }
+        private void SaveMotionReport()
+        {
+            string path = motionReportPath; motionReportPath = null;
+            if (path == null || !SafeProofPath(path, ".json")) return;
+            try
+            {
+                var report = new MotionRenderReport { elapsed_seconds = motionStarted >= 0 ? Math.Max(0, Time.realtimeSinceStartupAsDouble - motionStarted) : 0,
+                    forced_frame_rate = motionForcedFrameRate,
+                    target_frame_rate = Application.targetFrameRate, v_sync_count = QualitySettings.vSyncCount,
+                    native_frames = nativeFrames, applied_frames = appliedFrames, ack_attempts = ackAttempts, ack_completed = ackCompleted,
+                    rejected_render = rejectedRender, rejected_fog = rejectedFog, rejected_session = rejectedSession,
+                    render_intervals = renderIntervals.Summary(), applied_intervals = appliedIntervals.Summary(), presented_intervals = presentedIntervals.Summary() };
+                string transport = session != null ? JsonUtility.ToJson(session.MotionDiagnostics()) : "{}";
+                byte[] bytes = Encoding.UTF8.GetBytes("{\"schema\":\"actor.broadcast-motion.v1\",\"render\":" + JsonUtility.ToJson(report) + ",\"transport\":" + transport + "}");
+                if (bytes.Length > 32768) return;
+                using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                if (PrivateFileMode(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), 384) != 0) return;
+                stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
+            }
+            catch (Exception) { } // Optional numeric QA only; never log path or game state.
         }
         private void CaptureProbeOnce()
         {
@@ -314,7 +408,8 @@ namespace Actor.Presentation
         }
         private void RemoveActor(string key) { var proxy = actors[key]; proxy.Name?.RemoveFromHierarchy(); Destroy(proxy.Root); actors.Remove(key); }
         private void Clear() { foreach (string key in actors.Keys.ToArray()) RemoveActor(key); foreach (var body in bodies.Values) Destroy(body.Root); bodies.Clear(); Applied = null; applied = 0; }
-        private void OnDisable() { RenderPipelineManager.endCameraRendering -= Rendered; StopAllCoroutines(); capturePending = false; Clear(); hud?.RemoveFromHierarchy(); notesHud?.RemoveFromHierarchy(); hud = notesHud = null; confirmed.Clear(); if (Current == this) Current = null; }
+        private void OnApplicationQuit() => SaveMotionReport();
+        private void OnDisable() { SaveMotionReport(); RenderPipelineManager.endCameraRendering -= Rendered; StopAllCoroutines(); capturePending = false; Clear(); hud?.RemoveFromHierarchy(); notesHud?.RemoveFromHierarchy(); hud = notesHud = null; confirmed.Clear(); if (Current == this) Current = null; }
 #else
         internal bool Sight(out Vector2 eye, out float radius, out ulong epoch) { eye = Vector2.zero; radius = 0; epoch = 0; return false; }
 #endif

@@ -46,6 +46,48 @@ public sealed class BroadcastPresentationTests
         Assert.False(p.Witnesses(actors[0].Id, actors[1].Id, 0, -.94f, 2.5f, -.94f, 1100));
         Assert.False(p.Witnesses(actors[0].Id, actors[1].Id, 0, -.94f, .5f, -.94f, 1600));
     }
+    [Fact] public void ThirtyHertzSamplingRetainsExactPresentedSourceAcrossNetworkRoundTrip()
+    {
+        var p = new BroadcastViewProjector(Scope(), (_, _, _, _) => true, 1000);
+        var state = new SocialMatchStateObservation { MatchId = Scope().MatchId, Phase = SocialPhase.Exploration, VisibilityRadius = 3.5f };
+        var actor = new BroadcastViewProjector.Actor { Id = "00000000000000000000000000000010", Name = "A1", X = 0, Y = -.94f, Room = "main-hall", Alive = true };
+        var first = p.Build(state, null, null, new[] { actor }, Array.Empty<BroadcastViewProjector.Body>(), null, 1000);
+        for (int i = 1; i <= 15; i++)
+        {
+            actor.X = .01f * i;
+            p.Build(state, null, null, new[] { actor }, Array.Empty<BroadcastViewProjector.Body>(), null, 1000 + i * 33);
+        }
+        // A receipt for source1 must use source1, not the newer permitted pose.
+        var ack = Ack(); ack.Scope = first.Scope; ack.RenderedSequence = first.Sequence;
+        Assert.True(p.ConfirmPresented(ack, 1500));
+        Assert.False(p.ConfirmPresented(ack, 1501)); // cannot commit twice.
+    }
+    [Fact] public void FasterSamplingDoesNotExtendTheExistingPresentationReceiptAgeLimit()
+    {
+        var p = new BroadcastViewProjector(Scope(), (_, _, _, _) => true, 1000);
+        var state = new SocialMatchStateObservation { MatchId = Scope().MatchId, Phase = SocialPhase.Exploration, VisibilityRadius = 3.5f };
+        var first = p.Build(state, null, null, Array.Empty<BroadcastViewProjector.Actor>(), Array.Empty<BroadcastViewProjector.Body>(), null, 1000);
+        var later = p.Build(state, null, null, Array.Empty<BroadcastViewProjector.Actor>(), Array.Empty<BroadcastViewProjector.Body>(), null, 2001);
+        var ack = Ack(); ack.Scope = first.Scope; ack.RenderedSequence = first.Sequence;
+        Assert.False(p.ConfirmPresented(ack, 2001));
+        ack.RenderedSequence = later.Sequence;
+        Assert.True(p.ConfirmPresented(ack, 2001));
+    }
+    [Fact] public void RepeatedSameTimestampBuildsStillHaveABoundedPresentationCache()
+    {
+        var p = new BroadcastViewProjector(Scope(), (_, _, _, _) => true, 1000);
+        var state = new SocialMatchStateObservation { MatchId = Scope().MatchId, Phase = SocialPhase.Exploration, VisibilityRadius = 3.5f };
+        BroadcastView first = null, last = null;
+        for (int i = 0; i < 33; i++)
+        {
+            last = p.Build(state, null, null, Array.Empty<BroadcastViewProjector.Actor>(), Array.Empty<BroadcastViewProjector.Body>(), null, 1000);
+            first ??= last;
+        }
+        var ack = Ack(); ack.Scope = first.Scope; ack.RenderedSequence = first.Sequence;
+        Assert.False(p.ConfirmPresented(ack, 1000));
+        ack.RenderedSequence = last.Sequence;
+        Assert.True(p.ConfirmPresented(ack, 1000));
+    }
     [Fact] public void TemporalOpeningIsBoundedButClosingIsImmediate()
     {
         float displayed = 1;

@@ -198,6 +198,7 @@ async def prepared(fakes):
 async def test_preview_composes_only_observer_and_is_nonblocking_until_activate(tmp_path, monkeypatch):
     monkeypatch.setenv("TWITCH_ACCESS_TOKEN", "must-not-enter-unity")
     monkeypatch.setenv("ACTOR_BRIDGE_TOKEN", "old-session-must-not-enter")
+    monkeypatch.setenv("ACTOR_BROADCAST_MOTION_REPORT", "/untrusted-parent-path.json")
     fakes = Fakes(tmp_path); factory, run, flags, unsafe, terminal = await prepared(fakes)
     try:
         assert fakes.model_calls == 0 and run.readiness() == {**dict.fromkeys(flags[-1], True), "chat": False}
@@ -207,6 +208,7 @@ async def test_preview_composes_only_observer_and_is_nonblocking_until_activate(
         assert spawn[2]["ACTOR_OBSERVER_ADMISSION"] == "private-admission" and "TWITCH_ACCESS_TOKEN" not in spawn[2]
         assert spawn[2]["ACTOR_BRIDGE_TOKEN"] != "old-session-must-not-enter"
         assert spawn[2]["ACTOR_BROADCAST_PROBE_PNG"] == str(run.directory / "native-presented.png")
+        assert spawn[2]["ACTOR_BROADCAST_MOTION_REPORT"] == str(run.directory / "motion.json")
         await asyncio.wait_for(run.activate(), .1); await asyncio.sleep(0)
         assert fakes.model_calls == 1 and not unsafe
     finally: await factory.aclose()

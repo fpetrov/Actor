@@ -29,6 +29,10 @@ namespace Actor.Networking
         private BroadcastCamera camera = new() { AnchorId = "main-hall", X = 0, Y = -.94f, VisibilityRadius = 3.5f, OrthographicSize = 3.4f, Aspect = 4f / 3 };
         private BroadcastView last, presented;
         private readonly Dictionary<ulong, BroadcastView> prepared = new();
+        // Presentation receipts make a full network round trip. Keep up to one
+        // second of 30 Hz source frames; transport receipts do not commit them.
+        private const int PreparedCapacity = 32;
+        private const long PresentationReceiptMaxAgeMs = 1000;
         private readonly HashSet<string> committed = new(StringComparer.Ordinal);
         private long switchedAt, now;
         private ulong sequence, semantic = 1;
@@ -72,7 +76,7 @@ namespace Actor.Networking
         internal bool ConfirmPresented(BroadcastPresentationAck ack, long at)
         {
             if (ack == null || !prepared.TryGetValue(ack.RenderedSequence, out var frame) || !BroadcastPresentationRules.CanAcknowledge(frame, ack, false)
-                || !BroadcastObserverRules.SameScope(scope, ack.Scope) || at - frame.ObservedAtUnixMs > 1000 || presented != null && frame.Sequence <= presented.Sequence) return false;
+                || !BroadcastObserverRules.SameScope(scope, ack.Scope) || at - frame.ObservedAtUnixMs > PresentationReceiptMaxAgeMs || presented != null && frame.Sequence <= presented.Sequence) return false;
             presented = BroadcastPresentationRules.PresentedSubset(frame, ack); foreach (var fact in presented.Facts) if (fact.RetentionExpiresAtUnixMs > at) committed.Add(fact.EvidenceId);
             foreach (var key in prepared.Keys.Where(k => k <= frame.Sequence).ToArray()) prepared.Remove(key); return true;
         }
@@ -151,7 +155,11 @@ namespace Actor.Networking
                 || (f.Predicate == "body-seen" && !view.Bodies.Any(b => b.VictimActorId == f.ActorId))
                 || (f.Predicate == "public-state" && f.Label != state.Phase.ToString())));
             view.SemanticRevision = semantic; view.Facts.Add(facts.Select(f => f.Clone())); view.RevokedEvidenceIds.Add(revoked);
-            last = view.Clone(); prepared[view.Sequence] = view.Clone(); while (prepared.Count > 8) prepared.Remove(prepared.Keys.Min()); return view;
+            last = view.Clone();
+            foreach (var key in prepared.Where(pair => now - pair.Value.ObservedAtUnixMs > PresentationReceiptMaxAgeMs).Select(pair => pair.Key).ToArray()) prepared.Remove(key);
+            prepared[view.Sequence] = view.Clone();
+            while (prepared.Count > PreparedCapacity) prepared.Remove(prepared.Keys.Min());
+            return view;
         }
     }
 }
