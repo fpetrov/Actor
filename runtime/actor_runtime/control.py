@@ -17,6 +17,33 @@ from .errors import ActorError
 from .launching import profiles,resolve_client,api_url,process_identity,owned_process,write_state,read_state
 
 
+class _RegisteredSpawn:
+    """Defer an interrupt only until cleanup owns the newly created child."""
+
+    def __init__(self):
+        self._registering = False
+        self._pending = False
+
+    def interrupted(self, _signal, _frame):
+        if self._registering:
+            self._pending = True
+        else:
+            raise KeyboardInterrupt
+
+    def spawn(self, command, *, register, **kwargs):
+        if self._pending:
+            raise KeyboardInterrupt
+        self._registering = True
+        try:
+            process = subprocess.Popen(command, **kwargs)
+            register(process)
+        finally:
+            self._registering = False
+        if self._pending:
+            raise KeyboardInterrupt
+        return process
+
+
 def installed(name):
     try:return metadata.version(name)
     except metadata.PackageNotFoundError:return None
@@ -103,9 +130,9 @@ def join(args):
     if args.model:runtime += ["--model",args.model]
     processes=[]
     previous_handlers={}
-    def interrupted(*_):raise KeyboardInterrupt
+    spawning=_RegisteredSpawn()
     for signum in (signal.SIGINT,signal.SIGTERM):
-        previous_handlers[signum]=signal.signal(signum,interrupted)
+        previous_handlers[signum]=signal.signal(signum,spawning.interrupted)
     result=1
     try:
         client_arguments=profile.client_arguments(room=args.room.upper(),player_name=args.player_name,
@@ -114,8 +141,8 @@ def join(args):
                 any(not isinstance(value,str) or "\x00" in value or len(value)>8192 for value in client_arguments)):
             raise ActorError("game_profile_invalid","Installed game profile returned an invalid client argument vector")
         with (output/"runtime.log").open("w") as log:
-            server=subprocess.Popen(runtime,env=environment,stdout=log,stderr=subprocess.STDOUT)
-        processes.append(server);state["processes"]["runtime"]=process_identity(server.pid)
+            server=spawning.spawn(runtime,register=processes.append,env=environment,stdout=log,stderr=subprocess.STDOUT)
+        state["processes"]["runtime"]=process_identity(server.pid)
         write_state(output,state)
         deadline=time.monotonic()+20
         while True:
@@ -127,8 +154,8 @@ def join(args):
                 time.sleep(.1)
         command=[str(client),*client_arguments]
         with (output/"client-stdout.log").open("w") as log:
-            game=subprocess.Popen(command,env=environment,stdout=log,stderr=subprocess.STDOUT)
-        processes.append(game);state["processes"]["client"]=process_identity(game.pid)
+            game=spawning.spawn(command,register=processes.append,env=environment,stdout=log,stderr=subprocess.STDOUT)
+        state["processes"]["client"]=process_identity(game.pid)
         state["state"]="running";write_state(output,state)
         print(f"Joining {args.room.upper()} with {brain}. Diagnostics: {output}",flush=True)
         print("Ctrl-C stops this owned Runtime and client. actorctl status --run PATH checks them.",flush=True)
