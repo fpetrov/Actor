@@ -54,6 +54,17 @@ class BroadcastCoordinator:
         for key, value in flags.items():
             if key in self._ready and type(value) is bool: self._ready[key] = value
 
+    def _current_readiness(self):
+        if self._run is None: return dict(self._ready)
+        current = self._run.readiness()
+        if not isinstance(current, dict) or set(current) != set(self._ready) or any(type(value) is not bool for value in current.values()):
+            return dict.fromkeys(self._ready, False)
+        return {key: value and current[key] for key, value in self._ready.items()}
+
+    def _dependencies_ready(self):
+        flags = self._current_readiness()
+        return all(flags[key] for key in self._required)
+
     async def execute(self, action, payload):
         if not isinstance(payload, dict): raise CoordinatorError("operator_payload_invalid")
         async with self._lock:
@@ -79,7 +90,7 @@ class BroadcastCoordinator:
                         or payload["broadcast_session_id"] != self.broadcast_session_id):
                     raise CoordinatorError("broadcast_public_confirmation_required")
                 if self.state == "Live": return {"accepted": True, "state": self.state}
-                if self.state != "PreviewReady" or not all(self._ready[key] for key in self._required) or self._run is None:
+                if self.state != "PreviewReady" or not self._dependencies_ready() or self._run is None:
                     raise CoordinatorError("broadcast_preview_not_ready")
                 if self._start_task is None or self._start_task.done():
                     self.reason = "confirming_public_output"
@@ -150,10 +161,22 @@ class BroadcastCoordinator:
         try:
             run = self._run
             if run is None: raise CoordinatorError("broadcast_preview_not_ready")
+            # A queued request may begin after the exact presented frame expires.
+            # Refusing this attempt does not destroy an otherwise live preview.
+            if not self._dependencies_ready():
+                self.reason = "broadcast_preview_not_ready"
+                return
             await run.obs.start_stream(PublicStartPermit(self.channel, time.monotonic() + 30, True))
             async with self._lock:
                 if generation != self._generation or self.state != "PreviewReady":
                     await run.obs.emergency_stop(); return
+                if not self._dependencies_ready():
+                    # The owned Start RPC awaited real output confirmation.
+                    # Drain that output without changing the audited preview
+                    # route; another start always needs a new explicit request.
+                    await run.obs.stop_stream()
+                    self.reason = "broadcast_preview_not_ready"
+                    return
                 self.state, self.reason = "Live", "public_output_confirmed"
                 self.metrics["public_starts"] += 1
                 run.scheduler.public_started()
@@ -238,11 +261,29 @@ class BroadcastCoordinator:
         for name in ('pending','terminal'):
             value=raw.get(name) if isinstance(raw,dict) else None
             director[name]=value if type(value)is bool else None
+        health = details.get("feed_health", {})
+        def feed_row(row):
+            if not isinstance(row, dict): return None
+            code = row.get("code")
+            result = {"code": code if code in {"fresh", "presentation_expired", "broadcast_feed_stale",
+                "broadcast_feed_disconnected", "broadcast_feed_invalid"} else None}
+            for name in ("elapsed_ms", "entry_age_ms", "unique_ack_age_ms", "expiry_remaining_ms", "guard_gap_ms", "pf_ms", "obs_ms"):
+                value = row.get(name)
+                result[name] = value if type(value) in (int, float) and math.isfinite(value) and abs(value) <= 3600000 else None
+            for name in ("eligible", "feed_live", "latest_matches_accepted", "presentation_matches_view"):
+                value = row.get(name); result[name] = value if type(value) is bool else None
+            return result
+        count = health.get("transition_count") if isinstance(health, dict) else None
+        rows = health.get("transitions") if isinstance(health, dict) else None
+        feed_health = {"transition_count": count if type(count) is int and 0 <= count <= 1000000 else None,
+            "transitions": [feed_row(row) for row in rows] if isinstance(rows, list) and len(rows) <= 8 else [],
+            "fatal": feed_row(health.get("fatal")) if isinstance(health, dict) else None}
         return {"state": self.state, "reason": self.reason, "channel": self.channel,
             "room_code": self.room_code, "broadcast_session_id": self.broadcast_session_id,
-            "rooms": await self.factory.rooms(), "ready": dict(self._ready), "live": self.state == "Live",
+            "rooms": await self.factory.rooms(), "ready": self._current_readiness(), "live": self.state == "Live",
             "chat_enabled": self.chat_enabled,
             "camera_director":director,
+            "feed_health": feed_health,
             "last_spoken": details.get("last_spoken"), "usage": details.get("usage", {}),
             "commentary": {"idle_enabled": self.config.idle.enabled, "idle_after_seconds": self.config.idle.after_seconds,
                 "allow_memory_callbacks":self.config.idle.allow_memory_callbacks,

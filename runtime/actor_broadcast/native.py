@@ -284,6 +284,12 @@ class PreparedNativeRun:
         self._flags = dict.fromkeys(("observer", "model", "tts", "obs", "audio", "chat"), False)
         self._tasks = set(); self._close_lock = asyncio.Lock(); self._closing = False; self._closed = False
         self._failure = None; self._failed = asyncio.Event(); self._terminal = False; self._last_sequence = None
+        self._last_presented_key = self._last_presented_at = None
+        self._feed_started_at = time.monotonic()
+        self._feed_entry_at = None; self._feed_latest_matches = False
+        self._feed_eligible = None; self._feed_transitions = []; self._feed_transition_count = 0
+        self._feed_fatal = None; self._feed_guard_at = None
+        self._feed_guard_gap = self._feed_pf_ms = self._feed_obs_ms = None
         self._release_admission = False; self._binding = None; self._channel_binding = None
         self._activated = False; self._record_directory_original = None; self._decoder = None
         self._admission_pending = None
@@ -293,7 +299,52 @@ class PreparedNativeRun:
         self.prepare_failure_code = None
         self.cleanup_failures = (); self.recovered_cleanup_stages = ()
 
-    def readiness(self): return dict(self._flags)
+    def readiness(self):
+        flags = dict(self._flags)
+        flags["observer"] = bool(flags["observer"] and not self._closing and self._failure is None
+            and self.scheduler is not None and self.scheduler._fresh() and self._feed_live())
+        return flags
+
+    def _feed_live(self):
+        # Only a newly accepted coherent native presentation can advance this
+        # clock. Repeated bridge envelopes and rejected/expired views cannot.
+        return (self._last_presented_at is not None and
+            0 <= time.monotonic() - self._last_presented_at <= self.commentary.feed_stale_seconds)
+
+    def _feed_snapshot(self, code):
+        now, wall = time.monotonic(), time.time() * 1000
+        view = self.scheduler.view if self.scheduler is not None else None
+        def bounded(value):
+            return round(max(-3600000, min(3600000, value)), 3) if type(value) in (int, float) and math.isfinite(value) else None
+        return {"code": code, "elapsed_ms": bounded((now - self._feed_started_at) * 1000),
+            "entry_age_ms": bounded((now - self._feed_entry_at) * 1000) if self._feed_entry_at is not None else None,
+            "unique_ack_age_ms": bounded((now - self._last_presented_at) * 1000) if self._last_presented_at is not None else None,
+            "expiry_remaining_ms": bounded(view.expires_at_unix_ms - wall) if view is not None else None,
+            "eligible": self.scheduler is not None and self.scheduler._fresh(), "feed_live": self._feed_live(),
+            "latest_matches_accepted": self._feed_latest_matches,
+            "presentation_matches_view": view is not None and view.presentation.rendered_sequence == view.sequence,
+            "guard_gap_ms": bounded(self._feed_guard_gap), "pf_ms": bounded(self._feed_pf_ms),
+            "obs_ms": bounded(self._feed_obs_ms)}
+
+    def feed_health_report(self):
+        return {"transition_count": self._feed_transition_count,
+            "transitions": [dict(row) for row in self._feed_transitions],
+            "fatal": dict(self._feed_fatal) if self._feed_fatal is not None else None}
+
+    def _check_feed(self):
+        if self.scheduler is None or not self._flags["observer"]: return
+        eligible = self.scheduler._fresh()
+        if eligible != self._feed_eligible:
+            if self._feed_eligible is not None or not eligible:
+                self._feed_transition_count = min(1000000, self._feed_transition_count + 1)
+                self._feed_transitions.append(self._feed_snapshot("fresh" if eligible else "presentation_expired"))
+                del self._feed_transitions[:-8]
+            if not eligible and (getattr(self.scheduler, "_active", None) or getattr(self.scheduler, "_speech_pending", None)):
+                # Fence synchronously; existing scheduler cancellation and every
+                # PCM/playback validator still enforce the original expiry.
+                self.scheduler._invalidate("feed_stale")
+            self._feed_eligible = eligible
+        if not self._feed_live(): raise NativeError("broadcast_feed_stale")
 
     def _ready(self, name):
         self._flags[name] = True; self.on_ready(self.readiness())
@@ -308,6 +359,9 @@ class PreparedNativeRun:
 
     def _trip(self, code):
         if self._closing or self._failure is not None: return
+        if code in {"broadcast_feed_stale", "broadcast_feed_disconnected", "broadcast_feed_invalid"}:
+            try: self._feed_fatal = self._feed_snapshot(code)
+            except Exception: self._feed_fatal = None  # Diagnostics never prevent the unsafe fence.
         self._failure = code; self._failed.set(); self.on_unsafe(code)
         if self.obs is not None: self._task(self.obs.emergency_stop())
 
@@ -517,12 +571,26 @@ class PreparedNativeRun:
         entry = self.session.world.latest_entry(BroadcastPresentedViewObservation, self.observer_id,
             capability_id="agents-arena.broadcast-presented-view")
         if entry is None: return
-        if time.monotonic() - entry.received_at > self.commentary.feed_stale_seconds:
+        now = time.monotonic()
+        if type(entry.received_at) not in (int, float) or not math.isfinite(entry.received_at) or not 0 <= entry.received_at <= now:
+            raise NativeError("broadcast_feed_invalid")
+        self._feed_entry_at = entry.received_at
+        if now - entry.received_at > self.commentary.feed_stale_seconds:
             raise NativeError("broadcast_feed_stale")
         if entry.sequence == self._last_sequence: return
-        view = self.projector.project(entry)
+        try: view = self.projector.project(entry)
+        except ValueError: raise NativeError("broadcast_feed_invalid") from None
+        previous = self.scheduler.view
+        if previous is not None and (view.scope.connection_generation, view.scope.view_epoch) < (
+                previous.scope.connection_generation, previous.scope.view_epoch):
+            raise NativeError("broadcast_feed_invalid")
+        key = (view.scope, view.sequence)
+        self._feed_latest_matches = key == self._last_presented_key
+        self._last_sequence = entry.sequence
+        if self._feed_latest_matches: return
         if self.scheduler.observe(view):
-            self._last_sequence = entry.sequence
+            self._last_presented_key, self._last_presented_at = key, entry.received_at
+            self._feed_latest_matches = True
             if self.director is not None: self.director.observe(view)
             if view.terminal and not self._terminal:
                 self._terminal = True
@@ -606,31 +674,37 @@ class PreparedNativeRun:
         try:
             while not self._closing:
                 now = time.monotonic()
+                self._feed_guard_gap = (now - self._feed_guard_at) * 1000 if self._feed_guard_at is not None else None
+                self._feed_guard_at = now
                 if now >= next_pf:
                     next_pf = now + .5
+                    began = time.monotonic()
                     if not await self.attestor.refresh(): raise NativeError("obs_firewall_attestation_lost")
+                    self._feed_pf_ms = (time.monotonic() - began) * 1000
                 if self.factory.guardian is not None: self.factory.guardian.require_alive()
                 if self.process is not None and self.process.poll() is not None: raise NativeError("broadcast_observer_exited")
                 if self._flags["model"]:
                     self._require_healthy_provider()
                 if self.scheduler is not None:
                     self._capture()
-                    if self._flags["observer"] and not self.scheduler._fresh(): raise NativeError("broadcast_feed_stale")
+                    self._check_feed()
                 if self._binding is not None and not self.window.verify(self._binding): raise NativeError("broadcast_window_lost")
                 audited = False
                 if self._flags["obs"] and now >= next_obs:
                     next_obs = now + 1
+                    began = time.monotonic()
                     await self.obs.check_stream_health()
                     if not (await self.obs.audit()).passed or not await self._verify_channel(self.config.channel):
                         raise NativeError("obs_route_or_destination_changed")
                     audited = True
+                    self._feed_obs_ms = (time.monotonic() - began) * 1000
                 if self._flags["audio"] and self.sink.public_status.get("renderer_ready") is not True:
                     self._flags["audio"] = False
                     raise NativeError("audio_renderer_unavailable")
                 # OBS audits above may await. Capture the newest actual view
                 # again before the synchronous speech/sequence admission gate.
                 if self._activated:
-                    if audited: self._capture()
+                    if audited: self._capture(); self._check_feed()
                     self._direct_camera()
                 await asyncio.sleep(.05)
         except asyncio.CancelledError: raise
@@ -657,6 +731,7 @@ class PreparedNativeRun:
         return {"last_spoken": report.get("last_spoken"), "usage": await self.budget.report() if self.budget is not None else {},
             "idle_deadline_seconds": max(0, self.scheduler.idle_deadline - time.monotonic()) if self.scheduler is not None else None,
             "chat_enabled": self.config.chat_enabled,
+            "feed_health": self.feed_health_report(),
             "director": {**(self.director.report() if self.director is not None else {}),
                 "commands_dispatched": self._director_commands, "selection_results_accepted": self._director_results_accepted,
                 "selection_results_rejected": self._director_results_rejected}}

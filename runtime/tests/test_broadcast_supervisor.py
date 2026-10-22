@@ -553,8 +553,11 @@ def test_non_reaping_exit_probe_uses_exact_child_and_waitnowait_without_os_call(
 
 
 @pytest.mark.parametrize("pid,code,status,expected", [
-    (1234567, 2, 0, True), (0, 0, 0, False), (777, 2, 0, None),
-    (1234567, 4, 0, None), (0, 0, -1, None),
+    (1234567, 1, 0, True), (1234567, 2, 0, True), (1234567, 3, 0, True),
+    (0, 0, 0, False), (777, 2, 0, None),
+    (1234567, 4, 0, False), (1234567, 5, 0, False), (1234567, 6, 0, False),
+    (1234567, 0, 0, None), (1234567, 7, 0, None), (1234567, -1, 0, None),
+    (0, 5, 0, None), (0, 0, -1, None),
 ])
 def test_darwin_libc_nonreaping_probe_exact_abi_with_fake_library(monkeypatch, pid, code, status, expected):
     import ctypes
@@ -566,7 +569,7 @@ def test_darwin_libc_nonreaping_probe_exact_abi_with_fake_library(monkeypatch, p
         info = pointer._obj
         assert ctypes.sizeof(info) == 104 and type(info).pid.offset == 12
         calls.append((kind, requested, flags))
-        info.pid, info.code, info.signo = pid, code, signal.SIGCHLD
+        info.pid, info.code, info.signo = pid, code, signal.SIGCHLD if pid else 0
         return status
     def load(path, **options):
         assert path == "/usr/lib/libSystem.B.dylib" and options == {"use_errno": True}
@@ -576,3 +579,59 @@ def test_darwin_libc_nonreaping_probe_exact_abi_with_fake_library(monkeypatch, p
         with pytest.raises(SupervisorError): unreaped_controller_exited(1234567)
     else: assert unreaped_controller_exited(1234567) is expected
     assert calls == [(1, 1234567, 37)]
+
+
+@pytest.mark.parametrize("pid,signo,code,si_error,result,errno", [
+    (777,signal.SIGCHLD,5,0,0,0), (1234567,signal.SIGTERM,5,0,0,0),
+    (1234567,signal.SIGCHLD,5,5,0,0), (1234567,signal.SIGCHLD,5,0,-1,3),
+    (0,signal.SIGCHLD,0,0,0,0),
+])
+def test_darwin_nonterminal_reports_preserve_identity_signal_and_error_guards(monkeypatch,pid,signo,code,si_error,result,errno):
+    import ctypes
+    import actor_broadcast.supervisor as module
+    def fake(kind,requested,pointer,flags):
+        assert (kind,requested,flags)==(1,1234567,37)
+        info=pointer._obj
+        info.pid,info.signo,info.code,info.error=pid,signo,code,si_error
+        ctypes.set_errno(errno)
+        return result
+    monkeypatch.setattr(ctypes,"CDLL",lambda *a,**k:SimpleNamespace(waitid=fake))
+    with pytest.raises(SupervisorError,match="supervisor_exit_probe_failed"):
+        module._darwin_unreaped_exit(1234567)
+
+
+async def test_darwin_stopped_leader_real_libc_predicate_allows_term_then_kill_before_reap(monkeypatch):
+    import ctypes
+    import actor_broadcast.supervisor as module
+    process=SimpleNamespace(pid=1234567,returncode=None)
+    clock=Clock();signals=[];queries=[];waits=[];state={"code":5}
+    def fake(kind,pid,pointer,flags):
+        assert (kind,pid,flags)==(1,process.pid,37)
+        info=pointer._obj
+        assert ctypes.sizeof(info)==104 and type(info).pid.offset==12
+        info.pid,info.signo,info.code=pid,signal.SIGCHLD,state["code"]
+        info.status=signal.SIGSTOP if state["code"]==5 else signal.SIGKILL
+        queries.append(state["code"]);return 0
+    monkeypatch.setattr(ctypes,"CDLL",lambda *a,**k:SimpleNamespace(waitid=fake))
+    def send(pid,number):
+        assert pid==process.pid and process.returncode is None
+        signals.append(number)
+        if number==signal.SIGKILL:state["code"]=2
+    async def wait(timeout):
+        assert signals==[signal.SIGTERM,signal.SIGKILL]and state["code"]==2
+        waits.append(timeout);process.returncode=-signal.SIGKILL;return process.returncode
+    group=RetainedControllerGroup(process,group_members=lambda pid:(pid,),verify_group=lambda pid:pid,
+        send_signal=send,leader_exited=module._darwin_unreaped_exit,wait_child=wait,
+        clock=clock,sleep=clock.sleep)
+    assert await group.terminate()is True and group.closed
+    assert queries[:2]==[5,5]and queries[-1]==2 and len(waits)==1
+    assert signals==[signal.SIGTERM,signal.SIGKILL]
+
+
+@pytest.mark.parametrize("code",[4,5,6])
+def test_non_darwin_waitid_path_still_rejects_unexpected_nonterminal_result(monkeypatch,code):
+    import actor_broadcast.supervisor as module
+    monkeypatch.setattr(module.os,"waitid",lambda *a:SimpleNamespace(si_pid=1234567,si_code=code),raising=False)
+    for name,value in {"P_PID":1,"WEXITED":4,"WNOHANG":1,"WNOWAIT":32,"CLD_EXITED":1,"CLD_KILLED":2,"CLD_DUMPED":3}.items():
+        monkeypatch.setattr(module.os,name,value,raising=False)
+    with pytest.raises(SupervisorError):unreaped_controller_exited(1234567)

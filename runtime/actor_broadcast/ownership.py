@@ -50,7 +50,11 @@ class ChannelLease:
         if self.held: return self
         directory = self._directory(); fd = None
         try:
-            fd = os.open(self.name, os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK, 0o600, dir_fd=directory)
+            flags = os.O_RDWR | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NONBLOCK
+            # Publish a new inode atomically, or open the already published
+            # entry without O_CREAT. Never retry an unexpected missing entry.
+            try: fd = os.open(self.name, flags | os.O_CREAT | os.O_EXCL, 0o600, dir_fd=directory)
+            except FileExistsError: fd = os.open(self.name, flags, dir_fd=directory)
             info = os.fstat(fd)
             if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077 or info.st_nlink != 1:
                 raise LeaseError("channel_lease_file_unsafe")

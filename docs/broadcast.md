@@ -201,8 +201,22 @@ The controller and its guardian serialize read-only PF queries with a private
 per-account, per-service lock. Waiting and the challenged exchange share the
 existing request deadline; the proof lifetime is unchanged. The persistent lock
 inode is never unlinked, and its namespace comes from the OS account home rather
-than the selected Codex home or run configuration. This prevents the legitimate
+than the selected Codex home or run configuration. Initial lock publication uses
+exclusive creation; an existing entry is opened without `O_CREAT`. Both paths
+retain no-follow, private metadata, inode and nonblocking flock checks; an
+unexpected missing entry remains an error. This prevents the legitimate
 clients from colliding with the checker's single in-flight inspection.
+
+On macOS the guardian's nonreaping child check distinguishes terminal
+`SIGCHLD` codes from known trap/stop/continue notifications. An actual isolated
+stopped-child probe returned `CLD_STOPPED` even with `WEXITED | WNOHANG | WNOWAIT`;
+that notification means the retained child has not exited. Only exact-child
+`CLD_EXITED`, `CLD_KILLED` or `CLD_DUMPED` can prove exit. Unknown codes,
+contradictory metadata and error returns still fail closed, and group membership,
+signal/drain/reap and lease-release requirements remain unchanged. The earlier
+failed fault/probe receipts remain failures; real post-fix containment requires
+Root's separate execution. Apple's [public signal codes](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/signal.h#L320-L329)
+identify trap/stop/continue as nonterminal notifications.
 
 During OBS preparation, the guardian's mutation connection and final quiet graph
 audit are the startup authority. Delayed graph events on the controller's second,
@@ -260,6 +274,20 @@ immediately; newly allowed radial space may open smoothly with display <= curren
 allowed distance. Cached 193-ray state avoids new render targets or extra raycasts.
 Teleports, view changes and stale sight reset the filter. Old world vertices or whole
 mask crossfades must not reveal newly occluded space. Actual motion/cost need native QA.
+
+Native observer health separates the original 500 ms source-view eligibility from
+the 3 s monotonic feed timeout. A short expired view immediately removes observer
+readiness and fences speech/PCM and camera admission; only a real newly accepted
+coherent presentation restores eligibility. Duplicate bridge envelopes and expired
+or rejected views cannot renew the last unique ACK's original receipt timestamp.
+Disconnect, invalid scope and existing PF/window/route failures still fail closed.
+Public start checks current readiness at request and dispatch; expiry during an
+owned Start RPC drains that stream without committing Live or altering the preview
+route, and requires another explicit start. Stop/cleanup never depends on view
+freshness. Status retains at most eight numeric freshness transitions and one fatal
+snapshot with receipt/ACK ages, remaining source expiry, equality flags and guard/
+PF/OBS timings; it exports no identities or game content and does not establish a
+historical fault's cause. No source expiry, ACK, epoch or visibility rule is relaxed.
 
 ## Validation status
 

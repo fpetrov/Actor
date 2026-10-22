@@ -185,13 +185,21 @@ def _darwin_unreaped_exit(pid):
         waitid.argtypes = (ctypes.c_int, ctypes.c_uint32, ctypes.POINTER(Siginfo), ctypes.c_int)
         waitid.restype = ctypes.c_int
         info = Siginfo()
+        ctypes.set_errno(0)
         result = waitid(1, pid, ctypes.byref(info), 0x04 | 0x01 | 0x20)
     except (OSError, AttributeError): raise SupervisorError("supervisor_exit_probe_unavailable") from None
-    if result != 0: raise SupervisorError("supervisor_exit_probe_failed")
-    if info.pid == 0: return False
-    if info.pid != pid or info.signo != signal.SIGCHLD or info.code not in (1, 2, 3):
+    if result != 0 or info.error != 0: raise SupervisorError("supervisor_exit_probe_failed")
+    if info.pid == 0:
+        if info.signo != 0 or info.code != 0 or info.status != 0:
+            raise SupervisorError("supervisor_exit_probe_failed")
+        return False
+    if info.pid != pid or info.signo != signal.SIGCHLD:
         raise SupervisorError("supervisor_exit_probe_failed")
-    return True
+    # Darwin can report a pending stop even for WEXITED | WNOHANG | WNOWAIT.
+    # SDK sys/signal.h: CLD_TRAPPED/STOPPED/CONTINUED are NOT exit proofs.
+    if info.code in (1, 2, 3): return True
+    if info.code in (4, 5, 6): return False
+    raise SupervisorError("supervisor_exit_probe_failed")
 
 
 def unreaped_controller_exited(pid):
