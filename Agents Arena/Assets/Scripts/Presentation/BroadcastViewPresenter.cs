@@ -134,7 +134,7 @@ namespace Actor.Presentation
                 nativeFrames++; renderIntervals.Record(now);
             }
         }
-        private void LateUpdate()
+        private void Update()
         {
             if (Application.isBatchMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null) return;
             if (session == null || !session.Fresh || art == null)
@@ -149,6 +149,12 @@ namespace Actor.Presentation
             }
             AnimatePermitted();
             ArrangeLabels();
+        }
+        private void LateUpdate()
+        {
+            // HUD text/layout must enter UI Toolkit's panel update before the
+            // camera render. Fog still obtains this exact eye in LateUpdate.
+            if (session == null || !session.Fresh || Applied == null || camera == null || !camera.isActiveAndEnabled) return;
             if (!capturePending && (session.Presented == null || session.Presented.View.Sequence != applied)) StartCoroutine(AcknowledgeFrame(Applied));
         }
         private void Apply(BroadcastView frame)

@@ -29,6 +29,13 @@ extra `yield return null` before `WaitForEndOfFrame` could replace the source
 before its render was acknowledged. The coroutine now waits for the current
 render's end without relaxing any of these checks.
 
+The presenter applies the source and changes HUD text in `Update`, before UI
+Toolkit validates its panels. `LateUpdate` schedules the end-of-frame check;
+the fog still updates before rendering. This conservatively avoids depending on
+the later repaint pass to revalidate changed text. It is timing hardening, not
+evidence that earlier recordings displayed stale text. The timing follows Unity's
+[runtime UI Toolkit loop](https://docs.unity.com/en-us/engine/6000.6/manual/uitoolkits/uielements/uie-test-ui/profile-ui/uie-profiler-markers).
+
 The server retains at most 32 prepared frames, pruning frames older than the
 existing 1,000 ms presentation-receipt limit. Source TTL and local freshness
 remain 500 ms. There is no pose extrapolation, interpolation of hidden actors,

@@ -2,7 +2,7 @@
 
 Current public site: **http://5.181.134.236/**. Source repository: **https://github.com/fpetrov/Actor** (public).
 
-The current source targets **Game 0.10.0 / admission 4 / Arena 0.7.0 / local Runtime 0.8.0 / Core 1.0.0**. This is a compatibility requirement, not a claim that these products are already deployed or publicly downloadable. The accepted [M8 C1 deployment](release-validation/deployment/activation-c1.json) records Game 0.9.0/admission 4; retain that historical scope and check the live API before a new rollout. Exact game versions must match even when the admission version is unchanged.
+The current source targets **Game 0.10.0 / admission 4 / Arena 0.7.0 / local Runtime 0.8.0 / Core 1.0.0**; both Standard packages remain **0.1.0**. At this source checkpoint, [v0.10.0-rc.1](https://github.com/fpetrov/Actor/releases/tag/v0.10.0-rc.1) is a planned link, not a verified download or a deployment/acceptance receipt. The accepted [M8 C1 deployment](release-validation/deployment/activation-c1.json) records **Game 0.9.0 / admission 4**; check the live API before a new rollout. Exact game versions must match even when the admission version is unchanged. An isolated 0.10 staging service does not update production.
 
 Production is Ubuntu 24.04 x86-64. nginx is installed as a system package; the .NET 10 Control Plane is a self-contained Linux x64 application running as the non-login system user `actor`. Unity Dedicated Servers are its child processes. No Unity Editor, Docker socket or container orchestrator is installed on the VPS.
 
@@ -47,7 +47,7 @@ scripts/deploy-vps.sh <host> <ssh-user> <private-key-path>
 
 Build outputs stay under ignored `build/`. Server build uses `StandaloneLinux64` with `StandaloneBuildSubtarget.Server` and Mono; the normal macOS client build is non-Development. The Control Plane publish is self-contained, so the VPS requires no system .NET runtime. Ubuntu dependencies are listed in `scripts/provision-vps.sh`; review/run that script only on an authorized fresh host. It does not change SSH or firewall configuration.
 
-Freeze one clean reviewed source commit before building all three native products. `scripts/publish-control-plane.sh` tests the solution and stamps the actual executable/DLL hashes and source fingerprint. Export the matching Runtime0.8.0 wheel to `build/runtime-dist/actor_runtime-0.8.0-py3-none-any.whl`, then run `python3 scripts/package-release.py --output build/releases/0.10.0` with a fresh output directory. Packaging rejects mixed-source native stamps, stale wheel payloads and nonpublishable builds. `deploy-vps.sh` uploads the current build roots; it does not perform this complete source-coherence check for you. Reverify the roots if anything changed after packaging. See [installation and packaging](installation.md) for the seven-file distribution. Building, packaging, publishing and deployment are separate actions.
+Freeze one clean reviewed source commit before building all three native products. `scripts/publish-control-plane.sh` tests the solution and stamps the actual executable/DLL hashes and source fingerprint. Export the matching Runtime 0.8.0 wheel to `build/runtime-dist/actor_runtime-0.8.0-py3-none-any.whl`, then run `python3 scripts/package-release.py --output build/releases/0.10.0-rc1` with a fresh output directory. The planned prerelease tag does not change the package's `0.10.0` game or `0.8.0` Runtime filenames. Packaging rejects mixed-source native stamps, stale wheel payloads and nonpublishable builds. `deploy-vps.sh` uploads the current build roots; it does not perform this complete source-coherence check for you. Reverify the roots if anything changed after packaging. See [installation and packaging](installation.md) for the seven-file distribution. Building, packaging, publishing and deployment are separate actions. Ad-hoc macOS signing does not establish Apple notarization; a Linux QA player build does not promise a public Linux client, and no Windows release is claimed.
 
 ## Configuration
 
@@ -55,7 +55,7 @@ See [`.env.example`](../.env.example) and [`appsettings.json`](../src/Actor.Cont
 
 Keep `/etc/actor/control-plane.env` a root-owned regular file with mode0600. Activation preserves its existing settings while explicitly setting the built GameVersion, ProtocolVersion=4 and `Match__AdmissionDrainFile=/run/actor-admission-drain`. Check the host, paths and rule overrides deliberately before rollout. Every allocated match gets a random environment-only signing key; there is no persistent match signing secret to provision. Never print environment contents, `/proc/.../environ`, full join/resume tickets or private keys.
 
-`Match__BroadcastOperatorKey` is separate: empty disables observer admission. To enable it, provision the distinct owned key matching the local macOS Keychain item `org.actor.broadcast.v1` / `broadcast-server-operator-key` through a protected stdin channel and an atomic mode0600 env-file update. Keep it out of command arguments, shell tracing, logs and tracked configuration. Do not transfer OBS, Twitch or Codex credentials to the VPS. The service reads the new key only after its gated restart; changing the env file alone does not update a running process.
+`Match__BroadcastOperatorKey` is separate: empty disables observer admission. To enable it, provision the distinct owned key matching the local macOS Keychain item `org.actor.broadcast.v1` / `broadcast-server-operator-key` through a protected stdin channel and an atomic mode0600 env-file update. It authorizes only observer admission/revocation, not a player identity, OBS control, Twitch publication or model access. Keep it out of command arguments, shell tracing, logs and tracked configuration. Do not transfer OBS, Twitch or Codex credentials to the VPS. The service reads the new key only after its gated restart; changing the env file alone does not update a running process.
 
 Observer POST/DELETE routes under `/internal/broadcast-observers/` require direct loopback, no forwarded-origin headers, and `X-Actor-Broadcast-Operator`. They remain excluded from public nginx routing. The local [Broadcast installation](broadcast.md) can use its owned SSH forward to production remote port5080; staging5081 is a different endpoint. Do not expose Kestrel or the internal route publicly to avoid a tunnel.
 
@@ -85,7 +85,7 @@ python3 scripts/verify-capacity.py http://<host>
 
 The capacity script is an allocating test: it creates empty rooms up to the configured limit, waits for real READY callbacks, verifies distinct ports and the sixth-room409, and saves ignored local evidence. Run it only in an authorized acceptance window; it is not a read-only health check. Empty test rooms expire automatically. Explicit diagnostic clients support `--auto-room`, `--player-name`, `--probe-role A|B`, `--probe-output` for movement/collision/identity checks. Editor diagnostics consume `Agents Arena/Verification/multiplayer-probe.json`. These hooks are excluded from dedicated builds and require explicit diagnostic configuration.
 
-Accepted evidence is in [multiplayer validation](multiplayer-validation/README.md). Backend tests cover concurrent creation, port uniqueness/reuse, failures, timeouts, stale persistence, admission claims and public Minimal APIs. Actual VPS checks include Editor + Standalone, names/movement/authoritative collision, local-transform correction, disconnect/reconnect and five real servers.
+Historical accepted evidence is in [multiplayer validation](multiplayer-validation/README.md). Backend tests cover concurrent creation, port uniqueness/reuse, failures, timeouts, stale persistence, admission claims and public Minimal APIs. Those actual VPS checks include Editor + Standalone, names/movement/authoritative collision, local-transform correction, disconnect/reconnect and five real servers; they do not prove the upcoming 0.10 candidate's rollout or complete Broadcast acceptance.
 
 ## HTTPS later
 
@@ -95,11 +95,12 @@ Point a real domain to this VPS and add nginx TLS termination and HTTP→HTTPS r
 
 Run the isolated Unity query checks with `-batchmode -quit -executeMethod Actor.Editor.MovementPredictionVerification.Run` (report: ignored `build/verification/prediction-query-tests.json`). They cover wall sweeps/tangency, non-authoritative bodies, snapshot timeout/recovery/order/wrap, replay and preserving a recent release under a high RTT.
 
-The development-only probe role `P` measures first visual movement versus the replicated root and checks release, reversals, convergence, wall holding/sliding, speed and server authority. Test a real room normally, then optionally add a loopback relay:
+The explicit probe role `P` measures first visual movement versus the replicated root and checks release, reversals, convergence, wall holding/sliding, speed and server authority. Interactive probes require Editor/Development builds; the non-Development client admits `P` only with batch mode and an explicit output path. It is a synthetic input diagnostic, not Human/native presentation proof. Test a real room normally, then optionally add a loopback relay:
 
 ```bash
 python3 scripts/latency-relay.py <server-host> <room-udp-port> --delay-ms 100 --jitter-ms 10 --loss-percent 3
-# Launch the development client with:
+# Launch the diagnostic client with (also required for non-Development P):
+# -batchmode -nographics
 # --auto-room ROOMCODE --player-name "Prediction Pilot" --probe-role P
 # --probe-output /absolute/path/report.json --probe-relay-port 17777
 ```
