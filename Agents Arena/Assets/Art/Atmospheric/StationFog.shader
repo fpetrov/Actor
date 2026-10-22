@@ -43,11 +43,15 @@ Shader "Actor/Station Fog"
                 float2 deckUV=(i.world-float2(2.55,-2.925))/float2(14.1,18.65)+.5;
                 half4 deck=SAMPLE_TEXTURE2D(_DeckPlan,sampler_DeckPlan,saturate(deckUV));
                 half inside=(half)(step(0.0,deckUV.x)*step(deckUV.x,1.0)*step(0.0,deckUV.y)*step(deckUV.y,1.0));
-                color=lerp(color,deck.rgb*half3(.16h,.19h,.23h),saturate(_DeckPlanStrength)*deck.a*inside);
+                // Linear-space floor tint is deliberately low: the previous
+                // values became a conspicuous grey map after sRGB conversion.
+                color=lerp(color,deck.rgb*half3(.04h,.0475h,.0575h),saturate(_DeckPlanStrength)*deck.a*inside);
                 // A very restrained silver-blue lip supplies depth, entirely
                 // inside permitted geometry; it never reveals a hidden sprite.
                 color += half3(.032h, .044h, .052h) * (4.0h * original * (1.0h-original));
-                return half4(color, alpha);
+                // Fog-only exposure; the visible orbital backdrop retains its
+                // own palette. RGB changes never reduce the opaque alpha seal.
+                return half4(color * .75h, alpha);
             }
             ENDHLSL
         }
