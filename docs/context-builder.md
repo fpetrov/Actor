@@ -79,6 +79,8 @@ The centralized `ContextConfig` used by the cognitive CLI currently defaults to:
 | `max_memory_items` | 6 |
 | `max_event_payload_bytes` | 4,096 |
 | `stale_observation_seconds` | 3 seconds |
+| `max_working_knowledge` | 24 records |
+| `max_working_knowledge_bytes` | 8,192 UTF-8 bytes |
 
 Direct callers retain the previous builder defaults: 64 observations, 32 recent
 events, 8 KiB per payload and 64 KiB external JSON, plus 8 memory items. The
@@ -127,3 +129,9 @@ replans, duration and recorded cumulative provider usage.
 
 See [event routing](event-routing.md), [memory](memory.md), [Brains](brains.md)
 and [Codex](codex.md) for the surrounding lifecycle.
+
+## Installed selection and private evidence groups
+
+Runtime0.7 adds optional `ContextSelection`: a synchronous installed policy can select observation capability IDs and omit protobuf default scalar fields. This filters actual reflected payloads; it never writes a summary or invents observations. Core contains no room, role or voting branches. Arena's policy selects current phase-relevant raw state: Exploration retains the actual own Transform for spatial choices, while movement Skills consume detailed motion internally. Discussion retains match/own/meeting state, attributed messages and private working evidence. Empty/default protobuf scalars are documented as zero/false/empty, distinct from a payload marked omitted or truncated.
+
+Private working records distinguish historical observations, player claims, model hypotheses and model-noted contradictions. An unresolved contradiction cites at least two distinct retained evidence versions; it does not identify which source is truthful. Note creation freezes exact personally available versions atomically, preserving provenance and expiry as latest-value records advance. Selection keeps a note together with its evidence dependencies or omits that group. Evidence expiry/eviction removes dependent notes, without refreshing the original observation time. These records are scope-bound and session-only; no private claim, own alignment or model note is automatically saved as public SQLite truth. See [social reasoning](social-reasoning.md).

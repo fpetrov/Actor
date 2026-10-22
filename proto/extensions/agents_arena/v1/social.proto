@@ -38,6 +38,24 @@ enum SocialAction {
   SOCIAL_ACTION_SABOTAGE = 7;
   SOCIAL_ACTION_REPAIR_EMERGENCY = 8;
   SOCIAL_ACTION_CANCEL_WORK = 9;
+  SOCIAL_ACTION_TASK_STEP = 10;
+}
+
+enum SocialTaskMechanic {
+  SOCIAL_TASK_MECHANIC_UNSPECIFIED = 0;
+  SOCIAL_TASK_MECHANIC_MAINTENANCE_HOLD = 1;
+  SOCIAL_TASK_MECHANIC_CIRCUIT_CALIBRATION = 2;
+  SOCIAL_TASK_MECHANIC_SENSOR_OBSERVATION = 3;
+}
+enum SocialTaskChoice {
+  SOCIAL_TASK_CHOICE_UNSPECIFIED = 0;
+  SOCIAL_TASK_CHOICE_CONFIRM = 1;
+  SOCIAL_TASK_CHOICE_ALPHA = 2;
+  SOCIAL_TASK_CHOICE_BETA = 3;
+  SOCIAL_TASK_CHOICE_GAMMA = 4;
+  SOCIAL_TASK_CHOICE_RISING = 5;
+  SOCIAL_TASK_CHOICE_STABLE = 6;
+  SOCIAL_TASK_CHOICE_FALLING = 7;
 }
 
 // Only public transitions advance server_revision here. Invisible physical
@@ -80,6 +98,26 @@ message SocialOwnStateObservation {
   uint32 remaining_meetings = 12;
   // Recipient-specific revision, not the hidden global action sequence.
   uint64 server_revision = 13;
+  // Public-to-own-endpoint fencing value; NEVER a resume credential.
+  uint64 connection_generation = 14;
+}
+
+message SocialWaitingPlayer {
+  string actor_id = 1;
+  string display_name = 2;
+  bool ready = 3;
+  bool connected = 4;
+}
+message SocialWaitingPlayersObservation {
+  string match_id = 1;
+  string recipient_actor_id = 2;
+  uint64 server_revision = 3;
+  uint32 min_players = 4;
+  uint32 max_players = 5;
+  uint32 ready_count = 6;
+  // <=6; populated ONLY in WaitingForPlayers, otherwise explicitly empty.
+  // No Alignment, duty, life, position or Human/Agent control metadata.
+  repeated SocialWaitingPlayer players = 7;
 }
 
 // Positions in Social observations are physical capsule centers, not an
@@ -159,6 +197,9 @@ message SocialTask {
   float approach_y = 7;
   uint32 work_duration_ms = 8;
   bool completed = 9;
+  SocialTaskMechanic mechanic = 10;
+  uint32 step_count = 11;
+  uint32 sample_delay_ms = 12;
 }
 message SocialOwnTasksObservation {
   string match_id = 1;
@@ -166,6 +207,26 @@ message SocialOwnTasksObservation {
   repeated SocialTask tasks = 3; // <= 5, no performer-linked completion feed
   bool contributes_to_crew_progress = 4; // Owner's own permission only.
   uint64 server_revision = 5;
+}
+// Targeted own work only. Empty work_id is the explicit cleared replacement.
+// Acknowledged/start/progress is NEVER evidence that the task has completed.
+message SocialOwnTaskWorkObservation {
+  string match_id = 1;
+  string recipient_actor_id = 2;
+  uint64 server_revision = 3;
+  string work_id = 4;
+  string task_id = 5;
+  SocialTaskMechanic mechanic = 6;
+  uint64 step_revision = 7;
+  uint32 step_index = 8;
+  uint32 step_count = 9;
+  int64 not_before_unix_ms = 10;
+  int64 deadline_unix_ms = 11;
+  // Calibration target only, shown equally to the own Human and agent Skill.
+  SocialTaskChoice required_choice = 12;
+  sint32 sample_a = 13;
+  sint32 sample_b = 14;
+  bool sample_b_ready = 15;
 }
 message SocialEmergencyStateObservation {
   string match_id = 1;
@@ -189,6 +250,9 @@ message SocialActionContext {
   uint64 phase_revision = 2;
   string correlation_id = 3;
   int64 expires_at_unix_ms = 4;
+  // Must equal the current authenticated own connection generation. Prevents
+  // a pre-resume command from being replayed in the same match/phase.
+  uint64 connection_generation = 5;
 }
 message SocialReadyCommand { SocialActionContext context = 1; bool ready = 2; }
 message SocialKillCommand { SocialActionContext context = 1; string target_actor_id = 2; }
@@ -204,6 +268,12 @@ message SocialWorkTaskCommand { SocialActionContext context = 1; string task_id 
 message SocialSabotageCommand { SocialActionContext context = 1; string terminal_entity_id = 2; }
 message SocialRepairEmergencyCommand { SocialActionContext context = 1; string emergency_id = 2; }
 message SocialCancelWorkCommand { SocialActionContext context = 1; string work_id = 2; }
+message SocialTaskStepCommand {
+  SocialActionContext context = 1;
+  string work_id = 2;
+  uint64 step_revision = 3;
+  SocialTaskChoice choice = 4;
+}
 
 // Acknowledging work is distinct from its continuously validated completion.
 message SocialActionResultEvent {
@@ -216,6 +286,8 @@ message SocialActionResultEvent {
   string work_id = 7;
   uint64 phase_revision = 8;
   int64 work_ends_at_unix_ms = 9;
+  uint64 task_step_revision = 10;
+  uint32 task_step_index = 11;
   // Deliberately no target position, hidden identity or actual alignment.
 }
 message SocialMatchChangedEvent { SocialMatchStateObservation state = 1; }
@@ -241,6 +313,21 @@ message SocialVisibleActivityEvent {
   string activity = 5;
   int64 observed_at_unix_ms = 6;
   uint64 observed_revision = 7;
+}
+
+// Server-confirmed presentation only. Recipient-specific payload: the victim
+// receives no attacker identity; only the actor and legitimate pre-action
+// witnesses receive both identities. No remote/global flash or sound.
+message SocialKillPresentationEvent {
+  string match_id = 1;
+  string recipient_actor_id = 2;
+  string presentation_id = 3;
+  string body_id = 4;
+  string victim_actor_id = 5;
+  string attacker_actor_id = 6;
+  float x = 7;
+  float y = 8;
+  int64 server_unix_ms = 9;
 }
 
 // All fields below are available to participants ONLY after GameOver.

@@ -26,16 +26,26 @@ namespace Actor.Lobby
             view.CreateRequested += Create;
             view.JoinRequested += JoinRoom;
             view.DisconnectRequested += session.Disconnect;
+            view.FreshRoundRequested += FreshRound;
+            view.ResumeRequested += session.ResumeConnection;
             session.Connected += OnConnected;
             session.Disconnected += OnDisconnected;
 #endif
         }
 
+        private void Update()
+        {
+#if !UNITY_SERVER
+            view.ResumeAvailable = session.CanResume;
+            view.ResumeBusy = session.IsResuming;
+            view.ResumeCredentialSeconds = Math.Max(0, (session.ResumeExpiresAtUnixMs - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 999) / 1000);
+#endif
+        }
         private IEnumerator Start()
         {
             while (true)
             {
-                if (view.Visible && !view.Busy) Refresh();
+                if (view.Visible && !view.Busy && !refreshing) StartCoroutine(RefreshRooms(false));
                 yield return new WaitForSecondsRealtime(settings.refreshInterval);
             }
         }
@@ -43,30 +53,42 @@ namespace Actor.Lobby
         public void Refresh()
         {
             if (refreshing) return;
-            StartCoroutine(RefreshRooms());
+            StartCoroutine(RefreshRooms(true));
         }
-        private IEnumerator RefreshRooms()
+        private IEnumerator RefreshRooms(bool showStatus)
         {
             refreshing = true;
             yield return api.List(list =>
             {
                 view.Rooms = list.lobbies ?? Array.Empty<LobbyInfo>();
-                if (!view.Busy) view.Status = view.Rooms.Length + " rooms available. Move with WASD or arrow keys in the game.";
-            }, error => { if (!view.Busy) view.Status = error; });
+                if (!view.Busy && (showStatus || view.Status == "Fetching rooms…")) view.Status = "Choose an expedition or create one. Move with WASD or arrow keys in the game.";
+            }, error => { if (!view.Busy && showStatus) view.Status = error; });
             refreshing = false;
         }
         public void Create()
         {
-            if (view.Busy || !ValidatePlayerName()) return;
+            if (view.Busy || rematching || session.IsResuming || session.IsReturningToLobby || !ValidatePlayerName()) return;
             StartCoroutine(CreateAndJoin());
         }
-        private IEnumerator CreateAndJoin()
+        private IEnumerator CreateAndJoin(bool waitForCapacity = false)
         {
             view.Busy = true;
             view.Status = "Creating room…";
             LobbyInfo lobby = null;
             string error = null;
-            yield return api.Create(view.NewRoomName, result => lobby = result, message => error = message, view.GameMode);
+            // An empty completed room can retain the last server slot during its
+            // shutdown grace. Only this explicit rematch flow waits for capacity;
+            // transport failures and other errors are never retried as POSTs.
+            double capacityDeadline = Time.realtimeSinceStartupAsDouble + 75;
+            do
+            {
+                string code = null; error = null;
+                yield return api.Create(view.NewRoomName, result => lobby = result, message => error = message, view.GameMode, value => code = value);
+                if (lobby != null || !waitForCapacity || code != "server_capacity_reached" || Time.realtimeSinceStartupAsDouble >= capacityDeadline) break;
+                view.Status = "Waiting for a server slot for the next expedition…";
+                // Stay below the public create limit (12/minute per address).
+                yield return new WaitForSecondsRealtime(8);
+            } while (true);
             if (lobby == null) { Fail(error); yield break; }
             view.DirectRoomCode = lobby.roomCode;
             float deadline = Time.realtimeSinceStartup + 55;
@@ -83,7 +105,7 @@ namespace Actor.Lobby
 
         public void JoinRoom(string roomCode)
         {
-            if (view.Busy || !ValidatePlayerName()) return;
+            if (view.Busy || rematching || session.IsResuming || session.IsReturningToLobby || !ValidatePlayerName()) return;
             if (string.IsNullOrWhiteSpace(roomCode) || roomCode.Trim().Length != 6) { view.Status = "Enter a six-character room code."; return; }
             StartCoroutine(Join(roomCode));
         }
@@ -98,6 +120,26 @@ namespace Actor.Lobby
             try { session.Connect(admission); }
             catch (InvalidOperationException exception) { Fail(exception.Message); }
         }
+        private bool rematching;
+        private void FreshRound()
+        {
+            if (rematching || session.IsResuming || session.IsReturningToLobby) return;
+            StartCoroutine(CreateFreshRound());
+        }
+        private IEnumerator CreateFreshRound()
+        {
+            rematching = true;
+            session.Disconnect();
+            view.Status = "Leaving the completed expedition…";
+            double deadline = Time.realtimeSinceStartupAsDouble + 15;
+            while ((session.IsReturningToLobby || Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening)
+                && Time.realtimeSinceStartupAsDouble < deadline) yield return null;
+            if (session.IsReturningToLobby || Unity.Netcode.NetworkManager.Singleton != null && Unity.Netcode.NetworkManager.Singleton.IsListening)
+            { rematching = false; Fail("Could not finish disconnecting. Return to rooms before creating the next expedition."); yield break; }
+            view.Busy = false; view.GameMode = "SocialDeduction"; view.NewRoomName = "Next expedition";
+            yield return CreateAndJoin(true);
+            rematching = false;
+        }
         private bool ValidatePlayerName()
         {
             view.PlayerName = view.PlayerName.Trim();
@@ -109,16 +151,20 @@ namespace Actor.Lobby
         private void OnConnected()
         {
             view.Busy = false; view.Visible = false; view.ConnectedRoom = session.RoomCode;
+            // A long expedition outlives the room browser snapshot. Return to
+            // an empty list until the ordinary disconnect refresh completes.
+            view.Rooms = Array.Empty<LobbyInfo>();
         }
         private void OnDisconnected(string reason)
         {
-            view.Busy = false; view.Visible = true; view.Status = reason; Refresh();
+            view.Busy = rematching; view.Visible = true; view.Status = reason;
+            if (!refreshing) StartCoroutine(RefreshRooms(false));
         }
         private void Fail(string error) { view.Busy = false; view.Status = error ?? "The request failed. Please try again."; }
         private void OnDestroy()
         {
             view.RefreshRequested -= Refresh; view.CreateRequested -= Create; view.JoinRequested -= JoinRoom;
-            view.DisconnectRequested -= session.Disconnect;
+            view.DisconnectRequested -= session.Disconnect; view.FreshRoundRequested -= FreshRound; view.ResumeRequested -= session.ResumeConnection;
             session.Connected -= OnConnected; session.Disconnected -= OnDisconnected;
         }
     }

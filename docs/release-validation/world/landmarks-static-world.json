@@ -1,0 +1,45 @@
+{
+    "schema": "actor.social-static-presentation.v2",
+    "scope": "Actual saved Social world, scene camera configuration and URP 2D rendering. No actors, fog, IMGUI, Human input or native-window visual acceptance.",
+    "passed": true,
+    "rendered": true,
+    "source_map_unchanged": true,
+    "saved_scene_unchanged": true,
+    "atmospheric_art_active": true,
+    "legacy_atlas_inactive": true,
+    "all_enabled_sprites_original": true,
+    "bounded_art": true,
+    "floor_bounds_match": true,
+    "scene_setup_restored": true,
+    "render_request_supported": true,
+    "actual_renderer_2d": true,
+    "width": 800,
+    "height": 1000,
+    "quantized_colors": 68,
+    "enabled_sprite_count": 125,
+    "original_texture_count": 12,
+    "disabled_legacy_atlas_sprites": 15,
+    "maximum_texture_dimension": 1865,
+    "graphics_api": "Metal",
+    "pipeline": "UniversalRP",
+    "renderer": "Renderer2D",
+    "failure_code": "",
+    "source_map_sha256": "df91456bf8d5921274a5de4f6e9ddfab9f6b56a845b3a764f7bf876c0d715a84",
+    "saved_scene_sha256": "5ae9672f03c3440dd158f039bad05591d59cd666f708584773069068e5cb35e9",
+    "camera": {
+        "center": {
+            "x": 2.5500001907348633,
+            "y": -2.924999952316284
+        },
+        "world_minimum": {
+            "x": -4.5,
+            "y": -12.25
+        },
+        "world_maximum": {
+            "x": 9.600000381469727,
+            "y": 6.400000095367432
+        },
+        "orthographic_size": 9.625,
+        "aspect": 0.800000011920929
+    }
+}

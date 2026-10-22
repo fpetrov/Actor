@@ -5,7 +5,7 @@ namespace Actor.Networking
 {
     public sealed class MultiplayerProbe : MonoBehaviour
     {
-#if (UNITY_EDITOR || DEVELOPMENT_BUILD) && !UNITY_SERVER
+#if !UNITY_SERVER
         [System.Serializable] private sealed class ProbeConfig
         {
             public string roomCode, playerName, role, outputPath;
@@ -57,6 +57,10 @@ namespace Actor.Networking
                 int index = System.Array.IndexOf(args, key);
                 return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
             }
+            // Release validation exercises the same ordinary owned input path.
+            // Keep legacy interactive A/B probes development-only; the
+            // production build runs only the explicitly requested headless P case.
+            if (!Debug.isDebugBuild && (!Application.isBatchMode || value("--probe-role") != "P")) yield break;
             // The observer keeps ordinary human input. Its independent probe owns diagnostics.
             if (value("--probe-role") == "O") yield break;
             if (value("--auto-room") != null)
@@ -108,7 +112,7 @@ namespace Actor.Networking
                 yield return VerifyPrediction();
                 completed = true;
                 Sample(); Save();
-                ScreenCapture.CaptureScreenshot(System.IO.Path.ChangeExtension(config.outputPath, ".png"));
+                if (!Application.isBatchMode) ScreenCapture.CaptureScreenshot(System.IO.Path.ChangeExtension(config.outputPath, ".png"));
                 Debug.Log("ACTOR_PROBE_COMPLETE role=P checks=" + checks.Count);
                 yield break;
             }

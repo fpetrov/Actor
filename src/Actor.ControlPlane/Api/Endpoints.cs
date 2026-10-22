@@ -34,6 +34,11 @@ public static class Endpoints
             => Results.Ok(await manager.GetAsync(roomCode, token))).WithName("GetLobby");
         api.MapPost("/lobbies/{roomCode}/join", async (string roomCode, JoinLobbyRequest request, LobbyManager manager, CancellationToken token)
             => Results.Ok(await manager.JoinAsync(roomCode, request, token))).RequireRateLimiting("join").WithName("JoinLobby");
+        api.MapPost("/lobbies/{roomCode}/resume", async (string roomCode, ResumeLobbyRequest request, LobbyManager manager, HttpResponse response, CancellationToken token) =>
+        {
+            response.Headers.CacheControl = "no-store";
+            return Results.Ok(await manager.ResumeAsync(roomCode, request, token));
+        }).RequireRateLimiting("join").WithName("ResumeLobby");
         api.MapGet("/game/version", (IOptions<MatchOptions> options)
             => Results.Ok(new { gameVersion = options.Value.GameVersion, protocolVersion = options.Value.ProtocolVersion, maxConcurrentGameServers = options.Value.MaxConcurrentGameServers, defaultMaxPlayers = options.Value.DefaultMaxPlayers,
                 gameModes = new[] { "Sandbox", "SocialDeduction" }, socialMinPlayers = options.Value.SocialDeduction.MinPlayers, socialMaxPlayers = options.Value.SocialDeduction.MaxPlayers })).WithName("GameVersion");

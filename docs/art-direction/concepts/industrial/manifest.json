@@ -1,0 +1,74 @@
+{
+  "schema": "actor.art-concept.v1",
+  "direction": "Quiet Industrial",
+  "original_vector_art": true,
+  "production_assets_modified": false,
+  "render": "CairoSVG 2.8.2",
+  "pages": [
+    {
+      "file": "main-hall",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "fog-of-war",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "engineering",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "security",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "lobby",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "boarding",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "discussion",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "voting",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "death",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "game-over",
+      "width": 800,
+      "height": 600
+    },
+    {
+      "file": "character-motion",
+      "width": 1600,
+      "height": 900
+    },
+    {
+      "file": "design-system",
+      "width": 1200,
+      "height": 900
+    },
+    {
+      "file": "contact-sheet",
+      "width": 1648,
+      "height": 2014
+    }
+  ]
+}

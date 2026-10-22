@@ -22,6 +22,8 @@ jobs:
         run: dotnet test Actor.sln --configuration Release --nologo
       - name: Install local Runtime and extension packages
         run: python -m pip install -e 'runtime[dev]'
+      - name: Install pinned authored-art verification dependency
+        run: python -m pip install 'Pillow==13.0.0'
       - name: Cognitive providers remain optional for deterministic CI
         run: python -c 'import importlib.util; assert importlib.util.find_spec("openai_codex") is None; assert importlib.util.find_spec("typesafe_sdk") is None'
       - name: Runtime, routing, memory, Skills, Brains, launch helpers and real loopback gRPC tests
@@ -41,5 +43,7 @@ jobs:
           python spikes/social-faults/test_server_guard.py
           python -m pytest spikes/social-validation spikes/sandbox-regression -q
           python -m unittest discover -s spikes/social-threat -p 'test_*.py' -q
+      - name: Resume relay, release validation and authored art checks
+        run: python -m pytest spikes/social-resume spikes/release-validation art/atmospheric -q
       - name: Curated deterministic event-routing evaluation
         run: python scripts/evaluate-events.py

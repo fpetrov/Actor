@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="280" viewBox="0 0 320 280">
+<!-- Original ACTOR M8 illustration. Atmospheric palette; no borrowed game art. -->
+<path d="M35 210 160 147 285 210 160 270Z" fill="#D9D8C9"/>
+<path d="m35 210 125 60 125-60v12l-125 58L35 222Z" fill="#A5ADA5"/>
+<path d="m60 209 100-49 100 49-100 48Z" fill="none" stroke="#95B6A4" stroke-width="2"/>
+<ellipse cx="160" cy="219" rx="53" ry="13" fill="#52615F" opacity=".3"/>
+<path d="m134 191-5 29 23 2 5-29m12 0 4 30 24-3-13-31" fill="#26343D"/>
+<path d="m131 104-30 97 61 20 60-23-32-95Z" fill="#95B6A4" stroke="#26343D" stroke-width="4"/>
+<path d="m164 125-2 90 53-20-27-85Z" fill="#576E68"/>
+<path d="m111 127-9 48 18 5 18-56m48-1 17 54 18-5-13-43" fill="#26343D"/>
+<path d="M120 107c-11-11-9-33-1-52 11-27 28-40 43-40s34 15 44 43c9 24 8 41-2 51l-42 28Z" fill="#26343D"/>
+<path d="M128 85c1-24 15-46 34-46 20 0 35 24 35 47 0 17-13 30-35 32-22-2-35-15-34-33" fill="#171F29"/>
+<ellipse cx="149" cy="82" rx="5" ry="8" fill="#FAF7F0"/><ellipse cx="177" cy="82" rx="5" ry="8" fill="#FAF7F0"/>
+<path d="m161 150 8 12-8 12-8-12Z" fill="#EEE9DC"/>
+<path d="m112 206 20-4m58 3 20-6" stroke="#26343D" stroke-width="4"/>
+</svg>

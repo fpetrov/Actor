@@ -63,11 +63,31 @@ def canonical_id(value):
         raise GuardRejected("invalid_arguments") from None
 
 
-def expected_identity(room, lobby, control_pid, control_start):
+def target_profile(staging_name="m7-visibility", game_version="0.8.0", protocol_version="3"):
+    # Derive paths only beneath the dedicated staging roots. Arbitrary executable
+    # and state paths (in particular production current symlinks) are not options.
+    require(isinstance(staging_name, str) and len(staging_name) <= 48
+        and re.fullmatch(r"m[1-9][0-9]{0,2}-[a-z0-9]+(?:-[a-z0-9]+)*", staging_name) is not None
+        and isinstance(game_version, str) and re.fullmatch(r"[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}", game_version) is not None
+        and isinstance(protocol_version, str) and re.fullmatch(r"[1-9][0-9]{0,2}", protocol_version) is not None,
+        "invalid_arguments")
+    return dict(staging_name=staging_name, game_version=game_version, protocol_version=protocol_version)
+
+
+def profile_paths(expected):
+    profile = target_profile(expected.get("staging_name", "m7-visibility"),
+        expected.get("game_version", "0.8.0"), expected.get("protocol_version", "3"))
+    name = profile["staging_name"]
+    return (f"/opt/actor/staging/{name}/server/AgentsArenaServer",
+        f"/opt/actor/staging/{name}/control-plane/Actor.ControlPlane", Path("/var/lib/actor") / name)
+
+
+def expected_identity(room, lobby, control_pid, control_start, *, staging_name="m7-visibility",
+        game_version="0.8.0", protocol_version="3"):
     require(isinstance(room, str) and re.fullmatch(r"[A-Z0-9]{6}", room) is not None
         and integer(control_pid, 2) and integer(control_start), "invalid_arguments")
     return dict(room_code=room, lobby_id=canonical_id(lobby), control_plane_pid=control_pid,
-        control_plane_start_ticks=control_start)
+        control_plane_start_ticks=control_start, **target_profile(staging_name, game_version, protocol_version))
 
 
 def proc_stat(value):
@@ -141,6 +161,7 @@ def command_identity(command):
 def validate(evidence, expected):
     """Pure validation. Raw evidence never becomes a public projection."""
     now = evidence["now_unix_ms"]
+    server_exe, control_exe, _ = profile_paths(expected)
     lobby, cp, server = evidence["lobby"], evidence["control"], evidence["server"]
     try:
         created = int(datetime.fromisoformat(lobby["createdAt"].replace("Z", "+00:00")).timestamp()*1000)
@@ -153,15 +174,16 @@ def validate(evidence, expected):
         and lobby.get("roomCode") == expected["room_code"] and type(lobby.get("gamePort")) is int
         and lobby["gamePort"] == PORT and lobby.get("status") in ("Ready", "Running")
         and lobby.get("gameMode") in ("Sandbox", "SocialDeduction")
-        and lobby.get("gameVersion") == "0.8.0" and lobby.get("protocolVersion") == "3", "fresh_exact_lobby")
+        and lobby.get("gameVersion") == expected.get("game_version", "0.8.0")
+        and lobby.get("protocolVersion") == expected.get("protocol_version", "3"), "fresh_exact_lobby")
     require(cp["pid"] == expected["control_plane_pid"] and cp["start_ticks"] == expected["control_plane_start_ticks"]
-        and cp["pid"] == evidence["control_pid_file"] and cp["executable"] == CONTROL_EXE
+        and cp["pid"] == evidence["control_pid_file"] and cp["executable"] == control_exe
         and cp["uids"] == (evidence["actor_uid"],)*4 and cp["file_uid"] == evidence["actor_uid"]
         and cp["state"] not in ("Z", "X") and evidence["tcp_owners"] == {cp["pid"]}
         and cp["started_unix_ms"] <= created+2000, "exact_staging_control_plane")
     require(evidence["allocation_pid"] == server["pid"], "exact_allocation_record")
     command = command_identity(server["command"])
-    require(server["pid"] != cp["pid"] and server["executable"] == SERVER_EXE
+    require(server["pid"] != cp["pid"] and server["executable"] == server_exe
         and server["uids"] == (evidence["actor_uid"],)*4 and server["file_uid"] == evidence["actor_uid"]
         and server["state"] not in ("Z", "X") and created-2000 <= server["started_unix_ms"] <= created+60000
         and command == {"--match-id": expected["lobby_id"], "--room-code": expected["room_code"],
@@ -178,7 +200,8 @@ def validate_previous(previous, current, now):
     require(isinstance(previous, dict) and previous.get("schema") == IDENTITY_SCHEMA
         and integer(previous.get("inspected_at_unix_ms"))
         and 0 <= now-previous["inspected_at_unix_ms"] <= 30000, "inspection_expired")
-    keys = ("room_code", "lobby_id", "control_plane_pid", "control_plane_start_ticks", "server_pid", "server_start_ticks", "game_mode")
+    keys = ("room_code", "lobby_id", "control_plane_pid", "control_plane_start_ticks", "server_pid", "server_start_ticks", "game_mode",
+        "staging_name", "game_version", "protocol_version")
     require(all(previous.get(key) == current[key] and type(previous.get(key)) is type(current[key]) for key in keys), "same_inspected_instance")
 
 
@@ -216,7 +239,7 @@ def read_json(path, *, private=False):
     return json.loads(read_file(path, 65536, owner=os.geteuid(), private=private))
 
 
-def process(pid, actor_uid, boot_ms, ticks_per_second):
+def process(pid, actor_uid, boot_ms, ticks_per_second, *, server_exe=SERVER_EXE):
     root = Path("/proc") / str(pid)
     value = proc_stat((root / "stat").read_text())
     require(value["pid"] == pid, "bounded_io_failed")
@@ -225,7 +248,7 @@ def process(pid, actor_uid, boot_ms, ticks_per_second):
     value.update(executable=os.readlink(root / "exe"), file_uid=root.stat().st_uid,
         uids=tuple(map(int, uid.groups())), network_namespace=os.readlink(root / "ns/net"),
         started_unix_ms=boot_ms+int(value["start_ticks"]*1000/ticks_per_second))
-    if value["executable"] == SERVER_EXE:
+    if value["executable"] == server_exe:
         data = (root / "cmdline").read_bytes()
         require(len(data) <= 16384, "bounded_io_failed")
         value["command"] = data.rstrip(b"\0").decode().split("\0")
@@ -257,23 +280,24 @@ def fresh_lobby(room):
 
 
 def collect(expected):
+    server_exe, control_exe, state = profile_paths(expected)
     uid = pwd.getpwnam("actor").pw_uid
     require(uid > 0, "exact_staging_control_plane")
     boot = re.search(r"^btime (\d+)$", Path("/proc/stat").read_text(), re.MULTILINE)
     require(boot is not None, "bounded_io_failed")
     boot_ms, ticks = int(boot[1])*1000, os.sysconf("SC_CLK_TCK")
-    cp = process(expected["control_plane_pid"], uid, boot_ms, ticks)
-    cp_pid = int(read_file(STATE / "control-plane.pid", 32, owner=uid).strip())
+    cp = process(expected["control_plane_pid"], uid, boot_ms, ticks, server_exe=server_exe)
+    cp_pid = int(read_file(state / "control-plane.pid", 32, owner=uid).strip())
     tcp = sockets("tcp", 5081)
-    require(cp["executable"] == CONTROL_EXE and cp["start_ticks"] == expected["control_plane_start_ticks"]
+    require(cp["executable"] == control_exe and cp["start_ticks"] == expected["control_plane_start_ticks"]
         and cp_pid == cp["pid"] and tcp == {cp["pid"]}, "exact_staging_control_plane")
     acquired = int(time.time()*1000)
     lobby = fresh_lobby(expected["room_code"])
     # A root-owned nohup shell can open this fixed log before runuser switches
     # the actual CP process to actor. Both trusted owners are valid here only.
-    allocation = allocation_pid(read_file(STATE / "control-plane.log", 4*1024*1024, owner=(0, uid), tail=True), expected)
-    server = process(allocation, uid, boot_ms, ticks)
-    ready = ready_log_matches(read_file(STATE / "matches" / (expected["lobby_id"]+".log"), 4*1024*1024, owner=uid, tail=True), expected)
+    allocation = allocation_pid(read_file(state / "control-plane.log", 4*1024*1024, owner=(0, uid), tail=True), expected)
+    server = process(allocation, uid, boot_ms, ticks, server_exe=server_exe)
+    ready = ready_log_matches(read_file(state / "matches" / (expected["lobby_id"]+".log"), 4*1024*1024, owner=uid, tail=True), expected)
     return dict(now_unix_ms=int(time.time()*1000), acquired_at_unix_ms=acquired, lobby=lobby,
         control=cp, control_pid_file=cp_pid, server=server, actor_uid=uid, allocation_pid=allocation,
         tcp_owners=sockets("tcp", 5081), udp_owners=sockets("udp", PORT), ready_log_matches=ready,
@@ -331,13 +355,17 @@ def main(argv=None):
     parser.add_argument("--lobby-id", required=True)
     parser.add_argument("--control-plane-pid", required=True, type=int)
     parser.add_argument("--control-plane-start-ticks", required=True, type=int)
+    parser.add_argument("--staging-name", default="m7-visibility", help="Dedicated staging basename only; derives fixed executable/state roots")
+    parser.add_argument("--game-version", default="0.8.0", help="Exact public game version; historical default unchanged")
+    parser.add_argument("--protocol-version", default="3", help="Exact public admission version; historical default unchanged")
     parser.add_argument("--identity", required=True, type=Path, help="Inspect creates a fresh 0600 private file; terminate reuses that exact file")
     parser.add_argument("--observer-ready", type=Path, help="Terminate only: fresh lifecycle server-loss-observer ready.json")
     parser.add_argument("--signal", choices=("SIGTERM", "SIGKILL"), default="SIGTERM",
         help="Explicit owned-instance termination signal; SIGKILL tests abrupt loss, SIGTERM does not prove a crash")
     args = parser.parse_args(argv)
     try:
-        expected = expected_identity(args.room, args.lobby_id, args.control_plane_pid, args.control_plane_start_ticks)
+        expected = expected_identity(args.room, args.lobby_id, args.control_plane_pid, args.control_plane_start_ticks,
+            staging_name=args.staging_name, game_version=args.game_version, protocol_version=args.protocol_version)
         require(sys.platform == "linux" and os.geteuid() == 0, "host_not_supported")
         require(args.operation != "terminate" or args.observer_ready is not None, "fresh_observer_ready")
         execute(args.operation, expected, identity_path=args.identity, observer_path=args.observer_ready, signal_name=args.signal)

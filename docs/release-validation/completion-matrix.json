@@ -1,0 +1,204 @@
+{
+  "categories": [
+    {
+      "accepted_gameovers": 2,
+      "attempts": 8,
+      "category": "codex_series",
+      "evidence": "models/attempts-01-08.json",
+      "failed_attempts": 6,
+      "full_social_cycles": 1,
+      "required_independent_starts": 5,
+      "status": "partial",
+      "strict_independent_starts": 2
+    },
+    {
+      "actual_assigned_gameovers": 1,
+      "attempts": 2,
+      "category": "human_mixed",
+      "evidence": "human-mixed/attempt-02.json",
+      "reason": "historical_interrupted_turn_tool_counts_unknown",
+      "status": "strict_gate_failed",
+      "strict_passes": 0
+    },
+    {
+      "authorized_victim_fold_frames": 5,
+      "category": "native_human",
+      "dead_native_key_movement_blocked": true,
+      "deterministic_fixtures": [
+        {
+          "case": "witness-02",
+          "complete": false,
+          "participants": 5,
+          "terminal": "match_timeout",
+          "terminal_reports": 2
+        },
+        {
+          "case": "victim-01",
+          "complete": true,
+          "native_exit_code": 0,
+          "owned_groups_remaining": 0,
+          "owned_processes_remaining": 0,
+          "participants": 3,
+          "terminal": "parity",
+          "terminal_reports": 3
+        }
+      ],
+      "evidence": [
+        "human-mixed/native-02.json",
+        "native-human/witness-02.json",
+        "native-human/victim-01.json",
+        "native-human/dead-keyboard.json",
+        "native-human/victim-presentation.json"
+      ],
+      "fresh_same_process_rematch": true,
+      "native_body_report": true,
+      "native_mechanics_completed": 3,
+      "not_proven": [
+        "audibility/all-cue/LOS sound coverage",
+        "complete screen-resolution matrix",
+        "Agent read-only HUD"
+      ],
+      "own_death_view": true,
+      "sparse_local_dsp_output_measured": true,
+      "status": "partial"
+    },
+    {
+      "accepted_case_attempts": 3,
+      "attempts": 4,
+      "category": "legacy_sandbox",
+      "evidence": "sandbox/summary.json",
+      "failed_case_attempts": 1,
+      "status": "passed_with_retained_failure"
+    },
+    {
+      "accepted_recoveries": 1,
+      "actual_fault_attempts": 1,
+      "category": "transport_resume",
+      "evidence": "network/reconnect.json",
+      "not_proven": [
+        "post-death resume",
+        "ghost vulnerability kill",
+        "native reconnect",
+        "full-match completion"
+      ],
+      "status": "passed_bounded_scope",
+      "supervisor_attempts": 3
+    },
+    {
+      "category": "rendered_gameplay_frames",
+      "evidence": "human-mixed/native-02.json",
+      "not_proven": [
+        "hardware presentation",
+        "physical input latency",
+        "all phase-resolution combinations",
+        "transition/GC/kill frame spikes"
+      ],
+      "status": "measured_bounded_windows"
+    },
+    {
+      "category": "server_performance",
+      "evidence": [
+        "performance/mixed-server-03.json",
+        "performance/human-mixed-02-postgame.json"
+      ],
+      "not_proven": [
+        "full UDP throughput",
+        "packet rate",
+        "RTT",
+        "sustained queue maximum"
+      ],
+      "status": "measured_two_separate_windows"
+    },
+    {
+      "category": "runtime_wheel",
+      "evidence": "runtime-package.json",
+      "not_proven": [
+        "actual model behavior",
+        "multiplayer acceptance"
+      ],
+      "status": "passed_auth_free",
+      "tests": 545
+    },
+    {
+      "category": "current_m8_privacy_protocol_faults",
+      "evidence": "../../spikes/release-validation/README.md",
+      "status": "pending_actual_runs"
+    },
+    {
+      "category": "native_lobby_layout",
+      "evidence": "ui-integration/layout-validation.json",
+      "status": "passed_bounded_scope"
+    },
+    {
+      "category": "web_browser",
+      "evidence": "web/browser.json",
+      "not_proven": [
+        "browser Create",
+        "clipboard Copy",
+        "HTTPS deployment"
+      ],
+      "status": "passed_read_only_scope"
+    },
+    {
+      "category": "final_release_integrity",
+      "not_proven": [
+        "clean M8 commit",
+        "final source-bound archives",
+        "final CI",
+        "production activation",
+        "HTTPS distribution"
+      ],
+      "status": "pending"
+    }
+  ],
+  "local_deterministic_check_snapshot": {
+    "control_plane_tests": 29,
+    "passed": true,
+    "schema_generated_artifacts": 54,
+    "scope": "Latest completed local runs reported by the integrator; not final GitHub CI or an artifact-source stamp.",
+    "sdk_tests": 288,
+    "static_surface_rules_included": 13,
+    "web_tests": 9
+  },
+  "native_asset_formats": {
+    "extensions_match_magic": true,
+    "f12_png_frames": 5,
+    "jpeg_images": 4,
+    "jpeg_rename_preserved_bytes": true
+  },
+  "public_asset_sha256": {
+    "native-human/death-800.jpg": "253c68d353c0159b97d3a60635a451d719d69b566d2c98b35af6f80e80556316",
+    "native-human/gameover-800.jpg": "25ba97b1ff8e30233d7366fb96c61ded49f83d083703a6e4b16aa069bd3870aa",
+    "native-human/rematch-800.jpg": "b467b4a47976ed13602cc5fa505ac8194e8a07149ca2440b7447f734d5b82718",
+    "native-human/victim-gameover-800.jpg": "f23f7708bceb0affe622ccb93807617e61236279f8d9e52937937e5b1b0a8e50",
+    "native-human/victim-presentation-02-frame-01.png": "7578302c33ffb9867ee69a72057a3313d7a144233f8e5fcc831b40d801a8170b",
+    "native-human/victim-presentation-02-frame-02.png": "bc63c944fa9c8911d41da03793d20a9dab3c18b38cb0c66d715c6b4a295808ce",
+    "native-human/victim-presentation-02-frame-03.png": "cbc8343e8e395e356862f09506bec0979ba78c9d234ef1f98fe3124185c3a81e",
+    "native-human/victim-presentation-02-frame-04.png": "8863c96b8368d24f971483773d92efc4611d7edab6361f3d029e63890f85048e",
+    "native-human/victim-presentation-02-frame-05.png": "9f30a3e23364f8b8f5ab47f97c5a3f829b9d5d48e10aaabe8230be372c87370c"
+  },
+  "public_evidence_sha256": {
+    "codex-attempt-08.json": "9af75a47e170a4622301ca9e7cbecdd3b9a4746d21203a331127305c59299710",
+    "human-mixed/attempt-01.json": "e1d6067b88975529a8e2068b3d1a15ba6e95a84f476209e55f2437991f00c072",
+    "human-mixed/attempt-02.json": "66c33265a437b1c9c6753661369c4cf1896bf715e99b0656cd7dbaf889febb9e",
+    "human-mixed/native-02.json": "f534b1364d2792f0870bc8dacc9072e4544c9a2acb820ac4985b1ec1da7637f8",
+    "models/attempts-01-08.json": "bcd1d7edfc434118b2fbdd11e95314c68a55fb0e0f77aa76eada840882172f71",
+    "native-human/dead-keyboard.json": "9835a80e943362687a3637cb7de67066266340a0f74d42c84aac7db13c363638",
+    "native-human/victim-01.json": "7f8dfaac07c525694d985c5235fe1d3db93f77d4a5f663f85194e92e231810e1",
+    "native-human/victim-presentation.json": "cfbc97b7132e3c08f9c8cdac8f4bacadad50f135315b3ca0373f7c61083c08a3",
+    "native-human/witness-02.json": "1605fe5377458c45b126eecfeebd9b938c6137bdc74a4305470e7f15c92851a9",
+    "network/reconnect.json": "396de87276e4f3c31d4662033d259fe12761946aac37bb6eb6f3bd411da11dc7",
+    "performance/human-mixed-02-postgame.json": "e82a19f837c3b4703f0b56122b218e8e9b1f9b26feaf2f72ba311e6fc1d19891",
+    "performance/mixed-server-03.json": "78fc6a69f752435bbf470a3ae9395e1c6603086e9d8f432f51af5523bb1d6d18",
+    "runtime-package.json": "3bfbcd11194847152f8794d28e6d9ffe77e7da445950d5f803a8510d931690f0",
+    "sandbox/summary.json": "02d5dc453509479bb7c9fe0729984ceb93b7a439e5bfde4094724ab83edab198",
+    "tests/auxiliary-verification.json": "a0f89d8e575591797cfb36071c0d6484bb2a7b857505a086fa287756c25caa88",
+    "tests/auxiliary.json": "406f734e3987fd368dcad26e78d8c586fd97e491e1eca147b37fce47d91cc82f",
+    "ui-integration/layout-validation.json": "d8a8771c3c0194000a0ceac81e9f21ff452781317e764ead3e488b8e373be746",
+    "web/browser.json": "dcb8edcefc0448a171a5a4f976cab435d9b68e14d5089fb72417e556633d6248",
+    "world/scene-semantic-audit.json": "45a1c8a731009cfd6dc960171f16fa2052f08414168a2a6f0d4b13a78b295f95"
+  },
+  "release_ready": false,
+  "schema": "actor.m8-completion-matrix.v1",
+  "scope": "Offline index of public evidence scopes, not a replacement for acceptance validators or signed attestation"
+}

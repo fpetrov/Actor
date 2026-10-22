@@ -1,0 +1,372 @@
+fileFormatVersion: 2
+guid: 6a92f2d2087a041b291638f9a166c488
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -641843651995850445
+    second: surveyor-left_0
+  - first:
+      213: 750408738297694915
+    second: surveyor-left_1
+  - first:
+      213: 8123718624312947122
+    second: surveyor-left_2
+  - first:
+      213: 6076591125774363307
+    second: surveyor-left_3
+  - first:
+      213: 8240690369113338017
+    second: surveyor-left_4
+  - first:
+      213: -4383937288422975945
+    second: surveyor-left_5
+  - first:
+      213: 4818848847338048874
+    second: surveyor-left_6
+  - first:
+      213: -1225680163097082455
+    second: surveyor-left_7
+  - first:
+      213: -7753150701268731612
+    second: surveyor-left_00
+  - first:
+      213: 7817943385364656410
+    second: surveyor-left_01
+  - first:
+      213: -5046568538204635883
+    second: surveyor-left_02
+  - first:
+      213: -263068109175062493
+    second: surveyor-left_03
+  - first:
+      213: 8673273663159529438
+    second: surveyor-left_04
+  - first:
+      213: 5726444269186595664
+    second: surveyor-left_05
+  - first:
+      213: 3401561434556410472
+    second: surveyor-left_06
+  - first:
+      213: -5471796359685697019
+    second: surveyor-left_07
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 320
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: surveyor-left_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4297ec0e386476490800000000000000
+      internalID: -7753150701268731612
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-left_01
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a1176c6761aee7c60800000000000000
+      internalID: 7817943385364656410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-left_02
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 51d76a107acf6f9b0800000000000000
+      internalID: -5046568538204635883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-left_03
+      rect:
+        serializedVersion: 2
+        x: 720
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 32003e0d2f4695cf0800000000000000
+      internalID: -263068109175062493
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-left_04
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: edfef549178ad5870800000000000000
+      internalID: 8673273663159529438
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-left_05
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05b30fa09ba687f40800000000000000
+      internalID: 5726444269186595664
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-left_06
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 86a276c3a16c43f20800000000000000
+      internalID: 3401561434556410472
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-left_07
+      rect:
+        serializedVersion: 2
+        x: 1680
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50298a1a3364014b0800000000000000
+      internalID: -5471796359685697019
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      surveyor-left_0: -641843651995850445
+      surveyor-left_00: -7753150701268731612
+      surveyor-left_01: 7817943385364656410
+      surveyor-left_02: -5046568538204635883
+      surveyor-left_03: -263068109175062493
+      surveyor-left_04: 8673273663159529438
+      surveyor-left_05: 5726444269186595664
+      surveyor-left_06: 3401561434556410472
+      surveyor-left_07: -5471796359685697019
+      surveyor-left_1: 750408738297694915
+      surveyor-left_2: 8123718624312947122
+      surveyor-left_3: 6076591125774363307
+      surveyor-left_4: 8240690369113338017
+      surveyor-left_5: -4383937288422975945
+      surveyor-left_6: 4818848847338048874
+      surveyor-left_7: -1225680163097082455
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

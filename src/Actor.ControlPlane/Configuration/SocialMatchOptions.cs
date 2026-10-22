@@ -13,14 +13,18 @@ public sealed record SocialMatchOptions
     public long KillCooldownMs { get; init; } = 30000;
     public long EmergencyCooldownMs { get; init; } = 90000;
     public long SabotageTimeoutMs { get; init; } = 150000;
-    public long WorkDurationMs { get; init; } = 4000;
+    public long WorkDurationMs { get; init; } = 12000;
+    public long ReconnectGraceMs { get; init; } = 30000;
+    public long CalibrationStepMs { get; init; } = 2500;
+    public long SensorSampleDelayMs { get; init; } = 8000;
+    public long TaskDecisionTimeoutMs { get; init; } = 30000;
     public long SabotageCooldownMs { get; init; } = 90000;
     public long WaitingTimeoutMs { get; init; } = 300000;
     public double KillDistance { get; init; } = .9;
     public double VisibilityRadius { get; init; } = 3.5;
     public double BodyReportDistance { get; init; } = 1.2;
     public double InteractionRadius { get; init; } = 1.25;
-    public int TaskThreshold { get; init; } = 4;
+    public int TaskThreshold { get; init; } = 8;
     public int MeetingLimit { get; init; } = 3;
     public int PlayerMeetingLimit { get; init; } = 1;
 
@@ -30,10 +34,13 @@ public sealed record SocialMatchOptions
         && KillCooldownMs is >= 5000 and <= 300000 && EmergencyCooldownMs is >= 10000 and <= 600000
         && SabotageTimeoutMs is >= 30000 and <= 600000 && WorkDurationMs is >= 1000 and <= 30000
         && SabotageCooldownMs is >= 10000 and <= 600000 && WaitingTimeoutMs is >= 30000 and <= 900000
+        && ReconnectGraceMs is >= 1000 and <= 120000 && CalibrationStepMs is >= 500 and <= 10000
+        && SensorSampleDelayMs is >= 1000 and <= 30000 && TaskDecisionTimeoutMs is >= 1000 and <= 120000
         && double.IsFinite(KillDistance) && KillDistance is >= .4 and <= 2
         && double.IsFinite(VisibilityRadius) && VisibilityRadius is >= 2 and <= 8
         && double.IsFinite(BodyReportDistance) && BodyReportDistance is >= .5 and <= 2.5
         && double.IsFinite(InteractionRadius) && InteractionRadius is >= .5 and <= 2
-        && TaskThreshold is >= 1 and <= 5 && MeetingLimit is >= 1 and <= 8
+        && TaskThreshold is >= 1 and <= 20 && MeetingLimit is >= 1 and <= 8
+        && TaskThreshold <= 4 * (MinPlayers - ImpostorCount)
         && PlayerMeetingLimit is >= 1 and <= 3 && PlayerMeetingLimit <= MeetingLimit;
 }

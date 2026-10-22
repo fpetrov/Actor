@@ -1,0 +1,47 @@
+{
+  "ci_art_dependency": {
+    "package": "Pillow",
+    "source": "Existing local art-tools distribution metadata; explicit CI-only install, no Runtime dependency change",
+    "version": "13.0.0"
+  },
+  "event_routing": {
+    "cases": 32,
+    "correct": 32,
+    "external_requests": 0,
+    "important_false_negatives": 0,
+    "model_calls": 0,
+    "unnecessary_interruptions": 0
+  },
+  "passed": true,
+  "pytest": {
+    "duration_seconds": 32.84,
+    "passed": true,
+    "scope": "scripts/tests; social-resume; release-validation; existing M7 privacy/protocol/fault/validation/sandbox/threat guards; authored Atmospheric art",
+    "subtests": 332,
+    "tests": 311
+  },
+  "schema": "actor.m8-auxiliary-verification.v1",
+  "schema_freshness": {
+    "generated_artifacts": 54,
+    "passed": true
+  },
+  "scope": "Auth-free offline/local-IPC checks only. No Unity GUI/player/model/SSH/VPS/deploy operation. Separate self-test invocations can overlap guards imported by pytest; counts are not a unique-case sum.",
+  "separate_self_test_invocations": {
+    "cooperative_faults": {
+      "passed": true,
+      "tests": 9
+    },
+    "investigation_faults": {
+      "passed": true,
+      "tests": 6
+    },
+    "protocol_guard": {
+      "passed": true,
+      "tests": 3
+    },
+    "visibility_guard": {
+      "passed": true,
+      "tests": 5
+    }
+  }
+}

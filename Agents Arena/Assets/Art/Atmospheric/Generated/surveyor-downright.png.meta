@@ -1,0 +1,372 @@
+fileFormatVersion: 2
+guid: fbf84835e0fdb4c3bb752c6dd8462b19
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -8178427982514762438
+    second: surveyor-downright_0
+  - first:
+      213: 6514864236725651341
+    second: surveyor-downright_1
+  - first:
+      213: 6521065420594065043
+    second: surveyor-downright_2
+  - first:
+      213: -7075503761162191084
+    second: surveyor-downright_3
+  - first:
+      213: 8392861369354008403
+    second: surveyor-downright_4
+  - first:
+      213: -1181800286250097702
+    second: surveyor-downright_5
+  - first:
+      213: -7766574924054832484
+    second: surveyor-downright_6
+  - first:
+      213: 3587214664828256407
+    second: surveyor-downright_7
+  - first:
+      213: 1978129865163469399
+    second: surveyor-downright_00
+  - first:
+      213: -7890489944948779231
+    second: surveyor-downright_01
+  - first:
+      213: 3495392117272994736
+    second: surveyor-downright_02
+  - first:
+      213: -8947633475193080470
+    second: surveyor-downright_03
+  - first:
+      213: -5459621479766074047
+    second: surveyor-downright_04
+  - first:
+      213: -508779659326717373
+    second: surveyor-downright_05
+  - first:
+      213: -4599553764715262208
+    second: surveyor-downright_06
+  - first:
+      213: 1591305268691703370
+    second: surveyor-downright_07
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 320
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: surveyor-downright_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 752f8acb1aab37b10800000000000000
+      internalID: 1978129865163469399
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-downright_01
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 127598f53395f7290800000000000000
+      internalID: -7890489944948779231
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-downright_02
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0b3e1cc7c90228030800000000000000
+      internalID: 3495392117272994736
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-downright_03
+      rect:
+        serializedVersion: 2
+        x: 720
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a65f8bac2ce93d380800000000000000
+      internalID: -8947633475193080470
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-downright_04
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14d5372c0378b34b0800000000000000
+      internalID: -5459621479766074047
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-downright_05
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 34203e0789370f8f0800000000000000
+      internalID: -508779659326717373
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-downright_06
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00f06d0783a1b20c0800000000000000
+      internalID: -4599553764715262208
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-downright_07
+      rect:
+        serializedVersion: 2
+        x: 1680
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a469395f5b3751610800000000000000
+      internalID: 1591305268691703370
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      surveyor-downright_0: -8178427982514762438
+      surveyor-downright_00: 1978129865163469399
+      surveyor-downright_01: -7890489944948779231
+      surveyor-downright_02: 3495392117272994736
+      surveyor-downright_03: -8947633475193080470
+      surveyor-downright_04: -5459621479766074047
+      surveyor-downright_05: -508779659326717373
+      surveyor-downright_06: -4599553764715262208
+      surveyor-downright_07: 1591305268691703370
+      surveyor-downright_1: 6514864236725651341
+      surveyor-downright_2: 6521065420594065043
+      surveyor-downright_3: -7075503761162191084
+      surveyor-downright_4: 8392861369354008403
+      surveyor-downright_5: -1181800286250097702
+      surveyor-downright_6: -7766574924054832484
+      surveyor-downright_7: 3587214664828256407
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

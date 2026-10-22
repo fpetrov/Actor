@@ -1,116 +1,123 @@
 using System;
+using Actor.UI;
 using UnityEngine;
+#if !UNITY_SERVER
+using UnityEngine.UIElements;
+#endif
 
 namespace Actor.Lobby
 {
+    // Stable controller-facing model; rendering is retained and never handles admission.
     public sealed class LobbyMenuView : MonoBehaviour
     {
         public event Action RefreshRequested;
         public event Action CreateRequested;
         public event Action<string> JoinRequested;
         public event Action DisconnectRequested;
+        public event Action FreshRoundRequested;
+        public event Action ResumeRequested;
         public string PlayerName = "Player";
-        public string NewRoomName = "Main Hall";
-        public string GameMode = "Sandbox";
+        public string NewRoomName = "New expedition";
+        public string GameMode = "SocialDeduction";
         public string DirectRoomCode = "";
         public string Status = "Fetching rooms…";
         public string ConnectedRoom = "";
+        public bool ResumeAvailable, ResumeBusy;
+        public long ResumeCredentialSeconds;
         public bool Busy;
         public bool Visible = true;
         public LobbyInfo[] Rooms = Array.Empty<LobbyInfo>();
+        public void Leave() => DisconnectRequested?.Invoke();
+        public void RequestFreshRound() => FreshRoundRequested?.Invoke();
 #if !UNITY_SERVER
-        private Vector2 scroll, formScroll;
-        private GUIStyle title, subtitle, label, button, input, status;
-        private Texture2D backdrop, panel;
-
-        private void InitializeStyles()
+        private VisualElement root, roomList, connection;
+        private Label status, connected;
+        private TextField name, roomName, roomCode;
+        private Button create, join, refresh, resume;
+        private VisualElement recovery;
+        private DropdownField mode;
+        private string roomSignature = "";
+        private bool tutorialOffered;
+        private void Build()
         {
-            backdrop = Texture(new Color(0.035f, 0.045f, 0.075f));
-            panel = Texture(new Color(0.075f, 0.09f, 0.145f));
-            title = new GUIStyle(GUI.skin.label) { fontSize = 38, fontStyle = FontStyle.Bold };
-            subtitle = new GUIStyle(GUI.skin.label) { fontSize = 17, normal = { textColor = new Color(0.65f, 0.73f, 0.9f) } };
-            label = new GUIStyle(GUI.skin.label) { fontSize = 18 };
-            button = new GUIStyle(GUI.skin.button) { fontSize = 17, padding = new RectOffset(16, 16, 10, 10) };
-            input = new GUIStyle(GUI.skin.textField) { fontSize = 19, padding = new RectOffset(12, 12, 10, 10) };
-            status = new GUIStyle(GUI.skin.label) { fontSize = 16, wordWrap = true, normal = { textColor = new Color(0.7f, 0.8f, 1f) } };
+            var layer = ArenaUI.ScreenLayer; if (layer == null) return;
+            root = ArenaUI.Element("lobby-backdrop", layer);
+            var shell = ArenaUI.Panel("", "lobby-shell", root);
+            ArenaUI.Text("ACTOR  /  AGENTS ARENA", "eyebrow", shell);
+            ArenaUI.Text("A quiet station. Hidden intentions.", "title", shell);
+            ArenaUI.Text("Meet, work, investigate — or deceive. Human and autonomous players share the same world.", "muted", shell);
+            var scroll = new ScrollView(); shell.Add(scroll);
+            var columns = ArenaUI.Element("lobby-columns", scroll);
+            var browse = ArenaUI.Element("lobby-column", columns);
+            var title = ArenaUI.Element("row spaced", browse);
+            ArenaUI.Text("Find an expedition", "heading grow", title);
+            refresh = ArenaUI.Button("Refresh", () => RefreshRequested?.Invoke(), "quiet", title);
+            recovery = ArenaUI.Element("participant", browse);
+            ArenaUI.Text("Connection interrupted", "body", recovery);
+            ArenaUI.Text("Try reconnecting promptly. The server checks the grace period and your original identity.", "muted", recovery);
+            resume = ArenaUI.Button("Reconnect", () => ResumeRequested?.Invoke(), "primary", recovery);
+            var rooms = new ScrollView(); rooms.AddToClassList("room-list"); browse.Add(rooms); roomList = rooms.contentContainer;
+            roomCode = ArenaUI.Field("Room code", DirectRoomCode, v => DirectRoomCode = v.ToUpperInvariant(), 6, browse);
+            join = ArenaUI.Button("Join room", () => JoinRequested?.Invoke(DirectRoomCode), "primary", browse);
+            var setup = ArenaUI.Element("lobby-column", columns);
+            ArenaUI.Text("Your seat", "heading", setup);
+            name = ArenaUI.Field("Player name", PlayerName, v => PlayerName = v, 24, setup);
+            roomName = ArenaUI.Field("Room name", NewRoomName, v => NewRoomName = v, 48, setup);
+            mode = new DropdownField("Mode", new System.Collections.Generic.List<string> { "Social Deduction · 4–6", "Sandbox / Investigation" }, GameMode == "SocialDeduction" ? 0 : 1);
+            mode.AddToClassList("vertical-field");
+            mode.RegisterValueChangedCallback(e => GameMode = e.newValue.StartsWith("Social") ? "SocialDeduction" : "Sandbox"); setup.Add(mode);
+            create = ArenaUI.Button("Create room", () => CreateRequested?.Invoke(), "primary", setup);
+            var tools = ArenaUI.Element("row", setup);
+            ArenaUI.Button("How to play", ArenaUI.Tutorial, "quiet grow gap", tools);
+            ArenaUI.Button("Settings", ArenaUI.Settings, "quiet grow", tools);
+            status = ArenaUI.Text(Status, "muted", shell);
+            connection = ArenaUI.Element("connection-bar", ArenaUI.HudLayer);
+            connected = ArenaUI.Text("", "eyebrow", connection);
+            var actions = ArenaUI.Element("connection-tools", connection);
+            ArenaUI.Button("Help", ArenaUI.Tutorial, "quiet", actions);
+            ArenaUI.Button("Menu", OpenMenu, "quiet", actions);
         }
-        private static Texture2D Texture(Color color)
+        private void OpenMenu()
         {
-            var texture = new Texture2D(1, 1);
-            texture.SetPixel(0, 0, color); texture.Apply(); return texture;
+            var card = ArenaUI.OpenModal("Expedition menu"); if (card == null) return;
+            ArenaUI.Text("Room " + ConnectedRoom + " · " + PlayerName, "body", card);
+            ArenaUI.Button("Settings", ArenaUI.Settings, "", card);
+            ArenaUI.Button("How to play", ArenaUI.Tutorial, "", card);
+            ArenaUI.Button("Leave room", () => { ArenaUI.CloseModal(); Leave(); }, "danger", card);
         }
-
-        private void OnGUI()
+        private void Update()
         {
-            if (title == null) InitializeStyles();
-            if (!Visible)
+            if (root == null) Build(); if (root == null) return;
+            ArenaUI.Show(root, Visible); ArenaUI.Show(connection, !Visible);
+            status.text = Status; connected.text = "ROOM " + ConnectedRoom + "  ·  " + PlayerName;
+            name.SetValueWithoutNotify(PlayerName); roomName.SetValueWithoutNotify(NewRoomName); roomCode.SetValueWithoutNotify(DirectRoomCode);
+            mode.SetValueWithoutNotify(GameMode == "SocialDeduction" ? "Social Deduction · 4–6" : "Sandbox / Investigation");
+            ArenaUI.Show(recovery, ResumeAvailable || ResumeBusy);
+            resume.text = ResumeBusy ? "Reconnecting…" : "Try reconnect · credential " + ResumeCredentialSeconds + "s";
+            resume.SetEnabled(ResumeAvailable && !ResumeBusy && !Busy);
+            create.SetEnabled(!Busy && !ResumeBusy); join.SetEnabled(!Busy && !ResumeBusy); refresh.SetEnabled(!Busy);
+            name.SetEnabled(!Busy && !ResumeBusy); roomCode.SetEnabled(!Busy && !ResumeBusy);
+            roomName.SetEnabled(!Busy && !ResumeBusy); mode.SetEnabled(!Busy && !ResumeBusy);
+            string signature = Busy + "|" + ResumeBusy + "|" + string.Join("|", Array.ConvertAll(Rooms ?? Array.Empty<LobbyInfo>(), r => r.roomCode + r.status + r.currentPlayers + r.displayName));
+            if (signature != roomSignature)
             {
-                GUILayout.BeginArea(new Rect(18, 16, 330, 80));
-                GUILayout.Label("Room " + ConnectedRoom + "  ·  " + PlayerName, subtitle);
-                if (GUILayout.Button("Leave room", button)) DisconnectRequested?.Invoke();
-                GUILayout.EndArea(); return;
+                roomSignature = signature; roomList.Clear();
+                if (Rooms == null || Rooms.Length == 0) ArenaUI.Text("No expeditions yet. Create a room to begin.", "muted", roomList);
+                foreach (var room in Rooms ?? Array.Empty<LobbyInfo>())
+                {
+                    var row = ArenaUI.Element("room-card row", roomList);
+                    var description = ArenaUI.Element("grow", row);
+                    ArenaUI.Text(room.displayName, "room-name", description);
+                    ArenaUI.Text(room.roomCode + " · " + (room.gameMode == "SocialDeduction" ? "Social" : "Sandbox") + " · " + room.currentPlayers + "/" + room.maxPlayers + " · " + room.status, "muted", description);
+                    var button = ArenaUI.Button("Join", () => JoinRequested?.Invoke(room.roomCode), "", row);
+                    button.SetEnabled(!Busy && !ResumeBusy && (room.status == "Ready" || room.status == "Running"));
+                }
             }
-            GUI.DrawTexture(new Rect(0, 0, Screen.width, Screen.height), backdrop);
-            float width = Mathf.Min(880, Screen.width - 40);
-            float height = Mathf.Min(730, Screen.height - 40);
-            var box = new Rect((Screen.width - width) / 2, (Screen.height - height) / 2, width, height);
-            GUI.DrawTexture(box, panel);
-            GUILayout.BeginArea(new Rect(box.x + 30, box.y + 22, box.width - 60, box.height - 44));
-            formScroll = GUILayout.BeginScrollView(formScroll);
-            GUILayout.Label("Agents Arena", title);
-            GUILayout.Label("ACTOR  /  MAIN HALL", subtitle);
-            GUILayout.Space(20);
-            GUILayout.Label("Player name", label);
-            PlayerName = GUILayout.TextField(PlayerName, 24, input, GUILayout.Height(44));
-            GUILayout.Space(16);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Available rooms", label);
-            GUILayout.FlexibleSpace();
-            GUI.enabled = !Busy;
-            if (GUILayout.Button("Refresh", button, GUILayout.Width(130))) RefreshRequested?.Invoke();
-            GUILayout.EndHorizontal();
-            scroll = GUILayout.BeginScrollView(scroll, GUILayout.Height(Mathf.Max(80, height - 530)));
-            if (Rooms.Length == 0) GUILayout.Label("No rooms yet. Create the first one below.", subtitle);
-            foreach (LobbyInfo room in Rooms)
-            {
-                GUILayout.BeginHorizontal(GUI.skin.box);
-                GUILayout.Label(room.roomCode, label, GUILayout.Width(110));
-                GUILayout.Label(room.displayName + " · " + (room.gameMode == "SocialDeduction" ? "Social" : "Sandbox"), label, GUILayout.MinWidth(130));
-                GUILayout.Label(room.currentPlayers + "/" + room.maxPlayers, label, GUILayout.Width(55));
-                GUILayout.Label(room.status, subtitle, GUILayout.Width(90));
-                GUI.enabled = !Busy && (room.status == "Ready" || room.status == "Running");
-                if (GUILayout.Button("Join", button, GUILayout.Width(85))) JoinRequested?.Invoke(room.roomCode);
-                GUI.enabled = !Busy;
-                GUILayout.EndHorizontal();
-            }
-            GUILayout.EndScrollView();
-            GUILayout.Space(14);
-            GUILayout.Label("Join by room code", label);
-            GUILayout.BeginHorizontal();
-            DirectRoomCode = GUILayout.TextField(DirectRoomCode, 6, input, GUILayout.Height(44)).ToUpperInvariant();
-            if (GUILayout.Button("Join", button, GUILayout.Width(130), GUILayout.Height(44))) JoinRequested?.Invoke(DirectRoomCode);
-            GUILayout.EndHorizontal();
-            GUILayout.Space(14);
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("Create a room", label);
-            if (GUILayout.Button(GameMode == "Sandbox" ? "Sandbox / Investigation" : "Social Deduction · 4–6", button))
-                GameMode = GameMode == "Sandbox" ? "SocialDeduction" : "Sandbox";
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            NewRoomName = GUILayout.TextField(NewRoomName, 48, input, GUILayout.Height(44));
-            if (GUILayout.Button("Create room", button, GUILayout.Width(160), GUILayout.Height(44))) CreateRequested?.Invoke();
-            GUILayout.EndHorizontal();
-            GUI.enabled = true;
-            GUILayout.Space(14);
-            GUILayout.Label(Status, status);
-            GUILayout.EndScrollView();
-            GUILayout.EndArea();
+            if (!Visible && !tutorialOffered && PlayerPrefs.GetInt("Arena.TutorialSeen", 0) == 0)
+            { tutorialOffered = true; ArenaUI.Tutorial(); }
         }
-        private void OnDestroy()
-        {
-            if (backdrop != null) Destroy(backdrop);
-            if (panel != null) Destroy(panel);
-        }
+        private void OnDisable() { root?.RemoveFromHierarchy(); connection?.RemoveFromHierarchy(); root = connection = null; }
+        private void OnDestroy() => OnDisable();
 #endif
     }
 }

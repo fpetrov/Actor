@@ -1,0 +1,1 @@
+.compat-glass { backdrop-filter: blur(8px); }

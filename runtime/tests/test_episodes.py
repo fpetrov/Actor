@@ -35,6 +35,99 @@ def registry():
     return result
 
 
+def private_registry():
+    class Input(SkillModel):
+        value: str
+    class Output(SkillModel):
+        value: str
+    class Private(ActorSkill):
+        async def execute(self,context,arguments):
+            return Output(value=arguments.value)
+    result=registry()
+    result.register(SkillDefinition("test.private-procedure","1.0.0","Synthetic session-only procedure",
+        Input,Output,Private,result_policy="session_only"))
+    return result
+
+
+async def test_closed_episode_identifiers_reveal_only_at_authoritative_terminal_without_payloads(session):
+    policy=Policy()
+    def factory():
+        return SequenceBrain([SkillCall(skill_id="test.private-procedure",arguments={"value":"session-only-fixture"}),
+            SkillCall(skill_id="actor.wait",arguments={"duration_seconds":30.0})])
+    controller=MatchEpisodeController(session,private_registry(),factory,policy)
+    pending=asyncio.create_task(controller.run())
+    await eventually(lambda:controller.runner is not None and len(controller.runner._skill_results)>=1
+        and controller.scheduler.current_skill_metadata() is not None)
+    live=controller.report()
+    assert live["episodes"]==[] and "test.private-procedure" not in str(live)
+    policy.state="suspended";await session.world.notify()
+    await eventually(lambda:len(controller._reports)==1)
+    earlier_closed=controller._reports[0]
+    assert earlier_closed["decisions"][0]["skill_id"]=="[private_activity]"
+    assert controller.report()["episodes"]==[]
+    policy.state="terminal";await session.world.notify()
+    result=await pending
+    postgame=controller.report()
+    assert result.authoritative_terminal
+    episode=postgame["episodes"][0]
+    assert episode["decisions"][0]["skill_id"]=="test.private-procedure"
+    assert episode["skills"][0]["skill_id"]=="test.private-procedure"
+    assert episode["result"]["skill_results"][0]["skill_id"]=="test.private-procedure"
+    assert episode["skills"][0]["output"]=={"redacted":True}
+    assert "session-only-fixture" not in str(postgame)
+    assert earlier_closed["decisions"][0]["skill_id"]=="[private_activity]" and live["episodes"]==[]
+
+
+async def test_cancelled_participation_discards_identifier_ledger_and_new_scope_has_no_carry(session,manifest):
+    from actor_runtime.session import RuntimeSession
+    from conftest import negotiate
+    policy=Policy()
+    controller=MatchEpisodeController(session,private_registry(),lambda:SequenceBrain([
+        SkillCall(skill_id="test.private-procedure",arguments={"value":"first-scope-only"}),
+        SkillCall(skill_id="actor.wait",arguments={"duration_seconds":30.0})]),policy)
+    pending=asyncio.create_task(controller.run())
+    await eventually(lambda:controller.runner is not None and len(controller.runner._skill_results)>=1
+        and controller.scheduler.current_skill_metadata() is not None)
+    await controller.cancel();result=await pending
+    assert result.status=="cancelled" and not result.authoritative_terminal
+    assert controller.report()["episodes"]==[] and controller._activity_ids==[]
+    fresh=RuntimeSession(session.registry)
+    await negotiate(fresh,manifest)
+    class FreshPolicy(Policy):
+        def evaluate(self,session):
+            return super().evaluate(session).model_copy(update={"scope_id":"fresh-scope"})
+    next_policy=FreshPolicy()
+    next_controller=MatchEpisodeController(fresh,registry(),lambda:SequenceBrain([
+        SkillCall(skill_id="actor.wait",arguments={"duration_seconds":30.0})]),next_policy)
+    try:
+        next_pending=asyncio.create_task(next_controller.run())
+        await eventually(lambda:next_controller.scheduler.current_skill_metadata() is not None)
+        next_policy.state="terminal";await fresh.world.notify()
+        next_result=await next_pending
+        report=next_controller.report()
+        assert next_result.scope_id=="fresh-scope" and next_result.authoritative_terminal
+        assert "test.private-procedure" not in str(report) and "first-scope-only" not in str(report)
+        assert report["episodes"][0]["skills"][0]["skill_id"]=="actor.wait"
+    finally:
+        fresh.close()
+
+
+async def test_optional_mechanics_guidance_never_truncates_valid_user_objective(session):
+    policy=Policy();policy.objective_instructions="Optional installed mechanics."
+    seen=[]
+    class Brain(SequenceBrain):
+        async def start(self,objective,catalog):
+            seen.append(objective.text)
+            await super().start(objective,catalog)
+    controller=MatchEpisodeController(session,registry(),lambda:Brain([
+        SkillCall(skill_id="actor.wait",arguments={"duration_seconds":30.0})]),policy)
+    text="x"*4096
+    pending=asyncio.create_task(controller.run(text))
+    await eventually(lambda:bool(seen))
+    await controller.cancel();await pending
+    assert seen==[text] and controller.report()["guidance_omitted"]
+
+
 @pytest.mark.asyncio
 async def test_finished_objective_rotates_fresh_brain_but_does_not_finish_match(session, monkeypatch):
     policy, providers, finalizers = Policy(), [], []
@@ -164,7 +257,9 @@ def test_private_knowledge_distinguishes_claim_hypothesis_and_expiry():
     records = {record["id"]: record for record in knowledge.context()}
     assert records["fact"]["kind"] == "player_claim"
     assert records[hypothesis]["kind"] == "hypothesis"
-    assert records[hypothesis]["evidence_refs"] == ["fact"]
+    source=records[records[hypothesis]["evidence_refs"][0]]
+    assert source["content"]==records["fact"]["content"]
+    assert source["source_event_id"]=="received-message-1" and source["observed_at_unix_ms"]==1000
     assert "unverified" in records[hypothesis]["content"]["epistemic_status"]
     with pytest.raises(ActorError, match="Working evidence"):
         knowledge.remember(note(scope="foreign"))
@@ -334,5 +429,5 @@ async def test_private_hypothesis_skill_uses_active_scheduler_and_catalog_cannot
     result = await scheduler.run("actor.remember-hypothesis", {"statement": "This claim is uncertain", "confidence": .5,
                                                            "evidence_refs": ["fact"]})
     assert result.status == "succeeded"
-    assert session.working_knowledge.context()[0]["kind"] == "hypothesis"
+    assert session.working_knowledge.records[result.output["note_id"]].kind == "hypothesis"
     assert "This claim is uncertain" not in str(scheduler.report())

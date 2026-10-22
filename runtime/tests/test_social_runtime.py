@@ -17,7 +17,7 @@ from actor_runtime.objectives import Objective
 from actor_runtime.skills import SkillRegistry, SkillScheduler, SkillError
 from actor_runtime.snapshots import build_decision_context
 from actor_agents_arena import (SOCIAL_MATCH, SOCIAL_OWN_STATE, SOCIAL_VISIBLE_WORLD, SOCIAL_MEETING,
-    SOCIAL_TASKS, SOCIAL_EMERGENCY, SOCIAL_ACTION_RESULT, SOCIAL_VISIBLE_ATTACK, SOCIAL_OWN_STATE_CHANGED)
+    SOCIAL_TASKS, SOCIAL_TASK_WORK, SOCIAL_EMERGENCY, SOCIAL_ACTION_RESULT, SOCIAL_VISIBLE_ATTACK, SOCIAL_OWN_STATE_CHANGED)
 from actor_agents_arena.social_agent import SocialMatchPolicy, SocialScriptedBrain
 from actor_agents_arena.social_skills import SocialActionSkill, skill_package
 from actor_standard import TRANSFORM, MOTION, Transform2DObservation, Motion2DObservation
@@ -30,11 +30,11 @@ NOW = lambda: int(time.time() * 1000)
 
 async def observe(session, *, phase=pb.SOCIAL_PHASE_EXPLORATION, alignment=pb.SOCIAL_ALIGNMENT_CREW,
                   life=pb.SOCIAL_LIFE_ALIVE, phase_revision=3, visible=(), bodies=(), tasks=(), ready=True,
-                  recipient="actor-1", match_id="match-social"):
+                  recipient="actor-1", match_id="match-social", connection_generation=1):
     sequence = session.last_received_sequence + 1
     own = pb.SocialOwnStateObservation(match_id=match_id, actor_id=recipient, alignment=alignment, assigned=True,
         life=life, can_move=life == pb.SOCIAL_LIFE_ALIVE and phase == pb.SOCIAL_PHASE_EXPLORATION,
-        ready=ready, server_revision=sequence)
+        ready=ready, server_revision=sequence, connection_generation=connection_generation)
     values = [(SOCIAL_MATCH, pb.SocialMatchStateObservation(match_id=match_id, phase=phase,
         phase_revision=phase_revision, server_revision=sequence, mode="SocialDeduction",
         phase_ends_at_unix_ms=NOW() + 60000)), (SOCIAL_OWN_STATE, own),
@@ -44,6 +44,7 @@ async def observe(session, *, phase=pb.SOCIAL_PHASE_EXPLORATION, alignment=pb.SO
             voting_ends_at_unix_ms=NOW() + 60000, participants=[pb.SocialMeetingParticipant(actor_id="peer", life=pb.SOCIAL_LIFE_ALIVE)])),
         (SOCIAL_TASKS, pb.SocialOwnTasksObservation(match_id=match_id, recipient_actor_id=recipient,
             contributes_to_crew_progress=alignment == pb.SOCIAL_ALIGNMENT_CREW, tasks=tasks)),
+        (SOCIAL_TASK_WORK, pb.SocialOwnTaskWorkObservation(match_id=match_id, recipient_actor_id=recipient)),
         (SOCIAL_EMERGENCY, pb.SocialEmergencyStateObservation(match_id=match_id))]
     observations = [envelope(cap, "agents-arena", value) for cap, value in values]
     observations += [envelope(TRANSFORM, "actor.standard", Transform2DObservation(x=0, y=-1.4)),
@@ -284,19 +285,21 @@ async def test_visible_approach_stops_inside_default_kill_range_without_impossib
             self.speeds = []
         def now(self): return self.at
         def observation(self, cap, cls): return self.observation_entry(cap, cls).payload
-        def observation_entry(self, cap, cls):
+        def observation_entry(self, cap, cls, **kwargs):
             if cap == TRANSFORM:
                 value = Transform2DObservation(y=self.center_y - .46)
             elif cap == MOTION:
                 value = Motion2DObservation(is_moving=bool(self.desired), velocity_y=self.desired * 2.6)
             elif cap == SOCIAL_MATCH:
-                value = pb.SocialMatchStateObservation(match_id="match")
+                value = pb.SocialMatchStateObservation(match_id="match", phase=pb.SOCIAL_PHASE_EXPLORATION)
             elif cap == SOCIAL_OWN_STATE:
-                value = pb.SocialOwnStateObservation(match_id="match", actor_id="actor-1")
+                value = pb.SocialOwnStateObservation(match_id="match", actor_id="actor-1",life=pb.SOCIAL_LIFE_ALIVE,can_move=True)
+            elif cap == ROOM_MEMBERSHIP:
+                value = RoomMembershipObservation(room_id="main-hall")
             else:
                 value = pb.SocialVisibleWorldObservation(match_id="match", recipient_actor_id="actor-1",
                     actors=[pb.SocialVisibleActor(actor_id="peer", x=0, y=0)])
-            return SimpleNamespace(sequence=self.sequence, payload=value)
+            return SimpleNamespace(sequence=self.sequence, payload=value,received_at=self.at)
         def command(self, cap, value):
             assert cap == LOCOMOTION
             self.desired = value.desired_move_y

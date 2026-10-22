@@ -23,12 +23,20 @@ namespace Actor.World
 #if !UNITY_SERVER
         private bool opened;
         private double localReadyAt, noticeUntil;
-        private GUIStyle title, body;
+        private UnityEngine.UIElements.VisualElement panel, notice;
+        private UnityEngine.UIElements.Label worldLabel, noticeTitle, noticeBody, actionStatus;
+        private UnityEngine.UIElements.Button routine, urgent;
         internal void OpenFromFocus() => opened = true;
         internal void CloseFromFocus() => opened = false;
 #endif
         private void OnEnable() { if (Current == null) Current = this; }
-        private void OnDisable() { if (Current == this) Current = null; }
+        private void OnDisable()
+        {
+            if (Current == this) Current = null;
+#if !UNITY_SERVER
+            panel?.RemoveFromHierarchy(); notice?.RemoveFromHierarchy(); worldLabel?.RemoveFromHierarchy(); panel = notice = null; worldLabel = null;
+#endif
+        }
 
         internal StationSignalEvent CreateAuthoritativeSignal(StationSignalKind kind, string sourceActor, double now)
         {
@@ -60,49 +68,36 @@ namespace Actor.World
         private void Update()
         {
             if (!NearHuman(out _)) { opened = false; return; }
-            if (NetworkCooperation.LocalOwner == null && Application.isFocused && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) opened = !opened;
+            if (NetworkCooperation.LocalOwner == null && !Actor.UI.ArenaUI.InputCaptured && Application.isFocused && Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame) opened = !opened;
         }
-        private void OnGUI()
+        private void LateUpdate()
         {
-            if (NetworkStationSignals.LocalOwner == null || Camera.main == null) return;
-            if (title == null)
+            if (NetworkStationSignals.LocalOwner == null || Actor.Networking.SocialVisibilitySystem.IsSocial(Unity.Netcode.NetworkManager.Singleton))
+            { Actor.UI.ArenaUI.Show(panel, false); Actor.UI.ArenaUI.Show(notice, false); Actor.UI.ArenaUI.Show(worldLabel, false); return; }
+            if (Actor.UI.ArenaUI.HudLayer == null) return;
+            if (panel == null)
             {
-                title = new GUIStyle(GUI.skin.label) { fontSize = 16, fontStyle = FontStyle.Bold };
-                body = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
+                worldLabel = Actor.UI.ArenaUI.Text("Signal Console", "world-label", Actor.UI.ArenaUI.WorldLayer);
+                panel = Actor.UI.ArenaUI.Panel("Signal Console · training", "action-sheet", Actor.UI.ArenaUI.ScreenLayer);
+                Actor.UI.ArenaUI.Button("Close", () => opened = false, "quiet", panel);
+                Actor.UI.ArenaUI.Text("Broadcast to all connected station personnel. No emergency is simulated.", "body", panel);
+                routine = Actor.UI.ArenaUI.Button("Routine notice", () => Send(NetworkStationSignals.LocalOwner, StationSignalKind.RoutineNotice), "primary", panel);
+                urgent = Actor.UI.ArenaUI.Button("Urgent recall", () => Send(NetworkStationSignals.LocalOwner, StationSignalKind.UrgentRecall), "", panel);
+                actionStatus = Actor.UI.ArenaUI.Text("", "muted", panel);
+                notice = Actor.UI.ArenaUI.Panel("", "death", Actor.UI.ArenaUI.ScreenLayer);
+                noticeTitle = Actor.UI.ArenaUI.Text("", "heading", notice); noticeBody = Actor.UI.ArenaUI.Text("", "body", notice);
             }
-            Vector3 screen = Camera.main.WorldToScreenPoint(transform.position + Vector3.up * .55f);
-            if (screen.z > 0 && screen.x > 0 && screen.x < Screen.width && screen.y > 0 && screen.y < Screen.height)
-                GUI.Label(new Rect(screen.x - 80, Screen.height - screen.y - 14, 160, 26), "SIGNAL CONSOLE", GUI.skin.box);
-            if (NearHuman(out var owner) && (opened || NetworkCooperation.LocalOwner == null))
+            Actor.UI.ArenaUI.WorldLabel(worldLabel, transform.position + Vector3.up * .55f);
+            Actor.UI.ArenaUI.Show(panel, opened && NearHuman(out _));
+            routine.SetEnabled(Time.realtimeSinceStartupAsDouble >= localReadyAt);
+            urgent.SetEnabled(Time.realtimeSinceStartupAsDouble >= localReadyAt);
+            actionStatus.text = NetworkStationSignals.LocalOwner.InteractionStatus;
+            bool showing = lastSignal != null && Time.realtimeSinceStartupAsDouble < noticeUntil;
+            Actor.UI.ArenaUI.Show(notice, showing);
+            if (showing)
             {
-                float width = Mathf.Min(460, Screen.width - 32);
-                var area = new Rect((Screen.width - width) * .5f, Screen.height - (opened ? 198 : 54), width, opened ? 182 : 38);
-                GUI.Box(area, GUIContent.none);
-                if (!opened)
-                {
-                    if (GUI.Button(new Rect(area.x + 8, area.y + 6, width - 16, 26), "E  ·  Use Signal Console")) opened = true;
-                }
-                else
-                {
-                    GUI.Label(new Rect(area.x + 14, area.y + 8, width - 70, 26), "Signal Console  ·  Training channel", title);
-                    if (GUI.Button(new Rect(area.xMax - 44, area.y + 8, 30, 24), "×")) opened = false;
-                    GUI.Label(new Rect(area.x + 14, area.y + 38, width - 28, 38), "Broadcast to all connected station personnel. No emergency is simulated.", body);
-                    bool oldEnabled = GUI.enabled;
-                    GUI.enabled = Time.realtimeSinceStartupAsDouble >= localReadyAt;
-                    if (GUI.Button(new Rect(area.x + 14, area.y + 82, (width - 38) / 2, 40), "Routine Notice")) Send(owner, StationSignalKind.RoutineNotice);
-                    if (GUI.Button(new Rect(area.x + 24 + (width - 38) / 2, area.y + 82, (width - 38) / 2, 40), "Urgent Recall")) Send(owner, StationSignalKind.UrgentRecall);
-                    GUI.enabled = oldEnabled;
-                    GUI.Label(new Rect(area.x + 14, area.y + 132, width - 28, 42), owner.InteractionStatus, body);
-                }
-            }
-            if (lastSignal != null && Time.realtimeSinceStartupAsDouble < noticeUntil)
-            {
-                float width = Mathf.Min(440, Screen.width - 32);
-                var area = new Rect(18, 112, width, 88);
-                GUI.Box(area, GUIContent.none);
-                GUI.Label(new Rect(area.x + 10, area.y + 8, width - 20, 24),
-                    lastSignal.SignalKind == StationSignalKind.UrgentRecall ? "Station · URGENT RECALL" : "Station · Routine notice", title);
-                GUI.Label(new Rect(area.x + 10, area.y + 34, width - 20, 48), lastSignal.Message, body);
+                noticeTitle.text = lastSignal.SignalKind == StationSignalKind.UrgentRecall ? "Station · urgent recall" : "Station · routine notice";
+                noticeBody.text = lastSignal.Message;
             }
         }
         private void Send(NetworkStationSignals owner, StationSignalKind kind)

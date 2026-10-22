@@ -9,13 +9,13 @@ from functools import cache
 
 from pydantic import Field, model_validator
 from extensions.agents_arena.v1 import social_pb2 as pb
-from actor_runtime.skills import ActorSkill, CapabilityRequirement as Req, SkillDefinition, SkillError, SkillModel
+from actor_runtime.skills import ActorSkill, CapabilityRequirement as Req, SkillDefinition, SkillError, SkillTimeout, SkillModel
 from actor_standard import TRANSFORM, MOTION, LOCOMOTION, Transform2DObservation, Motion2DObservation, Locomotion2DCommand
 from . import (ROOM_MEMBERSHIP, ROOM_CHANGED, RoomMembershipObservation, RoomChangedEvent,
     SOCIAL_MATCH, SOCIAL_OWN_STATE, SOCIAL_VISIBLE_WORLD, SOCIAL_MEETING, SOCIAL_TASKS,
     SOCIAL_EMERGENCY, SOCIAL_READY, SOCIAL_KILL, SOCIAL_REPORT_BODY, SOCIAL_CALL_MEETING,
     SOCIAL_CAST_VOTE, SOCIAL_WORK_TASK, SOCIAL_SABOTAGE, SOCIAL_REPAIR_EMERGENCY,
-    SOCIAL_CANCEL_WORK, SOCIAL_ACTION_RESULT)
+    SOCIAL_CANCEL_WORK, SOCIAL_ACTION_RESULT, SOCIAL_TASK_WORK, SOCIAL_TASK_STEP)
 from .skills import Waypoint
 from .social_navigation import SocialNavigateToRoom as NavigateToRoom, SocialNavigateToRoomInput as NavigateToRoomInput
 
@@ -53,14 +53,15 @@ def waiting(context):
 
 
 def action_context(context):
-    match, _ = states(context)
+    match, own = states(context)
     expires = NOW() + 2000
     if match.phase_ends_at_unix_ms:
         expires = min(expires, match.phase_ends_at_unix_ms)
     if expires <= NOW():
         raise SkillError("phase_expired", "The authoritative phase deadline has elapsed")
     return pb.SocialActionContext(match_id=match.match_id, phase_revision=match.phase_revision,
-        correlation_id=uuid4().hex, expires_at_unix_ms=expires)
+        correlation_id=uuid4().hex, expires_at_unix_ms=expires,
+        connection_generation=own.connection_generation)
 
 
 class EmptyInput(SkillModel):
@@ -126,31 +127,45 @@ class SocialActionSkill(ActorSkill):
         self.work_id = ""
         self.correlation_id = ""
         self.work_pending = False
-        self.initial_match = self.initial_phase = None
+        self.initial_match = self.initial_phase = self.initial_generation = None
 
     def preflight(self, context, arguments):
-        match, _ = states(context)
+        match, own = states(context)
         self.initial_match, self.initial_phase = match.match_id, match.phase_revision
+        self.initial_generation = own.connection_generation
+
+    def check_boundary(self, context):
+        match, own = states(context)
+        if self.initial_match is not None and (match.match_id, match.phase_revision, own.connection_generation) != (
+                self.initial_match, self.initial_phase, self.initial_generation):
+            raise SkillError("phase_changed", "The authoritative execution boundary changed during this Skill")
+        return match, own
 
     async def approach(self, context, room, x, y):
         # The authored game graph supplies safe routes, never hidden actor data.
         lane = -.3 if sum(context.actor_id.encode()) % 2 else .3
         await self.navigator.execute_to_approach(context, room, Waypoint(x, y), lane_x=lane)
 
-    async def request(self, context, capability, command, action, *, await_completion=False, timeout=12):
-        match, _ = states(context)
-        if self.initial_match is not None and (match.match_id, match.phase_revision) != (self.initial_match, self.initial_phase):
-            raise SkillError("phase_changed", "The authoritative phase changed during this Skill")
+    async def request(self, context, capability, command, action, *, await_completion=False, timeout=12, progress=None):
+        match, own = self.check_boundary(context)
         command.context.CopyFrom(action_context(context))
         self.correlation_id = command.context.correlation_id
         self.work_pending = await_completion
         context.command(capability, command, ttl_ms=1000)
         deadline = context.now() + timeout
         while True:
-            entry = await context.wait_event(SOCIAL_ACTION_RESULT, pb.SocialActionResultEvent,
-                predicate=lambda value: value.match_id == command.context.match_id and
-                    value.correlation_id == self.correlation_id and value.action == action,
-                timeout_seconds=max(.01, deadline - context.now()))
+            if context.now() >= deadline:
+                raise SkillTimeout("event_timeout", "Expected authoritative completion did not arrive")
+            try:
+                entry = await context.wait_event(SOCIAL_ACTION_RESULT, pb.SocialActionResultEvent,
+                    predicate=lambda value: value.match_id == command.context.match_id and
+                        value.correlation_id == self.correlation_id and value.action == action,
+                    timeout_seconds=max(.01, min(.15 if progress else timeout, deadline - context.now())))
+            except SkillTimeout:
+                if progress is None:
+                    raise
+                await progress(context)
+                continue
             result = entry.payload
             self.work_id = result.work_id or self.work_id
             if not result.accepted:
@@ -161,6 +176,8 @@ class SocialActionSkill(ActorSkill):
                 return ActionOutput(accepted=True, completed=result.completed,
                     action=pb.SocialAction.Name(action), match_id=result.match_id,
                     correlation_id=result.correlation_id, work_id=result.work_id, reason_code=result.reason_code)
+            if progress is not None:
+                await progress(context)
 
     async def cleanup(self, context):
         if self.owns_movement:
@@ -181,6 +198,58 @@ class Ready(SocialActionSkill):
 
 class WorkTask(SocialActionSkill):
     owns_movement = owns_work = True
+    def __init__(self):
+        super().__init__()
+        self.task_id = ""
+        self.steps_sent = set()
+
+    @staticmethod
+    def completion_timeout(task):
+        # WorkDuration describes the hold mechanic; timed calibration/sensor
+        # steps have their own public windows and may take substantially longer.
+        seconds = task.work_duration_ms / 1000 + 10
+        if task.mechanic == pb.SOCIAL_TASK_MECHANIC_CIRCUIT_CALIBRATION:
+            # At most 10s until a displayed step plus its bounded 5s receipt.
+            seconds = max(seconds, min(task.step_count or 3, 8) * 15 + 10)
+        elif task.mechanic == pb.SOCIAL_TASK_MECHANIC_SENSOR_OBSERVATION:
+            seconds = max(seconds, task.sample_delay_ms / 1000 + 10, 40)
+        return min(90, max(10, seconds))
+
+    async def step(self, context):
+        if not self.work_id:
+            return
+        work = context.observation(SOCIAL_TASK_WORK, pb.SocialOwnTaskWorkObservation)
+        match, _ = self.check_boundary(context)
+        if (work.match_id != match.match_id or work.recipient_actor_id != context.actor_id or
+                work.work_id != self.work_id or work.task_id != self.task_id):
+            return
+        identity = work.work_id, work.step_revision
+        if not work.step_revision or identity in self.steps_sent or NOW() < work.not_before_unix_ms:
+            return
+        if work.deadline_unix_ms and NOW() >= work.deadline_unix_ms:
+            raise SkillError("task_step_expired", "The own task step deadline elapsed")
+        if work.mechanic == pb.SOCIAL_TASK_MECHANIC_CIRCUIT_CALIBRATION:
+            choice = work.required_choice
+            if choice not in (pb.SOCIAL_TASK_CHOICE_ALPHA, pb.SOCIAL_TASK_CHOICE_BETA, pb.SOCIAL_TASK_CHOICE_GAMMA):
+                raise SkillError("task_step_invalid", "Calibration has no valid displayed target")
+        elif work.mechanic == pb.SOCIAL_TASK_MECHANIC_SENSOR_OBSERVATION:
+            if not work.sample_b_ready:
+                return
+            choice = (pb.SOCIAL_TASK_CHOICE_RISING if work.sample_b > work.sample_a else
+                pb.SOCIAL_TASK_CHOICE_FALLING if work.sample_b < work.sample_a else pb.SOCIAL_TASK_CHOICE_STABLE)
+        else:
+            return
+        command = pb.SocialTaskStepCommand(context=action_context(context), work_id=work.work_id,
+            step_revision=work.step_revision, choice=choice)
+        self.steps_sent.add(identity)
+        context.command(SOCIAL_TASK_STEP, command, ttl_ms=1000)
+        entry = await context.wait_event(SOCIAL_ACTION_RESULT, pb.SocialActionResultEvent,
+            predicate=lambda value: value.match_id == match.match_id and value.work_id == work.work_id
+                and value.correlation_id == command.context.correlation_id and value.action == pb.SOCIAL_ACTION_TASK_STEP,
+            timeout_seconds=5)
+        if not entry.payload.accepted:
+            raise SkillError(entry.payload.reason_code or "task_step_rejected", "Authoritative server rejected the own task step")
+
     async def execute(self, context, arguments):
         own_tasks = context.observation(SOCIAL_TASKS, pb.SocialOwnTasksObservation)
         match, own = states(context)
@@ -190,8 +259,11 @@ class WorkTask(SocialActionSkill):
         if task is None:
             raise SkillError("task_unavailable", "Task is not in your unfinished task list")
         await self.approach(context, task.room_id, task.approach_x, task.approach_y)
+        self.task_id = task.task_id
         return await self.request(context, SOCIAL_WORK_TASK, pb.SocialWorkTaskCommand(task_id=task.task_id),
-            pb.SOCIAL_ACTION_WORK_TASK, await_completion=True, timeout=min(60, task.work_duration_ms / 1000 + 10))
+            pb.SOCIAL_ACTION_WORK_TASK, await_completion=True, timeout=self.completion_timeout(task),
+            progress=self.step if task.mechanic in (pb.SOCIAL_TASK_MECHANIC_CIRCUIT_CALIBRATION,
+                pb.SOCIAL_TASK_MECHANIC_SENSOR_OBSERVATION) else None)
 
 
 class KillVisible(SocialActionSkill):
@@ -284,36 +356,16 @@ class RepairEmergency(SocialActionSkill):
 class ApproachVisible(SocialActionSkill):
     owns_movement = True
     async def execute(self, context, arguments):
-        deadline, distinct, last = context.now() + 20, 0, None
-        match, _ = states(context)
-        configured_range = match.kill_distance or .9
-        distance_limit = max(.3, configured_range - .04)
-        stop_distance = min(arguments.stop_distance, distance_limit) if arguments.stop_distance is not None else distance_limit
-        while context.now() < deadline:
-            target = visible_target(context, arguments.actor_id)
-            transform = context.observation_entry(TRANSFORM, Transform2DObservation)
-            motion = context.observation_entry(MOTION, Motion2DObservation)
-            if transform.sequence != motion.sequence:
-                raise SkillError("stale_world_state", "Movement observations are not coherent")
-            dx, dy = target.x - transform.payload.x, target.y - (transform.payload.y + .46)
-            distance = math.hypot(dx, dy)
-            if not math.isfinite(distance):
-                raise SkillError("target_unavailable", "Permitted target state is invalid")
-            if distance <= stop_distance:
-                self.navigator.move(context)
-                if not motion.payload.is_moving and math.hypot(motion.payload.velocity_x, motion.payload.velocity_y) <= .2:
-                    if transform.sequence != last: distinct += 1
-                else: distinct = 0
-                last = transform.sequence
-                if distinct >= 4:
-                    return ActionOutput(accepted=True, completed=True, action="approach_visible", match_id=states(context)[0].match_id,
-                                        correlation_id="")
-            else:
-                distinct = 0
-                strength = min(1, max(.06, distance - (stop_distance - .03)))
-                self.navigator.move(context, dx / distance * strength, dy / distance * strength)
-            await context.sleep(.05)
-        raise SkillError("route_failed", "Visible target approach exceeded its bounded deadline")
+        from .social_pursuit import FollowVisible, FollowInput
+        follower = FollowVisible()
+        follower.navigator = self.navigator
+        result = await follower.execute(context, FollowInput(actor_id=arguments.actor_id,
+            stop_distance=arguments.stop_distance))
+        if not result.reached_current_target:
+            raise SkillError("target_lost" if result.stop_reason == "target_lost" else "route_failed",
+                "Bounded permitted target approach stopped without a current opportunity")
+        return ActionOutput(accepted=True, completed=True, action="approach_visible", match_id=result.match_id,
+            correlation_id="")
 
 
 class Evade(SocialActionSkill):
@@ -341,7 +393,7 @@ class WaitForMatchEvent(ActorSkill):
 def skill_package():
     exploration = (pb.SOCIAL_PHASE_EXPLORATION,)
     obs = lambda cap, cls: Req(cap, cls, "observation", 2)
-    def action(identifier, description, input_model, factory, capability, command, available, *, extra=(), move=False, work=False):
+    def action(identifier, description, input_model, factory, capability, command, available, *, extra=(), move=False, work=False, step=False):
         requirements = BASE + (RESULT, Req(capability, command, "command")) + tuple(extra)
         owned = (capability,)
         if move:
@@ -350,17 +402,20 @@ def skill_package():
         if work:
             requirements += (CANCEL,)
             owned += (SOCIAL_CANCEL_WORK,)
+        if step:
+            requirements += (obs(SOCIAL_TASK_WORK, pb.SocialOwnTaskWorkObservation), Req(SOCIAL_TASK_STEP, pb.SocialTaskStepCommand, "command"))
+            owned += (SOCIAL_TASK_STEP,)
         return SkillDefinition("agents-arena." + identifier, "1.0.0", description, input_model, ActionOutput,
             factory, requirements, owned, timeout_seconds=120, result_policy="session_only", availability=available)
     return (
         action("ready-for-match", "Mark yourself ready for server assignment when the required participants are present. You cannot select Alignment or another player's Duty. Own hidden Alignment arrives through your private observation; another player's profession or faction claim is unverified chat.", EmptyInput, Ready,
             SOCIAL_READY, pb.SocialReadyCommand, waiting),
-        action("perform-task", "Crew: navigate to an own unfinished task and await authoritative continuously validated completion; no progress from client prose. Crew wins when the public task threshold is reached or all Impostors are ejected. Preserve your life and consider visible bodies or emergencies instead of blindly continuing work.",
+        action("perform-task", "Crew: navigate to an own unfinished task and perform its displayed mechanic: maintenance hold, timed circuit choices or a two-sample sensor check. Each step uses only own targeted work prompts and the same typed commands as Human; server completion is required. No model polling inside. Balance progress with visible danger or emergencies.",
             TaskInput, WorkTask, SOCIAL_WORK_TASK, pb.SocialWorkTaskCommand, permitted(exploration, pb.SOCIAL_ALIGNMENT_CREW),
-            extra=(obs(SOCIAL_TASKS, pb.SocialOwnTasksObservation),), move=True, work=True),
+            extra=(obs(SOCIAL_TASKS, pb.SocialOwnTasksObservation),), move=True, work=True, step=True),
         action("fake-task", "Impostor: physically perform visible task activity. It has the same external appearance but does not increase Crew progress.",
             TaskInput, WorkTask, SOCIAL_WORK_TASK, pb.SocialWorkTaskCommand, permitted(exploration, pb.SOCIAL_ALIGNMENT_IMPOSTOR),
-            extra=(obs(SOCIAL_TASKS, pb.SocialOwnTasksObservation),), move=True, work=True),
+            extra=(obs(SOCIAL_TASKS, pb.SocialOwnTasksObservation),), move=True, work=True, step=True),
         action("kill-visible-actor", "Impostor: request elimination of a CURRENTLY visible target. Server rechecks life, phase, range, LOS and cooldown; rejection reveals no hidden location. Approach explicitly if needed. Impostors win when living Impostors reach parity with living Crew. Other players learn an attack only through permitted witnessing/discovery; no hidden Alignment oracle exists.",
             TargetInput, KillVisible, SOCIAL_KILL, pb.SocialKillCommand, permitted(exploration, pb.SOCIAL_ALIGNMENT_IMPOSTOR),
             extra=(obs(SOCIAL_VISIBLE_WORLD, pb.SocialVisibleWorldObservation),)),

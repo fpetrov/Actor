@@ -163,10 +163,10 @@ async def serve(args, *, server_factory=None):
                 config=config.classifier, rules=router.rules)
             router.configure(config=config.router, classifier=classifier, memory=memory_store,
                 policy_tags=config.policy_tags, classifier_config=config.classifier)
-            LOG.info("Cognition brain=%s classifier=%s memory=%s profile=%s extensions=%s connection=ready objective_id=%s objective=%s",
+            LOG.info("Cognition brain=%s classifier=%s memory=%s profile=%s extensions=%s connection=ready objective_id=%s",
                 args.brain, config.classifier.provider, "sqlite" if config.memory.enabled else "disabled",
                 config.memory.profile or "session-isolated", sorted(session.negotiated.available),
-                pending_objective.id, pending_objective.text)
+                pending_objective.id)
             if args.operation == "match":
                 from .episodes import MatchEpisodeController, MatchPolicyRegistry, EpisodeLimits
                 objective_runner = MatchEpisodeController(session, SkillRegistry.discover(), brain_factory,

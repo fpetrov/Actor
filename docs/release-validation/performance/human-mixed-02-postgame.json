@@ -1,0 +1,87 @@
+{
+  "case_category": "human_and_three_codex_clients",
+  "identity_checks": {
+    "actor_owned_regular_file": true,
+    "bounded_file_size_and_no_follow": true,
+    "exact_requested_completed_match": true
+  },
+  "limits": [
+    "The instrumented window starts at server Social session initialization and ends at GameOver; it includes Waiting and all later phases, not Exploration alone.",
+    "The latest 1024 samples determine p95; maximum spans all recorded samples. FixedUpdate count is not the NGO network tick rate.",
+    "CPU time covers the measured server window, relative to one logical core. Peak working set is a process-lifetime high-water mark.",
+    "Social payload counts include only instrumented Social protobuf payload bytes; they exclude RPC/NGO/UDP headers, transforms, spawns and Standard communication. Their scoped byte rate is not full UDP throughput.",
+    "No packet capture, packet rate, RTT, physical input latency, native client FPS or displayed frame timing was measured.",
+    "Recipients are independently anonymized and sorted by aggregate counts; no actor/session/role/life state or identity mapping is published.",
+    "Performance instrumentation does not itself prove native-input or model gameplay acceptance."
+  ],
+  "private_source_sha256": "b541af4ab96bfe2a08bfb3f6f38b26fd42ae67e37dc2cbc6c05ba9b67bb43db5",
+  "public_projection": true,
+  "schema": "actor.m8-postgame-server-performance.v1",
+  "server": {
+    "elapsed_seconds": 704.913816661,
+    "mean_observer_pairs": 7.982310856734037,
+    "mean_update_rate": 59.76759002903927,
+    "measurement_scope": "server session initialization through GameOver",
+    "observer_pair_samples": 55910,
+    "payload_scope": "social protobuf payloads only; excludes RPC/NGO/UDP headers, transforms, spawn and Standard communication",
+    "percentile_window": "latest 1024 samples; maximum covers all samples",
+    "physics_ticks": 35245,
+    "physics_ticks_per_second": 49.99901997516054,
+    "refresh_max_ms": 38.2142,
+    "refresh_p95_ms": 3.6041,
+    "refresh_samples": 6867,
+    "server_cpu_percent_one_core": 8.524446333685336,
+    "server_peak_working_set_bytes": 154484736,
+    "server_process_cpu_seconds": 60.089999999999996,
+    "social_payload_recipients": [
+      {
+        "bytes": 1766782,
+        "mean_social_payload_bytes_per_second": 2506.380153489973,
+        "mean_visible_actors": 1.153985234292602,
+        "messages": 8472,
+        "recipient": "recipient01",
+        "visible_actor_max": 3,
+        "visible_actor_total": 7659,
+        "world_samples": 6637
+      },
+      {
+        "bytes": 1792921,
+        "mean_social_payload_bytes_per_second": 2543.4612822495337,
+        "mean_visible_actors": 0.8656918902622852,
+        "messages": 8472,
+        "recipient": "recipient02",
+        "visible_actor_max": 3,
+        "visible_actor_total": 5743,
+        "world_samples": 6634
+      },
+      {
+        "bytes": 1817449,
+        "mean_social_payload_bytes_per_second": 2578.2570252471432,
+        "mean_visible_actors": 0.7931034482758621,
+        "messages": 8716,
+        "recipient": "recipient03",
+        "visible_actor_max": 3,
+        "visible_actor_total": 5474,
+        "world_samples": 6902
+      },
+      {
+        "bytes": 2075433,
+        "mean_social_payload_bytes_per_second": 2944.236516501841,
+        "mean_visible_actors": 1.3685003767897512,
+        "messages": 8479,
+        "recipient": "recipient04",
+        "visible_actor_max": 3,
+        "visible_actor_total": 9080,
+        "world_samples": 6635
+      }
+    ],
+    "social_payload_total_bytes": 7452585,
+    "social_payload_total_messages": 34139,
+    "update_frames": 42131,
+    "visibility_max_ms": 11.5315,
+    "visibility_p95_ms": 0.2232,
+    "visibility_samples": 55910
+  },
+  "source_schema": "actor.social-performance.v1",
+  "status": "measured"
+}

@@ -1,0 +1,15 @@
+{
+  "schema": "actor.native-dead-keyboard.v1",
+  "before": {
+    "x": -0.8640800714492798,
+    "y": -1.399999976158142
+  },
+  "after": {
+    "x": -0.8640800714492798,
+    "y": -1.399999976158142
+  },
+  "life": "Dead",
+  "held_key": "Up",
+  "held_ms": 1200,
+  "scope": "Actual native key input with own client pose before/after; no hidden actor data."
+}

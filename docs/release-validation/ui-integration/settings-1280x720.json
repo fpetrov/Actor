@@ -1,0 +1,20 @@
+{
+    "schema": "actor.rendered-ui.v2",
+    "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+    "phase": "Lobby",
+    "screenshot": "004-Lobby-1280x720.png",
+    "unity": "6000.6.4f1",
+    "graphics": "Metal",
+    "version": "0.9.0",
+    "width": 1280,
+    "height": 720,
+    "frames": 1917,
+    "focused_frames": 1917,
+    "sample_seconds": 16.092191325034946,
+    "mean_fps": 119.12610043466762,
+    "frame_ms_p50": 8.33521131426096,
+    "frame_ms_p95": 8.799206465482712,
+    "frame_ms_p99": 9.941496886312962,
+    "headless": false,
+    "fullscreen": false
+}

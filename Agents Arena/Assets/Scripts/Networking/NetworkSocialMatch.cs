@@ -12,7 +12,7 @@ namespace Actor.Networking
     [RequireComponent(typeof(NetworkCharacter))]
     public sealed class NetworkSocialMatch : NetworkBehaviour
     {
-        private enum Kind : byte { Match, Own, World, Meeting, Tasks, Emergency, Postgame, ActionResult, MatchChanged, OwnStateChanged, MeetingChanged, EmergencyChanged, VisibleAttack, VisibleActivity, MatchEnded }
+        private enum Kind : byte { Match, Own, World, Meeting, Tasks, Emergency, Postgame, ActionResult, MatchChanged, OwnStateChanged, MeetingChanged, EmergencyChanged, VisibleAttack, VisibleActivity, MatchEnded, Waiting, TaskWork, KillPresentation }
         public SocialMatchStateObservation State { get; private set; } = new();
         public SocialOwnStateObservation Own { get; private set; } = new();
         public SocialVisibleWorldObservation World { get; private set; } = new();
@@ -20,15 +20,18 @@ namespace Actor.Networking
         public SocialOwnTasksObservation Tasks { get; private set; } = new();
         public SocialEmergencyStateObservation Emergency { get; private set; } = new();
         public SocialPostgameObservation Postgame { get; private set; } = new();
+        public SocialWaitingPlayersObservation Waiting { get; private set; } = new();
+        public SocialOwnTaskWorkObservation TaskWork { get; private set; } = new();
         public static NetworkSocialMatch LocalOwner { get; private set; }
         public event Action<IMessage> PermittedEvent;
         public string LastAction { get; private set; } = "";
         public string ActiveWorkId { get; private set; } = "";
+        internal bool ExplicitLeaveAcknowledged { get; private set; }
         private double tokens = 8, tokenAt, nextUnavailable, worldReceivedAt = -100;
         private readonly System.Collections.Generic.Dictionary<Kind, byte[]> sent = new();
         public string Self => GetComponent<NetworkCharacter>().AuthoritativeActorId;
         public bool Human => IsSpawned && IsClient && IsOwner && GetComponent<PlayerInputSource>().isActiveAndEnabled;
-        public bool HasOwnState => IsSpawned && Own.ActorId == Self && Own.MatchId.Length > 0
+        public bool HasOwnState => IsSpawned && Own.ActorId == Self && Own.MatchId.Length > 0 && Own.ConnectionGeneration > 0
             && State.MatchId == Own.MatchId && World.MatchId == Own.MatchId && World.RecipientActorId == Self;
         public SocialVisibleWorldObservation CaptureWorld()
         {
@@ -38,7 +41,8 @@ namespace Actor.Networking
         }
         public bool CanMove => HasOwnState && Own.CanMove;
         public SocialActionContext Context() => new() { MatchId = State.MatchId, PhaseRevision = State.PhaseRevision,
-            CorrelationId = Guid.NewGuid().ToString("N"), ExpiresAtUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 5000 };
+            CorrelationId = Guid.NewGuid().ToString("N"), ExpiresAtUnixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + 5000,
+            ConnectionGeneration = Own.ConnectionGeneration };
         public override void OnNetworkSpawn()
         { if (IsClient && IsOwner) LocalOwner = this; tokenAt = Time.realtimeSinceStartupAsDouble; }
         public bool Submit(IMessage command)
@@ -55,7 +59,8 @@ namespace Actor.Networking
                 SocialWorkTaskCommand _ => 6,
                 SocialSabotageCommand _ => 7,
                 SocialRepairEmergencyCommand _ => 8,
-                SocialCancelWorkCommand _ => 9, _ => (byte)0
+                SocialCancelWorkCommand _ => 9,
+                SocialTaskStepCommand _ => 10, _ => (byte)0
             };
             if (kind == 0) return false;
             RequestRpc(kind, command.ToByteArray()); return true;
@@ -83,7 +88,8 @@ namespace Actor.Networking
                     6 => SocialWorkTaskCommand.Parser.ParseFrom(bytes),
                     7 => SocialSabotageCommand.Parser.ParseFrom(bytes),
                     8 => SocialRepairEmergencyCommand.Parser.ParseFrom(bytes),
-                    9 => SocialCancelWorkCommand.Parser.ParseFrom(bytes), _ => null
+                    9 => SocialCancelWorkCommand.Parser.ParseFrom(bytes),
+                    10 => SocialTaskStepCommand.Parser.ParseFrom(bytes), _ => null
                 };
                 if (command != null) SocialMatchSession.Current?.Request(Self, command);
             }
@@ -98,7 +104,25 @@ namespace Actor.Networking
         }
         [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Owner)]
         private void ControlUnavailableRpc(RpcParams rpc = default)
-        { if (Approved(rpc)) SocialMatchSession.Current?.ControlUnavailable(Self); }
+        { if (Approved(rpc)) { NetworkManager.GetComponent<MatchSession>().RevokeResume(Self); SocialMatchSession.Current?.ControlUnavailable(Self); } }
+        internal void SendResumeCredential(string credential, long expires, ulong generation)
+        { if (IsServer && IsSpawned) ReceiveResumeCredentialRpc(credential, expires, generation); }
+        [Rpc(SendTo.Owner, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Server)]
+        private void ReceiveResumeCredentialRpc(string credential, long expires, ulong generation)
+        { if (IsClient && IsOwner) NetworkManager.GetComponent<MatchSession>().AcceptResumeCredential(Self, generation, credential, expires); }
+        internal void AcknowledgeResumeCredential(ulong generation) => ResumeCredentialAckRpc(generation);
+        [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Owner)]
+        private void ResumeCredentialAckRpc(ulong generation, RpcParams rpc = default)
+        { if (Approved(rpc)) NetworkManager.GetComponent<MatchSession>().AcknowledgeResume(Self, generation, OwnerClientId); }
+        internal void RequestExplicitLeave() { ExplicitLeaveAcknowledged = false; ExplicitLeaveRpc(); }
+        [Rpc(SendTo.Server, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Owner)]
+        private void ExplicitLeaveRpc(RpcParams rpc = default)
+        {
+            if (!Approved(rpc)) return;
+            NetworkManager.GetComponent<MatchSession>().RevokeResume(Self); SocialMatchSession.Current?.ControlUnavailable(Self); ExplicitLeaveAckRpc();
+        }
+        [Rpc(SendTo.Owner, Delivery = RpcDelivery.Reliable, InvokePermission = RpcInvokePermission.Server)]
+        private void ExplicitLeaveAckRpc() { if (IsClient && IsOwner) ExplicitLeaveAcknowledged = true; }
         internal void Deliver(IMessage payload)
         {
             if (!IsServer || !SocialVisibilitySystem.IsSocial(NetworkManager)) return;
@@ -111,6 +135,8 @@ namespace Actor.Networking
                 SocialOwnTasksObservation _ => Kind.Tasks,
                 SocialEmergencyStateObservation _ => Kind.Emergency,
                 SocialPostgameObservation _ => Kind.Postgame,
+                SocialWaitingPlayersObservation _ => Kind.Waiting,
+                SocialOwnTaskWorkObservation _ => Kind.TaskWork,
                 SocialActionResultEvent _ => Kind.ActionResult,
                 SocialMatchChangedEvent _ => Kind.MatchChanged,
                 SocialOwnStateChangedEvent _ => Kind.OwnStateChanged,
@@ -118,7 +144,8 @@ namespace Actor.Networking
                 SocialEmergencyChangedEvent _ => Kind.EmergencyChanged,
                 SocialVisibleAttackEvent _ => Kind.VisibleAttack,
                 SocialVisibleActivityEvent _ => Kind.VisibleActivity,
-                SocialMatchEndedEvent _ => Kind.MatchEnded, _ => throw new ArgumentException("Unsupported social delivery.")
+                SocialMatchEndedEvent _ => Kind.MatchEnded,
+                SocialKillPresentationEvent _ => Kind.KillPresentation, _ => throw new ArgumentException("Unsupported social delivery.")
             };
             byte[] bytes = payload.ToByteArray();
             if (bytes.Length > 65536) throw new InvalidOperationException("Bounded social payload exceeded.");
@@ -128,7 +155,7 @@ namespace Actor.Networking
                 SocialMatchMetrics.RecordWorld(Self, ((SocialVisibleWorldObservation)payload).Actors.Count);
                 ReceiveWorldRpc(bytes); return;
             }
-            if ((int)kind <= (int)Kind.Postgame)
+            if ((int)kind <= (int)Kind.Postgame || kind is Kind.Waiting or Kind.TaskWork)
             {
                 if (sent.TryGetValue(kind, out var previous) && previous.AsSpan().SequenceEqual(bytes)) return;
                 sent[kind] = bytes;
@@ -167,6 +194,8 @@ namespace Actor.Networking
                     Kind.Tasks => SocialOwnTasksObservation.Parser.ParseFrom(bytes),
                     Kind.Emergency => SocialEmergencyStateObservation.Parser.ParseFrom(bytes),
                     Kind.Postgame => SocialPostgameObservation.Parser.ParseFrom(bytes),
+                    Kind.Waiting => SocialWaitingPlayersObservation.Parser.ParseFrom(bytes),
+                    Kind.TaskWork => SocialOwnTaskWorkObservation.Parser.ParseFrom(bytes),
                     Kind.ActionResult => SocialActionResultEvent.Parser.ParseFrom(bytes),
                     Kind.MatchChanged => SocialMatchChangedEvent.Parser.ParseFrom(bytes),
                     Kind.OwnStateChanged => SocialOwnStateChangedEvent.Parser.ParseFrom(bytes),
@@ -174,7 +203,8 @@ namespace Actor.Networking
                     Kind.EmergencyChanged => SocialEmergencyChangedEvent.Parser.ParseFrom(bytes),
                     Kind.VisibleAttack => SocialVisibleAttackEvent.Parser.ParseFrom(bytes),
                     Kind.VisibleActivity => SocialVisibleActivityEvent.Parser.ParseFrom(bytes),
-                    Kind.MatchEnded => SocialMatchEndedEvent.Parser.ParseFrom(bytes), _ => null
+                    Kind.MatchEnded => SocialMatchEndedEvent.Parser.ParseFrom(bytes),
+                    Kind.KillPresentation => SocialKillPresentationEvent.Parser.ParseFrom(bytes), _ => null
                 };
             }
             catch (InvalidProtocolBufferException) { return; }
@@ -189,6 +219,8 @@ namespace Actor.Networking
                 SocialOwnTasksObservation x => x.MatchId,
                 SocialEmergencyStateObservation x => x.MatchId,
                 SocialPostgameObservation x => x.MatchId,
+                SocialWaitingPlayersObservation x => x.MatchId,
+                SocialOwnTaskWorkObservation x => x.MatchId,
                 SocialActionResultEvent x => x.MatchId,
                 SocialMatchChangedEvent x => x.State?.MatchId,
                 SocialOwnStateChangedEvent x => x.State?.MatchId,
@@ -196,7 +228,8 @@ namespace Actor.Networking
                 SocialEmergencyChangedEvent x => x.State?.MatchId,
                 SocialVisibleAttackEvent x => x.MatchId,
                 SocialVisibleActivityEvent x => x.MatchId,
-                SocialMatchEndedEvent x => x.Summary?.MatchId, _ => ""
+                SocialMatchEndedEvent x => x.Summary?.MatchId,
+                SocialKillPresentationEvent x => x.MatchId, _ => ""
             };
             if (match != NetworkManager.GetComponent<MatchSession>().MatchId) return;
             switch (value)
@@ -208,6 +241,8 @@ namespace Actor.Networking
                 case SocialOwnTasksObservation x: if (x.RecipientActorId != Self) return; Tasks = x; return;
                 case SocialEmergencyStateObservation x: Emergency = x; return;
                 case SocialPostgameObservation x: Postgame = x; return;
+                case SocialWaitingPlayersObservation x: if (x.RecipientActorId != Self) return; Waiting = x; return;
+                case SocialOwnTaskWorkObservation x: if (x.RecipientActorId != Self) return; TaskWork = x; return;
                 case SocialActionResultEvent x:
                     LastAction = x.ReasonCode;
                     if (x.WorkId == ActiveWorkId && (!x.Accepted || x.Completed)) ActiveWorkId = "";
@@ -219,6 +254,7 @@ namespace Actor.Networking
                 case SocialEmergencyChangedEvent x: Emergency = x.State; break;
                 case SocialVisibleAttackEvent x: if (x.ObserverActorId != Self) return; break;
                 case SocialVisibleActivityEvent x: if (x.ObserverActorId != Self) return; break;
+                case SocialKillPresentationEvent x: if (x.RecipientActorId != Self) return; break;
                 case SocialMatchEndedEvent x: Postgame = new SocialPostgameObservation { MatchId = match, Summary = x.Summary }; break;
             }
             PermittedEvent?.Invoke(value);
@@ -226,7 +262,7 @@ namespace Actor.Networking
         public override void OnNetworkDespawn()
         {
             if (LocalOwner == this) LocalOwner = null;
-            State = new(); Own = new(); World = new(); Meeting = new(); Tasks = new(); Emergency = new(); Postgame = new(); sent.Clear(); worldReceivedAt = -100; ActiveWorkId = "";
+            State = new(); Own = new(); World = new(); Meeting = new(); Tasks = new(); Emergency = new(); Postgame = new(); Waiting = new(); TaskWork = new(); sent.Clear(); worldReceivedAt = -100; ActiveWorkId = "";
         }
     }
 }

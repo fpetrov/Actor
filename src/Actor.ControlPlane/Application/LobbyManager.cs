@@ -10,8 +10,11 @@ namespace Actor.ControlPlane.Application;
 
 public sealed record CreateLobbyRequest(string DisplayName, int? MaxPlayers, string GameVersion, string ProtocolVersion, string GameMode = "Sandbox");
 public sealed record JoinLobbyRequest(string PlayerName, string GameVersion, string ProtocolVersion);
-public sealed record JoinLobbyResult(string LobbyId, string RoomCode, string Host, int Port, string JoinTicket, DateTimeOffset ExpiresAt, string GameMode = "Sandbox");
-public sealed record GameServerHeartbeat(int CurrentPlayers, string ServerState, string[]? ConnectedNonces);
+public sealed record ResumeLobbyRequest(string ResumeCredential, string GameVersion, string ProtocolVersion)
+{ public override string ToString() => "ResumeLobbyRequest [private]"; }
+public sealed record JoinLobbyResult(string LobbyId, string RoomCode, string Host, int Port, string JoinTicket, DateTimeOffset ExpiresAt, string GameMode = "Sandbox", bool Resume = false)
+{ public override string ToString() => "JoinLobbyResult [private]"; }
+public sealed record GameServerHeartbeat(int CurrentPlayers, string ServerState, string[]? ConnectedNonces, string[]? ConnectedActorIds = null);
 public sealed record LobbySummary(string LobbyId, string RoomCode, string DisplayName, string Status, DateTimeOffset CreatedAt,
     string GameVersion, string ProtocolVersion, string PublicHost, int GamePort, int CurrentPlayers, int MaxPlayers, string GameMode = "Sandbox")
 {
@@ -28,6 +31,7 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
         public Lobby Lobby { get; } = lobby;
         public byte[] Secret { get; } = secret;
         public Dictionary<string, DateTimeOffset> PendingTickets { get; } = new();
+        public HashSet<string> ConnectedActors { get; } = new(StringComparer.Ordinal);
     }
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly Dictionary<Guid, Match> matches = new();
@@ -81,6 +85,7 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
         await gate.WaitAsync(cancellationToken);
         try
         {
+            ThrowIfDraining();
             if (matches.Count >= settings.MaxConcurrentGameServers)
                 throw new LobbyException(409, "server_capacity_reached", "All game server slots are occupied.");
             DateTimeOffset now = clock.GetUtcNow();
@@ -127,6 +132,7 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
         await gate.WaitAsync(cancellationToken);
         try
         {
+            ThrowIfDraining();
             Match match = Find(roomCode);
             Lobby lobby = match.Lobby;
             if (lobby.Status == LobbyStatus.Starting) throw new LobbyException(409, "server_starting", "The game server is starting.");
@@ -142,12 +148,56 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
             {
                 lobbyId = lobby.LobbyId.ToString("N"), playerName = name, gameVersion = lobby.GameVersion,
                 protocolVersion = lobby.ProtocolVersion, expiresAt = expires.ToUnixTimeSeconds(), nonce = newNonce
+                , actorId = Guid.NewGuid().ToString("N"), connectionGeneration = 1
             };
             string ticket = tickets.Issue(claims, match.Secret);
             match.PendingTickets.Add(newNonce, expires);
             return new JoinLobbyResult(claims.lobbyId, lobby.RoomCode, lobby.PublicHost, lobby.GamePort, ticket, expires, lobby.GameMode);
         }
         finally { gate.Release(); }
+    }
+
+    public async Task<JoinLobbyResult> ResumeAsync(string roomCode, ResumeLobbyRequest request, CancellationToken cancellationToken)
+    {
+        ValidateVersions(request.GameVersion, request.ProtocolVersion);
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            ThrowIfDraining();
+            Match match = Find(roomCode); Lobby lobby = match.Lobby;
+            if (lobby.GameMode != "SocialDeduction" || lobby.Status is not (LobbyStatus.Ready or LobbyStatus.Running))
+                throw new LobbyException(409, "resume_unavailable", "This match cannot be resumed.");
+            var now = clock.GetUtcNow(); ResumeCredentialClaims? credential = null;
+            if (ResumeCredentialCodec.TryVerify(request.ResumeCredential, match.Secret, out string payload))
+            {
+                try { credential = System.Text.Json.JsonSerializer.Deserialize<ResumeCredentialClaims>(payload,
+                    new System.Text.Json.JsonSerializerOptions { IncludeFields = true }); }
+                catch (System.Text.Json.JsonException) { }
+            }
+            if (!ResumeCredentialCodec.ClaimsMatch(credential!, lobby.LobbyId.ToString("N"), lobby.GameVersion, lobby.ProtocolVersion, now.ToUnixTimeSeconds()))
+                throw new LobbyException(401, "invalid_resume", "The resume credential is unavailable or expired.");
+            if (match.ConnectedActors.Contains(credential!.actorId))
+                throw new LobbyException(409, "resume_busy", "The previous connection is still closing. Please retry shortly.");
+            DateTimeOffset expires = now.AddSeconds(Math.Min(settings.JoinTicketLifetime, credential.expiresAt - now.ToUnixTimeSeconds()));
+            var claims = new JoinTicketClaims { lobbyId = lobby.LobbyId.ToString("N"), playerName = credential.playerName,
+                actorId = credential.actorId, gameVersion = lobby.GameVersion, protocolVersion = lobby.ProtocolVersion,
+                nonce = Guid.NewGuid().ToString("N"), expiresAt = expires.ToUnixTimeSeconds(), resume = true,
+                resumeGeneration = credential.generation, resumeCredentialId = credential.credentialId };
+            // The existing actor owns the reservation. Resume ticket retries
+            // must not consume new capacity or extend a bearer lifetime.
+            return new JoinLobbyResult(claims.lobbyId, lobby.RoomCode, lobby.PublicHost, lobby.GamePort,
+                tickets.Issue(claims, match.Secret), expires, lobby.GameMode, true);
+        }
+        finally { gate.Release(); }
+    }
+
+    private void ThrowIfDraining()
+    {
+        // Checked INSIDE the same mutation gate as allocation/admission. A final
+        // ListAsync zero-room guard waits for earlier allocations; requests
+        // queued behind it cannot reopen admission after the deployment check.
+        if (File.Exists(settings.AdmissionDrainFile))
+            throw new LobbyException(503, "admission_draining", "The station is updating. Please retry shortly.");
     }
 
     public async Task ReadyAsync(Guid lobbyId, string? secret, CancellationToken cancellationToken)
@@ -176,6 +226,10 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
             Lobby lobby = match.Lobby;
             if (heartbeat.CurrentPlayers < 0 || heartbeat.CurrentPlayers > lobby.MaxPlayers)
                 throw new LobbyException(400, "invalid_player_count", "Invalid player count.");
+            if (heartbeat.ConnectedActorIds != null && (heartbeat.ConnectedActorIds.Length > lobby.MaxPlayers
+                || heartbeat.ConnectedActorIds.Any(id => !Guid.TryParseExact(id, "N", out _))
+                || heartbeat.ConnectedActorIds.Distinct().Count() != heartbeat.ConnectedActorIds.Length))
+                throw new LobbyException(400, "invalid_actor_bindings", "Invalid connected actor bindings.");
             if (lobby.Status is not (LobbyStatus.Ready or LobbyStatus.Running)) return;
             if (lobby.CurrentPlayers != heartbeat.CurrentPlayers)
                 logger.LogInformation("PlayerCountChanged {LobbyId} {CurrentPlayers}", lobbyId, heartbeat.CurrentPlayers);
@@ -185,6 +239,8 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
             if (lobby.CurrentPlayers > 0) lobby.HasHadPlayers = true;
             lobby.Status = lobby.CurrentPlayers > 0 ? LobbyStatus.Running : LobbyStatus.Ready;
             foreach (string nonce in heartbeat.ConnectedNonces ?? []) match.PendingTickets.Remove(nonce);
+            match.ConnectedActors.Clear();
+            foreach (string actor in heartbeat.ConnectedActorIds ?? []) match.ConnectedActors.Add(actor);
             await repository.SaveAsync(lobby, cancellationToken);
         }
         finally { gate.Release(); }

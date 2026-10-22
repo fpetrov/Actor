@@ -1,0 +1,30 @@
+{
+  "documents_before": 417,
+  "documents_after": 417,
+  "canonical_graph_equal": true,
+  "changed_document_count": 0,
+  "transforms_and_colliders_equal": true,
+  "changed_geometry_count": 0,
+  "transforms_before": 132,
+  "transforms_after": 132,
+  "colliders_before": 78,
+  "colliders_after": 78,
+  "schema": "actor.scene-semantic-audit.v1",
+  "scene": "Agents Arena/Assets/Scenes/MainHallMultiplayer.unity",
+  "reference_commit": "4a4cbbd46d8dcc8624699e405755a7d457138648",
+  "raw_scene_changed": true,
+  "baseline_sha256": "45b039af524643b4e014221c970c3d16020d1c7ad6596fc9aa77157b4fcb3329",
+  "current_sha256": "bd20847e0d9372748b735e431d53dd0bc1b5621fc3073ad2427147a035cf27bc",
+  "unchanged_assets": {
+    "Agents Arena/Assets/Scenes/MainHall.unity": {
+      "byte_identical": true,
+      "sha256": "0d0c96df8032101c34355a149173e6cf3ca8984c45c3d664178855b2deedf18d"
+    },
+    "Agents Arena/Assets/World/SocialLayout.json": {
+      "byte_identical": true,
+      "sha256": "39a6f0a017a2acc678a36e20314bd116862f8ac1ed1c14c6592faec4323dd681"
+    }
+  },
+  "method": "Resolve local file IDs to unique hierarchy/component identities; disambiguate duplicate names by exact transform; ignore sibling/root order and YAML trailing whitespace; preserve external GUIDs and all component values.",
+  "passed": true
+}

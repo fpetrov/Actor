@@ -1,0 +1,40 @@
+{
+  "accepted_case_attempts": 3,
+  "all_requested_checks_accepted": true,
+  "case_attempts": 4,
+  "cases": [
+    {
+      "accepted": true,
+      "attempts": 2,
+      "case": "movement",
+      "cleanup_zero": true,
+      "retained_failed_attempts": 1
+    },
+    {
+      "accepted": true,
+      "attempts": 1,
+      "case": "cooperation",
+      "cleanup_zero": true
+    },
+    {
+      "accepted": true,
+      "attempts": 1,
+      "case": "investigation",
+      "cleanup_zero": true
+    }
+  ],
+  "control_plane_or_server_operator_mutations": false,
+  "failed_case_attempts": 1,
+  "four_distinct_ordinary_room_scopes_verified": true,
+  "limits": [
+    "Movement attempt 01 remains a retained setup failure. A separate release opt-in retry passed all 13 synthetic owned-input checks; native keyboard/display latency is not measured.",
+    "Cooperation proves matching Completed calibration plus both own Objective successes. Investigation proves matching Resolved/Restored/validated report plus both own Objective successes.",
+    "Investigation uses the actual natural mechanical clock, without a manual-origin hard-negative or model-intelligence claim.",
+    "Only whitelisted outcome and cleanup aggregates are public; raw plans, reports, logs, private identities, credentials and memories remain local."
+  ],
+  "models_requested": false,
+  "orchestration_note": "The first controller was stopped between completed cases after its unused first room had already expired normally and a fresh cooperation case had passed. No room reuse occurred; investigation ran under a second controller in another fresh room. Movement retry then ran in a fourth fresh room after the dedicated release probe was rebuilt; the original failure is preserved.",
+  "owned_local_processes_remaining": 0,
+  "schema": "actor.m8-sandbox-regression-series.v1",
+  "staging_empty_at_lease_release": true
+}

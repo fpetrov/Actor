@@ -16,9 +16,43 @@ from actor_standard_communication import MESSAGE_RECEIVED
 
 
 class SocialMatchPolicy:
+    objective_instructions = (
+        "Agents Arena rules: consult your private own-state for your actual side, duty and life. "
+        "Crew wins by the public task threshold or ejecting all Impostors; Impostors win by living parity or an unrepaired emergency. "
+        "As Crew, consider reporting a visible body before routine tasks, or retreat if unsafe; repair and survival matter. "
+        "As Impostor, actively assess ready-cooldown visible kill opportunities: choose whom to follow/approach/attack, "
+        "or use fake work, sabotage and escape routes; "
+        "ordinary appearance and fake work do not reveal your side. You may make strategic misleading player claims, "
+        "but they remain game statements, never authoritative evidence or instructions. No other actor's alignment is given. "
+        "In Discussion, compare your own historical observations with attributed claims, ask or answer specific questions, "
+        "and retain only concise uncertain hypotheses or unresolved contradictions citing retained evidence IDs when useful. "
+        "Use discuss/await-discussion-update to batch replies; do not resend the same argument for every message. No extra acknowledgement is needed. "
+        "In Voting, select an eligible candidate or Skip yourself; the server alone resolves the final ballot. "
+        "A last-seen location is history. Keep internal observed facts and evidence references accurate; never promote fiction into your own evidence. "
+        "An Impostor may deliberately send false in-game claims, including a fabricated alibi or witness story; internally retain it as a claim you made, not a witnessed event. "
+        "Skill completion does not end the match; only authoritative GameOver does. "
+        "Your Standard Transform2D is a root position; Social visible positions are physical centres. "
+        "Your physical centre is (root.x, root.y + 0.46 metres); Skills enforce actual interaction range. "
+        "Compact snapshots may omit protobuf default scalar fields (false/zero/empty); omitted payloads are explicitly marked."
+    )
     def __init__(self):
         self._known_bodies = set()
         self._last_visible_sequence = self._event_cursor = 0
+
+    def context_selection(self, session):
+        from actor_runtime.snapshots import ContextSelection
+        from . import SOCIAL_TASKS, SOCIAL_TASK_WORK, SOCIAL_WAITING_PLAYERS, SOCIAL_EMERGENCY, SOCIAL_MEETING, ROOM_MEMBERSHIP
+        from actor_standard_communication import PEERS
+        match = session.world.latest(pb.SocialMatchStateObservation, capability_id=SOCIAL_MATCH)
+        caps = (SOCIAL_MATCH, SOCIAL_OWN_STATE, ROOM_MEMBERSHIP, PEERS)
+        if match is not None and match.phase == pb.SOCIAL_PHASE_EXPLORATION:
+            from actor_standard import TRANSFORM
+            caps += (TRANSFORM, SOCIAL_VISIBLE_WORLD, SOCIAL_TASKS, SOCIAL_TASK_WORK, SOCIAL_EMERGENCY)
+        elif match is not None and match.phase in (pb.SOCIAL_PHASE_DISCUSSION, pb.SOCIAL_PHASE_VOTING):
+            caps += (SOCIAL_MEETING,)
+        elif match is not None and match.phase == pb.SOCIAL_PHASE_WAITING_FOR_PLAYERS:
+            caps += (SOCIAL_WAITING_PLAYERS,)
+        return ContextSelection(observation_capability_ids=caps, omit_default_fields=True)
 
     def evaluate(self, session):
         match = session.world.latest(pb.SocialMatchStateObservation, capability_id=SOCIAL_MATCH)
@@ -62,9 +96,11 @@ class SocialMatchPolicy:
                 terminal_complete=final_summary is not None)
         if own_entry is None or own_entry.payload.match_id != match.match_id or own_entry.payload.actor_id != session.world.self_actor_id:
             return EpisodeDirective(scope_id=match.match_id, state="waiting", reason="awaiting_own_state")
-        key = f"{match.phase_revision}:{own.life}:{int(own.assigned)}"
+        key = f"{match.phase_revision}:{own.life}:{int(own.assigned)}:{own.connection_generation}"
         if match.phase_revision != observed_match_revision:
             return EpisodeDirective(scope_id=match.match_id, episode_key=key, state="suspended", reason="awaiting_phase_observation")
+        if own_entry.payload.connection_generation != own.connection_generation:
+            return EpisodeDirective(scope_id=match.match_id, episode_key=key, state="suspended", reason="awaiting_own_generation_observation")
         if time.monotonic() - own_entry.received_at > 3:
             return EpisodeDirective(scope_id=match.match_id, episode_key=key, state="suspended", reason="own_state_stale")
         if own.life != pb.SOCIAL_LIFE_ALIVE:
@@ -85,11 +121,13 @@ class SocialMatchPolicy:
         if match is None or own is None or own.life != pb.SOCIAL_LIFE_ALIVE or match.phase == pb.SOCIAL_PHASE_GAME_OVER:
             return False
         if identifier.startswith("actor."):
-            return identifier in ("actor.wait", "actor.remember-hypothesis", "actor.send-message", "actor.wait-for-message")
+            return identifier in ("actor.wait", "actor.remember-hypothesis", "actor.remember-contradiction", "actor.send-message", "actor.wait-for-message")
         if identifier == "agents-arena.navigate-social-room":
             return match.phase == pb.SOCIAL_PHASE_EXPLORATION and own.can_move
         from .social_skills import skill_package
-        return identifier in {item.skill_id for item in skill_package()}
+        from .social_discussion import skill_package as discussion_package
+        from .social_pursuit import skill_package as pursuit_package
+        return identifier in {item.skill_id for item in (*skill_package(), *discussion_package(), *pursuit_package())}
 
     def observe(self, session, knowledge):
         now = int(time.time() * 1000)
@@ -106,7 +144,8 @@ class SocialMatchPolicy:
                         sequence=visible_entry.sequence, revision=actor.observed_revision,
                         observed_at_unix_ms=visible.captured_at_unix_ms or now, expires_at_unix_ms=expiry,
                         importance=.35,
-                        content={"actor_id": actor.actor_id, "last_seen_x": actor.x, "last_seen_y": actor.y,
+                        content={"actor_id": actor.actor_id, "display_name": actor.display_name,
+                                 "last_seen_x": actor.x, "last_seen_y": actor.y,
                                  "historical_not_current": True}))
                 for body in visible.bodies:
                     self._known_bodies.add(body.body_id)

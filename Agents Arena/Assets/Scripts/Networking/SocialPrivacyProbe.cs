@@ -119,6 +119,11 @@ namespace Actor.Networking
                 case SocialOwnStateObservation own: CheckRecipient(own.ActorId,adapter); break;
                 case SocialOwnStateChangedEvent own: CheckRecipient(own.State?.ActorId??"",adapter); break;
                 case SocialOwnTasksObservation tasks: CheckRecipient(tasks.RecipientActorId,adapter); break;
+                case SocialWaitingPlayersObservation waiting:
+                    CheckRecipient(waiting.RecipientActorId,adapter);
+                    if(waiting.Players.Count>6)++report.probeFailures;
+                    break;
+                case SocialOwnTaskWorkObservation work: CheckRecipient(work.RecipientActorId,adapter); break;
                 case SocialVisibleWorldObservation world:
                     CheckRecipient(world.RecipientActorId,adapter);
                     if(adapter)++report.adapterWorldFrames;else {++report.incomingWorldFrames;lastOwnWorldAt=Time.realtimeSinceStartupAsDouble;}
@@ -144,6 +149,12 @@ namespace Actor.Networking
                         &&!PermittedPoint(new Vector2(attack.X,attack.Y),.35f))++report.farForbiddenAttackEvents;
                     break;
                 case SocialVisibleActivityEvent activity: CheckRecipient(activity.ObserverActorId,adapter); break;
+                case SocialKillPresentationEvent presentation:
+                    CheckRecipient(presentation.RecipientActorId,adapter);
+                    if(presentation.VictimActorId==self&&presentation.AttackerActorId.Length>0)++report.probeFailures;
+                    if(FarReady()&&presentation.ServerUnixMs>=farEnteredUnixMs
+                        &&!PermittedPoint(new Vector2(presentation.X,presentation.Y),.35f))++report.farForbiddenAttackEvents;
+                    break;
                 case SocialPostgameObservation postgame:
                     if(postgame.Summary!=null&&!TerminalObserved())++report.earlyPostgamePayloads;
                     break;
@@ -248,7 +259,8 @@ namespace Actor.Networking
                 {
                     ++report.foreignComponentSamples;
                     if(social.Own.Assigned||social.Own.Alignment!=SocialAlignment.Unspecified||social.Own.Duty!=CrewRole.Unspecified
-                        ||social.Own.Life!=SocialLife.Unspecified||social.Own.ActorId.Length>0||social.Tasks.Tasks.Count>0||social.Tasks.RecipientActorId.Length>0)
+                        ||social.Own.Life!=SocialLife.Unspecified||social.Own.ActorId.Length>0||social.Tasks.Tasks.Count>0||social.Tasks.RecipientActorId.Length>0
+                        ||social.TaskWork.RecipientActorId.Length>0||social.TaskWork.WorkId.Length>0||social.Waiting.RecipientActorId.Length>0||social.Waiting.Players.Count>0)
                         ++report.foreignPrivateComponentSamples;
                     AuditLegacy(target.gameObject);
                     var character=target.GetComponent<NetworkCharacter>();

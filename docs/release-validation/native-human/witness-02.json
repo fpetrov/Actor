@@ -1,0 +1,80 @@
+{
+  "schema": "actor.native-human-fixture.v1",
+  "attempt": "witness-02",
+  "native_window": [
+    800,
+    600
+  ],
+  "fixture_participants": 5,
+  "human_participants": 1,
+  "provider": "deterministic ordinary fixture peers; no model",
+  "terminal": {
+    "reason": "match_timeout",
+    "duration_ms": 900000,
+    "team_winner": null
+  },
+  "actual_own_server_replay": [
+    {
+      "kind": "task",
+      "elapsed_ms": 430377,
+      "outcome": "completed",
+      "terminal": "main-panel"
+    },
+    {
+      "kind": "task",
+      "elapsed_ms": 585493,
+      "outcome": "completed",
+      "terminal": "security-records"
+    },
+    {
+      "kind": "task",
+      "elapsed_ms": 795465,
+      "outcome": "completed",
+      "terminal": "engineering-systems"
+    },
+    {
+      "kind": "meeting",
+      "elapsed_ms": 864076,
+      "outcome": "body_report",
+      "terminal": null
+    }
+  ],
+  "coverage": {
+    "four_room_keyboard_traversal": true,
+    "circuit_calibration_completed": true,
+    "sensor_comparison_completed": true,
+    "maintenance_hold_completed": true,
+    "body_report": true,
+    "human_ballot": false,
+    "six_cosmetic_skins_observed": true,
+    "folded_corpse_observed": true,
+    "chat_utf8_512_client_received": true,
+    "chat_utf8_514_send_disabled": true,
+    "ime_composition": false,
+    "audibility": false
+  },
+  "supervisor": {
+    "schema": "actor.native-fixture-supervisor.v1",
+    "status": "terminal_before_assignment",
+    "fixture_participants": 5,
+    "scenario": "witness",
+    "completed_fixture_reports": 2,
+    "process_isolation": {},
+    "owned_fixture_cleanup": true,
+    "human_acceptance": "separate actual native screenshots/input and own client proof; not inferred here"
+  },
+  "rematch": {
+    "schema": "actor.native-rematch-proof.v1",
+    "same_client_process": true,
+    "old_terminal_captured_before_leave": true,
+    "new_actor": true,
+    "new_match": true,
+    "phase": "WaitingForPlayers",
+    "own_assignment_cleared": true,
+    "summary_cleared": true,
+    "screenshot": "rematch-800.jpg",
+    "scope": "Actual New expedition native click, ordinary server-capacity retry, same running client; no forced world state.",
+    "own_assignment_ui": "Waiting \u00b7 Your assignment is private \u00b7 waiting"
+  },
+  "scope": "Native Human actions and exact own postgame replay. Fixture supervisor terminal proof incomplete (2/5 reports); do not classify fixture as accepted Codex/mixed run or erase failed setup attempt01."
+}

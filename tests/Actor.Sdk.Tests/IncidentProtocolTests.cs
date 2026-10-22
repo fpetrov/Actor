@@ -33,7 +33,7 @@ public sealed class IncidentProtocolTests
         Assert.Equal(1u, manifest.ProtocolVersion.Major);
         var extension = Assert.Single(manifest.Extensions);
         Assert.Equal("agents-arena", extension.ExtensionId);
-        Assert.Equal("0.5.0", extension.ExtensionVersion);
+        Assert.Equal("0.6.0", extension.ExtensionVersion);
         Assert.Equal(AgentsArenaExtensionPackage.SchemaHash, extension.SchemaHash);
         Assert.Equal(4, manifest.Capabilities.Count);
         var inspect = Assert.Single(manifest.Capabilities, c => c.Kind == CapabilityKind.Command);

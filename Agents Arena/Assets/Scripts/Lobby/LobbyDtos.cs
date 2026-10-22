@@ -12,6 +12,7 @@ namespace Actor.Lobby
     {
         public string lobbyId, roomCode, host, joinTicket, expiresAt, gameMode;
         public int port;
+        public bool resume;
     }
     [Serializable] public sealed class CreateLobbyBody
     {
@@ -19,6 +20,8 @@ namespace Actor.Lobby
         public int maxPlayers = 8;
     }
     [Serializable] public sealed class JoinLobbyBody { public string playerName, gameVersion, protocolVersion; }
+    [Serializable] public sealed class ResumeLobbyBody
+    { public string resumeCredential, gameVersion, protocolVersion; public override string ToString() => "ResumeLobbyBody [private]"; }
     [Serializable] public sealed class ApiError { public string code, message; }
     [Serializable] public sealed class ErrorEnvelope { public ApiError error; }
 }

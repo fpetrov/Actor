@@ -1,0 +1,68 @@
+{
+  "schema": "actor.release-series-conditions.v1",
+  "source": "actual_runtime_cognitive_config_scalars",
+  "scope": "snapshot; rerun after the final report replaces an active participation report",
+  "attempts": [
+    {
+      "attempt": "codex-01",
+      "reported_participant_configs": 4,
+      "all_four_agree": true,
+      "brain_usage_limit_tokens": 500000,
+      "brain_usage_warning_tokens": 100000,
+      "participation_limit_tokens": 3000000
+    },
+    {
+      "attempt": "codex-02",
+      "reported_participant_configs": 0,
+      "all_four_agree": false
+    },
+    {
+      "attempt": "codex-03",
+      "reported_participant_configs": 0,
+      "all_four_agree": false
+    },
+    {
+      "attempt": "codex-04",
+      "reported_participant_configs": 4,
+      "all_four_agree": true,
+      "brain_usage_limit_tokens": 500000,
+      "brain_usage_warning_tokens": 100000,
+      "participation_limit_tokens": 3000000
+    },
+    {
+      "attempt": "codex-05",
+      "reported_participant_configs": 4,
+      "all_four_agree": true,
+      "brain_usage_limit_tokens": 500000,
+      "brain_usage_warning_tokens": 100000,
+      "participation_limit_tokens": 3000000
+    },
+    {
+      "attempt": "codex-06",
+      "reported_participant_configs": 4,
+      "all_four_agree": true,
+      "brain_usage_limit_tokens": 500000,
+      "brain_usage_warning_tokens": 100000,
+      "participation_limit_tokens": 3000000
+    },
+    {
+      "attempt": "codex-07",
+      "reported_participant_configs": 4,
+      "all_four_agree": true,
+      "brain_usage_limit_tokens": 500000,
+      "brain_usage_warning_tokens": 100000,
+      "participation_limit_tokens": 3000000
+    }
+  ],
+  "planned_change": {
+    "brain_usage_limit_tokens": 1500000,
+    "brain_usage_warning_tokens": 800000,
+    "participation_limit_tokens": 3000000,
+    "effective_start_attempt": null,
+    "basis": "operator plan, not a proven applied configuration"
+  },
+  "limitations": [
+    "Changed budgets or Runtime instrumentation define a new experimental condition; do not pool outcomes as an apples-to-apples model win rate.",
+    "Source Runtime failure codes and closed-episode metadata can differ across attempts; unknown historic provider details are not reconstructed."
+  ]
+}

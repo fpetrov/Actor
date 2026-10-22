@@ -1,4 +1,8 @@
 using UnityEngine;
+#if !UNITY_SERVER
+using Actor.UI;
+using UnityEngine.UIElements;
+#endif
 
 namespace Actor.World
 {
@@ -7,20 +11,25 @@ namespace Actor.World
     {
         [System.Serializable] public struct Marker { public Vector2 world; public string text; }
         [SerializeField] private Marker[] markers;
-        public void Configure(Marker[] values) => markers = values;
-#if UNITY_EDITOR || !UNITY_SERVER
-        private GUIStyle style;
-        private void OnGUI()
+        public void Configure(Marker[] values){markers=values;Clear();}
+#if !UNITY_SERVER
+        private Label[] labels;
+        private void LateUpdate()
         {
-            if (Camera.main == null || markers == null) return;
-            if (style == null) style = new GUIStyle(GUI.skin.box) { fontSize = 13, alignment = TextAnchor.MiddleCenter };
-            foreach (var marker in markers)
+            if(!Application.isPlaying||markers==null)return;var layer=ArenaUI.WorldLayer;if(layer==null)return;
+            if(labels==null||labels.Length!=markers.Length){Clear();labels=new Label[markers.Length];}
+            for(int i=0;i<markers.Length;++i)
             {
-                Vector3 screen = Camera.main.WorldToScreenPoint(marker.world);
-                if (screen.z <= 0 || screen.x < 0 || screen.x > Screen.width || screen.y < 0 || screen.y > Screen.height) continue;
-                GUI.Label(new Rect(screen.x - 78,Screen.height-screen.y-11,156,22),marker.text,style);
+                labels[i]??=new Label{enableRichText=false,pickingMode=PickingMode.Ignore};
+                if(labels[i].parent!=layer)layer.Add(labels[i]);labels[i].text=markers[i].text;
+                ArenaUI.WorldLabel(labels[i],markers[i].world,156);
             }
         }
+        private void Clear(){if(labels!=null)foreach(var label in labels)label?.RemoveFromHierarchy();labels=null;}
+        private void OnDisable()=>Clear();
+        private void OnDestroy()=>Clear();
+#else
+        private void Clear() { }
 #endif
     }
 }

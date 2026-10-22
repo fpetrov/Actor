@@ -13,6 +13,8 @@ from typing import Protocol
 
 from actor_runtime.errors import ActorError
 from .schema import decision_schema
+from .catalog import compact_catalog
+from .stream import ToolObservation, collect_turn
 
 SDK_VERSION = "0.162.1"
 BASE_INSTRUCTIONS = (
@@ -33,7 +35,8 @@ class CodexReply:
     status: str
     duration_seconds: float
     usage: dict | None
-    tool_calls: int = 0
+    tool_calls: int | None = None
+    tool_count_scope: str = "unavailable"
 
 
 class CodexAdapter(Protocol):
@@ -48,7 +51,7 @@ def sdk_module():
     try:
         sdk = importlib.import_module("openai_codex")
     except ImportError as error:
-        raise ActorError("codex_not_installed", "Install the optional Runtime extra: pip install -e 'runtime[codex]'") from error
+        raise ActorError("codex_not_installed", "Install the verified Runtime wheel with its [codex] extra, or use pip install -e 'runtime[codex]' from a source checkout") from error
     if version("openai-codex") != SDK_VERSION:
         raise ActorError("codex_version_mismatch", "ACTOR requires the pinned official Codex SDK",
                          {"required_version": SDK_VERSION})
@@ -82,10 +85,14 @@ class OfficialCodexAdapter:
         self.turn_ids = set()
         self.interrupted_turn_ids = set()
         self.completed_turns = {}
+        self._turn_tools = {}
+        self._primary_handles = {}
+        self._last_decision_tools = {}
         self._decision_task = None
         self._decision_done = asyncio.Event()
         self.authentication_mode = None
         self.closed = False
+        self.catalog_metrics = {}
 
     async def start_episode(self, objective: str, catalog: list[dict]):
         if self.thread is not None:
@@ -97,10 +104,18 @@ class OfficialCodexAdapter:
         self.turn_ids.clear()
         self.interrupted_turn_ids.clear()
         self.completed_turns.clear()
+        self._turn_tools.clear()
+        self._primary_handles.clear()
+        self._last_decision_tools.clear()
         self.usage_totals.clear()
         self._decision_epoch = 0
         self._decision_interrupt_requested = False
         self.schema = decision_schema(catalog)
+        compact = compact_catalog(catalog)
+        trusted_catalog = json.dumps(compact, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        self.catalog_metrics = {"source_bytes": len(json.dumps(catalog, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":")).encode()), "trusted_bytes": len(trusted_catalog.encode()),
+            "unique_schemas": len(compact["schemas"])}
         try:
             self.workspace = tempfile.TemporaryDirectory(prefix="actor-codex-")
             self.client = self.sdk.AsyncCodex(configuration(self.sdk, self.workspace.name))
@@ -113,7 +128,7 @@ class OfficialCodexAdapter:
                 sandbox=self.sdk.Sandbox.read_only, approval_mode=self.sdk.ApprovalMode.deny_all,
                 ephemeral=True, model=self.model, base_instructions=BASE_INSTRUCTIONS,
                 developer_instructions="Available Runtime Skill catalog (trusted installed metadata):\n" +
-                    json.dumps(catalog, ensure_ascii=False, sort_keys=True, separators=(",", ":")))
+                    trusted_catalog)
             self.objective = objective
             self.interrupt_requested = False
             self.closed = False
@@ -126,20 +141,33 @@ class OfficialCodexAdapter:
             raise asyncio.CancelledError
         handle = await self.thread.turn(input, output_schema=self.schema)
         self.handles.append(handle)
+        if handle.id not in self.turn_ids:
+            self._primary_handles[handle.id] = id(handle)
+            self._turn_tools[handle.id] = ToolObservation()
         self.turn_ids.add(handle.id)
         if self.interrupt_requested or self._decision_interrupt_requested:
             await self._interrupt_handles()
             try:
                 async with asyncio.timeout(2):
-                    results = await asyncio.gather(*(item.run() for item in self.handles))
-                    for result in results:
-                        self._record_result(result)
+                    await asyncio.gather(*(self._run_handle(item) for item in self.handles))
             except Exception:
                 pass
             raise asyncio.CancelledError
         return handle
 
+    async def _run_handle(self, handle):
+        observation = self._turn_tools[handle.id]
+        result = await collect_turn(self.sdk, handle, observation,
+            primary=self._primary_handles[handle.id] == id(handle))
+        self._record_result(result)
+        return result
+
+    def last_decision_tool_telemetry(self):
+        return dict(self._last_decision_tools)
+
     async def decide(self, external_json: str) -> CodexReply:
+        if self._decision_task is None:
+            self._last_decision_tools = {}
         if self.thread is None or self.closed:
             raise ActorError("codex_episode_unavailable", "Codex episode has not started")
         if self._decision_task is not None:
@@ -160,9 +188,7 @@ class OfficialCodexAdapter:
             await self._start_turn(external)
             # ExternalMessage joins a regular active turn. Consume each public handle's
             # subscription even when both refer to the same turn; count unique IDs only.
-            results = await asyncio.gather(*(handle.run() for handle in self.handles))
-            for item in results:
-                self._record_result(item)
+            results = await asyncio.gather(*(self._run_handle(handle) for handle in self.handles))
             result = results[-1]
             status = str(getattr(result.status, "value", result.status))
             if self.interrupt_requested or self._decision_interrupt_requested or epoch != self._decision_epoch:
@@ -176,11 +202,10 @@ class OfficialCodexAdapter:
                 usage = {name: {key: value for key, value in usage.get(name, {}).items()
                                 if key in ("input_tokens", "cached_input_tokens", "output_tokens", "total_tokens")}
                          for name in ("last", "total")}
-            tool_types = {"commandExecution", "fileChange", "mcpToolCall", "dynamicToolCall", "collabAgentToolCall",
-                          "webSearch", "imageView", "imageGeneration", "sleep"}
-            tool_calls = sum(getattr(getattr(item, "root", item), "type", None) in tool_types
-                             for item in getattr(result, "items", ()))
-            return CodexReply(result.final_response, result.id, status, time.monotonic() - started, usage, tool_calls)
+            observed = [self._turn_tools[identity] for identity in {handle.id for handle in self.handles}]
+            tool_calls = sum(item.count for item in observed) if observed and all(item.complete for item in observed) else None
+            return CodexReply(result.final_response, result.id, status, time.monotonic() - started, usage,
+                tool_calls, "sdk_item_lifecycle" if tool_calls is not None else "unavailable")
         except asyncio.CancelledError:
             # A soft preemption must not poison the whole Objective episode.
             # The requester already interrupted the remote turn. Repeating an
@@ -196,6 +221,11 @@ class OfficialCodexAdapter:
             raise ActorError("codex_provider_error", "Codex SDK decision failed",
                              {"exception_type": type(error).__name__}) from error
         finally:
+            observed = [self._turn_tools[identity] for identity in {handle.id for handle in self.handles}]
+            complete = bool(observed) and all(item.complete for item in observed)
+            self._last_decision_tools = {"tool_calls": sum(item.count for item in observed) if complete else None,
+                "tool_count_complete": complete, "tool_count_scope": "sdk_item_lifecycle",
+                "observed_tool_items": sum(item.count for item in observed)}
             self.handles.clear()
             self._decision_task = None
             self._decision_done.set()
@@ -284,4 +314,5 @@ class OfficialCodexAdapter:
                 "completed_turn_statuses": dict(self.completed_turns),
                 "decision_epoch": self._decision_epoch, "decision_active": self._decision_task is not None,
                 "usage_totals": dict(self.usage_totals),
+                "catalog": dict(self.catalog_metrics),
                 "closed": self.closed}

@@ -14,6 +14,20 @@ namespace Actor.Editor
         private static string refreshedCommand;
         static MilestoneEditorCommands() => EditorApplication.update += Poll;
 
+        private static void VerifySavedSocialScene()
+        {
+            var setup = UnityEditor.SceneManagement.EditorSceneManager.GetSceneManagerSetup();
+            for (int i = 0; i < UnityEngine.SceneManagement.SceneManager.sceneCount; ++i)
+                if (UnityEngine.SceneManagement.SceneManager.GetSceneAt(i).isDirty)
+                    throw new InvalidOperationException("Save scene changes before geometry validation.");
+            try
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.OpenScene(MultiplayerBuild.SocialScene);
+                SocialWorldBuilder.ValidateCurrentSocialScene();
+            }
+            finally { UnityEditor.SceneManagement.EditorSceneManager.RestoreSceneManagerSetup(setup); }
+        }
+
         private static void Poll()
         {
             if (EditorApplication.timeSinceStartup < nextPoll || EditorApplication.isCompiling || EditorApplication.isUpdating) return;
@@ -41,8 +55,12 @@ namespace Actor.Editor
                     case "prepare-multiplayer": MultiplayerBuild.Prepare(); break;
                     case "preview-world-passage": EngineeringRoomBuilder.ShowPassagePreview(); break;
                     case "build-client": MultiplayerBuild.BuildMacClient(); break;
+                    case "build-client-qa": MultiplayerBuild.BuildMacQAClient(); break;
+                    case "prepare-release": MultiplayerBuild.PrepareReleaseSettings(); break;
+                    case "prepare-art": AtmosphericArtImporter.Prepare(); break;
+                    case "prepare-ui": RuntimeUIAssets.Prepare(); break;
                     case "build-server": MultiplayerBuild.BuildLinuxDedicatedServer(); break;
-                    case "verify-social-world": SocialWorldBuilder.ValidateCurrentSocialScene(); break;
+                    case "verify-social-world": VerifySavedSocialScene(); break;
                     case "render-social-world": SocialPresentationVerification.RenderWorld(); break;
                     case "verify-visibility": SocialVisibilityVerification.Run(); break;
                     case "verify-prediction": MovementPredictionVerification.Run(); break;

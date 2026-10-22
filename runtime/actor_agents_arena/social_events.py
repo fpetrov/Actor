@@ -9,6 +9,7 @@ from actor_runtime.inbox import EventInboxPolicy
 from . import (SOCIAL_MATCH, SOCIAL_OWN_STATE, SOCIAL_VISIBLE_WORLD, SOCIAL_MEETING, SOCIAL_TASKS,
     SOCIAL_EMERGENCY, SOCIAL_POSTGAME, SOCIAL_ACTION_RESULT, SOCIAL_MATCH_CHANGED, SOCIAL_OWN_STATE_CHANGED,
     SOCIAL_MEETING_CHANGED, SOCIAL_EMERGENCY_CHANGED, SOCIAL_VISIBLE_ATTACK, SOCIAL_VISIBLE_ACTIVITY, SOCIAL_MATCH_ENDED)
+from . import SOCIAL_WAITING_PLAYERS, SOCIAL_TASK_WORK, SOCIAL_KILL_PRESENTATION
 
 
 def _match(session, identity):
@@ -40,6 +41,13 @@ def _accept(session, entry):
                         (item.x, item.y, item.radius, item.approach_x, item.approach_y))):
             return False
     if is_type(pb.SocialOwnTasksObservation) and (not recipient or len(state.tasks) > 5):
+        return False
+    if is_type(pb.SocialWaitingPlayersObservation) and (not recipient or len(state.players) > 6):
+        return False
+    if is_type(pb.SocialOwnTaskWorkObservation) and (not recipient or state.step_count > 8):
+        return False
+    if is_type(pb.SocialKillPresentationEvent) and (not recipient or not state.presentation_id or
+            not math.isfinite(state.x) or not math.isfinite(state.y) or state.server_unix_ms <= 0):
         return False
     if is_type(pb.SocialMeetingObservation) and len(state.participants) > 6:
         return False
@@ -98,6 +106,7 @@ def event_rules():
     for cap, cls in ((SOCIAL_MATCH, pb.SocialMatchStateObservation), (SOCIAL_OWN_STATE, pb.SocialOwnStateObservation),
         (SOCIAL_VISIBLE_WORLD, pb.SocialVisibleWorldObservation), (SOCIAL_MEETING, pb.SocialMeetingObservation),
         (SOCIAL_TASKS, pb.SocialOwnTasksObservation), (SOCIAL_EMERGENCY, pb.SocialEmergencyStateObservation),
+        (SOCIAL_WAITING_PLAYERS, pb.SocialWaitingPlayersObservation), (SOCIAL_TASK_WORK, pb.SocialOwnTaskWorkObservation),
         (SOCIAL_POSTGAME, pb.SocialPostgameObservation)):
         rules.append(EventRule(cap, "agents-arena", type_url(cls), lambda event: EventHints(), routine,
             data_policy="public" if cap == SOCIAL_POSTGAME else "session_only", accept=_accept))
@@ -108,6 +117,9 @@ def event_rules():
             data_policy="public" if cap == SOCIAL_MATCH_ENDED else "session_only", accept=_accept))
     rules.append(EventRule(SOCIAL_VISIBLE_ACTIVITY, "agents-arena", type_url(pb.SocialVisibleActivityEvent),
         lambda event: EventHints(semantic_id=f"{event.entry.payload.match_id}:{event.entry.payload.observed_revision}"),
+        routine, data_policy="session_only", accept=_accept))
+    rules.append(EventRule(SOCIAL_KILL_PRESENTATION, "agents-arena", type_url(pb.SocialKillPresentationEvent),
+        lambda event: EventHints(semantic_id=event.entry.payload.presentation_id),
         routine, data_policy="session_only", accept=_accept))
     # Multi-stage work results share correlation IDs. Retain by wire sequence,
     # never deduplicate the completed result against the earlier acceptance.

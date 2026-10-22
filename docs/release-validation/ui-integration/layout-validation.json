@@ -1,0 +1,88 @@
+{
+  "schema": "actor.m8-native-ui-layout.v1",
+  "passed": true,
+  "scope": "Actual rendered standalone Lobby/Settings/Unicode layout only. QA bundle changes only app metadata/signature; no game-state injection. UI-only short samples, not gameplay FPS or all Human acceptance.",
+  "checks": {
+    "native_windowed": true,
+    "four_sizes": true,
+    "dark_buttons_and_popup_visually_verified": true,
+    "resolution_selection_retained": true,
+    "escape_closes_popup_then_modal": true,
+    "modal_restores_original_button_focus": true,
+    "cyrillic_paste_rendered": true
+  },
+  "ime_composition_tested": false,
+  "gameplay_tested": false,
+  "samples": [
+    {
+      "view": "lobby-theme-800x600",
+      "width": 800,
+      "height": 600,
+      "frames": 116,
+      "focused_frames": 116,
+      "mean_fps": 119.07022503939616,
+      "frame_ms_p95": 9.331037290394306,
+      "fullscreen": false
+    },
+    {
+      "view": "settings-dark-popup-800x600",
+      "width": 800,
+      "height": 600,
+      "frames": 17840,
+      "focused_frames": 6578,
+      "mean_fps": 117.55795926158703,
+      "frame_ms_p95": 9.351331740617752,
+      "fullscreen": false
+    },
+    {
+      "view": "settings-1280x720",
+      "width": 1280,
+      "height": 720,
+      "frames": 1917,
+      "focused_frames": 1917,
+      "mean_fps": 119.12610043466762,
+      "frame_ms_p95": 8.799206465482712,
+      "fullscreen": false
+    },
+    {
+      "view": "lobby-1280x720",
+      "width": 1280,
+      "height": 720,
+      "frames": 1967,
+      "focused_frames": 1967,
+      "mean_fps": 118.94787074343205,
+      "frame_ms_p95": 8.800871670246124,
+      "fullscreen": false
+    },
+    {
+      "view": "lobby-1920x1080",
+      "width": 1920,
+      "height": 1080,
+      "frames": 1689,
+      "focused_frames": 1689,
+      "mean_fps": 115.82127518213817,
+      "frame_ms_p95": 9.63512621819973,
+      "fullscreen": false
+    },
+    {
+      "view": "lobby-ultrawide-2560x1080",
+      "width": 2560,
+      "height": 1080,
+      "frames": 1099,
+      "focused_frames": 1099,
+      "mean_fps": 119.39188687510882,
+      "frame_ms_p95": 8.98183137178421,
+      "fullscreen": false
+    },
+    {
+      "view": "unicode-paste-current-800x600",
+      "width": 800,
+      "height": 600,
+      "frames": 1197,
+      "focused_frames": 1197,
+      "mean_fps": 118.71008151635561,
+      "frame_ms_p95": 9.08925011754036,
+      "fullscreen": false
+    }
+  ]
+}

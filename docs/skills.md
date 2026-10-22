@@ -210,3 +210,9 @@ build/runtime-venv/bin/python -m pytest \
 ```
 
 Tests cover synthetic plugin discovery without Core edits, deterministic catalog and compatibility, duplicate/version/schema rejection, strict input bounds/types/finite values, success/failure/exception/cancellation/deadline/disconnect cleanup, shared ownership and revoked rights. Navigation tests use the actual typed RuntimeSession interfaces, authoritative room events and closed-loop fixture physics; real remote Unity multiplayer evidence is recorded separately.
+
+## M8 social procedures
+
+Arena adds `agents-arena.discuss`, `agents-arena.await-discussion-update` and `agents-arena.follow-visible-actor`; optional generic `actor.remember-contradiction` complements `actor.remember-hypothesis`. Discussion batches attributed replies without model polling or claim verification. Following uses fresh current sight and bounded dated last sight, never hidden positions or automatic attacks. See [social reasoning](social-reasoning.md) for authority/privacy boundaries.
+
+`perform-task` and `fake-task` now consume the own targeted task-work observation for the same maintenance/calibration/sensor mechanics exposed to Human players. Their command lease includes typed task steps and exact owned-work cancellation; a step receipt is not final completion. New Social actions carry the own authenticated `connection_generation`. The new game capabilities register through the Arena manifest and ordinary Skill definitions; Core1.0's wire descriptor remains unchanged.

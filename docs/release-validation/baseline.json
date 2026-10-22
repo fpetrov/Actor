@@ -1,0 +1,35 @@
+{
+  "schema": "actor.m8-baseline.v1",
+  "commit": "4a4cbbd46d8dcc8624699e405755a7d457138648",
+  "python": {
+    "tests": 560,
+    "runtime": 491,
+    "scripts": 69,
+    "subtests": 96,
+    "seconds": 74.58,
+    "failed": 0
+  },
+  "dotnet": {
+    "sdk": 232,
+    "control_plane": 23,
+    "failed": 0
+  },
+  "generated_artifacts": 54,
+  "asset_inventory": {
+    ".png": 9,
+    ".anim": 12,
+    ".controller": 1,
+    ".mat": 2,
+    ".ttf": 0,
+    ".otf": 0,
+    ".wav": 0,
+    ".ogg": 0,
+    ".mp3": 0,
+    ".uss": 0,
+    ".uxml": 0
+  },
+  "unity": "6000.6.4f1",
+  "urp": "17.6.0",
+  "ngo": "2.13.3",
+  "scope": "Baseline automated checks and source inventory before M8 production changes; not Human, model or release acceptance."
+}

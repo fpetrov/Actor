@@ -1,0 +1,44 @@
+{
+  "accepted": false,
+  "category": "human_mixed",
+  "cleanup": {
+    "client_children_reported_alive": 0,
+    "launcher_exit_zero": 3,
+    "owned_cleanup_declared": true,
+    "process_group_measurement": "not_recorded_in_this_attempt",
+    "recorded_client_children": 3,
+    "recorded_launchers": 3,
+    "recorded_process_identities_matched": true,
+    "recorded_processes": 9,
+    "recorded_runtime_children": 3,
+    "remaining_owned_process_groups": null,
+    "remaining_recorded_processes": 0,
+    "runtime_children_reported_alive": 0
+  },
+  "failure_stage": "waiting_before_assignment",
+  "human_evidence": {
+    "frozen_terminal_proof_present": false,
+    "native_operator_proof_present": false,
+    "readiness_or_exploration_proven": false
+  },
+  "limits": [
+    "The supervisor was interrupted after the authoritative waiting timeout and recorded no accepted terminal gameplay snapshots.",
+    "Persisted process identities, child liveness flags and launcher exits establish recorded-process cleanup; this older snapshot did not record process-group liveness.",
+    "No Human readiness, Exploration, report, ballot, task mechanic, model intelligence or successful mixed-gameplay claim is inferred.",
+    "No actor, match, session, process identity, path, credential, private evidence or model content is published."
+  ],
+  "recorded_supervisor_status": "interrupted",
+  "runtime_evidence": {
+    "accepted_actor_session_bindings_verified": 3,
+    "accepted_gameplay_completion_snapshots": 0,
+    "authoritative_completed_waiting_timeout": 3,
+    "distinct_actors_and_sessions": true,
+    "participants": 3,
+    "same_terminal_summary": true,
+    "unassigned_at_terminal": 3
+  },
+  "schema": "actor.m8-human-mixed-failure.v1",
+  "scope": "A retained actual attempt that ended before assignment. Runtime completion of waiting_timeout is not gameplay or native Human acceptance.",
+  "status": "failed",
+  "terminal_reason": "waiting_timeout"
+}

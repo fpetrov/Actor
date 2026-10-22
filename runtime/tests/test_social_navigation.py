@@ -42,6 +42,16 @@ class PhysicalContext:
     def now(self):
         return self.at
 
+    def observation(self, cap, cls):
+        from actor_agents_arena import SOCIAL_MATCH, SOCIAL_OWN_STATE
+        from extensions.agents_arena.v1 import social_pb2 as pb
+        if cap == SOCIAL_MATCH:
+            return pb.SocialMatchStateObservation(match_id="fixture",phase=pb.SOCIAL_PHASE_EXPLORATION,phase_revision=1)
+        if cap == SOCIAL_OWN_STATE:
+            return pb.SocialOwnStateObservation(match_id="fixture",actor_id=self.actor_id,
+                life=pb.SOCIAL_LIFE_ALIVE,can_move=True,connection_generation=1)
+        raise AssertionError(cap)
+
     def observation_entry(self, cap, cls):
         if cap == TRANSFORM:
             payload = Transform2DObservation(x=self.x, y=self.y)

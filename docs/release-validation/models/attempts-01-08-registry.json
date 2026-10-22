@@ -1,0 +1,81 @@
+{
+  "schema": "actor.release-series-input.v1",
+  "inventory_roots": [
+    "codex-series"
+  ],
+  "attempts": [
+    {
+      "attempt_id": "codex-01",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-01/match",
+      "inventory_folder": "codex-series/attempt-01",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "none"
+    },
+    {
+      "attempt_id": "codex-02",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-02/match",
+      "inventory_folder": "codex-series/attempt-02",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "setup"
+    },
+    {
+      "attempt_id": "codex-03",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-03/match",
+      "inventory_folder": "codex-series/attempt-03",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "setup"
+    },
+    {
+      "attempt_id": "codex-04",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-04/match",
+      "inventory_folder": "codex-series/attempt-04",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "runtime"
+    },
+    {
+      "attempt_id": "codex-05",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-05/match",
+      "inventory_folder": "codex-series/attempt-05",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "runtime"
+    },
+    {
+      "attempt_id": "codex-06",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-06/match",
+      "inventory_folder": "codex-series/attempt-06",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "runtime"
+    },
+    {
+      "attempt_id": "codex-07",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-07/match",
+      "inventory_folder": "codex-series/attempt-07",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "runtime"
+    },
+    {
+      "attempt_id": "codex-08",
+      "category": "codex_series",
+      "folder": "codex-series/attempt-08/match",
+      "inventory_folder": "codex-series/attempt-08",
+      "expected_participants": 4,
+      "expected_codex": 4,
+      "failure_stage": "none",
+      "deception_review": "reviews/attempt-08.json"
+    }
+  ]
+}

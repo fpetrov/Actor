@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "actor-native-human-fixture"
+version = "0.1.0"
+description = "Optional ordinary-game peers for native Human UI acceptance"
+requires-python = ">=3.12"
+dependencies = ["actor-runtime==0.7.0"]
+
+[project.entry-points."actor.brains"]
+native-human-witness-fixture = "actor_native_human:witness_brain"
+native-human-victim-fixture = "actor_native_human:victim_brain"
+
+[tool.setuptools]
+packages = ["actor_native_human"]

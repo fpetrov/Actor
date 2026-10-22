@@ -6,6 +6,7 @@ Skill, creates game truth or retains a model thread across episode boundaries.
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 from dataclasses import dataclass
 from importlib import metadata
 import inspect
@@ -18,6 +19,7 @@ from .errors import ActorError
 from .knowledge import WorkingKnowledge
 from .objectives import Objective, ObjectiveRunner, ObjectiveStatus
 from .skills import SkillScheduler
+from .telemetry import provider_telemetry
 
 TRUSTED_MATCH_OBJECTIVE = (
     "Play the match autonomously. Preserve your life, pursue your own side's victory conditions, "
@@ -90,7 +92,7 @@ class MatchPolicyRegistry:
             raise ActorError("match_policy_invalid", "Lifecycle policies need synchronous read-only evaluation")
         if any(getattr(policy, method, None) is not None and (
                 not callable(getattr(policy, method)) or inspect.iscoroutinefunction(getattr(policy, method)))
-                for method in ("observe", "skill_available")):
+                for method in ("observe", "skill_available", "context_selection")):
             raise ActorError("match_policy_invalid", "Optional lifecycle policy hooks must be synchronous")
         return policy
 
@@ -110,9 +112,11 @@ class MatchEpisodeController:
         self._running = False
         self._run_task = None
         self._reports = []
+        self._activity_ids = []
         self._decisions = self._tokens = 0
         self._started = 0
         self._authority_terminal = False
+        self._guidance_omitted = False
         self._cleanup_errors = []
         self._collected = set()
         self._providers = []
@@ -170,6 +174,16 @@ class MatchEpisodeController:
         result = task.result()
         report = self.runner.report()
         self._reports.append(report)
+        # Keep only installed identifiers privately, never arguments, payloads,
+        # provider inputs or outputs. Public reports of a closed episode were
+        # already masked; the terminal participation report can restore these
+        # exact positional identifiers without inferring an action from counts.
+        known = self.registry.definitions
+        self._activity_ids.append({
+            "decisions": tuple(value.get("skill_id") if value.get("skill_id") in known else None
+                               for value in self.runner._decisions),
+            "results": tuple(value.get("skill_id") if value.get("skill_id") in known else None
+                             for value in self.runner._skill_results)})
         self._decisions += result.decision_count
         tokens = report.get("brain", {}).get("usage_totals", {}).get("total_tokens", 0)
         self._tokens += tokens if type(tokens) is int and tokens > 0 else 0
@@ -209,7 +223,18 @@ class MatchEpisodeController:
             raise ActorError("participation_busy", "Use a fresh controller for each participation")
         if getattr(self.session, "participation_controller", None) is not None:
             raise ActorError("participation_busy", "This session already has a participation controller")
-        objective = Objective(text=trusted_objective)
+        # Static installed game mechanics may explain available procedures. Own
+        # state, received claims and dynamic facts still use external snapshots.
+        guidance = getattr(self.policy, "objective_instructions", "")
+        if not isinstance(guidance, str) or len(guidance) > 2048:
+            raise ActorError("match_policy_invalid", "Installed objective guidance must be a bounded static string")
+        episode_text = trusted_objective + ("\n\n" + guidance if guidance else "")
+        if len(episode_text) > 4096:
+            # Preserve a valid full-length user objective rather than truncate
+            # it to make room for optional installed game guidance.
+            episode_text = trusted_objective
+            self._guidance_omitted = bool(guidance)
+        objective = Objective(text=episode_text)
         self.session.participation_controller = self
         availability = getattr(self.policy, "skill_available", None)
         self._old_filter = self.registry.availability_filter
@@ -296,8 +321,9 @@ class MatchEpisodeController:
                         event_router=self.router, config=episode_config, memory=self.memory,
                         max_decisions=min(12, remaining_decisions),
                         manage_router=False, run_finalizers=False, execution_guard=guard,
-                        working_knowledge=self.knowledge)
-                    active = asyncio.create_task(self.runner.run(Objective(text=trusted_objective)))
+                        working_knowledge=self.knowledge,
+                        context_selection=getattr(self.policy, "context_selection", None))
+                    active = asyncio.create_task(self.runner.run(Objective(text=episode_text)))
                 await self._update()
         except asyncio.CancelledError:
             self._cancel.set()
@@ -327,6 +353,8 @@ class MatchEpisodeController:
             status, reason = "failed", "cleanup_failed"
         if self._cancel.is_set():
             status, reason = "cancelled", "participation_cancelled"
+        if not self._authority_terminal:
+            self._activity_ids.clear()
         self.result = ParticipationResult(scope_id=scope_id, status=status, reason=reason,
             authoritative_terminal=self._authority_terminal, outcome=outcome,
             duration_seconds=time.monotonic() - self._started, episodes=len(self._reports),
@@ -345,9 +373,23 @@ class MatchEpisodeController:
     def report(self):
         # Activity identifiers and private provider context are not realtime
         # public telemetry. Full safe episode reports become available postgame.
+        reports = deepcopy(self._reports) if self._authority_terminal else []
+        if self._authority_terminal and len(reports) == len(self._activity_ids):
+            def restore(rows, identifiers):
+                if len(rows) != len(identifiers):
+                    return
+                for row, identity in zip(rows, identifiers):
+                    if identity is not None and row.get("skill_id") == "[private_activity]":
+                        row["skill_id"] = identity
+            for report, identifiers in zip(reports, self._activity_ids):
+                restore(report.get("decisions", []), identifiers["decisions"])
+                restore(report.get("skills", []), identifiers["results"])
+                restore(report.get("result", {}).get("skill_results", []), identifiers["results"])
         return self.session.privacy.public({"participation": self.result.model_dump(mode="json") if self.result else None,
-            "episodes": list(self._reports) if self._authority_terminal else [],
+            "episodes": reports,
             "episode_count": len(self._reports), "decision_count": self._decisions,
+            "provider_telemetry": provider_telemetry(self._reports),
             "measured_tokens": self._tokens, "active_episode": self.runner is not None and self.runner._running,
             "knowledge": self.knowledge.report() if self.knowledge is not None else {},
+            "guidance_omitted": self._guidance_omitted,
             "cleanup_errors": self._cleanup_errors})

@@ -1,0 +1,386 @@
+{
+    "passed": true,
+    "checks": [
+        "root/capsule center mapping remains explicit",
+        "free authored graph node hall blockers=",
+        "free authored graph node hall-east blockers=",
+        "free authored graph node east-door blockers=",
+        "free authored graph node east-hub blockers=",
+        "free authored graph node security-gate blockers=",
+        "free authored graph node security blockers=",
+        "free authored graph node loop-north blockers=",
+        "free authored graph node loop-corner blockers=",
+        "free authored graph node storage-branch blockers=",
+        "free authored graph node loop-return blockers=",
+        "free authored graph node stem-east blockers=",
+        "free authored graph node hall-stem blockers=",
+        "free authored graph node engineering-door blockers=",
+        "free authored graph node engineering blockers=",
+        "free authored graph node storage-gate blockers=",
+        "free authored graph node storage blockers=",
+        "free authored graph node meeting-main-hall blockers=",
+        "free authored graph node task-main-panel blockers=",
+        "free authored graph node life-support-engineering blockers=",
+        "free authored graph node engineering-west blockers=",
+        "free authored graph node task-engineering-systems blockers=",
+        "free authored graph node task-security-records blockers=",
+        "free authored graph node task-storage-inventory blockers=",
+        "free actual capsule edge hall/hall-east offset -0.08 blockers=",
+        "free reverse capsule edge hall-east/hall offset -0.08 blockers=",
+        "free actual capsule edge hall/hall-east offset 0 blockers=",
+        "free reverse capsule edge hall-east/hall offset 0 blockers=",
+        "free actual capsule edge hall/hall-east offset 0.08 blockers=",
+        "free reverse capsule edge hall-east/hall offset 0.08 blockers=",
+        "free actual capsule edge hall-east/east-door offset -0.08 blockers=",
+        "free reverse capsule edge east-door/hall-east offset -0.08 blockers=",
+        "free actual capsule edge hall-east/east-door offset 0 blockers=",
+        "free reverse capsule edge east-door/hall-east offset 0 blockers=",
+        "free actual capsule edge hall-east/east-door offset 0.08 blockers=",
+        "free reverse capsule edge east-door/hall-east offset 0.08 blockers=",
+        "free actual capsule edge east-door/east-hub offset -0.08 blockers=",
+        "free reverse capsule edge east-hub/east-door offset -0.08 blockers=",
+        "free actual capsule edge east-door/east-hub offset 0 blockers=",
+        "free reverse capsule edge east-hub/east-door offset 0 blockers=",
+        "free actual capsule edge east-door/east-hub offset 0.08 blockers=",
+        "free reverse capsule edge east-hub/east-door offset 0.08 blockers=",
+        "free actual capsule edge east-hub/security-gate offset -0.08 blockers=",
+        "free reverse capsule edge security-gate/east-hub offset -0.08 blockers=",
+        "free actual capsule edge east-hub/security-gate offset 0 blockers=",
+        "free reverse capsule edge security-gate/east-hub offset 0 blockers=",
+        "free actual capsule edge east-hub/security-gate offset 0.08 blockers=",
+        "free reverse capsule edge security-gate/east-hub offset 0.08 blockers=",
+        "free actual capsule edge security-gate/security offset -0.08 blockers=",
+        "free reverse capsule edge security/security-gate offset -0.08 blockers=",
+        "free actual capsule edge security-gate/security offset 0 blockers=",
+        "free reverse capsule edge security/security-gate offset 0 blockers=",
+        "free actual capsule edge security-gate/security offset 0.08 blockers=",
+        "free reverse capsule edge security/security-gate offset 0.08 blockers=",
+        "free actual capsule edge east-hub/loop-north offset -0.08 blockers=",
+        "free reverse capsule edge loop-north/east-hub offset -0.08 blockers=",
+        "free actual capsule edge east-hub/loop-north offset 0 blockers=",
+        "free reverse capsule edge loop-north/east-hub offset 0 blockers=",
+        "free actual capsule edge east-hub/loop-north offset 0.08 blockers=",
+        "free reverse capsule edge loop-north/east-hub offset 0.08 blockers=",
+        "free actual capsule edge loop-north/loop-corner offset -0.08 blockers=",
+        "free reverse capsule edge loop-corner/loop-north offset -0.08 blockers=",
+        "free actual capsule edge loop-north/loop-corner offset 0 blockers=",
+        "free reverse capsule edge loop-corner/loop-north offset 0 blockers=",
+        "free actual capsule edge loop-north/loop-corner offset 0.08 blockers=",
+        "free reverse capsule edge loop-corner/loop-north offset 0.08 blockers=",
+        "free actual capsule edge loop-corner/storage-branch offset -0.08 blockers=",
+        "free reverse capsule edge storage-branch/loop-corner offset -0.08 blockers=",
+        "free actual capsule edge loop-corner/storage-branch offset 0 blockers=",
+        "free reverse capsule edge storage-branch/loop-corner offset 0 blockers=",
+        "free actual capsule edge loop-corner/storage-branch offset 0.08 blockers=",
+        "free reverse capsule edge storage-branch/loop-corner offset 0.08 blockers=",
+        "free actual capsule edge storage-branch/loop-return offset -0.08 blockers=",
+        "free reverse capsule edge loop-return/storage-branch offset -0.08 blockers=",
+        "free actual capsule edge storage-branch/loop-return offset 0 blockers=",
+        "free reverse capsule edge loop-return/storage-branch offset 0 blockers=",
+        "free actual capsule edge storage-branch/loop-return offset 0.08 blockers=",
+        "free reverse capsule edge loop-return/storage-branch offset 0.08 blockers=",
+        "free actual capsule edge loop-return/stem-east offset -0.08 blockers=",
+        "free reverse capsule edge stem-east/loop-return offset -0.08 blockers=",
+        "free actual capsule edge loop-return/stem-east offset 0 blockers=",
+        "free reverse capsule edge stem-east/loop-return offset 0 blockers=",
+        "free actual capsule edge loop-return/stem-east offset 0.08 blockers=",
+        "free reverse capsule edge stem-east/loop-return offset 0.08 blockers=",
+        "free actual capsule edge stem-east/hall-stem offset -0.08 blockers=",
+        "free reverse capsule edge hall-stem/stem-east offset -0.08 blockers=",
+        "free actual capsule edge stem-east/hall-stem offset 0 blockers=",
+        "free reverse capsule edge hall-stem/stem-east offset 0 blockers=",
+        "free actual capsule edge stem-east/hall-stem offset 0.08 blockers=",
+        "free reverse capsule edge hall-stem/stem-east offset 0.08 blockers=",
+        "free actual capsule edge hall-stem/hall offset -0.08 blockers=",
+        "free reverse capsule edge hall/hall-stem offset -0.08 blockers=",
+        "free actual capsule edge hall-stem/hall offset 0 blockers=",
+        "free reverse capsule edge hall/hall-stem offset 0 blockers=",
+        "free actual capsule edge hall-stem/hall offset 0.08 blockers=",
+        "free reverse capsule edge hall/hall-stem offset 0.08 blockers=",
+        "free actual capsule edge hall-stem/engineering-door offset -0.08 blockers=",
+        "free reverse capsule edge engineering-door/hall-stem offset -0.08 blockers=",
+        "free actual capsule edge hall-stem/engineering-door offset 0 blockers=",
+        "free reverse capsule edge engineering-door/hall-stem offset 0 blockers=",
+        "free actual capsule edge hall-stem/engineering-door offset 0.08 blockers=",
+        "free reverse capsule edge engineering-door/hall-stem offset 0.08 blockers=",
+        "free actual capsule edge engineering-door/engineering offset -0.08 blockers=",
+        "free reverse capsule edge engineering/engineering-door offset -0.08 blockers=",
+        "free actual capsule edge engineering-door/engineering offset 0 blockers=",
+        "free reverse capsule edge engineering/engineering-door offset 0 blockers=",
+        "free actual capsule edge engineering-door/engineering offset 0.08 blockers=",
+        "free reverse capsule edge engineering/engineering-door offset 0.08 blockers=",
+        "free actual capsule edge storage-branch/storage-gate offset -0.08 blockers=",
+        "free reverse capsule edge storage-gate/storage-branch offset -0.08 blockers=",
+        "free actual capsule edge storage-branch/storage-gate offset 0 blockers=",
+        "free reverse capsule edge storage-gate/storage-branch offset 0 blockers=",
+        "free actual capsule edge storage-branch/storage-gate offset 0.08 blockers=",
+        "free reverse capsule edge storage-gate/storage-branch offset 0.08 blockers=",
+        "free actual capsule edge storage-gate/storage offset -0.08 blockers=",
+        "free reverse capsule edge storage/storage-gate offset -0.08 blockers=",
+        "free actual capsule edge storage-gate/storage offset 0 blockers=",
+        "free reverse capsule edge storage/storage-gate offset 0 blockers=",
+        "free actual capsule edge storage-gate/storage offset 0.08 blockers=",
+        "free reverse capsule edge storage/storage-gate offset 0.08 blockers=",
+        "free actual capsule edge hall/meeting-main-hall offset -0.08 blockers=",
+        "free reverse capsule edge meeting-main-hall/hall offset -0.08 blockers=",
+        "free actual capsule edge hall/meeting-main-hall offset 0 blockers=",
+        "free reverse capsule edge meeting-main-hall/hall offset 0 blockers=",
+        "free actual capsule edge hall/meeting-main-hall offset 0.08 blockers=",
+        "free reverse capsule edge meeting-main-hall/hall offset 0.08 blockers=",
+        "free actual capsule edge hall/task-main-panel offset -0.08 blockers=",
+        "free reverse capsule edge task-main-panel/hall offset -0.08 blockers=",
+        "free actual capsule edge hall/task-main-panel offset 0 blockers=",
+        "free reverse capsule edge task-main-panel/hall offset 0 blockers=",
+        "free actual capsule edge hall/task-main-panel offset 0.08 blockers=",
+        "free reverse capsule edge task-main-panel/hall offset 0.08 blockers=",
+        "free actual capsule edge engineering/life-support-engineering offset -0.08 blockers=",
+        "free reverse capsule edge life-support-engineering/engineering offset -0.08 blockers=",
+        "free actual capsule edge engineering/life-support-engineering offset 0 blockers=",
+        "free reverse capsule edge life-support-engineering/engineering offset 0 blockers=",
+        "free actual capsule edge engineering/life-support-engineering offset 0.08 blockers=",
+        "free reverse capsule edge life-support-engineering/engineering offset 0.08 blockers=",
+        "free actual capsule edge engineering/engineering-west offset -0.08 blockers=",
+        "free reverse capsule edge engineering-west/engineering offset -0.08 blockers=",
+        "free actual capsule edge engineering/engineering-west offset 0 blockers=",
+        "free reverse capsule edge engineering-west/engineering offset 0 blockers=",
+        "free actual capsule edge engineering/engineering-west offset 0.08 blockers=",
+        "free reverse capsule edge engineering-west/engineering offset 0.08 blockers=",
+        "free actual capsule edge engineering-west/task-engineering-systems offset -0.08 blockers=",
+        "free reverse capsule edge task-engineering-systems/engineering-west offset -0.08 blockers=",
+        "free actual capsule edge engineering-west/task-engineering-systems offset 0 blockers=",
+        "free reverse capsule edge task-engineering-systems/engineering-west offset 0 blockers=",
+        "free actual capsule edge engineering-west/task-engineering-systems offset 0.08 blockers=",
+        "free reverse capsule edge task-engineering-systems/engineering-west offset 0.08 blockers=",
+        "free actual capsule edge security/task-security-records offset -0.08 blockers=",
+        "free reverse capsule edge task-security-records/security offset -0.08 blockers=",
+        "free actual capsule edge security/task-security-records offset 0 blockers=",
+        "free reverse capsule edge task-security-records/security offset 0 blockers=",
+        "free actual capsule edge security/task-security-records offset 0.08 blockers=",
+        "free reverse capsule edge task-security-records/security offset 0.08 blockers=",
+        "free actual capsule edge storage/task-storage-inventory offset -0.08 blockers=",
+        "free reverse capsule edge task-storage-inventory/storage offset -0.08 blockers=",
+        "free actual capsule edge storage/task-storage-inventory offset 0 blockers=",
+        "free reverse capsule edge task-storage-inventory/storage offset 0 blockers=",
+        "free actual capsule edge storage/task-storage-inventory offset 0.08 blockers=",
+        "free reverse capsule edge task-storage-inventory/storage offset 0.08 blockers=",
+        "four rooms plus real alternate corridor",
+        "real walls occlude cross-room sight",
+        "open corridor preserves sight",
+        "terminal approach is on swept public graph life-support-engineering",
+        "free terminal approach life-support-engineering",
+        "physical interaction radius life-support-engineering",
+        "actual authoritative terminal room life-support-engineering resolved=engineering",
+        "unobstructed terminal interaction sight life-support-engineering",
+        "terminal approach is on swept public graph task-storage-inventory",
+        "free terminal approach task-storage-inventory",
+        "physical interaction radius task-storage-inventory",
+        "actual authoritative terminal room task-storage-inventory resolved=storage",
+        "unobstructed terminal interaction sight task-storage-inventory",
+        "terminal approach is on swept public graph task-main-panel",
+        "free terminal approach task-main-panel",
+        "physical interaction radius task-main-panel",
+        "actual authoritative terminal room task-main-panel resolved=main-hall",
+        "unobstructed terminal interaction sight task-main-panel",
+        "terminal approach is on swept public graph meeting-main-hall",
+        "free terminal approach meeting-main-hall",
+        "physical interaction radius meeting-main-hall",
+        "actual authoritative terminal room meeting-main-hall resolved=main-hall",
+        "unobstructed terminal interaction sight meeting-main-hall",
+        "terminal approach is on swept public graph task-engineering-systems",
+        "free terminal approach task-engineering-systems",
+        "physical interaction radius task-engineering-systems",
+        "actual authoritative terminal room task-engineering-systems resolved=engineering",
+        "unobstructed terminal interaction sight task-engineering-systems",
+        "terminal approach is on swept public graph task-security-records",
+        "free terminal approach task-security-records",
+        "physical interaction radius task-security-records",
+        "actual authoritative terminal room task-security-records resolved=security",
+        "unobstructed terminal interaction sight task-security-records"
+    ],
+    "nodes": [
+        {
+            "id": "hall",
+            "roomId": "main-hall",
+            "rootPosition": {
+                "x": 0.0,
+                "y": -1.399999976158142
+            }
+        },
+        {
+            "id": "hall-east",
+            "roomId": "main-hall",
+            "rootPosition": {
+                "x": 2.799999952316284,
+                "y": -0.6100000143051147
+            }
+        },
+        {
+            "id": "east-door",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 3.5999999046325684,
+                "y": -0.6100000143051147
+            }
+        },
+        {
+            "id": "east-hub",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 6.440000057220459,
+                "y": -0.6100000143051147
+            }
+        },
+        {
+            "id": "security-gate",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 6.440000057220459,
+                "y": 1.909999966621399
+            }
+        },
+        {
+            "id": "security",
+            "roomId": "security",
+            "rootPosition": {
+                "x": 6.440000057220459,
+                "y": 3.309999942779541
+            }
+        },
+        {
+            "id": "loop-north",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 6.440000057220459,
+                "y": -3.490000009536743
+            }
+        },
+        {
+            "id": "loop-corner",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 5.639999866485596,
+                "y": -4.789999961853027
+            }
+        },
+        {
+            "id": "storage-branch",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 5.340000152587891,
+                "y": -4.789999961853027
+            }
+        },
+        {
+            "id": "loop-return",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 2.0399999618530273,
+                "y": -4.789999961853027
+            }
+        },
+        {
+            "id": "stem-east",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 0.7799999713897705,
+                "y": -4.829999923706055
+            }
+        },
+        {
+            "id": "hall-stem",
+            "roomId": "main-hall",
+            "rootPosition": {
+                "x": 0.0,
+                "y": -4.829999923706055
+            }
+        },
+        {
+            "id": "engineering-door",
+            "roomId": "engineering",
+            "rootPosition": {
+                "x": 0.0,
+                "y": -6.0
+            }
+        },
+        {
+            "id": "engineering",
+            "roomId": "engineering",
+            "rootPosition": {
+                "x": 0.0,
+                "y": -7.0
+            }
+        },
+        {
+            "id": "storage-gate",
+            "roomId": "east-corridor",
+            "rootPosition": {
+                "x": 5.340000152587891,
+                "y": -5.690000057220459
+            }
+        },
+        {
+            "id": "storage",
+            "roomId": "storage",
+            "rootPosition": {
+                "x": 5.340000152587891,
+                "y": -7.289999961853027
+            }
+        },
+        {
+            "id": "meeting-main-hall",
+            "roomId": "main-hall",
+            "rootPosition": {
+                "x": -1.5,
+                "y": -1.899999976158142
+            }
+        },
+        {
+            "id": "task-main-panel",
+            "roomId": "main-hall",
+            "rootPosition": {
+                "x": 1.5,
+                "y": -1.0
+            }
+        },
+        {
+            "id": "life-support-engineering",
+            "roomId": "engineering",
+            "rootPosition": {
+                "x": 0.30000001192092896,
+                "y": -7.150000095367432
+            }
+        },
+        {
+            "id": "engineering-west",
+            "roomId": "engineering",
+            "rootPosition": {
+                "x": -1.2000000476837158,
+                "y": -7.599999904632568
+            }
+        },
+        {
+            "id": "task-engineering-systems",
+            "roomId": "engineering",
+            "rootPosition": {
+                "x": -0.949999988079071,
+                "y": -9.15999984741211
+            }
+        },
+        {
+            "id": "task-security-records",
+            "roomId": "security",
+            "rootPosition": {
+                "x": 6.349999904632568,
+                "y": 3.240000009536743
+            }
+        },
+        {
+            "id": "task-storage-inventory",
+            "roomId": "storage",
+            "rootPosition": {
+                "x": 5.0,
+                "y": -7.760000228881836
+            }
+        }
+    ]
+}

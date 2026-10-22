@@ -33,6 +33,8 @@ for cap, cls in (
     ("meeting-changed", social.SocialMeetingChangedEvent), ("emergency-changed", social.SocialEmergencyChangedEvent),
     ("visible-attack", social.SocialVisibleAttackEvent), ("visible-activity", social.SocialVisibleActivityEvent),
     ("match-ended", social.SocialMatchEndedEvent),
+    ("waiting-players", social.SocialWaitingPlayersObservation), ("task-work", social.SocialOwnTaskWorkObservation),
+    ("kill-presentation", social.SocialKillPresentationEvent),
 ):
     TYPES[PREFIX + cap] = cls
 
@@ -182,6 +184,12 @@ class WireAuditor:
             self.alive = value.state.life == social.SOCIAL_LIFE_ALIVE
         elif isinstance(value, social.SocialOwnTasksObservation):
             self.recipient(value.recipient_actor_id)
+        elif isinstance(value, social.SocialWaitingPlayersObservation):
+            self.recipient(value.recipient_actor_id)
+            if len(value.players) > 6:
+                self.counts["probe_failures"] += 1
+        elif isinstance(value, social.SocialOwnTaskWorkObservation):
+            self.recipient(value.recipient_actor_id)
         elif isinstance(value, social.SocialVisibleWorldObservation):
             self.counts["world_frames"] += 1
             self.recipient(value.recipient_actor_id)
@@ -219,6 +227,13 @@ class WireAuditor:
                 self.counts["far_forbidden_attack_events"] += 1
         elif isinstance(value, social.SocialVisibleActivityEvent):
             self.recipient(value.observer_actor_id)
+        elif isinstance(value, social.SocialKillPresentationEvent):
+            self.recipient(value.recipient_actor_id)
+            if value.victim_actor_id == self.self_actor and value.attacker_actor_id:
+                self.counts["probe_failures"] += 1
+            if (self.far_since is not None and self.clock() - self.far_since >= 1
+                    and value.server_unix_ms >= self.far_started_unix_ms and not self.in_range(value.x, value.y)):
+                self.counts["far_forbidden_attack_events"] += 1
         elif isinstance(value, social.SocialMatchChangedEvent):
             self.phase = value.state.phase
             self.record_match_start(value.state.started_at_unix_ms)

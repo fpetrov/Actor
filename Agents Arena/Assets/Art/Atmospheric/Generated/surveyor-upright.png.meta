@@ -1,0 +1,372 @@
+fileFormatVersion: 2
+guid: 43b78045ae03e47b98813f254c181aed
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5060398995746036155
+    second: surveyor-upright_0
+  - first:
+      213: -2136873455728430640
+    second: surveyor-upright_1
+  - first:
+      213: 3614133911667153234
+    second: surveyor-upright_2
+  - first:
+      213: -3250504400364529647
+    second: surveyor-upright_3
+  - first:
+      213: -7306146330280613162
+    second: surveyor-upright_4
+  - first:
+      213: 5246039290964192293
+    second: surveyor-upright_5
+  - first:
+      213: -6936396150431512731
+    second: surveyor-upright_6
+  - first:
+      213: 5095779420915683978
+    second: surveyor-upright_7
+  - first:
+      213: -8731305657014159538
+    second: surveyor-upright_00
+  - first:
+      213: 3357991059757348517
+    second: surveyor-upright_01
+  - first:
+      213: 8316389024408571648
+    second: surveyor-upright_02
+  - first:
+      213: 2778187249164635476
+    second: surveyor-upright_03
+  - first:
+      213: -6115964538927492667
+    second: surveyor-upright_04
+  - first:
+      213: -6138555420464435170
+    second: surveyor-upright_05
+  - first:
+      213: -7676286436230705466
+    second: surveyor-upright_06
+  - first:
+      213: 6955998662813566075
+    second: surveyor-upright_07
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 320
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationMethod: 0
+  spriteTessellationDetail: -1
+  spriteGeometrySubdivision: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: surveyor-upright_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e47ff40f3cb24d680800000000000000
+      internalID: -8731305657014159538
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-upright_01
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a636c3d31bf99e20800000000000000
+      internalID: 3357991059757348517
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-upright_02
+      rect:
+        serializedVersion: 2
+        x: 480
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00f84dd61cfb96370800000000000000
+      internalID: 8316389024408571648
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-upright_03
+      rect:
+        serializedVersion: 2
+        x: 720
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 45d4af9659a1e8620800000000000000
+      internalID: 2778187249164635476
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-upright_04
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5c15756d7aabf1ba0800000000000000
+      internalID: -6115964538927492667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-upright_05
+      rect:
+        serializedVersion: 2
+        x: 1200
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e103b295e587fcaa0800000000000000
+      internalID: -6138555420464435170
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-upright_06
+      rect:
+        serializedVersion: 2
+        x: 1440
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cec15e282a587590800000000000000
+      internalID: -7676286436230705466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: surveyor-upright_07
+      rect:
+        serializedVersion: 2
+        x: 1680
+        y: 0
+        width: 240
+        height: 350
+      alignment: 9
+      pivot: {x: 0.5, y: 0.022857143}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b74481bedeba88060800000000000000
+      internalID: 6955998662813566075
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      surveyor-upright_0: -5060398995746036155
+      surveyor-upright_00: -8731305657014159538
+      surveyor-upright_01: 3357991059757348517
+      surveyor-upright_02: 8316389024408571648
+      surveyor-upright_03: 2778187249164635476
+      surveyor-upright_04: -6115964538927492667
+      surveyor-upright_05: -6138555420464435170
+      surveyor-upright_06: -7676286436230705466
+      surveyor-upright_07: 6955998662813566075
+      surveyor-upright_1: -2136873455728430640
+      surveyor-upright_2: 3614133911667153234
+      surveyor-upright_3: -3250504400364529647
+      surveyor-upright_4: -7306146330280613162
+      surveyor-upright_5: 5246039290964192293
+      surveyor-upright_6: -6936396150431512731
+      surveyor-upright_7: 5095779420915683978
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

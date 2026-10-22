@@ -1,0 +1,71 @@
+{
+  "concept": "Luminous Station",
+  "original_art": true,
+  "source_images_copied": false,
+  "game_assets_modified": false,
+  "boards": [
+    {
+      "file": "main-hall",
+      "width": 800,
+      "height": 600,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "engineering-security",
+      "width": 1600,
+      "height": 600,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "lobby",
+      "width": 800,
+      "height": 600,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "waiting-room",
+      "width": 800,
+      "height": 600,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "discussion-vote",
+      "width": 1600,
+      "height": 600,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "death-results",
+      "width": 1600,
+      "height": 600,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "character-motion",
+      "width": 1600,
+      "height": 1050,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "style-system",
+      "width": 1600,
+      "height": 1050,
+      "svg": true,
+      "png_rendered": true
+    },
+    {
+      "file": "contact-sheet",
+      "width": 1600,
+      "height": 1730,
+      "svg": true,
+      "png_rendered": true
+    }
+  ]
+}

@@ -45,6 +45,35 @@ def allocation(**changes):
 
 
 class IdentityTests(unittest.TestCase):
+    def test_explicit_m8_profile_is_version_and_path_bound_without_changing_m7_defaults(self):
+        target = guard.expected_identity("ABC123", LOBBY, 200, 100,
+            staging_name="m8-validation", game_version="0.9.0", protocol_version="4")
+        server, control, state = guard.profile_paths(target)
+        self.assertEqual((server, control, str(state)), (
+            "/opt/actor/staging/m8-validation/server/AgentsArenaServer",
+            "/opt/actor/staging/m8-validation/control-plane/Actor.ControlPlane",
+            "/var/lib/actor/m8-validation"))
+        value = evidence()
+        value["server"]["executable"] = value["server"]["command"][0] = server
+        value["control"]["executable"] = control
+        value["lobby"].update(gameVersion="0.9.0", protocolVersion="4")
+        identity = guard.validate(value, target)
+        self.assertEqual(identity["staging_name"], "m8-validation")
+        self.assertEqual(guard.profile_paths(EXPECTED), (guard.SERVER_EXE, guard.CONTROL_EXE, guard.STATE))
+        with self.assertRaises(guard.GuardRejected): guard.validate(value, EXPECTED)
+        with self.assertRaises(guard.GuardRejected): guard.validate(evidence(), target)
+        for key, bad in (("game_version", "0.8.0"), ("protocol_version", "3"), ("staging_name", "m7-visibility")):
+            previous = dict(identity, **{key: bad})
+            with self.assertRaises(guard.GuardRejected): guard.validate_previous(previous, identity, NOW)
+
+    def test_profile_cannot_escape_staging_or_change_types(self):
+        for name in ("../production", "m8-../current", "/opt/actor/current", "production", "m8-a/b", "m8-a\\b", "m8-a\n", True):
+            with self.subTest(name=name), self.assertRaises(guard.GuardRejected):
+                guard.target_profile(name, "0.9.0", "4")
+        for version, protocol in (("0.9.0\n", "4"), ("0.9", "4"), ("0.9.0", 4), ("0.9.0", "04"), (True, "4")):
+            with self.subTest(version=version, protocol=protocol), self.assertRaises(guard.GuardRejected):
+                guard.target_profile("m8-validation", version, protocol)
+
     def test_sandbox_and_social_are_exactly_bound_without_reading_gameplay(self):
         for mode in ("Sandbox", "SocialDeduction"):
             value = evidence(); value["lobby"]["gameMode"] = value["server"]["command"][-1] = mode

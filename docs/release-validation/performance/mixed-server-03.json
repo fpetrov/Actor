@@ -1,0 +1,55 @@
+{
+  "case_category": "human_and_three_codex_clients",
+  "cpu": {
+    "host_logical_cpu_count": 4,
+    "interval_max_percent_one_core": 10.900269723031387,
+    "interval_min_percent_one_core": 8.951491986731156,
+    "mean_percent_one_core": 9.654051245988946,
+    "seconds_delta": 1.46
+  },
+  "duration_seconds": 15.123184690019116,
+  "identity_checks": {
+    "actor_owned_exact_staging_executable": true,
+    "current_control_plane_parent": true,
+    "exact_allocation_and_ready": true,
+    "exact_room_match": true,
+    "exclusive_udp_owner": true,
+    "game_0_9_admission_4": true,
+    "same_process_throughout": true
+  },
+  "limits": [
+    "CPU is process CPU time relative to one logical core, not a full host percentage or engine-tick duration.",
+    "RSS is resident process memory; the peak is a process-lifetime high-water mark.",
+    "No packet capture, packet count, throughput, multiplayer RTT, frame latency or native client FPS was measured.",
+    "UDP queue/drop samples do not establish zero network loss, zero latency or a sustained queue maximum.",
+    "Tick, visibility, refresh and social payload counters were not yet written; none is inferred from CPU or sample timing.",
+    "The sample alone does not establish whole-match performance or Human/model gameplay acceptance."
+  ],
+  "memory": {
+    "process_lifetime_peak_rss_bytes": 153595904,
+    "rss_bytes_end": 153595904,
+    "rss_bytes_sampled_max": 153595904,
+    "rss_bytes_start": 152965120,
+    "threads_end": 27,
+    "threads_start": 27
+  },
+  "operator_confirmed_phase_at_sample_start": "Exploration",
+  "participant_count_end": 4,
+  "participant_count_start": 4,
+  "postgame_metrics": null,
+  "postgame_metrics_available_at_sample_end": false,
+  "private_source_sha256": "9b6f6532ff0c7d6a15644d2be408bfbbba34befc27f5dc4a969262b44af099f4",
+  "public_projection": true,
+  "sample_count": 6,
+  "sampled_at_unix_ms": 1792622877761,
+  "schema": "actor.m8-live-server-performance.v1",
+  "scope": "One actual 15-second dedicated-process sample, with Exploration confirmed by the native operator at its start. No live private player state was read.",
+  "status": "measured",
+  "udp_socket": {
+    "bytes_and_packets": null,
+    "drops_delta": 0,
+    "rx_queue_bytes_sampled_max": 6400,
+    "throughput_status": "not_measured",
+    "tx_queue_bytes_sampled_max": 0
+  }
+}

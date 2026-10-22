@@ -1,0 +1,72 @@
+{
+  "schema": "actor.release-attempt-diagnosis.v1",
+  "attempt": "codex-04",
+  "category": "codex_series",
+  "outcome": "failed",
+  "supervisor_status": "runtime_match_failed",
+  "supervisor_passed": false,
+  "supervisor_exit_code": 1,
+  "authoritative_gameover_proven": false,
+  "underlying_provider_failure_code": null,
+  "participants": [
+    {
+      "participant": "agent-01",
+      "runtime_status": "failed",
+      "reason_code": "brain_failure",
+      "authoritative_terminal": false,
+      "duration_seconds": 197.11413795797853,
+      "decisions": 14,
+      "measured_tokens": 543804,
+      "public_episodes": 0,
+      "official_codex_turns": null,
+      "provider_usage": null,
+      "cost_usd": null
+    },
+    {
+      "participant": "agent-02",
+      "runtime_status": "cancelled",
+      "reason_code": "participation_cancelled",
+      "authoritative_terminal": false,
+      "duration_seconds": 197.3757149159792,
+      "decisions": 13,
+      "measured_tokens": 523173,
+      "public_episodes": 0,
+      "official_codex_turns": null,
+      "provider_usage": null,
+      "cost_usd": null
+    },
+    {
+      "participant": "agent-03",
+      "runtime_status": "cancelled",
+      "reason_code": "participation_cancelled",
+      "authoritative_terminal": false,
+      "duration_seconds": 197.35953304200666,
+      "decisions": 13,
+      "measured_tokens": 531798,
+      "public_episodes": 0,
+      "official_codex_turns": null,
+      "provider_usage": null,
+      "cost_usd": null
+    },
+    {
+      "participant": "agent-04",
+      "runtime_status": "cancelled",
+      "reason_code": "participation_cancelled",
+      "authoritative_terminal": false,
+      "duration_seconds": 197.35743787500542,
+      "decisions": 11,
+      "measured_tokens": 399693,
+      "public_episodes": 0,
+      "official_codex_turns": null,
+      "provider_usage": null,
+      "cost_usd": null
+    }
+  ],
+  "limitations": [
+    "Only whitelisted post-run status/counter fields are projected; no raw errors, prompts, outputs or chat are read into this projection.",
+    "Closed public episodes are empty after nonterminal failure; SDK turns, detailed usage, costs, selected actions and the underlying brain failure cannot be reconstructed.",
+    "A final client GameOver phase alone cannot replace Runtime authoritative-terminal agreement.",
+    "This is an additional failure record after the immutable initial-three snapshot, not another accepted match."
+  ],
+  "known_measured_tokens_subtotal": 1998468
+}

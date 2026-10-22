@@ -102,6 +102,7 @@ namespace Actor.Editor
             { camera.SetWorldBounds(new Vector2(-4.5f,-12.25f),new Vector2(9.6f,6.4f)); camera.GetComponent<Camera>().orthographicSize = 3.4f; }
             ValidateCurrentSocialScene();
             ExportLayout();
+            AtmosphericWorldArt.Apply(root.transform,boundary,floors);
         }
         private static void RemoveLegacyOnlyObjects()
         {

@@ -1,0 +1,36 @@
+{
+  "case": "movement",
+  "checks_expected": 13,
+  "checks_passed": 13,
+  "errors": 0,
+  "executed": true,
+  "input": "existing synthetic owned-input prediction probe; no physical keyboard or rendered-display claim",
+  "limitations": [
+    "Only the named case was run; no model intelligence or full M6 benchmark claim.",
+    "Prediction uses synthetic owned input on a headless client, not native keyboard/display response.",
+    "Raw local reports, plan and logs remain private; this acceptance publishes no authorization, chat, actor/session IDs or credentials."
+  ],
+  "measurement_scope": "Synthetic owned input on a headless non-Development QA client; no native keyboard/display claim.",
+  "metrics": {
+    "authoritativeResponseMs": 584.7921142578125,
+    "idleError": 0.004981279373168945,
+    "maxSpeed": 2.5999999046325684,
+    "releaseResponseMs": 113.91830444335938,
+    "visualResponseMs": 48.02703857421875
+  },
+  "owned_launchers_remaining": 0,
+  "owned_runtime_client_pids_checked": 0,
+  "owned_runtime_clients_remaining": 0,
+  "passed": true,
+  "public_projection": true,
+  "reason": "probe_completed",
+  "schema": "actor.sandbox-regression.v1",
+  "source_acceptance_sha256": "aebe806cd342324dddaa3758537f9263cd752c210f98349bc04c1a74595436b1",
+  "target": {
+    "admission_protocol_version": "4",
+    "game_version": "0.9.0",
+    "mode": "Sandbox",
+    "room_origin": "fresh ordinary public API room"
+  },
+  "warnings": 0
+}

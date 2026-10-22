@@ -39,11 +39,11 @@ public sealed class SocialMatchAuthorityTests
         }
         internal static SocialMatchAuthority.Configuration FastConfig() => new()
         { DiscussionDurationMs = 2000, VotingDurationMs = 2000, KillCooldownMs = 1000,
-            EmergencyCooldownMs = 2000, SabotageCooldownMs = 1000, WorkDurationMs = 1000, SabotageTimeoutMs = 10000 };
+            EmergencyCooldownMs = 2000, SabotageCooldownMs = 1000, WorkDurationMs = 1000, SabotageTimeoutMs = 10000, TaskThreshold = 4 };
         internal string Impostor => Players.Single(p => Authority.OwnState(p.Id).Alignment == SocialAlignment.Impostor).Id;
         internal string[] Crew => Players.Where(p => Authority.OwnState(p.Id).Alignment == SocialAlignment.Crew).Select(p => p.Id).ToArray();
         internal SocialActionContext Context(string? correlation = null) => new()
-        { MatchId = Match, PhaseRevision = Authority.State().PhaseRevision, CorrelationId = correlation ?? "request-" + ++request, ExpiresAtUnixMs = Now + 9000 };
+        { MatchId = Match, PhaseRevision = Authority.State().PhaseRevision, CorrelationId = correlation ?? "request-" + ++request, ExpiresAtUnixMs = Now + 9000, ConnectionGeneration = 1 };
         internal List<SocialMatchAuthority.Delivery> Do(string actor, IMessage command) => Authority.Execute(actor, command, Now);
         internal List<SocialMatchAuthority.Delivery> Refresh() => Authority.Refresh(Players, Now);
         internal List<SocialMatchAuthority.Delivery> Advance(long ms) { Now += ms; return Authority.Tick(Now); }
@@ -597,5 +597,148 @@ public sealed class SocialMatchAuthorityTests
         for (int i = 0; i < 3; i++) { Assert.True(f.Work(f.Crew[0], "task-" + i).Accepted); f.Advance(1000); }
         for (int i = 0; i < 2; i++) { Assert.True(f.Work(f.Crew[1], "task-" + i).Accepted); f.Advance(1000); }
         Assert.Equal("tasks_completed", f.Authority.State().WinReason); Assert.Equal(5u, f.Authority.Summary()!.CrewTasksCompleted);
+    }
+
+    private static SocialActionResultEvent Step(Fixture f, string actor, SocialTaskChoice choice, ulong? revision = null)
+    {
+        var work = f.Authority.TaskWork(actor);
+        return Reply(f.Do(actor, new SocialTaskStepCommand { Context = f.Context(), WorkId = work.WorkId,
+            StepRevision = revision ?? work.StepRevision, Choice = choice }));
+    }
+    [Fact]
+    public void WaitingRosterIsPublicReadinessAndBecomesStableEmptyAfterAssignment()
+    {
+        var f = new Fixture(start: false);
+        var before = f.Authority.Waiting(f.Players[0].Id);
+        Assert.Equal(4, before.Players.Count); Assert.Equal(0u, before.ReadyCount);
+        Assert.All(before.Players, p => Assert.True(p.Connected));
+        f.Ready(f.Players[0].Id);
+        var after = f.Authority.Waiting(f.Players[1].Id);
+        Assert.Equal(1u, after.ReadyCount); Assert.True(after.ServerRevision > before.ServerRevision);
+        foreach (var p in f.Players.Skip(1)) f.Ready(p.Id);
+        var cleared = f.Authority.Waiting(f.Players[0].Id);
+        Assert.Empty(cleared.Players); Assert.Equal(0ul, cleared.ServerRevision);
+        f.Advance(1000); f.Kill(f.Crew[0]);
+        Assert.Equal(cleared, f.Authority.Waiting(f.Players[0].Id));
+    }
+    [Fact]
+    public void CalibrationRequiresThreeTimedExactRevisionChoicesAndRetainsOriginalCompletionCorrelation()
+    {
+        var f = new Fixture(start: false); f.Definitions[0].Mechanic = SocialTaskMechanic.CircuitCalibration;
+        f.Authority.SetWorld(f.Terminals, f.Definitions); f.StartMatch(); string actor = f.Crew[0];
+        var start = f.Work(actor); Assert.True(start.Accepted); Assert.False(start.Completed);
+        Assert.Equal(3u, f.Authority.Tasks(actor).Tasks[0].StepCount);
+        Assert.Equal("task_step_not_ready", Step(f, actor, f.Authority.TaskWork(actor).RequiredChoice).ReasonCode);
+        for (int i = 0; i < 3; i++)
+        {
+            f.Advance(2500); var work = f.Authority.TaskWork(actor);
+            if (i == 1) Assert.Equal("task_step_changed", Step(f, actor, work.RequiredChoice, work.StepRevision - 1).ReasonCode);
+            var deliveries = f.Do(actor, new SocialTaskStepCommand { Context = f.Context(), WorkId = work.WorkId,
+                StepRevision = work.StepRevision, Choice = work.RequiredChoice });
+            var reply = Reply(deliveries); Assert.True(reply.Accepted); Assert.Equal(SocialAction.TaskStep, reply.Action);
+            Assert.Equal(start.WorkId, reply.WorkId); Assert.Equal(i == 2, reply.Completed);
+            if (i < 2) Assert.Equal(0u, f.Authority.State().CrewTasksCompleted);
+            else Assert.Contains(deliveries, d => d.Payload is SocialActionResultEvent result && result.Action == SocialAction.WorkTask
+                && result.CorrelationId == start.CorrelationId && result.Accepted && result.Completed);
+        }
+        Assert.Equal(1u, f.Authority.State().CrewTasksCompleted); Assert.Empty(f.Authority.TaskWork(actor).WorkId);
+    }
+    [Fact]
+    public void ObservationWithholdsSecondSampleAndRequiresActualTrendSelection()
+    {
+        var f = new Fixture(start: false); f.Definitions[0].Mechanic = SocialTaskMechanic.SensorObservation;
+        f.Authority.SetWorld(f.Terminals, f.Definitions); f.StartMatch(); string actor = f.Crew[0];
+        var start = f.Work(actor); var initial = f.Authority.TaskWork(actor);
+        Assert.False(initial.SampleBReady); Assert.Equal(0, initial.SampleB);
+        Assert.Equal("task_step_not_ready", Step(f, actor, SocialTaskChoice.Stable).ReasonCode);
+        f.Advance(8000); var sampled = f.Authority.TaskWork(actor); Assert.True(sampled.SampleBReady);
+        SocialTaskChoice correct = sampled.SampleB > sampled.SampleA ? SocialTaskChoice.Rising
+            : sampled.SampleB < sampled.SampleA ? SocialTaskChoice.Falling : SocialTaskChoice.Stable;
+        var wrong = correct == SocialTaskChoice.Rising ? SocialTaskChoice.Falling : SocialTaskChoice.Rising;
+        Assert.False(Step(f, actor, wrong).Accepted); Assert.Equal(0u, f.Authority.State().CrewTasksCompleted);
+        var completion = f.Do(actor, new SocialTaskStepCommand { Context = f.Context(), WorkId = sampled.WorkId,
+            StepRevision = sampled.StepRevision, Choice = correct });
+        Assert.True(Reply(completion).Completed);
+        Assert.Contains(completion, d => d.Payload is SocialActionResultEvent e && e.CorrelationId == start.CorrelationId && e.Completed && e.Accepted);
+        Assert.Equal(1u, f.Authority.State().CrewTasksCompleted);
+    }
+    [Fact]
+    public void InteractiveTasksTimeoutOrCancelWithoutImplicitCompletionAndFakeWorkNeverCounts()
+    {
+        var f = new Fixture(start: false); f.Definitions[0].Mechanic = SocialTaskMechanic.CircuitCalibration;
+        f.Authority.SetWorld(f.Terminals, f.Definitions); f.StartMatch();
+        string actor = f.Crew[0]; var start = f.Work(actor); var terminal = f.Advance(37500);
+        Assert.Contains(terminal, d => d.Payload is SocialActionResultEvent e && e.CorrelationId == start.CorrelationId
+            && !e.Accepted && !e.Completed && e.ReasonCode == "task_timed_out");
+        Assert.Equal(0u, f.Authority.State().CrewTasksCompleted); Assert.Empty(f.Authority.TaskWork(actor).WorkId);
+        start = f.Work(actor);
+        var cancel = Reply(f.Do(actor, new SocialCancelWorkCommand { Context = f.Context(), WorkId = start.CorrelationId }));
+        Assert.True(cancel.Accepted); Assert.Empty(f.Authority.TaskWork(actor).WorkId);
+        string fake = f.Impostor; Assert.True(f.Work(fake).Accepted);
+        for (int i = 0; i < 3; i++) { f.Advance(2500); Assert.True(Step(f, fake, f.Authority.TaskWork(fake).RequiredChoice).Accepted); }
+        Assert.Equal(0u, f.Authority.State().CrewTasksCompleted); Assert.Empty(f.Authority.TaskWork(fake).WorkId);
+    }
+    [Fact]
+    public void TransportGraceIsStoppedVulnerableAndResumeCannotResurrectVictim()
+    {
+        var f = new Fixture(); string actor = f.Crew[0]; var pose = f.Pose(actor); pose.ResumeEligible = true; f.Refresh();
+        var original = f.Authority.OwnState(actor); f.Players.Remove(pose); f.Refresh();
+        Assert.False(f.Authority.CanMove(actor)); Assert.Equal(SocialLife.Alive, f.Authority.OwnState(actor).Life);
+        Assert.Contains(f.Authority.VisibleWorld(f.Impostor, f.Now).Actors, p => p.ActorId == actor);
+        Assert.True(f.Kill(actor).Accepted); Assert.Equal(SocialLife.Dead, f.Authority.OwnState(actor).Life);
+        pose.AuthenticatedResume = true; pose.ConnectionGeneration = 2; pose.ConnectionEpoch += 100; f.Players.Add(pose); f.Refresh();
+        var resumed = f.Authority.OwnState(actor);
+        Assert.Equal(original.Alignment, resumed.Alignment); Assert.Equal(original.Duty, resumed.Duty);
+        Assert.Equal(SocialLife.Dead, resumed.Life); Assert.False(resumed.CanMove); Assert.Equal(2ul, resumed.ConnectionGeneration);
+        var command = new SocialReadyCommand { Context = f.Context("old-generation"), Ready = true };
+        Assert.Equal("connection_changed", Reply(f.Do(actor, command)).ReasonCode);
+    }
+    [Fact]
+    public void ResumePreservesFinalBallotAndExpiresToIrreversibleForfeit()
+    {
+        var f = new Fixture(); string actor = f.Crew[0]; var pose = f.Pose(actor); pose.ResumeEligible = true; f.Refresh();
+        f.Voting(); Assert.True(f.Vote(actor, skip: true).Accepted); f.Players.Remove(pose); f.Refresh();
+        Assert.True(f.Authority.Meeting(actor).OwnBallotSubmitted);
+        pose.AuthenticatedResume = true; pose.ConnectionGeneration = 2; pose.ConnectionEpoch += 100; f.Players.Add(pose); f.Refresh();
+        Assert.True(f.Authority.Meeting(actor).OwnBallotSubmitted); Assert.True(f.Authority.Meeting(actor).OwnSkip);
+        f.Players.Remove(pose); f.Refresh(); f.Advance(30000);
+        Assert.Equal(SocialLife.Disconnected, f.Authority.OwnState(actor).Life);
+        pose.ConnectionGeneration = 3; pose.ConnectionEpoch += 100; f.Players.Add(pose); f.Refresh();
+        Assert.Equal(SocialLife.Disconnected, f.Authority.OwnState(actor).Life); Assert.False(f.Authority.CanMove(actor));
+    }
+    [Fact]
+    public void KillPresentationAudienceContainsNoForeignRecipientAndVictimNeverGetsAttacker()
+    {
+        var f = new Fixture(); string victim = f.Crew[0], far = f.Crew[1]; f.Pose(far).X = 20; f.Refresh();
+        var deliveries = f.Do(f.Impostor, new SocialKillCommand { Context = f.Context(), TargetActorId = victim });
+        var presentations = deliveries.Where(d => d.Payload is SocialKillPresentationEvent).ToArray();
+        Assert.DoesNotContain(presentations, d => d.Recipient == far);
+        Assert.Contains(presentations, d => d.Recipient == f.Impostor);
+        var own = (SocialKillPresentationEvent)Assert.Single(presentations, d => d.Recipient == victim).Payload;
+        Assert.Empty(own.AttackerActorId); Assert.Equal(victim, own.VictimActorId);
+        Assert.All(presentations, d => Assert.Equal(d.Recipient, ((SocialKillPresentationEvent)d.Payload).RecipientActorId));
+        Assert.Single(presentations.Select(d => ((SocialKillPresentationEvent)d.Payload).PresentationId).Distinct());
+    }
+
+    [Fact]
+    public void FreshGenerationMayStartNewWorkButOldGenerationCannotReplayAnAcceptedCommand()
+    {
+        var f=new Fixture();string actor=f.Crew[0];var pose=f.Pose(actor);pose.ResumeEligible=true;f.Refresh();
+        var oldCommand=new SocialWorkTaskCommand{Context=f.Context("old-work-request"),TaskId="task-0"};
+        Assert.True(Reply(f.Do(actor,oldCommand)).Accepted);f.Players.Remove(pose);f.Refresh();
+        Assert.Empty(f.Authority.TaskWork(actor).WorkId);f.Advance(5000);Assert.Equal(0u,f.Authority.State().CrewTasksCompleted);
+        pose.ConnectionGeneration=2;pose.ConnectionEpoch+=100;pose.AuthenticatedResume=true;f.Players.Add(pose);f.Refresh();
+        Assert.Equal("connection_changed",Reply(f.Do(actor,oldCommand)).ReasonCode);
+        var fresh=f.Context();fresh.ConnectionGeneration=2;
+        Assert.True(Reply(f.Do(actor,new SocialWorkTaskCommand{Context=fresh,TaskId="task-0"})).Accepted);
+        f.Advance(1000);Assert.Equal(1u,f.Authority.State().CrewTasksCompleted);
+    }
+    [Fact]
+    public void ExplicitControlLossCannotUseTransportGraceToComeBackAlive()
+    {
+        var f=new Fixture();string actor=f.Crew[0];var pose=f.Pose(actor);pose.ResumeEligible=true;f.Refresh();
+        f.Authority.ControlUnavailable(actor,f.Now);Assert.Equal(SocialLife.Disconnected,f.Authority.OwnState(actor).Life);
+        f.Players.Remove(pose);f.Refresh();pose.AuthenticatedResume=true;pose.ConnectionGeneration=2;pose.ConnectionEpoch+=100;
+        f.Players.Add(pose);f.Refresh();Assert.Equal(SocialLife.Disconnected,f.Authority.OwnState(actor).Life);Assert.False(f.Authority.CanMove(actor));
     }
 }

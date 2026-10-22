@@ -14,14 +14,17 @@ namespace Actor.Lobby
             => Request("GET", "/api/v1/lobbies", null, success, failure);
         public IEnumerator Get(string code, Action<LobbyInfo> success, Action<string> failure)
             => Request("GET", "/api/v1/lobbies/" + Uri.EscapeDataString(code.Trim().ToUpperInvariant()), null, success, failure);
-        public IEnumerator Create(string displayName, Action<LobbyInfo> success, Action<string> failure, string gameMode = "Sandbox")
+        public IEnumerator Create(string displayName, Action<LobbyInfo> success, Action<string> failure, string gameMode = "Sandbox", Action<string> failureCode = null)
             => Request("POST", "/api/v1/lobbies", JsonUtility.ToJson(new CreateLobbyBody
-            { displayName = displayName, gameMode = gameMode, maxPlayers = gameMode == "SocialDeduction" ? 6 : 8, gameVersion = settings.gameVersion, protocolVersion = settings.protocolVersion }), success, failure);
+            { displayName = displayName, gameMode = gameMode, maxPlayers = gameMode == "SocialDeduction" ? 6 : 8, gameVersion = settings.gameVersion, protocolVersion = settings.protocolVersion }), success, failure, failureCode);
         public IEnumerator Join(string code, string name, Action<JoinInfo> success, Action<string> failure)
             => Request("POST", "/api/v1/lobbies/" + Uri.EscapeDataString(code.Trim().ToUpperInvariant()) + "/join",
                 JsonUtility.ToJson(new JoinLobbyBody { playerName = name.Trim(), gameVersion = settings.gameVersion, protocolVersion = settings.protocolVersion }), success, failure);
+        public IEnumerator Resume(string code, string credential, Action<JoinInfo> success, Action<string> failure, Action<string> failureCode = null)
+            => Request("POST", "/api/v1/lobbies/" + Uri.EscapeDataString(code.Trim().ToUpperInvariant()) + "/resume",
+                JsonUtility.ToJson(new ResumeLobbyBody { resumeCredential = credential, gameVersion = settings.gameVersion, protocolVersion = settings.protocolVersion }), success, failure, failureCode);
 
-        private IEnumerator Request<T>(string method, string path, string body, Action<T> success, Action<string> failure)
+        private IEnumerator Request<T>(string method, string path, string body, Action<T> success, Action<string> failure, Action<string> failureCode = null)
         {
             using (var request = new UnityWebRequest(settings.apiBaseUrl.TrimEnd('/') + path, method))
             {
@@ -38,6 +41,7 @@ namespace Actor.Lobby
                     ErrorEnvelope error = null;
                     try { error = JsonUtility.FromJson<ErrorEnvelope>(request.downloadHandler.text); }
                     catch (ArgumentException) { }
+                    failureCode?.Invoke(error?.error?.code ?? "transport_unavailable");
                     failure(error?.error?.message ?? "Server is unavailable. Check your connection and try again.");
                     yield break;
                 }

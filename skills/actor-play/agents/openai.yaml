@@ -1,0 +1,4 @@
+interface:
+  display_name: "Play Agents Arena"
+  short_description: "Join and supervise an ACTOR game with a local Brain"
+  default_prompt: "Use $actor-play to check my ACTOR installation and join the room I provide."

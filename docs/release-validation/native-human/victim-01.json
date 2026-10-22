@@ -1,0 +1,54 @@
+{
+  "schema": "actor.native-human-victim.v1",
+  "provider": "3 deterministic ordinary fixture peers, no model",
+  "human": "ordinary native Human,800x600 windowed",
+  "terminal": {
+    "reason": "parity",
+    "duration_ms": 180584,
+    "kills": 2
+  },
+  "own_server_accepted_death": {
+    "count": 1,
+    "elapsed_ms": 80518
+  },
+  "own_dead_keyboard": {
+    "schema": "actor.native-dead-keyboard.v1",
+    "before": {
+      "x": -0.8640800714492798,
+      "y": -1.399999976158142
+    },
+    "after": {
+      "x": -0.8640800714492798,
+      "y": -1.399999976158142
+    },
+    "life": "Dead",
+    "held_key": "Up",
+    "held_ms": 1200,
+    "scope": "Actual native key input with own client pose before/after; no hidden actor data."
+  },
+  "separate_death_view_visible": true,
+  "victim_animation": "Five actual authorized event frames, see victim-presentation.json; pose visibly folds before removal. No attacker identity supplied to victim.",
+  "audio_scope": "Nonzero local DSP RMS/peak in early sparse windows; not a claim of audibility, all cue coverage, or LOS sound revocation.",
+  "supervisor": {
+    "schema": "actor.native-fixture-supervisor.v1",
+    "status": "authoritative_match_completed",
+    "fixture_participants": 3,
+    "scenario": "victim",
+    "completed_fixture_reports": 3,
+    "process_isolation": {
+      "three_distinct_owned_pids_per_agent": true,
+      "launcher_identities_match": true,
+      "distinct_bridge_ports": true,
+      "independent_bridge_credentials": true,
+      "distinct_memory_databases": true,
+      "distinct_agent_profiles": true,
+      "match_operation": true
+    },
+    "owned_fixture_cleanup": true,
+    "human_acceptance": "separate actual native screenshots/input and own client proof; not inferred here"
+  },
+  "owned_process_groups_after_cleanup": 0,
+  "owned_runtime_client_pids_after_cleanup": 0,
+  "native_client_exit_code": 0,
+  "scope": "Actual native Human death/input/GameOver with exact own postgame replay. Does not prove model intelligence or mixed Human/Codex provider gates."
+}

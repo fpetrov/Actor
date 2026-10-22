@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "actor-runtime"
-version = "0.6.0"
+version = "0.7.0"
 description = "Typed ACTOR game runtime with discoverable extensions, skills and interchangeable brains"
 requires-python = ">=3.12"
 dependencies = ["grpcio==1.82.2", "protobuf==7.36.2", "pydantic==2.14.1"]
@@ -16,6 +16,10 @@ jev = ["typesafe-sdk==0.7.5"]
 
 [project.scripts]
 actor-runtime = "actor_runtime.cli:main"
+actorctl = "actor_runtime.control:main"
+
+[project.entry-points."actor.games"]
+agents-arena = "actor_agents_arena.launcher:game_profile"
 
 [project.entry-points."actor.extensions"]
 standard = "actor_standard:extension_package"
@@ -32,6 +36,8 @@ agents-arena = "actor_agents_arena.skills:skill_package"
 communication = "actor_standard_communication.skills:skill_package"
 investigation = "actor_agents_arena.investigation:skill_package"
 social = "actor_agents_arena.social_skills:skill_package"
+social-discussion = "actor_agents_arena.social_discussion:skill_package"
+social-pursuit = "actor_agents_arena.social_pursuit:skill_package"
 social-navigation = "actor_agents_arena.social_navigation:skill_package"
 
 [project.entry-points."actor.brains"]

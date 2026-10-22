@@ -12,10 +12,18 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
     <ProjectReference Include="../../packages/com.actor.sdk/Actor.Sdk.csproj" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Actor/Generated/*.cs" Link="ArenaProtocol/%(Filename)%(Extension)" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Actor/AgentsArenaSocialBindings.cs" Link="ArenaGame/AgentsArenaSocialBindings.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/UI/CommunicationPanel.cs" Link="ArenaPresentation/CommunicationPanel.cs" />
+    <None Include="../../generated/manifests/agents-arena.json" Link="ArenaProtocol/agents-arena.manifest.json" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Networking/StationSignalRules.cs" Link="ArenaGame/StationSignalRules.cs" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Networking/CooperativeAuthority.cs" Link="ArenaGame/CooperativeAuthority.cs" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Networking/IncidentAuthority.cs" Link="ArenaGame/IncidentAuthority.cs" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Networking/SocialMatchAuthority.cs" Link="ArenaGame/SocialMatchAuthority.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Presentation/PresentationLedger.cs" Link="ArenaPresentation/PresentationLedger.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Presentation/StaticSurfaceRules.cs" Link="ArenaPresentation/StaticSurfaceRules.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Networking/ResumeAdmissionRegistry.cs" Link="ArenaGame/ResumeAdmissionRegistry.cs" />
+    <Compile Include="../../shared/com.actor.contracts/Runtime/JoinTicketCodec.cs" Link="Admission/JoinTicketCodec.cs" />
+    <Compile Include="../../shared/com.actor.contracts/Runtime/ResumeCredentialCodec.cs" Link="Admission/ResumeCredentialCodec.cs" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

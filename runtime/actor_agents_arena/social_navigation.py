@@ -67,6 +67,19 @@ def shortest_path(nodes, edges, start, goal, *, blocked_edges=()):
 class SocialNavigateToRoom(NavigateToRoom):
     rooms = ("main-hall", "engineering", "east-corridor", "security", "storage")
 
+    def state(self, context):
+        from extensions.agents_arena.v1 import social_pb2 as pb
+        match = context.observation(SOCIAL_MATCH, SocialMatchStateObservation)
+        own = context.observation(SOCIAL_OWN_STATE, SocialOwnStateObservation)
+        boundary = match.match_id, match.phase_revision, own.connection_generation
+        if (not match.match_id or own.match_id != match.match_id or own.actor_id != context.actor_id or
+                match.phase != pb.SOCIAL_PHASE_EXPLORATION or own.life != pb.SOCIAL_LIFE_ALIVE or not own.can_move):
+            raise SkillError("execution_boundary_changed", "Own movement permission changed")
+        if getattr(self, "_boundary", boundary) != boundary:
+            raise SkillError("execution_boundary_changed", "Own connection or phase changed during navigation")
+        self._boundary = boundary
+        return super().state(context)
+
     def preflight(self, context, arguments):
         self.state(context)
         if arguments.target_room_id not in self.rooms or arguments.target_room_id == "east-corridor":

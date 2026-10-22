@@ -39,6 +39,8 @@ class ContextConfig(Settings):
     max_memory_items: int = Field(default=6, ge=0, le=32)
     max_event_payload_bytes: int = Field(default=4096, ge=256, le=8192)
     stale_observation_seconds: float = Field(default=3, gt=0, le=300)
+    max_working_knowledge: int = Field(default=24, ge=0, le=128)
+    max_working_knowledge_bytes: int = Field(default=8192, ge=512, le=32768)
 
 
 class MemoryConfig(Settings):

@@ -1,0 +1,12 @@
+{
+  "schema": "actor.sdk-stream-parity.v1",
+  "sdk_version": "0.162.1",
+  "checks": {
+    "completed_public_result_equal": true,
+    "interrupted_public_result_equal": true
+  },
+  "passed": true,
+  "model_calls": 0,
+  "authentication_used": false,
+  "scope": "Installed official public run() and ACTOR collector consumed identical synthetic typed notifications; not a live provider test"
+}

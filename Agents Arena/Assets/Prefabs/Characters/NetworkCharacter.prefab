@@ -111,7 +111,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage:
+  m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -126,7 +126,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e14a590948d6a4ad986ddb1f72448b0c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Characters.CharacterAnimationView
   motor: {fileID: 8366080411548413726}
 --- !u!1 &5363229347900180316
@@ -157,6 +157,7 @@ GameObject:
   - component: {fileID: 3161010153001430973}
   - component: {fileID: 2626488094533056121}
   - component: {fileID: 4273560026344180337}
+  - component: {fileID: 8151477743028314456}
   m_Layer: 0
   m_Name: NetworkCharacter
   m_TagString: Untagged
@@ -254,7 +255,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7435b16bd77ce4177b41754685a7f783, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Characters.CharacterMotor2D
   maxSpeed: 2.6
   acceleration: 22
@@ -269,7 +270,7 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 274b5e538cdf84fe0953a019ad2fa70e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Characters.PlayerInputSource
   actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
 --- !u!114 &1794025367831899660
@@ -282,9 +283,9 @@ MonoBehaviour:
   m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8b2fcf18596084b45b11a0829832ce46, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Characters.ActorCharacter
-  actorId:
+  actorId: 
   initialRoomId: main-hall
   role: 0
   inputSource: {fileID: 7966641339109989053}
@@ -298,9 +299,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4271889999
+  GlobalObjectIdHash: 1730199090
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -325,7 +326,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
@@ -371,7 +372,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 80d7c879794dfda4687da0e400131852, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkRigidbody2D
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkRigidbodyBaseExpanded: 0
@@ -388,7 +389,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a002059e7bc3941e5be83bc97d9672de, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkCharacter
   ShowTopMostFoldoutHeaderGroup: 1
   inputSendRate: 30
@@ -403,7 +404,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5432e92a38a4418baf4784dfeee7e4c2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.SocialVisibilityMember
   ShowTopMostFoldoutHeaderGroup: 1
   kind: 0
@@ -417,7 +418,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 58384d1d2a77f4b2d8a791575793747c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkSocialMatch
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &7123010924131951670
@@ -430,7 +431,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a398f6f22cfa467488ec04888317b21, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.World.SocialClientUI
 --- !u!114 &3532790401615482897
 MonoBehaviour:
@@ -442,7 +443,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 951b9ae428d9f47b6ada0f89530efb0f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkNameplate
 --- !u!114 &6124789488614808394
 MonoBehaviour:
@@ -454,7 +455,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36455464f4304052aaae6d67028a24a0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkRoomMembership
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &8041695005948336879
@@ -467,7 +468,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e147006f859c4559a1f301594271f2ac, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkStationSignals
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &3923768610757183594
@@ -480,7 +481,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 529a93c682764c438432a99417d9ac94, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkCooperation
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &3161010153001430973
@@ -493,7 +494,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ed09f493cfef48b88c168ce50b65765a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.World.CooperativeClientUI
 --- !u!114 &2626488094533056121
 MonoBehaviour:
@@ -505,7 +506,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f11ac471dfe945d8b20249e8a939a70, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.Networking.NetworkInvestigation
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &4273560026344180337
@@ -518,5 +519,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bb0eff06226514552a1f23e32554822e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Actor.World.IncidentClientUI
+--- !u!114 &8151477743028314456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5363229347900180316}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c7a3a7fc6e44bcabde187d3753f65e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Actor.Presentation.SocialAvatarArt

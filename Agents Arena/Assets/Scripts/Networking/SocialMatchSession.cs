@@ -38,14 +38,18 @@ namespace Actor.Networking
             public long KillCooldownMs = 30000;
             public long EmergencyCooldownMs = 90000;
             public long SabotageTimeoutMs = 150000;
-            public long WorkDurationMs = 4000;
+            public long WorkDurationMs = 12000;
+            public long ReconnectGraceMs = 30000;
+            public long CalibrationStepMs = 2500;
+            public long SensorSampleDelayMs = 8000;
+            public long TaskDecisionTimeoutMs = 30000;
             public long SabotageCooldownMs = 90000;
             public long WaitingTimeoutMs = 300000;
             public double KillDistance = .9;
             public double VisibilityRadius = 3.5;
             public double BodyReportDistance = 1.2;
             public double InteractionRadius = 1.25;
-            public int TaskThreshold = 4;
+            public int TaskThreshold = 8;
             public int MeetingLimit = 3;
             public int PlayerMeetingLimit = 1;
             public SocialMatchAuthority.Configuration Rules() => new()
@@ -60,6 +64,10 @@ namespace Actor.Networking
                 EmergencyCooldownMs = EmergencyCooldownMs,
                 SabotageTimeoutMs = SabotageTimeoutMs,
                 WorkDurationMs = WorkDurationMs,
+                ReconnectGraceMs = ReconnectGraceMs,
+                CalibrationStepMs = CalibrationStepMs,
+                SensorSampleDelayMs = SensorSampleDelayMs,
+                TaskDecisionTimeoutMs = TaskDecisionTimeoutMs,
                 SabotageCooldownMs = SabotageCooldownMs,
                 WaitingTimeoutMs = WaitingTimeoutMs,
                 KillDistance = KillDistance,
@@ -156,7 +164,7 @@ namespace Actor.Networking
                 var participants = new List<SocialMatchAuthority.Participant>(); endpoints.Clear(); actors.Clear();
                 foreach (var pair in manager.ConnectedClients)
                 {
-                    if (!session.TryGetApprovedPlayer(pair.Key, out _) || pair.Value.PlayerObject == null) continue;
+                    if (!session.TryGetApprovedPlayer(pair.Key, out var admission) || pair.Value.PlayerObject == null) continue;
                     var player = pair.Value.PlayerObject.GetComponent<NetworkCharacter>();
                     var endpoint = pair.Value.PlayerObject.GetComponent<NetworkSocialMatch>();
                     if (player == null || !player.IsSpawned || endpoint == null || !endpoint.IsSpawned || player.AuthoritativeActorId.Length == 0) continue;
@@ -165,15 +173,24 @@ namespace Actor.Networking
                     participants.Add(new SocialMatchAuthority.Participant { Id = player.AuthoritativeActorId, Name = player.PlayerName,
                         Room = player.GetComponent<NetworkRoomMembership>().CurrentRoomId, X = center.x, Y = center.y,
                         VelocityX = velocity.x, VelocityY = velocity.y, PoseFresh = true, ConnectionEpoch = pair.Key + 1,
-                        JoinOrder = session.ApprovedJoinOrder(pair.Key) });
+                        JoinOrder = session.ApprovedJoinOrder(pair.Key), ConnectionGeneration = admission.connectionGeneration,
+                        ResumeEligible = true, AuthenticatedResume = admission.resume });
                     endpoints[player.AuthoritativeActorId] = endpoint; actors[pair.Key] = player.AuthoritativeActorId;
                 }
                 Initialize(session); if (authority == null) return;
+                foreach (var retained in session.RetainedSocialPlayers)
+                {
+                    var center = retained.GetComponent<CapsuleCollider2D>().bounds.center;
+                    authority.RefreshSuspendedPose(new SocialMatchAuthority.Participant { Id = retained.AuthoritativeActorId,
+                        X = center.x, Y = center.y, Room = retained.GetComponent<NetworkRoomMembership>().CurrentRoomId });
+                }
                 var terminals = FindObjectsByType<SocialTerminal2D>();
                 var world = terminals.Select(t => new SocialMatchAuthority.Terminal { Id = t.EntityId, Room = t.RoomId, Kind = t.Kind,
                     X = t.InteractionPoint.x, Y = t.InteractionPoint.y, ApproachX = t.ApproachPoint.x, ApproachY = t.ApproachPoint.y,
                     Radius = Math.Min(t.Radius, rules.InteractionRadius), Available = t.isActiveAndEnabled }).ToArray();
-                var tasks = terminals.Where(t => t.Kind == "task").Select(t => new SocialMatchAuthority.TaskDefinition { Id = t.TaskId, TerminalId = t.EntityId }).ToArray();
+                var tasks = terminals.Where(t => t.Kind == "task").Select(t => new SocialMatchAuthority.TaskDefinition { Id = t.TaskId, TerminalId = t.EntityId,
+                    Mechanic = t.RoomId == "engineering" ? SocialTaskMechanic.MaintenanceHold : t.RoomId == "security" ? SocialTaskMechanic.SensorObservation
+                        : SocialTaskMechanic.CircuitCalibration }).ToArray();
                 authority.SetWorld(world, tasks);
                 var deliveries = authority.Refresh(participants, Now);
                 SynchronizeBodies(); visibility.RefreshNow(); Dispatch(deliveries);
@@ -242,6 +259,7 @@ namespace Actor.Networking
                 endpoint.Deliver(authority.State()); endpoint.Deliver(authority.OwnState(actor));
                 endpoint.Deliver(authority.VisibleWorld(actor, Now)); endpoint.Deliver(authority.Meeting(actor));
                 endpoint.Deliver(authority.Tasks(actor)); endpoint.Deliver(authority.Emergency());
+                endpoint.Deliver(authority.Waiting(actor)); endpoint.Deliver(authority.TaskWork(actor));
                 var postgame = new SocialPostgameObservation { MatchId = authority.MatchId };
                 if (authority.IsTerminal) postgame.Summary = authority.Summary();
                 endpoint.Deliver(postgame);
@@ -265,7 +283,8 @@ namespace Actor.Networking
             {
                 if (bodyObjects.ContainsKey(state.BodyId)) continue;
                 var body = Instantiate(bodyPrefab, new Vector3(state.X, state.Y, 0), Quaternion.identity).GetComponent<SocialBody>();
-                body.Configure(state); bodyObjects[state.BodyId] = body;
+                int cosmetic = NetworkManager.Singleton.GetComponent<MatchSession>()?.CosmeticIndexForActor(state.VictimActorId) ?? 0;
+                body.Configure(state, cosmetic); bodyObjects[state.BodyId] = body;
                 body.GetComponent<SocialVisibilityMember>().Configure(SocialVisibilityKind.Body);
                 body.NetworkObject.Spawn(); // No observers until this returns.
             }

@@ -13,6 +13,16 @@ from .adapter import OfficialCodexAdapter
 
 
 class CodexBrain:
+    # Trusted diagnostic identifiers only; no provider message/details or game
+    # state is admitted to this optional generic Runtime logging contract.
+    public_error_codes = frozenset({
+        "codex_not_installed", "codex_version_mismatch", "codex_episode_busy",
+        "codex_authentication_required", "codex_episode_unavailable", "codex_turn_busy",
+        "codex_turn_incomplete", "codex_provider_error", "codex_interrupt_timeout",
+        "codex_turn_limit", "codex_usage_limit", "codex_preemption_unsupported",
+        "codex_stream_limit",
+    })
+
     def __init__(self, *, model=None, adapter=None, max_turns=24,
                  usage_warning_tokens=100000, usage_limit_tokens=200000):
         if (type(max_turns) is not int or max_turns < 1 or
@@ -50,7 +60,9 @@ class CodexBrain:
         try:
             reply = await self.adapter.decide(context.external_json())
             record.update(turn_id=reply.turn_id, duration_seconds=reply.duration_seconds, status=reply.status,
-                          usage=reply.usage, tool_calls=reply.tool_calls)
+                          usage=reply.usage)
+            if type(reply.tool_calls) is int and reply.tool_calls >= 0:
+                record.update(tool_calls=reply.tool_calls, tool_count_scope=reply.tool_count_scope)
             self._refresh_usage(reply.usage)
             if epoch != self._epoch:
                 record["status"] = "stale"
@@ -63,6 +75,12 @@ class CodexBrain:
             raise
         finally:
             record["duration_seconds"] = time.monotonic() - started
+            telemetry = getattr(self.adapter, "last_decision_tool_telemetry", None)
+            if callable(telemetry):
+                value = telemetry()
+                if (value.get("tool_count_complete") is True and value.get("tool_count_scope") == "sdk_item_lifecycle"
+                        and type(value.get("tool_calls")) is int and value["tool_calls"] >= 0):
+                    record.update(tool_calls=value["tool_calls"], tool_count_scope="sdk_item_lifecycle")
             self._refresh_usage()
             self._active = False
         try:

@@ -72,10 +72,10 @@ INCIDENT_ACTION_RESULT = "agents-arena.incident-action-result"
 # accessible through social_pb2 for an unambiguous generated enum surface.
 for _name in social_pb2.DESCRIPTOR.message_types_by_name:
     globals()[_name] = getattr(social_pb2, _name)
-for _suffix in ("match", "own-state", "visible-world", "meeting", "tasks", "emergency", "postgame",
+for _suffix in ("match", "own-state", "visible-world", "meeting", "tasks", "task-work", "task-step", "waiting-players", "emergency", "postgame",
     "ready", "kill", "report-body", "call-meeting", "cast-vote", "work-task", "sabotage",
     "repair-emergency", "cancel-work", "action-result", "match-changed", "own-state-changed",
-    "meeting-changed", "emergency-changed", "visible-attack", "visible-activity", "match-ended"):
+    "meeting-changed", "emergency-changed", "visible-attack", "visible-activity", "match-ended", "kill-presentation"):
     globals()["SOCIAL_" + _suffix.upper().replace("-", "_")] = "agents-arena.social-" + _suffix
 
 

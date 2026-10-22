@@ -63,7 +63,7 @@ class ObjectiveRunner:
                  max_decisions=12, repair_limit=1, scheduler=None,
                  event_router=None, config=None, memory=None, max_replans=None,
                  manage_router=True, run_finalizers=True, execution_guard=None,
-                 working_knowledge=None):
+                 working_knowledge=None, context_selection=None):
         if config is not None:
             decision_timeout_seconds = config.brain.decision_timeout
             objective_timeout_seconds = config.brain.objective_timeout
@@ -90,6 +90,9 @@ class ObjectiveRunner:
         self.config, self.memory = config, memory
         self.manage_router, self.run_finalizers = manage_router, run_finalizers
         self.execution_guard, self.working_knowledge = execution_guard, working_knowledge
+        if context_selection is not None and (not callable(context_selection) or inspect.iscoroutinefunction(context_selection)):
+            raise ActorError("context_selection_invalid", "Installed context selection must be synchronous")
+        self.context_selection = context_selection
         self._cancel_reason = "objective_cancelled"
         self.max_replans = max_replans
         self._replans = 0
@@ -127,6 +130,19 @@ class ObjectiveRunner:
         record = {"event": event, "elapsed_seconds": round(time.monotonic() - self._started_at, 6), **fields}
         self._lifecycle.append(record)
         LOG.info("%s %s", event, fields)
+
+    def _public_failure_code(self,error):
+        """Optional installed-provider constants, never arbitrary exception data."""
+        try:
+            allowed=getattr(self.brain,"public_error_codes",frozenset())
+            if (isinstance(error,ActorError) and type(allowed) is frozenset and len(allowed)<=64 and
+                    all(type(code) is str and 1<=len(code)<=64 and code.isascii() and
+                        all(character in "abcdefghijklmnopqrstuvwxyz0123456789_" for character in code)
+                        for code in allowed) and error.code in allowed):
+                return error.code
+        except Exception:
+            pass
+        return "unavailable"
 
     async def _abort_active(self, *, interrupt=False):
         async with self._abort_lock:
@@ -442,7 +458,11 @@ class ObjectiveRunner:
             options.update(max_external_bytes=bounds.max_external_context_bytes,
                 max_observations=bounds.max_observations, max_events=bounds.max_events,
                 max_memories=bounds.max_memory_items, max_event_payload_bytes=bounds.max_event_payload_bytes,
-                stale_after_seconds=bounds.stale_observation_seconds)
+                stale_after_seconds=bounds.stale_observation_seconds,
+                max_working_knowledge=bounds.max_working_knowledge,
+                max_working_knowledge_bytes=bounds.max_working_knowledge_bytes)
+        if self.context_selection is not None:
+            options["selection"] = self.context_selection(self.session)
         context = build_decision_context(self.session, self.objective, catalog,
             decision_index=index, event_cursor=self._event_cursor,
             previous_skill_result=previous, validation_error=validation_error,
@@ -593,7 +613,8 @@ class ObjectiveRunner:
             await self._abort_active(interrupt=True)
             reason = "brain_failure"
             message = error.message[:512] if isinstance(error, ActorError) else type(error).__name__
-            LOG.error("Objective failed code=%s exception_type=%s", reason, type(error).__name__)
+            LOG.error("Objective failed code=%s exception_type=%s provider_code=%s",
+                      reason, type(error).__name__, self._public_failure_code(error))
         finally:
             await self._cleanup_call(self.scheduler.cancel(), "skill_cancel")
             if self.run_finalizers:

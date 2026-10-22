@@ -314,6 +314,12 @@ class SkillContext:
         return getattr(self._session, "working_knowledge", None) is not None
 
     def remember_hypothesis(self, statement, confidence, evidence_refs):
+        return self._remember_note("hypothesize", statement, confidence, evidence_refs)
+
+    def remember_contradiction(self, statement, confidence, evidence_refs):
+        return self._remember_note("contradict", statement, confidence, evidence_refs)
+
+    def _remember_note(self, operation, statement, confidence, evidence_refs):
         self._live()
         if not self._lease.active or self.cancelled:
             raise SkillError("command_ownership_lost", "Working knowledge updates require an active Skill")
@@ -323,7 +329,7 @@ class SkillContext:
         if store is None:
             raise SkillError("knowledge_unavailable", "This execution has no private working knowledge")
         try:
-            return store.hypothesize(statement, confidence, evidence_refs)
+            return getattr(store, operation)(statement, confidence, evidence_refs)
         except ActorError as error:
             raise SkillError(error.code, error.message) from error
 

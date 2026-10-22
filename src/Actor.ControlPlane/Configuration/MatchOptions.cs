@@ -11,13 +11,14 @@ public sealed class MatchOptions
     public string DatabasePath { get; set; } = "runtime/actor.db";
     public string GameServerLogDirectory { get; set; } = "runtime/matches";
     public string InternalApiBaseUrl { get; set; } = "http://127.0.0.1:5080";
+    public string AdmissionDrainFile { get; set; } = "/run/actor-admission-drain";
     public int LobbyStartupTimeout { get; set; } = 45;
     public int EmptyLobbyLifetime { get; set; } = 300;
     public int EmptyLobbyGracePeriod { get; set; } = 60;
     public int HeartbeatTimeout { get; set; } = 20;
     public int JoinTicketLifetime { get; set; } = 45;
-    public string GameVersion { get; set; } = "0.8.0";
-    public string ProtocolVersion { get; set; } = "3";
+    public string GameVersion { get; set; } = "0.9.0";
+    public string ProtocolVersion { get; set; } = "4";
     public SocialMatchOptions SocialDeduction { get; set; } = new();
 
     public bool IsValid() => MaxConcurrentGameServers > 0
@@ -28,6 +29,7 @@ public sealed class MatchOptions
         && HeartbeatTimeout >= 5 && JoinTicketLifetime is > 0 and <= 300
         && !string.IsNullOrWhiteSpace(PublicGameHost) && !string.IsNullOrWhiteSpace(UnityServerExecutable)
         && Uri.TryCreate(InternalApiBaseUrl, UriKind.Absolute, out var uri) && uri.IsLoopback
+        && !string.IsNullOrWhiteSpace(AdmissionDrainFile) && Path.IsPathRooted(AdmissionDrainFile)
         && !string.IsNullOrWhiteSpace(GameVersion) && !string.IsNullOrWhiteSpace(ProtocolVersion)
         && SocialDeduction != null && SocialDeduction.IsValid();
 }

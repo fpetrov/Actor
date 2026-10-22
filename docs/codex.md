@@ -145,7 +145,7 @@ crosses the threshold, so this bounds further calls rather than promising an
 exact provider-side token cap. A single turn may exceed it. A thread is not
 silently compacted or continued beyond its Objective budget.
 
-Runtime 0.6.0's `actor-runtime match --brain codex --match-policy agents-arena`
+Runtime 0.7.0's `actor-runtime match --brain codex --match-policy agents-arena`
 coordinates bounded Objectives over a match. Each episode closes the old SDK
 instance/thread before constructing a fresh Brain; the Session, Scheduler,
 EventRouter and scoped memory span episodes. Finishing an Objective ends that
@@ -164,6 +164,31 @@ before a game session also returns Cancelled instead of false success.
 Reports retain durations/status, aggregate usage, unique turn counts and tool
 counts; they never persist SDK items, hidden reasoning or credentials. Skill
 issued-command counts and actual written bridge counts are separate metrics.
+Failed or nonterminal participation reports withhold private episode contents,
+but include `provider_telemetry`: bounded aggregate SDK versions, unique model
+turns, usage scalars, tool counts and read-only/ephemeral/closed provider counts
+from closed episodes. Missing or invalid counters remain `null`; an incomplete
+turn does not imply zero tools or zero usage. This is self-reported installed
+provider metadata, interpreted together with launcher/provider identity, rather
+than proof derived from a Brain name or token estimate. It includes no turn IDs,
+authentication mode, role, action, arguments or context. Older reports without
+this field cannot recover these counters retrospectively.
+Diagnostic failure logs admit only an installed provider's bounded constant
+`public_error_codes` whitelist. Unknown codes, exception messages and details
+are withheld. A recorded `codex_usage_limit` identifies that budget check;
+token totals alone do not establish the cause of an earlier failure.
+The official adapter consumes each public `AsyncTurnHandle.stream()` once and
+constructs the public `TurnResult` with the same final-answer, status and usage
+semantics as `run()`. Tool activity counts the union of actual `item/started`
+and `item/completed` identifiers, deduplicated across the initial joined
+subscriptions. Coverage becomes complete only when the initiating stream reaches
+`turn/completed`; a later joined stream cannot certify earlier events. An
+interrupted turn can therefore retain a known counter, including an unfinished
+tool start. Missing terminals, transport/Python cancellation, unknown item kinds
+or bounded-stream overflow retain unknown coverage. No zero is inferred from
+disabled-tool settings. Only counters and `sdk_item_lifecycle` scope enter turn
+reports; SDK item payloads and internal identifier sets are never persisted.
+This follows the [official app-server lifecycle](https://learn.chatgpt.com/docs/app-server#lifecycle-overview).
 Skills execute with zero Brain invocations; asynchronous SDK work does not block
 gRPC or Unity. Deterministic CI uses injectable public-surface fakes and needs
 no SDK extra, login, internet or model execution. Live checks are manual:
@@ -185,3 +210,5 @@ interrupted completion, no overlap, and a valid resumed decision in the same
 thread. Its report goes to `build/event-validation/codex-soft-interrupt.json`.
 It sends no game commands and is a provider-lifecycle test; multiplayer event
 publication, movement and authoritative arrival require the separate Unity run.
+
+Runtime0.7 deduplicates identical input/result schemas in the trusted developer catalog and sends references to the complete retained schemas. The provider's full structured output schema and both Runtime validation layers are unchanged. Adapter reports expose source/trusted catalog byte counts and unique schemas; no catalog content, model reasoning or credentials are added to public telemetry. Together with phase-relevant raw snapshots and batched discussion Skills this reduces redundant input; actual latency/token savings still require a measured live comparison. `actorctl doctor` is auth-free, and [actorctl onboarding](agent-onboarding.md) uses the existing official SDK login/status path.

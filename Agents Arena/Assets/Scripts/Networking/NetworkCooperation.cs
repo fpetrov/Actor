@@ -157,7 +157,7 @@ namespace Actor.Networking
                     if (!seen.Add(message.MessageId)) return;
                     seenOrder.Enqueue(message.MessageId); while (seenOrder.Count > 256) seen.Remove(seenOrder.Dequeue());
                     if (message.ExpiresAtUnixMs <= DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) return;
-                    ++MessageCount; Inbox.Enqueue(message); while (Inbox.Count > 16) Inbox.Dequeue();
+                    ++MessageCount; Inbox.Enqueue(message); while (Inbox.Count > 64) Inbox.Dequeue();
                     LastMessageId = message.MessageId; LastMessageSender = message.SenderActorId; LastMessageTask = message.TaskId;
                     latencyTotal += Math.Clamp(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - message.ServerUnixMs, 0, 300000);
                     LastAction = "Message from " + DisplayName(message.SenderActorId); break;

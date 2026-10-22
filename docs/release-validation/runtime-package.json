@@ -1,0 +1,70 @@
+{
+  "created_at": "2026-10-21T23:19:54.097259+00:00",
+  "duration_seconds": 91.74852929200279,
+  "isolated_probe": {
+    "discovered_brains": 14,
+    "discovered_event_rules": 35,
+    "discovered_game_profiles": 1,
+    "discovered_skills": 38,
+    "extension_schema_hashes": {
+      "actor.standard": "5188081ff451868991d0ba8cda56dc18d0a422794251c43216586996f7d9fb21",
+      "actor.standard.communication": "5a83afb7cd7116b6470b56fa1d3351e33a826a008c6246829430af3894ea49b6",
+      "agents-arena": "1d56e890cac28ec840b7916f513ae2aa722a6d36168d4b9b3878c2f111b242d4"
+    },
+    "extension_versions": {
+      "actor.standard": "0.1.0",
+      "actor.standard.communication": "0.1.0",
+      "agents-arena": "0.6.0"
+    },
+    "generated_resources_present": true,
+    "imports_from_installed_wheel": true,
+    "installed_actorctl_doctor_auth_free": true,
+    "installed_distribution_versions": {
+      "Pygments": "2.21.0",
+      "actor-runtime": "0.7.0",
+      "annotated-types": "0.8.0",
+      "grpcio": "1.82.2",
+      "grpcio-tools": "1.82.2",
+      "iniconfig": "2.3.1",
+      "packaging": "26.3",
+      "pip": "24.0",
+      "pluggy": "1.7.0",
+      "protobuf": "7.36.2",
+      "pydantic": "2.14.1",
+      "pydantic_core": "2.50.1",
+      "pytest": "9.0.2",
+      "pytest-asyncio": "1.3.0",
+      "setuptools": "84.2.1",
+      "typing-inspection": "0.4.4",
+      "typing_extensions": "4.16.0"
+    },
+    "optional_sdk_modules_absent": true,
+    "runtime_version": "0.7.0"
+  },
+  "model_authentication_used": false,
+  "passed": true,
+  "provider_sdk_extras_installed": false,
+  "scope": "Isolated real-wheel packaging and deterministic Runtime tests; no live multiplayer/model claim",
+  "tests": {
+    "duration_seconds": 80.70608824997908,
+    "errors": 0,
+    "failures": 0,
+    "model_authentication_used": false,
+    "passed": 545,
+    "skipped": 0,
+    "source": "copied fixtures, installed wheel imports only",
+    "tests": 545
+  },
+  "wheel": {
+    "bytes": 206026,
+    "required_generated_files_present": true,
+    "retained_artifact": {
+      "exact_verified_bytes": true,
+      "file": "actor_runtime-0.7.0-py3-none-any.whl",
+      "path": "build/runtime-dist/actor_runtime-0.7.0-py3-none-any.whl",
+      "sha256": "2aee36a2a60079ba56d53c954d40635b4b9524bf037f7eaa603765ffe0cdee5b"
+    },
+    "sha256": "2aee36a2a60079ba56d53c954d40635b4b9524bf037f7eaa603765ffe0cdee5b",
+    "version": "0.7.0"
+  }
+}

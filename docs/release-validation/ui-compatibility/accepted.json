@@ -1,0 +1,29 @@
+{
+  "schema": "actor.ui-compatibility.v1",
+  "scope": "Rendered standalone UI Toolkit/URP screen-overlay probe; no multiplayer or Human-input acceptance.",
+  "passed": true,
+  "native_backdrop_supported": true,
+  "translucent_fallback_rendered": true,
+  "unity": "6000.6.4f1",
+  "graphics": "Metal",
+  "pipeline": "UniversalRenderPipelineAsset",
+  "renderer": "Renderer2D",
+  "failure": "",
+  "width": 800,
+  "height": 600,
+  "baseline_frames": 90,
+  "blur_frames": 90,
+  "baseline_edge_energy": 0.047833334654569626,
+  "blur_edge_energy": 0.0008658382575958967,
+  "baseline_frame_ms_mean": 10.546171188354492,
+  "blur_frame_ms_mean": 8.333418846130371,
+  "owned_client_stopped": true,
+  "fullscreen": false,
+  "headless": false,
+  "limits": [
+    "Offline native800x600 standalone, no room/model/input acceptance.",
+    "90frames per condition; warmup and vsync affect timing. Not evidence that blur is faster than fallback.",
+    "URP warns about unused stripped postprocess variants; no Unity exceptions in accepted retry.",
+    "Opaque-world checker is deliberately authored probe content, not game art or private gameplay."
+  ]
+}

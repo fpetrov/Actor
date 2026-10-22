@@ -13,11 +13,15 @@ namespace Actor.Networking
         private readonly NetworkVariable<FixedString64Bytes> bodyId = new();
         private readonly NetworkVariable<FixedString64Bytes> victimId = new();
         private readonly NetworkVariable<FixedString128Bytes> victimName = new();
+        private readonly NetworkVariable<byte> cosmeticIndex = new();
         private SocialVisibleBody pending;
+        private byte pendingCosmeticIndex;
         public string BodyId => pending?.BodyId ?? bodyId.Value.ToString();
         public string VictimId => victimId.Value.ToString();
         public string VictimName => victimName.Value.ToString();
-        internal void Configure(SocialVisibleBody state) => pending = state.Clone();
+        public int CosmeticIndex => IsServer && pending != null ? pendingCosmeticIndex : cosmeticIndex.Value;
+        internal void Configure(SocialVisibleBody state, int approvedCosmeticIndex)
+        { pending = state.Clone(); pendingCosmeticIndex = (byte)Mathf.Clamp(approvedCosmeticIndex, 0, 5); }
         public override void OnNetworkSpawn()
         {
             if (IsServer && pending != null)
@@ -25,6 +29,7 @@ namespace Actor.Networking
                 bodyId.Value = new FixedString64Bytes(pending.BodyId);
                 victimId.Value = new FixedString64Bytes(pending.VictimActorId);
                 victimName.Value = new FixedString128Bytes(pending.VictimDisplayName);
+                cosmeticIndex.Value = pendingCosmeticIndex;
             }
         }
     }

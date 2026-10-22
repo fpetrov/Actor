@@ -274,6 +274,39 @@ class WireRuleTests(unittest.TestCase):
         self.auditor.payload(social.SocialPostgameObservation(summary=social.SocialMatchSummary(match_id="match")))
         self.assertEqual(self.auditor.counts["early_postgame_payloads"], 1)
 
+    def test_m8_new_own_bundles_and_presentation_decode_without_becoming_unknown_social_types(self):
+        self.frame()
+        rows = [("waiting-players", social.SocialWaitingPlayersObservation(match_id="match", recipient_actor_id="self")),
+                ("task-work", social.SocialOwnTaskWorkObservation(match_id="match", recipient_actor_id="self"))]
+        for suffix, value in rows:
+            envelope = self.envelope(audit.PREFIX+suffix, value)
+            self.auditor.inspect(bridge.GameToRuntime(observation=core.ObservationFrame(observations=[envelope])))
+        value = social.SocialKillPresentationEvent(match_id="match", recipient_actor_id="self", victim_actor_id="self")
+        packed = Any(); packed.Pack(value)
+        self.auditor.inspect(bridge.GameToRuntime(event=core.GameEventEnvelope(capability_id=audit.PREFIX+"kill-presentation", entity_id="self", payload=packed)))
+        self.assertEqual(self.auditor.counts["type_mismatches"], 0)
+        self.assertEqual(self.auditor.counts["foreign_recipients"], 0)
+        self.assertEqual(self.auditor.counts["probe_failures"], 0)
+
+    def test_m8_raw_foreign_work_roster_and_presentation_are_rejected_before_session_filter(self):
+        for suffix, value in (("waiting-players", social.SocialWaitingPlayersObservation(recipient_actor_id="foreign")),
+                ("task-work", social.SocialOwnTaskWorkObservation(recipient_actor_id="foreign")),
+                ("kill-presentation", social.SocialKillPresentationEvent(recipient_actor_id="foreign"))):
+            envelope = self.envelope(audit.PREFIX+suffix, value)
+            self.auditor.inspect(bridge.GameToRuntime(observation=core.ObservationFrame(observations=[envelope])))
+        self.assertEqual(self.auditor.counts["foreign_recipients"], 3)
+        self.assertEqual(self.auditor.counts["type_mismatches"], 0)
+
+    def test_m8_presentation_cannot_disclose_attacker_to_own_victim_or_hidden_far_attack(self):
+        self.far()
+        self.auditor.payload(social.SocialKillPresentationEvent(recipient_actor_id="self", victim_actor_id="self", attacker_actor_id="private-attacker"))
+        self.assertEqual(self.auditor.counts["probe_failures"], 1)
+        self.auditor.payload(social.SocialKillPresentationEvent(recipient_actor_id="self", victim_actor_id="other", x=0, y=-.94, server_unix_ms=1000))
+        self.assertEqual(self.auditor.counts["far_forbidden_attack_events"], 0)
+        self.auditor.payload(social.SocialKillPresentationEvent(recipient_actor_id="self", victim_actor_id="other", x=0, y=-.94, server_unix_ms=3000))
+        self.assertEqual(self.auditor.counts["far_forbidden_attack_events"], 1)
+        self.assertNotIn("private-attacker", json.dumps(self.auditor.report()))
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

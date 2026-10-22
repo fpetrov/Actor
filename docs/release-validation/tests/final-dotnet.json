@@ -1,0 +1,29 @@
+{
+  "schema": "actor.m8-offline-dotnet.v1",
+  "results": [
+    {
+      "suite": "Actor.Sdk.Tests",
+      "total": 288,
+      "passed": 288,
+      "failed": 0,
+      "proof_scope": "actual .NET production-linked unit tests; not Unity native or game throughput"
+    },
+    {
+      "suite": "Actor.ControlPlane.Tests",
+      "total": 29,
+      "passed": 29,
+      "failed": 0,
+      "proof_scope": "actual .NET production-linked unit tests; not Unity native or game throughput"
+    }
+  ],
+  "generated_schema_artifacts_fresh": 54,
+  "web_node_fixtures_passed": 9,
+  "unity_verification": {
+    "saved_social_geometry": true,
+    "static_world_render": true,
+    "visibility": true,
+    "movement_prediction": true,
+    "qa_mac_build": true
+  },
+  "scope": "Current working-tree checks after static-surface integration. Final clean release build/CI is separate."
+}

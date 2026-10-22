@@ -22,6 +22,13 @@ class GameMetadata(BaseModel):
     protocol_minor: int
 
 
+class ContextSelection(BaseModel):
+    """Optional installed-policy selection, not a world-state summarizer."""
+    model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
+    observation_capability_ids: tuple[str, ...] | None = Field(default=None, max_length=128)
+    omit_default_fields: bool = False
+
+
 class PayloadSnapshot(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True)
     capability_id: str
@@ -142,7 +149,7 @@ def _preview(value, budget):
     return None
 
 
-def _record(source, now, max_payload_bytes, *, trigger=False, stale_after_seconds=3.0):
+def _record(source, now, max_payload_bytes, *, trigger=False, stale_after_seconds=3.0, omit_default_fields=False):
     entry = getattr(source, "entry", source)
     opaque = isinstance(entry.payload, OpaquePayload)
     value = None
@@ -153,7 +160,7 @@ def _record(source, now, max_payload_bytes, *, trigger=False, stale_after_second
             truncated = True
         else:
             value = MessageToDict(entry.payload, preserving_proto_field_name=False,
-                                  always_print_fields_with_no_presence=True)
+                                  always_print_fields_with_no_presence=not omit_default_fields)
             if _encoded_size(value) > max_payload_bytes:
                 value, truncated = _preview(value, max_payload_bytes) if trigger else None, True
     assessment = getattr(source, "assessment", None)
@@ -208,10 +215,13 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
                            trigger_events=(), routed_events=None, memories=(), decision_reason=None,
                            cognitive_revision=0, current_skill=None, max_memories=8,
                            max_event_payload_bytes=None, stale_after_seconds=3.0,
-                           working_knowledge=()) -> DecisionContext:
+                           working_knowledge=(), max_working_knowledge=24, max_working_knowledge_bytes=8192,
+                           selection: ContextSelection | None = None) -> DecisionContext:
     if (not all(type(value) is int and value > 0 for value in (
             max_observations, max_events, max_payload_bytes, max_external_bytes)) or
             type(max_memories) is not int or max_memories < 0 or
+            type(max_working_knowledge) is not int or not 0 <= max_working_knowledge <= 128 or
+            type(max_working_knowledge_bytes) is not int or max_working_knowledge_bytes < 256 or
             type(cognitive_revision) is not int or cognitive_revision < 0 or
             not math.isfinite(stale_after_seconds) or stale_after_seconds <= 0 or
             (max_event_payload_bytes is not None and (type(max_event_payload_bytes) is not int or
@@ -221,6 +231,9 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
     if not math.isfinite(now):
         raise ValueError("Decision snapshot time must be finite")
     max_event_payload_bytes = max_event_payload_bytes or max_payload_bytes
+    if selection is not None and not isinstance(selection, ContextSelection):
+        raise ValueError("Installed context selection must use ContextSelection")
+    selection = selection or ContextSelection()
     world = session.world
     if (previous_skill_result and previous_skill_result.get("data_policy") in ("session_only", "sensitive") and
             previous_skill_result.get("expires_at_unix_ms", 0) and
@@ -240,7 +253,10 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
         if not isinstance(item.payload, OpaquePayload) and item.payload.ByteSize() <= max_payload_bytes:
             text += " " + json.dumps(MessageToDict(item.payload, preserving_proto_field_name=False))
         return len(keywords & _words(text))
-    observations = sorted(world.observations.values(),
+    all_observations = list(world.observations.values())
+    candidates = [entry for entry in all_observations if selection.observation_capability_ids is None or
+                  entry.capability_id in selection.observation_capability_ids]
+    observations = sorted(candidates,
                           key=lambda item: (item.capability_id not in relevant_caps,
                                             now - item.received_at > stale_after_seconds,
                                             -overlap(item), item.entity_id != world.self_actor_id,
@@ -267,7 +283,8 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
                     overlap(event.entry), event.entry.sequence)
         selected_events = sorted(events, key=event_priority, reverse=True)[:max_events]
         selected_events.sort(key=_identity)
-    observation_records = [_record(entry, now, max_payload_bytes, stale_after_seconds=stale_after_seconds)
+    observation_records = [_record(entry, now, max_payload_bytes, stale_after_seconds=stale_after_seconds,
+                                   omit_default_fields=selection.omit_default_fields)
                            for entry in observations[:max_observations]]
     event_records = [_record(entry, now, max_event_payload_bytes, stale_after_seconds=stale_after_seconds)
                      for entry in selected_events]
@@ -283,6 +300,10 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
                                  for key in ("skill_id", "status", "reason") if key in previous_skill_result}
         previous_skill_result["output_omitted"] = True
     manifest = session.manifest
+    from .knowledge import select_knowledge
+    knowledge_values = list(working_knowledge)
+    selected_knowledge = select_knowledge(knowledge_values, max_entries=max_working_knowledge,
+                                         max_bytes=max_working_knowledge_bytes)
     context = DecisionContext(
         objective=objective.model_copy(deep=True), decision_index=decision_index,
         game=GameMetadata(game_id=manifest.game_id[:160], game_version=manifest.game_version[:80],
@@ -291,14 +312,14 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
         actor_id=world.self_actor_id, observations=observation_records, recent_events=event_records,
         previous_skill_result=previous_skill_result, available_skills=catalog,
         validation_error=validation_error,
-        observations_omitted=max(0, len(observations) - max_observations),
+        observations_omitted=max(0, len(all_observations) - len(observation_records)),
         events_omitted=max(0, len(events) - len(event_records)),
         trigger_events=trigger_records, memories=memory_records,
         memories_omitted=max(0, len(memory_values) - len(memory_records)),
         decision_reason=(decision_reason or ("objective_started" if previous_skill_result is None else
             "skill_succeeded" if previous_skill_result.get("status") == "succeeded" else "skill_failed"))[:128],
         cognitive_revision=cognitive_revision, current_skill=current_skill,
-        working_knowledge=list(working_knowledge),
+        working_knowledge=selected_knowledge, knowledge_omitted=len(knowledge_values)-len(selected_knowledge),
     )
     # Trigger data and the previous result survive ordinary budget pressure.
     # A budget unable to contain those mandatory facts fails explicitly.
@@ -318,8 +339,10 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
                                                   "memories_omitted": context.memories_omitted + 1})
             continue
         if context.working_knowledge:
-            context = context.model_copy(update={"working_knowledge": context.working_knowledge[:-1],
-                                                 "knowledge_omitted": context.knowledge_omitted + 1})
+            retained = select_knowledge(context.working_knowledge[:-1], max_entries=max_working_knowledge,
+                                         max_bytes=max_working_knowledge_bytes)
+            context = context.model_copy(update={"working_knowledge": retained,
+                "knowledge_omitted": context.knowledge_omitted + len(context.working_knowledge)-len(retained)})
             continue
         candidates = [("observations", i, _encoded_size(item.value))
                       for i, item in enumerate(context.observations) if item.value is not None]

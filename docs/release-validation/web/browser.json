@@ -1,0 +1,38 @@
+{
+  "schema": "actor.web-native-browser.v1",
+  "captured_at": "2026-10-21T23:15:30.095Z",
+  "scope": "Actual built website against read-only real staging API; no room allocation or browser Create/Copy claim.",
+  "viewports": [
+    {
+      "connection": "Connected to arena",
+      "create_enabled": true,
+      "fonts_loaded": true,
+      "height": 600,
+      "images_loaded": true,
+      "scrollHeight": 1239,
+      "scrollWidth": 800,
+      "width": 800
+    },
+    {
+      "connection": "Connected to arena",
+      "create_enabled": true,
+      "fonts_loaded": true,
+      "height": 844,
+      "images_loaded": true,
+      "scrollHeight": 1642,
+      "scrollWidth": 390,
+      "width": 390
+    },
+    {
+      "connection": "Connected to arena",
+      "create_enabled": true,
+      "fonts_loaded": true,
+      "height": 720,
+      "images_loaded": true,
+      "scrollHeight": 1294,
+      "scrollWidth": 1280,
+      "width": 1280
+    }
+  ],
+  "errors": []
+}

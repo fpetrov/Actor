@@ -26,6 +26,7 @@ namespace Actor.Networking
         private readonly NetworkVariable<byte> facing = new((byte)FacingDirection.Down);
         private readonly NetworkVariable<FixedString64Bytes> actorId = new();
         private readonly NetworkVariable<FixedString128Bytes> playerName = new();
+        private readonly NetworkVariable<byte> cosmeticIndex = new();
         private ActorCharacter actor;
         private CharacterMotor2D motor;
         private PlayerInputSource keyboard;
@@ -50,6 +51,7 @@ namespace Actor.Networking
         public bool CanMove => !SocialVisibilitySystem.IsSocial(NetworkManager)
             || (IsServer ? SocialMatchSession.Current?.CanMove(AuthoritativeActorId) == true : GetComponent<NetworkSocialMatch>()?.CanMove == true);
         public string PlayerName => playerName.Value.ToString();
+        public int CosmeticIndex => cosmeticIndex.Value;
         public Vector2 Velocity => prediction != null ? prediction.Velocity : IsServer ? motor.Velocity : velocity.Value;
         public FacingDirection Facing => prediction != null ? prediction.Facing : IsServer ? motor.Facing : (FacingDirection)facing.Value;
         public bool IsMoving => Velocity.sqrMagnitude > 0.0025f;
@@ -86,10 +88,16 @@ namespace Actor.Networking
             {
                 remoteCommands = new RemoteCommands { Timeout = staleInputTimeout, Allowed = () => CanMove };
                 actor.SetInputSource(remoteCommands);
-                actorId.Value = new FixedString64Bytes(actor.ActorId);
                 var session = NetworkManager.GetComponent<MatchSession>();
                 if (session.TryGetApprovedPlayer(OwnerClientId, out var claims))
+                {
+                    if (!string.IsNullOrEmpty(claims.actorId)) actor.SetIdentity(claims.actorId);
                     playerName.Value = new FixedString128Bytes(claims.playerName);
+                }
+                actorId.Value = new FixedString64Bytes(actor.ActorId);
+                int slot = session.ApprovedJoinOrder(OwnerClientId);
+                cosmeticIndex.Value = (byte)(slot == int.MaxValue ? 0 : slot % 6);
+                session.BindSocialPlayer(OwnerClientId, NetworkObject);
             }
             else
             {
@@ -116,6 +124,8 @@ namespace Actor.Networking
         }
 
         public void SetLocalInputSource(IMovementInputSource source) => localCommands = source;
+        internal void HaltForTransportLoss()
+        { if (!IsServer) return; remoteCommands.Value = Vector2.zero; remoteCommands.ReceivedAt = -100; motor.Halt(); }
 
         private void Update()
         {

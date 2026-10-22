@@ -1,0 +1,20 @@
+{
+  "schema": "actor.ui-compatibility.v1",
+  "scope": "First actual rendered probe; failed. Not overwritten by successful retry.",
+  "passed": false,
+  "native_backdrop_supported": false,
+  "translucent_fallback_rendered": true,
+  "unity": "6000.6.4f1",
+  "graphics": "Metal",
+  "pipeline": "UniversalRenderPipelineAsset",
+  "renderer": "Renderer2D",
+  "failure": "runtime_created_panel_did_not_retain_builtin_blur_shader",
+  "width": 800,
+  "height": 600,
+  "baseline_frames": 90,
+  "blur_frames": 90,
+  "baseline_edge_energy": 0.047833334654569626,
+  "blur_edge_energy": 0.07366987317800522,
+  "baseline_frame_ms_mean": 8.333226203918457,
+  "blur_frame_ms_mean": 8.333172798156738
+}

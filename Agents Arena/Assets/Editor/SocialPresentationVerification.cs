@@ -25,11 +25,11 @@ namespace Actor.Editor
         }
         [Serializable] private sealed class Report
         {
-            public string schema="actor.social-static-presentation.v1";
+            public string schema="actor.social-static-presentation.v2";
             public string scope="Actual saved Social world, scene camera configuration and URP 2D rendering. No actors, fog, IMGUI, Human input or native-window visual acceptance.";
-            public bool passed, rendered, source_map_unchanged, saved_scene_unchanged, same_atlas_texture,
+            public bool passed, rendered, source_map_unchanged, saved_scene_unchanged, atmospheric_art_active, legacy_atlas_inactive, all_enabled_sprites_original, bounded_art, floor_bounds_match,
                 scene_setup_restored, render_request_supported, actual_renderer_2d;
-            public int width=Width,height=Height,quantized_colors;
+            public int width=Width,height=Height,quantized_colors, enabled_sprite_count, original_texture_count, disabled_legacy_atlas_sprites, maximum_texture_dimension;
             public string graphics_api, pipeline, renderer, failure_code="", source_map_sha256, saved_scene_sha256;
             public CameraSetup camera;
         }
@@ -64,9 +64,23 @@ namespace Actor.Editor
                 var follow=new SerializedObject(source.GetComponent<CameraFollow2D>());
                 Vector2 minimum=follow.FindProperty("roomMin").vector2Value,maximum=follow.FindProperty("roomMax").vector2Value;
                 var atlas=AssetDatabase.LoadAssetAtPath<Texture2D>(Atlas);
-                var worldAtlas=GameObject.Find("Unmodified Ship Atlas").GetComponent<SpriteRenderer>();
-                report.same_atlas_texture=atlas!=null&&worldAtlas.sprite!=null&&worldAtlas.sprite.texture==atlas;
-                if(!report.same_atlas_texture)throw new InvalidOperationException("Expected the unmodified authored atlas texture.");
+                var art=AtmosphericArtCatalog.Load();
+                var originals=GameObject.Find("Original Atmospheric Environment");
+                var sprites=UnityEngine.Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None);
+                var enabled=sprites.Where(r=>r.enabled&&r.gameObject.activeInHierarchy&&r.sprite!=null).ToArray();
+                report.enabled_sprite_count=enabled.Length;
+                report.atmospheric_art_active=art!=null&&originals!=null&&originals.activeInHierarchy&&enabled.Any(r=>r.sprite==art.floor);
+                report.legacy_atlas_inactive=atlas!=null&&!enabled.Any(r=>r.sprite.texture==atlas);
+                report.disabled_legacy_atlas_sprites=sprites.Count(r=>r.sprite!=null&&r.sprite.texture==atlas&&!r.enabled);
+                report.all_enabled_sprites_original=enabled.Length>0&&enabled.All(r=>AssetDatabase.GetAssetPath(r.sprite.texture).StartsWith("Assets/Art/Atmospheric/Generated/",StringComparison.Ordinal));
+                var textures=enabled.Select(r=>r.sprite.texture).Distinct().ToArray();
+                report.original_texture_count=textures.Length;
+                report.maximum_texture_dimension=textures.Select(t=>Math.Max(t.width,t.height)).DefaultIfEmpty(0).Max();
+                report.bounded_art=enabled.Length<=1024&&textures.Length<=16&&report.maximum_texture_dimension<=2048;
+                var floor=enabled.FirstOrDefault(r=>r.sprite==art?.floor);
+                report.floor_bounds_match=floor!=null&&Vector2.Distance(floor.bounds.min,minimum)<.002f&&Vector2.Distance(floor.bounds.max,maximum)<.002f;
+                if(!report.atmospheric_art_active||!report.legacy_atlas_inactive||!report.all_enabled_sprites_original||!report.bounded_art||!report.floor_bounds_match)
+                    throw new InvalidOperationException("Expected bounded original Atmospheric art over the unchanged Social world bounds.");
                 if(UnityEngine.Object.FindObjectsByType<Actor.Networking.NetworkCharacter>().Length!=0)
                     throw new InvalidOperationException("Static presentation must contain no actor instances.");
                 if(GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset asset)
@@ -119,7 +133,7 @@ namespace Actor.Editor
                     report.saved_scene_unchanged=sceneBefore!=null&&sceneBefore==report.saved_scene_sha256;
                 }
                 catch(Exception error){if(failure==null)failure=error;report.failure_code=error.GetType().Name;}
-                report.passed=report.rendered&&report.source_map_unchanged&&report.saved_scene_unchanged&&report.same_atlas_texture
+                report.passed=report.rendered&&report.source_map_unchanged&&report.saved_scene_unchanged&&report.atmospheric_art_active&&report.legacy_atlas_inactive&&report.all_enabled_sprites_original&&report.bounded_art&&report.floor_bounds_match
                     &&report.scene_setup_restored&&report.render_request_supported&&report.actual_renderer_2d&&failure==null;
                 File.WriteAllText(Path.Combine(directory,"presentation.json"),JsonUtility.ToJson(report,true)+"\n");
             }

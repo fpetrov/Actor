@@ -231,22 +231,8 @@ namespace Actor.GameAdapter
         { CloseBridge(); owner = null; keyboard = null; agent = null; retryScheduled = false; }
         private bool SocialEnded => owner != null && SocialVisibilitySystem.IsSocial(owner.NetworkManager)
             && owner.GetComponent<NetworkSocialMatch>().State.Phase == AgentsArena.ActorProtocol.V1.SocialPhase.GameOver;
-        private void OnGUI()
-        {
-            var box = new Rect(Mathf.Max(12, Screen.width - 335), 12, 323, 108);
-            GUILayout.BeginArea(box, GUI.skin.box);
-            GUILayout.Label("Control mode");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Toggle(mode == ActorControlMode.Human, "Human", GUI.skin.button)) SetMode(ActorControlMode.Human);
-            if (GUILayout.Toggle(mode == ActorControlMode.Runtime, "ACTOR Runtime", GUI.skin.button)) SetMode(ActorControlMode.Runtime);
-            GUILayout.EndHorizontal();
-            string state = SocialEnded && mode == ActorControlMode.Runtime ? "Match ended" : mode == ActorControlMode.Human ? "Disconnected" : configurationError != null ? "Error" : bridge?.State.ToString() ?? "Connecting";
-            GUILayout.Label("ACTOR Runtime: " + state);
-            string detail = SocialEnded ? "Authoritative result received." : mode == ActorControlMode.Runtime ? configurationError ?? bridge?.LastErrorMessage : "WASD / arrow keys";
-            // Keep the IMGUI control topology identical during Layout/Repaint when async state changes.
-            GUILayout.Label(detail ?? "");
-            GUILayout.EndArea();
-        }
+        public string DisplayState => SocialEnded && mode == ActorControlMode.Runtime ? "Match ended" : mode == ActorControlMode.Human ? "Keyboard" : configurationError != null ? "Connection unavailable" : bridge?.State.ToString() ?? "Connecting";
+        public string DisplayDetail => SocialEnded ? "Authoritative result received." : mode == ActorControlMode.Runtime ? configurationError ?? bridge?.LastErrorMessage ?? "" : "WASD / arrow keys";
         private void OnLog(string message, string stack, LogType type)
         {
             if (type == LogType.Error || type == LogType.Exception || type == LogType.Assert) { if (errors.Count < 32) errors.Add(message); }

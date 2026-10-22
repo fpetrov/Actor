@@ -1,0 +1,173 @@
+{
+  "schema": "actor.native-mixed-observation.v1",
+  "authoritative_gameplay_completed": true,
+  "duration_ms": 659645,
+  "winner": "SOCIAL_ALIGNMENT_IMPOSTOR",
+  "reason": "parity",
+  "gameplay_counts": {
+    "kills": 2,
+    "body_reports": 1,
+    "meetings": 2,
+    "votes": 6,
+    "crew_tasks_completed": 6,
+    "sabotages": 2
+  },
+  "human_server_actions": {
+    "body_reports": 0,
+    "votes": 1
+  },
+  "native_input_observed": [
+    "ready",
+    "move",
+    "chat",
+    "call_meeting",
+    "cast_vote",
+    "work_task_started"
+  ],
+  "native_main_process_exit_code": 0,
+  "strict_mixed_acceptance": false,
+  "strict_gate_limitation": "Three official SDK model gates have unknown interrupted-turn tool counts; historical zero is not inferred.",
+  "known_native_failures": [
+    "Active task choice controls clipped in pre-fix build",
+    "Exploration channel/recipient dropdown contents clipped in pre-fix build",
+    "First rematch exhausted staging slot before old empty room cleanup; status overwritten by refresh"
+  ],
+  "not_claimed": [
+    "Human body report",
+    "Human successful task completion",
+    "Separate Death screen before terminal parity",
+    "Kill animation/audio timing",
+    "IME composition"
+  ],
+  "screenshots": [
+    {
+      "file": "tasks-800-defect.png",
+      "sha256": "52e54602bcc76bae0428757f637e1c60252523a30a484dc3653d0bea90610b51"
+    },
+    {
+      "file": "voting-800.png",
+      "sha256": "c0701035f8ec6368a1356e45cf1b7d1dcc7a6afd8e35fd2f913a9297dd01ab29"
+    },
+    {
+      "file": "gameover-800.png",
+      "sha256": "c3fc5ea267e554447a4d50755a0c1e15da4e727bc31c0ab12ef54a78b7c1e2bc"
+    }
+  ],
+  "rendered_frame_windows": [
+    {
+      "schema": "actor.rendered-ui.v2",
+      "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+      "phase": "Exploration",
+      "unity": "6000.6.4f1",
+      "graphics": "Metal",
+      "version": "0.9.0",
+      "width": 800,
+      "height": 600,
+      "frames": 9565,
+      "focused_frames": 9565,
+      "sample_seconds": 79.86686620023102,
+      "mean_fps": 119.76180430092214,
+      "frame_ms_p50": 8.328918367624283,
+      "frame_ms_p95": 9.098172187805176,
+      "frame_ms_p99": 9.310664609074593,
+      "headless": false,
+      "fullscreen": false
+    },
+    {
+      "schema": "actor.rendered-ui.v2",
+      "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+      "phase": "Discussion",
+      "unity": "6000.6.4f1",
+      "graphics": "Metal",
+      "version": "0.9.0",
+      "width": 1280,
+      "height": 720,
+      "frames": 4863,
+      "focused_frames": 4863,
+      "sample_seconds": 40.59988858830184,
+      "mean_fps": 119.77865381140947,
+      "frame_ms_p50": 8.3314199000597,
+      "frame_ms_p95": 8.973788470029831,
+      "frame_ms_p99": 9.324667043983936,
+      "headless": false,
+      "fullscreen": false
+    },
+    {
+      "schema": "actor.rendered-ui.v2",
+      "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+      "phase": "Voting",
+      "unity": "6000.6.4f1",
+      "graphics": "Metal",
+      "version": "0.9.0",
+      "width": 1280,
+      "height": 720,
+      "frames": 2317,
+      "focused_frames": 2317,
+      "sample_seconds": 19.40004832763225,
+      "mean_fps": 119.43269217014301,
+      "frame_ms_p50": 8.3314199000597,
+      "frame_ms_p95": 9.017836302518845,
+      "frame_ms_p99": 9.347873739898205,
+      "headless": false,
+      "fullscreen": false
+    },
+    {
+      "schema": "actor.rendered-ui.v2",
+      "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+      "phase": "Discussion",
+      "unity": "6000.6.4f1",
+      "graphics": "Metal",
+      "version": "0.9.0",
+      "width": 800,
+      "height": 600,
+      "frames": 0,
+      "focused_frames": 0,
+      "sample_seconds": 0.0,
+      "mean_fps": 0.0,
+      "frame_ms_p50": 0.0,
+      "frame_ms_p95": 0.0,
+      "frame_ms_p99": 0.0,
+      "headless": false,
+      "fullscreen": false
+    },
+    {
+      "schema": "actor.rendered-ui.v2",
+      "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+      "phase": "Voting",
+      "unity": "6000.6.4f1",
+      "graphics": "Metal",
+      "version": "0.9.0",
+      "width": 800,
+      "height": 600,
+      "frames": 2179,
+      "focused_frames": 2179,
+      "sample_seconds": 18.17427730280906,
+      "mean_fps": 119.89472613930066,
+      "frame_ms_p50": 8.330704644322395,
+      "frame_ms_p95": 8.993877097964287,
+      "frame_ms_p99": 9.334870614111423,
+      "headless": false,
+      "fullscreen": false
+    },
+    {
+      "schema": "actor.rendered-ui.v2",
+      "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+      "phase": "GameOver",
+      "unity": "6000.6.4f1",
+      "graphics": "Metal",
+      "version": "0.9.0",
+      "width": 800,
+      "height": 600,
+      "frames": 1682,
+      "focused_frames": 1682,
+      "sample_seconds": 14.016697778366506,
+      "mean_fps": 119.99973364596714,
+      "frame_ms_p50": 8.329917676746845,
+      "frame_ms_p95": 9.200581349432468,
+      "frame_ms_p99": 9.423504583537579,
+      "headless": false,
+      "fullscreen": false
+    }
+  ],
+  "scope": "Actual windowed Human plus three Codex match; source-build snapshot before later UI/telemetry fixes. Frame intervals are Unity rendered loop samples, not hardware presentation timings."
+}

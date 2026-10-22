@@ -1,0 +1,92 @@
+{
+  "earlier_auxiliary_snapshot": {
+    "ci_art_dependency": {
+      "package": "Pillow",
+      "source": "Existing local art-tools distribution metadata; explicit CI-only install, no Runtime dependency change",
+      "version": "13.0.0"
+    },
+    "event_routing": {
+      "cases": 32,
+      "correct": 32,
+      "external_requests": 0,
+      "important_false_negatives": 0,
+      "model_calls": 0,
+      "unnecessary_interruptions": 0
+    },
+    "passed": true,
+    "pytest": {
+      "duration_seconds": 32.84,
+      "passed": true,
+      "scope": "scripts/tests; social-resume; release-validation; existing M7 privacy/protocol/fault/validation/sandbox/threat guards; authored Atmospheric art",
+      "subtests": 332,
+      "tests": 311
+    },
+    "schema": "actor.m8-auxiliary-verification.v1",
+    "schema_freshness": {
+      "generated_artifacts": 54,
+      "passed": true
+    },
+    "scope": "Auth-free offline/local-IPC checks only. No Unity GUI/player/model/SSH/VPS/deploy operation. Separate self-test invocations can overlap guards imported by pytest; counts are not a unique-case sum.",
+    "separate_self_test_invocations": {
+      "cooperative_faults": {
+        "passed": true,
+        "tests": 9
+      },
+      "investigation_faults": {
+        "passed": true,
+        "tests": 6
+      },
+      "protocol_guard": {
+        "passed": true,
+        "tests": 3
+      },
+      "visibility_guard": {
+        "passed": true,
+        "tests": 5
+      }
+    }
+  },
+  "final_mixed_validator_review": {
+    "duration_seconds": 0.26,
+    "passed": true,
+    "scope": "Offline artifact/operator-consistency guards. Cleanup contradictions, unsupported final lives, unsupported ejection/parity and an active provider episode are rejected; no native input attestation or live gameplay is implied.",
+    "source_sha256": "5bd5ae7c62c2412bd3b6785a84485867c7d13d9045a42af0c1eab813e89e11da",
+    "subtests": 54,
+    "tests": 20
+  },
+  "independent_mixed_validator_review": {
+    "cleanup_contradiction_regression": "Explicit aggregate nonzero cannot be overridden by per-row false values; fixed by owning Runtime agent and independently verified.",
+    "duration_seconds": 0.53,
+    "passed": true,
+    "scope": "Offline Human-plus-three-official-Codex artifact consistency and privacy; no input attestation or actual gameplay implied.",
+    "subtests": 53,
+    "tests": 17
+  },
+  "limitations": [
+    "Offline and owned local IPC tests only; no actual M8 privacy, protocol, server fault, Sandbox game or model run is implied.",
+    "Earlier and current pytest sets overlap. Counts and separate self-tests are not a unique-case sum.",
+    "The earlier snapshot precedes later SocialBindings and M8 helper changes; the selected current regression run is listed separately."
+  ],
+  "m8_helper_regressions": {
+    "duration_seconds": 1.7,
+    "passed": true,
+    "schema_freshness": {
+      "generated_artifacts": 54,
+      "passed": true
+    },
+    "scope": "social-resume; release-validation; social-faults; social-privacy; social-protocol; sandbox-regression",
+    "source_sha256": {
+      "server_guard": "e25141f077e86ea353465fc521d83aefe1795f96188c9e2ae37e838910f6abf5",
+      "version_bound_wrapper": "8db3adbbe30e87f68db135067acf2a20d80df8423239ab6ac9ca43274b0902f2"
+    },
+    "subtests": 242,
+    "targeted_new_version_profile_guards": {
+      "passed": true,
+      "subtests": 100,
+      "tests": 31
+    },
+    "tests": 159
+  },
+  "passed": true,
+  "schema": "actor.m8-auxiliary-verification-history.v1"
+}

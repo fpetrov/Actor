@@ -1,0 +1,111 @@
+{
+  "style": "Atmospheric Minimalism",
+  "original": true,
+  "logical_world_ppu": 50,
+  "world_ppu": 100,
+  "character_ppu": 320,
+  "character_frame": [
+    240,
+    350
+  ],
+  "character_pivot": [
+    0.5,
+    0.022857142857142857
+  ],
+  "directions": [
+    "Down",
+    "Up",
+    "Left",
+    "Right",
+    "DownRight",
+    "UpRight"
+  ],
+  "frames_per_direction": 8,
+  "kill_duration_ms": 640,
+  "layout_semantic_sha256": "c3747a705e55f52e757ee45acfc8a8b1b297cf5502be5f566118e96b40d7fabc",
+  "palette": {
+    "void": "#171F29",
+    "ink": "#26343D",
+    "panel": "#24313C",
+    "paper": "#EEE9DC",
+    "floor": "#D9D8C9",
+    "sage": "#95B6A4",
+    "clay": "#D9947E",
+    "lilac": "#A7ACC9",
+    "gold": "#E9C781",
+    "muted": "#B5C0C2",
+    "white": "#FAF7F0",
+    "edge": "#5B6A72",
+    "shadow": "#52615F"
+  },
+  "landmarks": [
+    {
+      "sprite": "landmark-hall-directory",
+      "x": -2.0,
+      "y": 1.84,
+      "pivot_x": 0.5,
+      "pivot_y": 0.0,
+      "width": 240,
+      "height": 110
+    },
+    {
+      "sprite": "landmark-security-records",
+      "x": 6.4,
+      "y": 5.09,
+      "pivot_x": 0.5,
+      "pivot_y": 0.0,
+      "width": 240,
+      "height": 110
+    },
+    {
+      "sprite": "landmark-storage-cargo",
+      "x": 6.92,
+      "y": -6.86,
+      "pivot_x": 0.0,
+      "pivot_y": 0.5,
+      "width": 110,
+      "height": 240
+    }
+  ],
+  "files": {
+    "Click.wav": "eb58837397de05d9d28d30f5c81089d62c5d6e88a74512c1bdf8ac779682299b",
+    "Death.wav": "19f6e949cf8e37d19acfb27ddaca7219d75a12a54fae3253a275e0fee437fcb7",
+    "Emergency.wav": "f3372ce6a1527aca281d315a27e7709ba655cc884b3ee3e36544af615533cef3",
+    "GameOver.wav": "2fc45d7bb184c965d8e29e4d6fad571f62daf08e2147c1f76b184faf16b27106",
+    "Hover.wav": "ce95d757bfc207ea89640584a816975e3190584e8103ec8cfb30e1192ba710e0",
+    "KillImpact.wav": "4f0f65962e692bad3cb2ecc783bb7f6337ab36c3e07b6fc19e29436fa57cb114",
+    "Meeting.wav": "fdf9d13bdecd3d340d650535953b6ebb19f2a028c5fb907d1a1e5b6fbcb140f3",
+    "Message.wav": "af773312b5a9f56fbee86df74b9d3335fe03e3c117e8516a8e7023821fd44d66",
+    "TaskAccepted.wav": "da210321eb4b298cbfbc211d92b0efc54f0ef2d25626ed8f763195e9c1cc3429",
+    "TaskCompleted.wav": "2eafe7c9cb351c8a185f7b3a4351dcde28aed78bdec20ee3688b9169be9ac1e2",
+    "VoteSubmitted.wav": "d447da8aedfe5f36aee85f81630fe26c6289ed13df73d77a6bebc5aaf6c16f3e",
+    "character-review.png": "ea51ae1083d0a8cf1579368d48a5a13dfa72776ece0fa754d90c454c4e7f015f",
+    "fold-0.png": "ff5822fcac8be229f2907f729cdf0903468234364c2ad0aaf0358f108f82b1d7",
+    "fold-1.png": "93665313bebcd28f6c1246c683413789636fcc429fd40996ea62a1633d971c8e",
+    "fold-2.png": "2079405f7533f5cd25d876edfa4465ae39457b3dd601ad61a5209727f056f11e",
+    "landmark-hall-directory.png": "b3035b0dc62b4d7b155e6a610802a3b0f57ee2d11e133cc468948ecda5c89a03",
+    "landmark-security-records.png": "53790b18a6adb534c0b4093536a20a0a1433b73c41f642d7d0e23aa2babf8a25",
+    "landmark-storage-cargo.png": "f6ebaf051a6733949d50057f7ebab2cdc65670abb32f22fe16784d6e203a681e",
+    "mark-0.png": "23e7caa7bc14067160aecca2a7756cc1b38f847480cf988fcea37b7afdde8492",
+    "mark-1.png": "7490bd0d891bb12246b0d4601f285ac773c8c0d5c3d740eb93c3c08d651da859",
+    "mark-2.png": "966936678756a3194f334699137c85d247eb9a0cd0ae981d32d53e86f4928f8b",
+    "mark-3.png": "1b244222213b0b3a6b8d3bb1c7ed2a8ae1ee61d006d5896f9a3f65fccd891e6e",
+    "mark-4.png": "5d493d8cb15603b88ffe95f3e07cb417a7839fc429f8a8a3b8844f3da5589282",
+    "mark-5.png": "76760af3e59504317dde52924db54ea4405e06f30056cab7b4eee269d8e3ea9c",
+    "reactor.png": "26ec8544025d91fc631e6f4179b8532f6093b7f8c5ea4325fa26e5f96d728384",
+    "service-light.png": "4bb37cd0d298d1e067ec4b24ae71644299d0b2647ee53e23bc2b715a1d195c93",
+    "station-floor.png": "ae4881a070b00bf615d172ff62537b5cd8e2e1f81e63c7196e4b2a305886fb0f",
+    "surveyor-down.png": "c794cc2a0cd20486d62bd0b1de5c1e4c69c14d0ffd98c7bb9870e2aa50a76bd8",
+    "surveyor-downright.png": "728e791147ce6e56544e9c8251d12bcad10d8425d99ee391aaf6263b1367e831",
+    "surveyor-left.png": "af0076f21b38b9e75640ac3edaba234acc23636dbfbf5f855c6877fd3d339cb4",
+    "surveyor-right.png": "3e91a5c42c90a217f96f8ff890a28f0bbd6b06140f4603177d26dadf577bb6d8",
+    "surveyor-up.png": "71fd3cd01afaa20c8fe03c45da88f74bbd5c8f1947d32c31ec8f4bab098e473d",
+    "surveyor-upright.png": "553c7471653ce17bc6b94b2e8a996d4b817ba8f567d2bd7d7b77c001a638692a",
+    "terminal-life-support.png": "0cd72cf39a3bc35a2a628abd7bd038e4809e690abe46e6c69f642fe162f59349",
+    "terminal-meeting.png": "5db714c215681ae662b4ca98f36e89900de57877320c8fcb7cded5faaba1a02c",
+    "terminal-records.png": "a437ab5a49a061f9cac16d3fa5517af497c63794e3504c16f0c7a38b91c4fcb2",
+    "terminal-storage.png": "6d92b843f2c18ee80f84f65141dca84146708f96684b678a5a3392c05731775a",
+    "terminal-task.png": "9dec85d7dd52f8be479f3de3e4188ebf9faf53372ae513ba577355e98359bef6",
+    "wall.png": "9dc6808a287c7e7911f4c20cb3af72e62422fc759d0e1a1766f064b1fd11d768"
+  }
+}

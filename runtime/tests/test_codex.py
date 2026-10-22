@@ -37,8 +37,9 @@ class FakeSDK:
     TextInput, ExternalMessage = TextInput, ExternalMessage
     Sandbox = SimpleNamespace(read_only="read-only")
     ApprovalMode = SimpleNamespace(deny_all="deny_all")
+    TurnResult = SimpleNamespace
 
-    def __init__(self, outputs=None, *, blocked=False, usage=None):
+    def __init__(self, outputs=None, *, blocked=False, usage=None, started_items=(), completed_items=(), terminal=True):
         self.outputs = outputs or [{"decision": {"kind": "skill", "skill_id": "actor.wait",
                                                 "arguments": {"duration_seconds": 0.01}}},
                                    {"decision": {"kind": "finish", "status": "success", "reason": None}}]
@@ -49,6 +50,8 @@ class FakeSDK:
         self.release = asyncio.Event()
         self.output_index = 0
         self.usage = usage
+        self.started_items, self.completed_items, self.terminal = started_items, completed_items, terminal
+        self.streams_closed = 0
 
     def CodexConfig(self, **options):
         return SimpleNamespace(**options)
@@ -95,6 +98,23 @@ class FakeSDK:
                         thread.active = None
                         return SimpleNamespace(id=self.id, status="interrupted" if state.interrupted else "completed",
                                                final_response=json.dumps(state.output), usage=sdk.usage)
+
+                    async def stream(self):
+                        try:
+                            for item in sdk.started_items:
+                                yield SimpleNamespace(method="item/started",payload=SimpleNamespace(turn_id=self.id,item=item))
+                            result=await self.run()
+                            for item in sdk.completed_items:
+                                yield SimpleNamespace(method="item/completed",payload=SimpleNamespace(turn_id=self.id,item=item))
+                            message=SimpleNamespace(id="message-"+self.id,type="agentMessage",phase=None,text=result.final_response)
+                            yield SimpleNamespace(method="item/completed",payload=SimpleNamespace(turn_id=self.id,item=message))
+                            if sdk.usage is not None:
+                                yield SimpleNamespace(method="thread/tokenUsage/updated",payload=SimpleNamespace(turn_id=self.id,token_usage=sdk.usage))
+                            if sdk.terminal:
+                                turn=SimpleNamespace(id=self.id,status=result.status,error=None,started_at=None,completed_at=None,duration_ms=None)
+                                yield SimpleNamespace(method="turn/completed",payload=SimpleNamespace(turn=turn))
+                        finally:
+                            sdk.streams_closed+=1
 
                     async def interrupt(self):
                         sdk.interrupted.append(self.id)
@@ -423,7 +443,7 @@ async def test_usage_totals_are_not_summed_for_cumulative_thread_replies(session
     await brain.close()
 
 
-async def test_interrupted_public_turn_usage_counts_toward_next_decision_budget(session):
+async def test_interrupted_public_turn_usage_counts_toward_next_decision_budget(session,caplog):
     from test_preemption import routing, emit
     usage = SimpleNamespace(model_dump=lambda **_: {"last": {"total_tokens": 100}, "total": {"total_tokens": 100}})
     sdk, router = FakeSDK(blocked=True, usage=usage), routing(session)
@@ -439,6 +459,21 @@ async def test_interrupted_public_turn_usage_counts_toward_next_decision_budget(
     assert brain.report()["usage_totals"]["total_tokens"] == 100
     assert adapter.report()["unique_model_turns"] == 1
     assert len(brain.turns) == 1 and brain.usage_warning
+    assert any("provider_code=codex_usage_limit" in record.message for record in caplog.records)
+
+
+async def test_unknown_provider_code_message_and_details_are_not_diagnostic_logs(session,caplog):
+    from actor_runtime.brains import SequenceBrain
+    class Failing(SequenceBrain):
+        public_error_codes=CodexBrain.public_error_codes
+        async def decide(self,context):
+            raise ActorError("untrusted_payload_code","private-provider-message",{"payload":"private-provider-details"})
+    runner=ObjectiveRunner(session,registry(),Failing([]))
+    result=await runner.run(Objective(text="Bounded provider failure"))
+    assert result.status=="failed" and result.reason=="brain_failure"
+    logs="\n".join(record.message for record in caplog.records)
+    assert "provider_code=unavailable" in logs
+    assert not any(value in logs for value in ("untrusted_payload_code","private-provider-message","private-provider-details"))
 
 
 @pytest.mark.parametrize("options", [{"max_turns": 0}, {"max_turns": True},

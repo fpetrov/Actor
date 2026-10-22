@@ -1,0 +1,95 @@
+{
+  "schema": "actor.m8-reconnect-acceptance.v1",
+  "passed": true,
+  "version": {
+    "game": "0.9.0",
+    "admission": "4"
+  },
+  "denominator": {
+    "supervisor_attempts": 3,
+    "setup_failures": 2,
+    "actual_transport_fault_attempts": 1,
+    "accepted_transport_recoveries": 1
+  },
+  "attempts": [
+    {
+      "attempt": 1,
+      "passed": false,
+      "reason_code": "primary_admission_failed",
+      "actual_udp_fault_exercised": false,
+      "known_owned_process_records": 1,
+      "owned_processes_remaining": 0,
+      "owned_groups_remaining": 0
+    },
+    {
+      "attempt": 2,
+      "passed": false,
+      "reason_code": "owned_participant_exited_early",
+      "actual_udp_fault_exercised": false,
+      "known_owned_process_records": 4,
+      "owned_processes_remaining": 0,
+      "owned_groups_remaining": 0
+    },
+    {
+      "attempt": 3,
+      "passed": true,
+      "reason_code": null,
+      "actual_udp_fault_exercised": true,
+      "known_owned_process_records": 10,
+      "owned_processes_remaining": 0,
+      "owned_groups_remaining": 0
+    }
+  ],
+  "accepted": {
+    "schema": "actor.social-resume-supervision.v1",
+    "passed": true,
+    "checks": {
+      "credential_memory_ready": true,
+      "connected_resume_rejected": true,
+      "disconnect_observed": true,
+      "same_actor": true,
+      "same_match": true,
+      "same_private_assignment": true,
+      "alive_preserved": true,
+      "higher_generation": true,
+      "hydrated": true,
+      "stale_generation_rejected": true,
+      "own_client_stopped": true,
+      "process_kept_alive": true,
+      "resumed_during_exploration": true,
+      "completed_probe": true,
+      "public_fault_profile": true,
+      "stationary_fresh_samples": true,
+      "actual_udp_blackhole": true,
+      "ordered_actual_reconnect_times": true,
+      "ordinary_four_owned_clients": true,
+      "same_owned_process_survived_fault": true,
+      "owned_process_cleanup": true
+    },
+    "reconnect_attempts": 1,
+    "transport": {
+      "client_packets": 1367,
+      "server_packets": 9148,
+      "dropped_client": 882,
+      "dropped_server": 8449,
+      "blackhole_seconds": 30.093552250007633
+    },
+    "owned_processes_remaining": 0,
+    "scope": "Actual ordinary own Human-mode headless client stays alive across UDP loss, resumes a live own identity and rejects old-generation intent; server-accepted duplicate-connected denial. No GUI/model, ghost-vulnerability kill, post-death resume or full-match claim.",
+    "privacy": "No credentials, roles, identities, messages, poses, context, paths, PID or payload bytes."
+  },
+  "client_evidence": {
+    "duration_seconds": 44.568573334,
+    "stationary_samples": 121,
+    "stationary_seconds": 2.0035157920000017,
+    "reconnect_attempts": 1,
+    "public_kill_cooldown_ms": 180000
+  },
+  "private_isolation": {
+    "independent_peer_bridge_ports": true,
+    "independent_peer_credentials": true,
+    "all_recorded_owned_pids_stopped": true
+  },
+  "scope": "One actual ordinary four-client staging match; same primary process and in-memory bearer survive opaque bidirectional UDP loss. Three peers use installed deterministic fixture Brains; no models. No post-death resurrection, vulnerable ghost kill, GUI or full-match result claim.",
+  "privacy": "Whitelist only: no match/actor/session IDs, room codes, PID, filesystem path, credential/fingerprint, role value, message, pose, observation or raw payload."
+}

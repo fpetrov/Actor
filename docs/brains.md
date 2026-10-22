@@ -238,3 +238,5 @@ tested separately by the optional adapter.
 burst, duplicate urgent signals, Wait and actual navigation preemption,
 ownership release, stale reasoning, single-flight continuation, terminal races,
 degraded routing and bounded replans.
+
+Runtime0.7 adds bounded evidence-group selection, explicit unresolved contradictions and installed raw-capability context selection. Arena's static strategy guidance describes both sides without assigning targets or facts; dynamic own state and other players' claims remain external data. Discussion gathering and visible pursuit remain ordinary foreground Skills, so no second agent framework or model polling loop is introduced. See [social reasoning](social-reasoning.md) and [installed agent onboarding](agent-onboarding.md).

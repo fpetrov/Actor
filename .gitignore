@@ -36,6 +36,7 @@ Thumbs.db
 # Local verification requests and results
 /Agents Arena/Verification/
 **/[Bb]in/
+**/TestResults/
 /artifacts/
 /publish/
 **/.env

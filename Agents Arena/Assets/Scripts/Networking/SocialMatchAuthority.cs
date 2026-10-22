@@ -18,9 +18,10 @@ namespace Actor.Networking
             internal int MinPlayers = 4, MaxPlayers = 6, ImpostorCount = 1;
             internal long MatchDurationMs = 900000, DiscussionDurationMs = 90000, VotingDurationMs = 60000;
             internal long KillCooldownMs = 30000, EmergencyCooldownMs = 90000, SabotageTimeoutMs = 150000;
-            internal long WorkDurationMs = 4000, SabotageCooldownMs = 90000, WaitingTimeoutMs = 300000;
+            internal long WorkDurationMs = 12000, SabotageCooldownMs = 90000, WaitingTimeoutMs = 300000;
+            internal long ReconnectGraceMs = 30000, CalibrationStepMs = 2500, SensorSampleDelayMs = 8000, TaskDecisionTimeoutMs = 30000;
             internal double KillDistance = .9, VisibilityRadius = 3.5, BodyReportDistance = 1.2, InteractionRadius = 1.25;
-            internal int TaskThreshold = 4, MeetingLimit = 3, PlayerMeetingLimit = 1;
+            internal int TaskThreshold = 8, MeetingLimit = 3, PlayerMeetingLimit = 1;
             internal Configuration Copy() => (Configuration)MemberwiseClone();
         }
         internal sealed class Participant
@@ -29,6 +30,8 @@ namespace Actor.Networking
             internal double X, Y, VelocityX, VelocityY;
             internal bool PoseFresh = true;
             internal ulong ConnectionEpoch;
+            internal ulong ConnectionGeneration = 1;
+            internal bool ResumeEligible, AuthenticatedResume;
             internal int JoinOrder;
             internal Participant Copy() => (Participant)MemberwiseClone();
         }
@@ -39,7 +42,8 @@ namespace Actor.Networking
             internal bool Available = true;
             internal Terminal Copy() => (Terminal)MemberwiseClone();
         }
-        internal sealed class TaskDefinition { internal string Id = "", TerminalId = ""; }
+        internal sealed class TaskDefinition
+        { internal string Id = "", TerminalId = ""; internal SocialTaskMechanic Mechanic = SocialTaskMechanic.MaintenanceHold; }
         internal sealed class Delivery
         {
             internal readonly string Recipient;
@@ -56,6 +60,8 @@ namespace Actor.Networking
             internal ulong OwnRevision;
             internal long KillReady, SabotageReady, MeetingReady, EliminatedAt;
             internal int MeetingsUsed;
+            internal long TransportLostUntil;
+            internal ulong Generation = 1;
         }
         private sealed class Work
         {
@@ -63,6 +69,10 @@ namespace Actor.Networking
             internal bool Repair;
             internal long Ends;
             internal ulong Phase;
+            internal SocialTaskMechanic Mechanic;
+            internal int Step, Attempts, SampleA, SampleB, CalibrationOffset;
+            internal ulong StepRevision = 1;
+            internal long NotBefore;
         }
         private sealed class Replay
         {
@@ -78,6 +88,7 @@ namespace Actor.Networking
         private readonly Dictionary<string, Player> players = new();
         private readonly Dictionary<string, Terminal> terminals = new();
         private readonly Dictionary<string, string> taskTerminals = new();
+        private readonly Dictionary<string, SocialTaskMechanic> taskMechanics = new();
         private readonly HashSet<string> completedTasks = new();
         private readonly Dictionary<string, Work> works = new();
         private readonly Dictionary<string, SocialVisibleBody> bodies = new();
@@ -94,6 +105,7 @@ namespace Actor.Networking
         private long now, waitingSince = -1, globalAt, pausedEmergencyRemaining;
         private double globalTokens = 16;
         private ulong sequence;
+        private ulong waitingRevision = 1;
         private uint kills, reports, meetings, votes, sabotages;
         private bool replayTruncated;
         internal const int MaxReplayEntries = 512, MaxHistoryEntries = 256, MaxPlayersTracked = 32;
@@ -135,7 +147,33 @@ namespace Actor.Networking
             if (p.Alignment == SocialAlignment.Impostor) { result.KillReadyAtUnixMs = p.KillReady; result.SabotageReadyAtUnixMs = p.SabotageReady; }
             result.EmergencyReadyAtUnixMs = p.MeetingReady;
             result.RemainingMeetings = (uint)Math.Max(0, config.PlayerMeetingLimit - p.MeetingsUsed);
+            result.ConnectionGeneration = p.Generation;
             result.ServerRevision = p.OwnRevision; return result;
+        }
+        internal SocialWaitingPlayersObservation Waiting(string actor)
+        {
+            var view = new SocialWaitingPlayersObservation { MatchId = match, RecipientActorId = BoundActor(actor),
+                MinPlayers = (uint)config.MinPlayers, MaxPlayers = (uint)config.MaxPlayers };
+            if (state.Phase != SocialPhase.WaitingForPlayers) return view;
+            view.ServerRevision = waitingRevision;
+            foreach (var p in players.Values.Where(p => p.Connected || p.TransportLostUntil > now).OrderBy(p => p.Pose.JoinOrder).Take(6))
+            { view.Players.Add(new SocialWaitingPlayer { ActorId = p.Pose.Id, DisplayName = SafeName(p.Pose.Name), Ready = p.Ready && p.Connected, Connected = p.Connected });
+                if (p.Ready && p.Connected) ++view.ReadyCount; }
+            return view;
+        }
+        internal SocialOwnTaskWorkObservation TaskWork(string actor)
+        {
+            var view = new SocialOwnTaskWorkObservation { MatchId = match, RecipientActorId = BoundActor(actor) };
+            if (!players.TryGetValue(actor, out var p)) return view;
+            view.ServerRevision = p.OwnRevision;
+            if (!works.TryGetValue(actor, out var work) || work.Repair || !Living(actor) || IsTerminal) return view;
+            view.WorkId = work.Id; view.TaskId = work.Task; view.Mechanic = work.Mechanic; view.StepRevision = work.StepRevision;
+            view.StepIndex = (uint)(work.Step + 1); view.StepCount = work.Mechanic == SocialTaskMechanic.CircuitCalibration ? 3u : 1u;
+            view.NotBeforeUnixMs = work.NotBefore; view.DeadlineUnixMs = work.Ends;
+            if (work.Mechanic == SocialTaskMechanic.CircuitCalibration) view.RequiredChoice = CalibrationChoice(work);
+            if (work.Mechanic == SocialTaskMechanic.SensorObservation)
+            { view.SampleA = work.SampleA; view.SampleBReady = now >= work.NotBefore; if (view.SampleBReady) view.SampleB = work.SampleB; }
+            return view;
         }
         internal SocialMeetingObservation Meeting(string actor)
         {
@@ -154,7 +192,10 @@ namespace Actor.Networking
                 if (!terminals.TryGetValue(task.Value, out var t)) continue;
                 result.Tasks.Add(new SocialTask { TaskId = task.Key, TerminalEntityId = t.Id, RoomId = t.Room,
                     X = (float)t.X, Y = (float)t.Y, ApproachX = (float)t.ApproachX, ApproachY = (float)t.ApproachY,
-                    WorkDurationMs = (uint)config.WorkDurationMs, Completed = result.ContributesToCrewProgress && completedTasks.Contains(TaskKey(actor, task.Key)) });
+                    WorkDurationMs = (uint)config.WorkDurationMs, Mechanic = taskMechanics[task.Key],
+                    StepCount = taskMechanics[task.Key] == SocialTaskMechanic.CircuitCalibration ? 3u : 1u,
+                    SampleDelayMs = (uint)config.SensorSampleDelayMs,
+                    Completed = result.ContributesToCrewProgress && completedTasks.Contains(TaskKey(actor, task.Key)) });
             }
             return result;
         }
@@ -166,14 +207,19 @@ namespace Actor.Networking
                 || !Coordinate(t.ApproachX) || !Coordinate(t.ApproachY) || !Finite(t.Radius) || t.Radius < 0 || t.Radius > 5
                 || t.Kind != "task" && t.Kind != "meeting" && t.Kind != "life-support") || ts.Select(t => t.Id).Distinct().Count() != ts.Length
                 || definitions.Length < 3 || definitions.Length > 5 || definitions.Any(t => t == null || !Identifier(t.Id)
+                    || t.Mechanic < SocialTaskMechanic.MaintenanceHold || t.Mechanic > SocialTaskMechanic.SensorObservation
                     || !ts.Any(s => s.Id == t.TerminalId && s.Kind == "task")) || definitions.Select(t => t.Id).Distinct().Count() != definitions.Length
                 || ts.Count(t => t.Kind == "meeting") != 1 || ts.Count(t => t.Kind == "life-support") != 1)
                 throw new ArgumentException("Expected bounded authored social terminals and tasks.");
+            if (config.TaskThreshold > definitions.Length * (config.MinPlayers - config.ImpostorCount))
+                throw new ArgumentException("Task threshold exceeds the minimum admitted Crew assignment capacity.");
             if (Started && (!taskTerminals.OrderBy(p => p.Key).SequenceEqual(definitions.Select(t => new KeyValuePair<string, string>(t.Id, t.TerminalId)).OrderBy(p => p.Key))
-                || !terminals.Keys.OrderBy(p => p).SequenceEqual(ts.Select(t => t.Id).OrderBy(p => p))))
+                || !terminals.Keys.OrderBy(p => p).SequenceEqual(ts.Select(t => t.Id).OrderBy(p => p))
+                || !taskMechanics.OrderBy(p => p.Key).SequenceEqual(definitions.Select(t => new KeyValuePair<string, SocialTaskMechanic>(t.Id, t.Mechanic)).OrderBy(p => p.Key))))
                 throw new InvalidOperationException("Social world identities are immutable after assignment.");
             terminals.Clear(); foreach (var t in ts) terminals.Add(t.Id, t.Copy());
             taskTerminals.Clear(); foreach (var task in definitions) taskTerminals.Add(task.Id, task.TerminalId);
+            taskMechanics.Clear(); foreach (var task in definitions) taskMechanics.Add(task.Id, task.Mechanic);
         }
         internal List<Delivery> Refresh(IEnumerable<Participant> approved, long at)
         {
@@ -189,17 +235,28 @@ namespace Actor.Networking
             {
                 if (players.TryGetValue(pose.Id, out var existing))
                 {
+                    if (!existing.Connected && existing.TransportLostUntil > at && pose.AuthenticatedResume && pose.ConnectionGeneration > existing.Generation)
+                    { existing.Connected = true; existing.TransportLostUntil = 0; existing.Generation = pose.ConnectionGeneration;
+                        existing.Pose = pose.Copy(); existing.Ready = false; ++waitingRevision; OwnChanged(existing, output); continue; }
                     if (existing.Connected && existing.Pose.ConnectionEpoch != pose.ConnectionEpoch) lost.Add(existing);
                     existing.Pose = pose.Copy(); if (lost.Contains(existing)) existing.Pose.PoseFresh = false;
                     continue;
                 }
                 if (players.Count >= MaxPlayersTracked) continue;
-                var player = new Player { Pose = pose.Copy(), Life = Started || IsTerminal ? SocialLife.Spectator : SocialLife.Alive, OwnRevision = 1 };
+                var player = new Player { Pose = pose.Copy(), Life = Started || IsTerminal ? SocialLife.Spectator : SocialLife.Alive, OwnRevision = 1, Generation = pose.ConnectionGeneration };
                 players.Add(pose.Id, player); visibleRevisions[pose.Id] = 0;
+                ++waitingRevision;
                 output.Add(new Delivery(pose.Id, new SocialOwnStateChangedEvent { State = OwnState(pose.Id) }));
             }
             output.AddRange(Tick(at));
-            foreach (var p in lost) Forfeit(p, output, "connection_lost");
+            foreach (var p in lost)
+            {
+                if (!p.Pose.ResumeEligible) { Forfeit(p, output, "connection_lost"); continue; }
+                p.Connected = false; p.Ready = false; p.TransportLostUntil = now + config.ReconnectGraceMs;
+                p.Pose.PoseFresh = true; p.Pose.VelocityX = p.Pose.VelocityY = 0;
+                if (works.TryGetValue(p.Pose.Id, out var work)) EndWork(work, false, "transport_lost", output);
+                ++waitingRevision; OwnChanged(p, output);
+            }
             EvaluateVictory(output); output.AddRange(Tick(now)); return output;
         }
         internal List<Delivery> ControlUnavailable(string actor, long at)
@@ -207,6 +264,15 @@ namespace Actor.Networking
             var output = Tick(at);
             if (players.TryGetValue(actor, out var p) && p.Connected && !IsTerminal) Forfeit(p, output, "control_unavailable");
             EvaluateVictory(output); output.AddRange(Tick(now)); return output;
+        }
+        internal void RefreshSuspendedPose(Participant pose)
+        {
+            if (pose == null || !players.TryGetValue(pose.Id, out var p) || p.Connected || p.TransportLostUntil <= now) return;
+            // Only the server's retained physical avatar supplies this. It is
+            // vulnerable, but is never an approved command-producing endpoint.
+            if (!Coordinate(pose.X) || !Coordinate(pose.Y)) return;
+            p.Pose.X = pose.X; p.Pose.Y = pose.Y; p.Pose.Room = pose.Room; p.Pose.PoseFresh = true;
+            p.Pose.VelocityX = p.Pose.VelocityY = 0;
         }
         internal bool CanMove(string actor) => players.TryGetValue(actor, out var p) && p.Connected && p.Life == SocialLife.Alive
             && (state.Phase == SocialPhase.Exploration || state.Phase == SocialPhase.WaitingForPlayers);
@@ -222,7 +288,7 @@ namespace Actor.Networking
         }
         internal bool IsVisible(string observer, string target)
         {
-            if (!Living(observer) || !players.TryGetValue(target, out var t) || !t.Connected || t.Life != SocialLife.Alive || observer == target) return false;
+            if (!Living(observer) || !players.TryGetValue(target, out var t) || !TargetAlive(target) || observer == target) return false;
             return Sees(observer, t.Pose.X, t.Pose.Y) && Fresh(t.Pose);
         }
         internal bool CanSee(string observer, float x, float y) => Sees(observer, x, y);
@@ -252,6 +318,8 @@ namespace Actor.Networking
             var output = new List<Delivery>();
             foreach (var key in replays.Where(p => p.Value.Expires <= now).Select(p => p.Key).ToArray()) replays.Remove(key);
             if (IsTerminal) return output;
+            foreach (var p in players.Values.Where(p => !p.Connected && p.TransportLostUntil > 0 && p.TransportLostUntil <= now).ToArray())
+                Forfeit(p, output, "reconnect_expired");
             foreach (var work in works.Values.Where(w => !WorkValid(w)).ToArray()) EndWork(work, false, "work_interrupted", output);
             if (state.Phase == SocialPhase.WaitingForPlayers)
             {
@@ -282,7 +350,8 @@ namespace Actor.Networking
                         continue;
                     }
                     foreach (var work in works.Values.Where(w => w.Ends == next).ToArray())
-                        EndWork(work, true, "work_completed", output);
+                        EndWork(work, work.Repair || work.Mechanic == SocialTaskMechanic.MaintenanceHold,
+                            work.Repair || work.Mechanic == SocialTaskMechanic.MaintenanceHold ? "work_completed" : "task_timed_out", output);
                     EvaluateVictory(output);
                 }
                 finally { now = capturedNow; }
@@ -295,7 +364,8 @@ namespace Actor.Networking
             if (!players.TryGetValue(actor, out var p) || command == null) return output;
             var context = Context(command); SocialAction action = Action(command);
             if (context == null || action == SocialAction.Unspecified) return output;
-            string invalid = context.MatchId != match ? "match_mismatch" : !Identifier(context.CorrelationId) ? "invalid_correlation"
+            string invalid = context.MatchId != match ? "match_mismatch" : context.ConnectionGeneration != p.Generation ? "connection_changed"
+                : !Identifier(context.CorrelationId) ? "invalid_correlation"
                 : command.CalculateSize() > 2048 || !CommandBounds(command) ? "invalid_request" : "";
             if (invalid.Length > 0) { output.Add(new Delivery(actor, Result(command, false, invalid))); return output; }
             string key = actor + ":" + context.CorrelationId; byte[] hash;
@@ -319,6 +389,7 @@ namespace Actor.Networking
             else if (command is SocialWorkTaskCommand task) reply = StartWork(p, task, output);
             else if (command is SocialSabotageCommand sabotage) reply = Sabotage(p, sabotage, output);
             else if (command is SocialRepairEmergencyCommand repair) reply = StartRepair(p, repair, output);
+            else if (command is SocialTaskStepCommand step) reply = TaskStep(p, step, output);
             else reply = CancelWork(p, (SocialCancelWorkCommand)command, output);
             replays[key] = new Replay { Hash = hash, Reply = reply.Clone(), Expires = now + ReplayRetentionMs };
             output.Add(new Delivery(actor, reply)); return output;
@@ -327,7 +398,7 @@ namespace Actor.Networking
         private SocialActionResultEvent Ready(Player p, SocialReadyCommand command, List<Delivery> output)
         {
             if (state.Phase != SocialPhase.WaitingForPlayers) return Result(command, false, "phase_unavailable");
-            p.Ready = command.Ready; OwnChanged(p, output); TryStart(output);
+            p.Ready = command.Ready; ++waitingRevision; OwnChanged(p, output); TryStart(output);
             return Result(command, true, "ready_updated", true);
         }
         private void TryStart(List<Delivery> output)
@@ -350,7 +421,7 @@ namespace Actor.Networking
         private SocialActionResultEvent Kill(Player attacker, SocialKillCommand command, List<Delivery> output)
         {
             if (state.Phase != SocialPhase.Exploration || attacker.Alignment != SocialAlignment.Impostor || works.ContainsKey(attacker.Pose.Id)
-                || now < attacker.KillReady || command.TargetActorId == attacker.Pose.Id || !Living(command.TargetActorId)
+                || now < attacker.KillReady || command.TargetActorId == attacker.Pose.Id || !TargetAlive(command.TargetActorId)
                 || !IsVisible(attacker.Pose.Id, command.TargetActorId)
                 || Distance(attacker.Pose, players[command.TargetActorId].Pose.X, players[command.TargetActorId].Pose.Y) > config.KillDistance)
                 return Result(command, false, "target_unavailable");
@@ -364,6 +435,11 @@ namespace Actor.Networking
             foreach (string witness in witnesses) output.Add(new Delivery(witness, new SocialVisibleAttackEvent { MatchId = match, ObserverActorId = witness,
                 AttackerActorId = attacker.Pose.Id, VictimActorId = victim.Pose.Id, X = (float)victim.Pose.X, Y = (float)victim.Pose.Y,
                 ObservedAtUnixMs = now, ObservedRevision = NextVisibleRevision(witness) }));
+            string presentation = Guid.NewGuid().ToString("N");
+            foreach (string recipient in witnesses.Concat(new[] { attacker.Pose.Id, victim.Pose.Id }).Distinct())
+                output.Add(new Delivery(recipient, new SocialKillPresentationEvent { MatchId = match, RecipientActorId = recipient,
+                    PresentationId = presentation, BodyId = bodyId, VictimActorId = victim.Pose.Id,
+                    AttackerActorId = recipient == victim.Pose.Id ? "" : attacker.Pose.Id, X = (float)victim.Pose.X, Y = (float)victim.Pose.Y, ServerUnixMs = now }));
             Record("kill", attacker.Pose.Id, victim.Pose.Id, "dead"); EvaluateVictory(output);
             return Result(command, true, "kill_completed", true);
         }
@@ -401,7 +477,7 @@ namespace Actor.Networking
         private SocialActionResultEvent Vote(Player caller, SocialCastVoteCommand command)
         {
             if (state.Phase != SocialPhase.Voting || command.MeetingId != meeting.MeetingId || ballots.ContainsKey(caller.Pose.Id)
-                || command.Skip && command.CandidateActorId.Length > 0 || !command.Skip && !Living(command.CandidateActorId))
+                || command.Skip && command.CandidateActorId.Length > 0 || !command.Skip && !TargetAlive(command.CandidateActorId))
                 return Result(command, false, "ballot_unavailable");
             ballots.Add(caller.Pose.Id, command.Skip ? "" : command.CandidateActorId); ++votes;
             Record("vote", caller.Pose.Id, command.Skip ? "" : command.CandidateActorId, command.Skip ? "skip" : "cast");
@@ -411,7 +487,7 @@ namespace Actor.Networking
         {
             var counts = ballots.Values.GroupBy(p => p).ToDictionary(p => p.Key, p => p.Count());
             int skips = counts.TryGetValue("", out var s) ? s : 0;
-            var candidates = counts.Where(p => p.Key.Length > 0 && Living(p.Key)).OrderByDescending(p => p.Value).ThenBy(p => p.Key).ToArray();
+            var candidates = counts.Where(p => p.Key.Length > 0 && TargetAlive(p.Key)).OrderByDescending(p => p.Value).ThenBy(p => p.Key).ToArray();
             meeting.Result.Clear(); foreach (var tally in counts.OrderBy(p => p.Key)) meeting.Result.Add(new SocialVoteTally { CandidateActorId = tally.Key, Votes = (uint)tally.Value });
             bool eject = candidates.Length > 0 && candidates[0].Value > skips && (candidates.Length == 1 || candidates[0].Value > candidates[1].Value);
             meeting.Resolution = eject ? "ejected" : "no_ejection"; meeting.EjectedActorId = eject ? candidates[0].Key : "";
@@ -425,8 +501,40 @@ namespace Actor.Networking
                 || caller.Alignment == SocialAlignment.Crew && completedTasks.Contains(TaskKey(caller.Pose.Id, command.TaskId)))
                 return Result(command, false, "task_unavailable");
             var work = NewWork(caller, terminal, command.Context.CorrelationId); work.Task = command.TaskId;
+            work.Mechanic = taskMechanics[command.TaskId];
+            if (work.Mechanic == SocialTaskMechanic.CircuitCalibration)
+            { work.CalibrationOffset = RandomNumber(3); work.NotBefore = now + config.CalibrationStepMs;
+                work.Ends = now + 3 * config.CalibrationStepMs + config.TaskDecisionTimeoutMs; }
+            else if (work.Mechanic == SocialTaskMechanic.SensorObservation)
+            { work.SampleA = 20 + RandomNumber(60); work.SampleB = work.SampleA + RandomNumber(3) - 1;
+                work.NotBefore = now + config.SensorSampleDelayMs; work.Ends = work.NotBefore + config.TaskDecisionTimeoutMs; }
             works.Add(caller.Pose.Id, work); Activity(work, "working", output);
+            OwnChanged(caller, output);
             return Result(command, true, "work_started", false, work);
+        }
+        private SocialActionResultEvent TaskStep(Player caller, SocialTaskStepCommand command, List<Delivery> output)
+        {
+            if (!works.TryGetValue(caller.Pose.Id, out var work) || work.Id != command.WorkId || work.Repair || !WorkValid(work)
+                || work.Mechanic == SocialTaskMechanic.MaintenanceHold) return Result(command, false, "task_step_unavailable");
+            if (command.StepRevision != work.StepRevision) return Result(command, false, "task_step_changed", false, work);
+            if (now < work.NotBefore) return Result(command, false, "task_step_not_ready", false, work);
+            var expected = work.Mechanic == SocialTaskMechanic.CircuitCalibration ? CalibrationChoice(work)
+                : work.SampleB > work.SampleA ? SocialTaskChoice.Rising : work.SampleB < work.SampleA ? SocialTaskChoice.Falling : SocialTaskChoice.Stable;
+            if (command.Choice != expected)
+            { if (++work.Attempts >= 3) EndWork(work, false, "task_attempts_exhausted", output);
+                return Result(command, false, "incorrect_task_step", false, work); }
+            ++work.Step; ++work.StepRevision; work.Attempts = 0; OwnChanged(caller, output);
+            bool complete = work.Mechanic == SocialTaskMechanic.SensorObservation || work.Step >= 3;
+            if (complete) EndWork(work, true, "work_completed", output);
+            else work.NotBefore = now + config.CalibrationStepMs;
+            return Result(command, true, complete ? "work_completed" : "task_step_completed", complete, work);
+        }
+        private static SocialTaskChoice CalibrationChoice(Work work) => (SocialTaskChoice)((int)SocialTaskChoice.Alpha + (work.CalibrationOffset + work.Step) % 3);
+        private int RandomNumber(int upper)
+        {
+            if (fixtureRandom != null) return fixtureRandom.Next(upper);
+            using (var rng = RandomNumberGenerator.Create())
+            { byte[] bytes = new byte[4]; rng.GetBytes(bytes); return (int)(BitConverter.ToUInt32(bytes, 0) % (uint)upper); }
         }
         private SocialActionResultEvent Sabotage(Player caller, SocialSabotageCommand command, List<Delivery> output)
         {
@@ -464,6 +572,7 @@ namespace Actor.Networking
         private void EndWork(Work work, bool complete, string reason, List<Delivery> output)
         {
             works.Remove(work.Actor); bool actual = complete && WorkValid(work);
+            OwnChanged(players[work.Actor], output);
             if (complete && !actual) reason = "work_interrupted";
             if (actual && work.Repair)
             {
@@ -483,7 +592,8 @@ namespace Actor.Networking
             Activity(work, "stopped", output);
             var result = new SocialActionResultEvent { MatchId = match, CorrelationId = work.Correlation,
                 Action = work.Repair ? SocialAction.RepairEmergency : SocialAction.WorkTask, Accepted = actual, Completed = actual,
-                ReasonCode = reason, WorkId = work.Id, PhaseRevision = state.PhaseRevision };
+                ReasonCode = reason, WorkId = work.Id, PhaseRevision = state.PhaseRevision,
+                TaskStepRevision = work.StepRevision, TaskStepIndex = (uint)work.Step };
             if (replays.TryGetValue(work.Actor + ":" + work.Correlation, out var replay)) replay.Reply = result.Clone();
             output.Add(new Delivery(work.Actor, result));
         }
@@ -504,6 +614,7 @@ namespace Actor.Networking
         private void Forfeit(Player p, List<Delivery> output, string reason)
         {
             p.Connected = false;
+            p.TransportLostUntil = 0; ++waitingRevision;
             if (IsTerminal) return;
             p.Ready = false;
             if (p.Life == SocialLife.Alive) { Eliminate(p, SocialLife.Disconnected, output); Record("disconnect", p.Pose.Id, "", reason); }
@@ -573,6 +684,8 @@ namespace Actor.Networking
         private void EmergencyChanged(List<Delivery> output)
         { foreach (string actor in players.Keys) output.Add(new Delivery(actor, new SocialEmergencyChangedEvent { State = Emergency() })); }
         private bool Living(string actor) => actor != null && players.TryGetValue(actor, out var p) && p.Connected && p.Assigned && p.Life == SocialLife.Alive;
+        private bool TargetAlive(string actor) => actor != null && players.TryGetValue(actor, out var p) && p.Assigned && p.Life == SocialLife.Alive
+            && (p.Connected || p.TransportLostUntil > now);
         private bool Sees(string actor, double x, double y) => Living(actor) && Fresh(players[actor].Pose) && Finite(x) && Finite(y)
             && Distance(players[actor].Pose, x, y) <= config.VisibilityRadius && (canSee?.Invoke(actor, (float)x, (float)y) ?? false);
         private bool At(Player p, Terminal terminal) => terminal != null && terminal.Available && Fresh(p.Pose) && p.Pose.Room == terminal.Room
@@ -619,7 +732,9 @@ namespace Actor.Networking
                 || c.VotingDurationMs < (trustedFixture ? 1000 : 10000) || c.VotingDurationMs > 180000 || c.KillCooldownMs < (trustedFixture ? 1000 : 5000) || c.KillCooldownMs > 300000
                 || c.EmergencyCooldownMs < (trustedFixture ? 1000 : 10000) || c.EmergencyCooldownMs > 600000 || c.SabotageCooldownMs < (trustedFixture ? 1000 : 10000) || c.SabotageCooldownMs > 600000
                 || c.SabotageTimeoutMs < (trustedFixture ? 10000 : 30000) || c.SabotageTimeoutMs > 600000 || c.WorkDurationMs < 1000 || c.WorkDurationMs > 30000
-                || c.WaitingTimeoutMs < (trustedFixture ? 1000 : 30000) || c.WaitingTimeoutMs > 900000 || c.TaskThreshold < 1 || c.TaskThreshold > 5
+                || c.WaitingTimeoutMs < (trustedFixture ? 1000 : 30000) || c.WaitingTimeoutMs > 900000 || c.TaskThreshold < 1 || c.TaskThreshold > 20
+                || c.ReconnectGraceMs < 1000 || c.ReconnectGraceMs > 120000 || c.CalibrationStepMs < 500 || c.CalibrationStepMs > 10000
+                || c.SensorSampleDelayMs < 1000 || c.SensorSampleDelayMs > 30000 || c.TaskDecisionTimeoutMs < 1000 || c.TaskDecisionTimeoutMs > 120000
                 || c.MeetingLimit < 1 || c.MeetingLimit > 8 || c.PlayerMeetingLimit < 1 || c.PlayerMeetingLimit > 3 || c.PlayerMeetingLimit > c.MeetingLimit
                 || !Finite(c.KillDistance) || c.KillDistance < .4 || c.KillDistance > 2 || !Finite(c.VisibilityRadius) || c.VisibilityRadius < 2 || c.VisibilityRadius > 8
                 || !Finite(c.BodyReportDistance) || c.BodyReportDistance < .5 || c.BodyReportDistance > 2.5
@@ -630,24 +745,27 @@ namespace Actor.Networking
         {
             SocialReadyCommand c => c.Context, SocialKillCommand c => c.Context, SocialReportBodyCommand c => c.Context,
             SocialCallMeetingCommand c => c.Context, SocialCastVoteCommand c => c.Context, SocialWorkTaskCommand c => c.Context,
-            SocialSabotageCommand c => c.Context, SocialRepairEmergencyCommand c => c.Context, SocialCancelWorkCommand c => c.Context, _ => null
+            SocialSabotageCommand c => c.Context, SocialRepairEmergencyCommand c => c.Context, SocialCancelWorkCommand c => c.Context,
+            SocialTaskStepCommand c => c.Context, _ => null
         };
         private static SocialAction Action(IMessage message) => message switch
         {
             SocialReadyCommand _ => SocialAction.Ready, SocialKillCommand _ => SocialAction.Kill, SocialReportBodyCommand _ => SocialAction.ReportBody,
             SocialCallMeetingCommand _ => SocialAction.CallMeeting, SocialCastVoteCommand _ => SocialAction.CastVote, SocialWorkTaskCommand _ => SocialAction.WorkTask,
             SocialSabotageCommand _ => SocialAction.Sabotage, SocialRepairEmergencyCommand _ => SocialAction.RepairEmergency,
-            SocialCancelWorkCommand _ => SocialAction.CancelWork, _ => SocialAction.Unspecified
+            SocialCancelWorkCommand _ => SocialAction.CancelWork, SocialTaskStepCommand _ => SocialAction.TaskStep, _ => SocialAction.Unspecified
         };
         private SocialActionResultEvent Result(IMessage command, bool accepted, string reason, bool completed = false, Work work = null) => new()
         { MatchId = match, CorrelationId = Bound(Context(command)?.CorrelationId), Action = Action(command), Accepted = accepted,
-            Completed = completed, ReasonCode = reason, PhaseRevision = state.PhaseRevision, WorkId = work?.Id ?? "", WorkEndsAtUnixMs = work?.Ends ?? 0 };
+            Completed = completed, ReasonCode = reason, PhaseRevision = state.PhaseRevision, WorkId = work?.Id ?? "", WorkEndsAtUnixMs = work?.Ends ?? 0,
+            TaskStepRevision = work?.StepRevision ?? 0, TaskStepIndex = (uint)(work?.Step ?? 0) };
         private static bool CommandBounds(IMessage command) => command switch
         {
             SocialKillCommand c => ActorIdentifier(c.TargetActorId), SocialReportBodyCommand c => Identifier(c.BodyId),
             SocialCastVoteCommand c => Identifier(c.MeetingId) && (c.Skip ? c.CandidateActorId.Length == 0 : ActorIdentifier(c.CandidateActorId)),
             SocialWorkTaskCommand c => Identifier(c.TaskId), SocialSabotageCommand c => Identifier(c.TerminalEntityId),
-            SocialRepairEmergencyCommand c => Identifier(c.EmergencyId), SocialCancelWorkCommand c => Identifier(c.WorkId), _ => true
+            SocialRepairEmergencyCommand c => Identifier(c.EmergencyId), SocialCancelWorkCommand c => Identifier(c.WorkId),
+            SocialTaskStepCommand c => Identifier(c.WorkId) && c.StepRevision > 0 && c.Choice >= SocialTaskChoice.Confirm && c.Choice <= SocialTaskChoice.Falling, _ => true
         };
         private static bool Finite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
         private static string TaskKey(string actor, string task) => actor + ":" + task;

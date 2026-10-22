@@ -18,7 +18,18 @@ namespace Actor.Characters
         private void OnEnable() => move?.Enable();
         private void OnDisable() => move?.Disable();
         private void OnDestroy() => move?.Dispose();
-        public Vector2 ReadMovement() => isActiveAndEnabled && Application.isFocused && !TextEntryFocused
+        private static bool InterfaceCaptured
+        {
+            get
+            {
+#if !UNITY_SERVER
+                return Actor.UI.ArenaUI.InputCaptured;
+#else
+                return false;
+#endif
+            }
+        }
+        public Vector2 ReadMovement() => isActiveAndEnabled && Application.isFocused && !TextEntryFocused && !InterfaceCaptured
             ? move.ReadValue<Vector2>() : Vector2.zero;
     }
 }

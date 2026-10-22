@@ -1,6 +1,6 @@
 {
   "extension_id": "agents-arena",
-  "extension_version": "0.5.0",
+  "extension_version": "0.6.0",
   "supported_protocol_major": 1,
   "generation": {
     "sources": [
@@ -379,6 +379,31 @@
       "kind": "event",
       "message_type": "actor.extensions.agents_arena.v1.SocialMatchEndedEvent",
       "description": "Postgame-only final alignments, individual outcomes and bounded server replay."
+    },
+    {
+      "capability_id": "agents-arena.social-waiting-players",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialWaitingPlayersObservation",
+      "description": "Public waiting-room roster/readiness only; explicit empty after assignment, no roles or private control metadata."
+    },
+    {
+      "capability_id": "agents-arena.social-task-work",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.SocialOwnTaskWorkObservation",
+      "description": "Owner-only continuously validated physical task progress/challenge; explicit cleared replacement."
+    },
+    {
+      "capability_id": "agents-arena.social-task-step",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.SocialTaskStepCommand",
+      "description": "Advance the own current task using an exact work/stage revision and typed choice; progress is distinct from completion.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.social-kill-presentation",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.SocialKillPresentationEvent",
+      "description": "Recipient-scoped confirmed presentation; victim payload omits attacker identity, permitted witnesses only."
     }
   ]
 }

@@ -1,0 +1,28 @@
+{
+  "both_objectives_passed": true,
+  "both_own_authoritative_terminal_and_same_scope": true,
+  "brain_kind": "installed scripted factories; no model requested",
+  "case": "cooperation",
+  "executed": true,
+  "independent_processes_credentials_and_memory": true,
+  "limitations": [
+    "Only the named case was run; no model intelligence or full M6 benchmark claim.",
+    "Prediction uses synthetic owned input on a headless client, not native keyboard/display response.",
+    "Raw local reports, plan and logs remain private; this acceptance publishes no authorization, chat, actor/session IDs or credentials."
+  ],
+  "owned_launchers_remaining": 0,
+  "owned_runtime_client_pids_checked": 4,
+  "owned_runtime_clients_remaining": 0,
+  "passed": true,
+  "public_projection": true,
+  "reason": "authoritative_pair_completed",
+  "schema": "actor.sandbox-regression.v1",
+  "scope": "Two ordinary calibration agents: same authoritative Completed task plus own Objective success.",
+  "source_acceptance_sha256": "c0acb6e5d5e31873c12ffd182be919d33d2c842d94e4a4ff8448383f827eb42a",
+  "target": {
+    "admission_protocol_version": "4",
+    "game_version": "0.9.0",
+    "mode": "Sandbox",
+    "room_origin": "fresh ordinary public API room"
+  }
+}

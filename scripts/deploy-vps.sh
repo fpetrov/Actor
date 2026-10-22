@@ -7,13 +7,24 @@ ACTOR_RELEASE="$(date -u +%Y%m%dT%H%M%SZ)-$(git -C "$ACTOR_ROOT" rev-parse --sho
 test -x "$ACTOR_ROOT/build/control-plane/Actor.ControlPlane"
 test -x "$ACTOR_ROOT/build/agents-arena-server/AgentsArenaServer"
 test -f "$ACTOR_ROOT/build/web/index.html"
+ACTOR_GAME_VERSION="$(python3 -c 'import json,sys; v=json.load(open(sys.argv[1])); assert v["development"] is False and v["options"] == "None"; print(v["game_version"])' "$ACTOR_ROOT/build/agents-arena-server/build-info.json")"
+[[ "$ACTOR_GAME_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { printf 'Invalid built game version.\n' >&2; exit 2; }
 # Restrict remotely interpolated values to prevent shell injection.
-[[ "$ACTOR_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$ACTOR_SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
-[[ -f "$ACTOR_SSH_KEY" && "$ACTOR_SSH_KEY" != *"'"* ]]
+[[ "$ACTOR_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$ACTOR_SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]] || { printf 'Invalid deployment host/user.\n' >&2; exit 2; }
+[[ -f "$ACTOR_SSH_KEY" && "$ACTOR_SSH_KEY" != *"'"* ]] || { printf 'Invalid deployment SSH key path.\n' >&2; exit 2; }
 ACTOR_REMOTE="$ACTOR_SSH_USER@$ACTOR_HOST"
 ACTOR_SSH=(ssh -i "$ACTOR_SSH_KEY" -o BatchMode=yes -o ConnectTimeout=15 "$ACTOR_REMOTE")
 ACTOR_RSYNC_SSH="ssh -i '$ACTOR_SSH_KEY' -o BatchMode=yes -o ConnectTimeout=15"
-"${ACTOR_SSH[@]}" "test -d /etc/actor && test -d /var/lib/actor && id actor >/dev/null && mkdir -p /opt/actor/control-plane/releases/$ACTOR_RELEASE /opt/actor/agents-arena/releases/$ACTOR_RELEASE /opt/actor/staging/$ACTOR_RELEASE"
+# Read-only early guard. Repeat with external admission drained immediately
+# before activation, because uploads can take several minutes.
+"${ACTOR_SSH[@]}" python3 - <<'GUARD'
+import json, urllib.request
+with urllib.request.urlopen("http://127.0.0.1:5080/api/v1/lobbies", timeout=10) as response:
+    rooms = json.load(response)["lobbies"]
+if rooms:
+    raise SystemExit("Deployment refused: production rooms are active")
+GUARD
+"${ACTOR_SSH[@]}" "test -d /etc/actor && test -d /var/lib/actor && id actor >/dev/null && test ! -e /opt/actor/control-plane/releases/$ACTOR_RELEASE && test ! -e /opt/actor/agents-arena/releases/$ACTOR_RELEASE && test ! -e /opt/actor/staging/$ACTOR_RELEASE && mkdir -p /opt/actor/control-plane/releases /opt/actor/agents-arena/releases /opt/actor/staging && mkdir /opt/actor/staging/$ACTOR_RELEASE && mkdir /opt/actor/control-plane/releases/$ACTOR_RELEASE /opt/actor/agents-arena/releases/$ACTOR_RELEASE"
 # Reuse unchanged files on the destination without linking mutable release
 # inodes. Unity's large native libraries rarely change between game milestones.
 # rsync still transfers changed content and preserves each rollback release.
@@ -23,56 +34,6 @@ if "${ACTOR_SSH[@]}" "test -d /opt/actor/agents-arena/current"; then ACTOR_GAME_
 rsync -a "${ACTOR_CP_BASIS[@]}" -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/control-plane/" "$ACTOR_REMOTE:/opt/actor/control-plane/releases/$ACTOR_RELEASE/"
 rsync -a "${ACTOR_GAME_BASIS[@]}" -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/agents-arena-server/" "$ACTOR_REMOTE:/opt/actor/agents-arena/releases/$ACTOR_RELEASE/"
 rsync -a -e "$ACTOR_RSYNC_SSH" "$ACTOR_ROOT/build/web/" "$ACTOR_REMOTE:/opt/actor/staging/$ACTOR_RELEASE/web/"
-scp -i "$ACTOR_SSH_KEY" -o BatchMode=yes "$ACTOR_ROOT/deploy/nginx/actor.conf" "$ACTOR_ROOT/deploy/systemd/actor-control-plane.service" "$ACTOR_REMOTE:/opt/actor/staging/$ACTOR_RELEASE/"
-"${ACTOR_SSH[@]}" bash -s -- "$ACTOR_RELEASE" "$ACTOR_HOST" <<'REMOTE'
-set -euo pipefail
-release="$1"; public_host="$2"
-stage="/opt/actor/staging/$release"
-mkdir -p "$stage/backup"
-cp -a /etc/nginx/sites-enabled "$stage/backup/"
-if [[ -f /etc/nginx/sites-available/actor.conf ]]; then cp -a /etc/nginx/sites-available/actor.conf "$stage/backup/actor.conf"; fi
-install -m 644 "$stage/actor.conf" /etc/nginx/sites-available/actor.conf
-# Only the distro's empty default virtual host is replaced; other virtual hosts remain.
-if [[ -L /etc/nginx/sites-enabled/default && "$(readlink /etc/nginx/sites-enabled/default)" == /etc/nginx/sites-available/default ]]; then
-  rm /etc/nginx/sites-enabled/default
-fi
-ln -sfn /etc/nginx/sites-available/actor.conf /etc/nginx/sites-enabled/actor.conf
-if ! nginx -t; then
-  rm /etc/nginx/sites-enabled/actor.conf
-  cp -a "$stage/backup/sites-enabled/." /etc/nginx/sites-enabled/
-  if [[ -f "$stage/backup/actor.conf" ]]; then cp -a "$stage/backup/actor.conf" /etc/nginx/sites-available/actor.conf; fi
-  exit 1
-fi
-install -m 644 "$stage/actor-control-plane.service" /etc/systemd/system/actor-control-plane.service
-if [[ ! -f /etc/actor/control-plane.env ]]; then
-  umask 077
-  cat > /etc/actor/control-plane.env <<ENV
-ASPNETCORE_ENVIRONMENT=Production
-ASPNETCORE_URLS=http://127.0.0.1:5080
-Match__PublicGameHost=$public_host
-Match__UnityServerExecutable=/opt/actor/agents-arena/current/AgentsArenaServer
-Match__DatabasePath=/var/lib/actor/actor.db
-Match__GameServerLogDirectory=/var/log/actor/matches
-Match__InternalApiBaseUrl=http://127.0.0.1:5080
-Match__MaxConcurrentGameServers=5
-Match__GameServerPortStart=7777
-Match__GameServerPortEnd=7781
-ENV
-fi
-chmod 600 /etc/actor/control-plane.env
-chmod +x "/opt/actor/agents-arena/releases/$release/AgentsArenaServer" "/opt/actor/control-plane/releases/$release/Actor.ControlPlane"
-systemctl stop actor-control-plane.service 2>/dev/null || true
-ln -sfn "/opt/actor/control-plane/releases/$release" /opt/actor/control-plane/current
-ln -sfn "/opt/actor/agents-arena/releases/$release" /opt/actor/agents-arena/current
-rsync -a "$stage/web/" /var/www/actor/
-systemctl daemon-reload
-systemctl enable --now actor-control-plane.service
-systemctl reload nginx
-for attempt in {1..20}; do
-  if curl --fail --silent http://127.0.0.1:5080/health >/dev/null; then exit 0; fi
-  sleep 1
-done
-systemctl status actor-control-plane.service --no-pager
-exit 1
-REMOTE
+scp -i "$ACTOR_SSH_KEY" -o BatchMode=yes "$ACTOR_ROOT/deploy/nginx/actor.conf" "$ACTOR_ROOT/deploy/systemd/actor-control-plane.service" "$ACTOR_ROOT/scripts/deploy-activate.sh" "$ACTOR_REMOTE:/opt/actor/staging/$ACTOR_RELEASE/"
+"${ACTOR_SSH[@]}" "bash /opt/actor/staging/$ACTOR_RELEASE/deploy-activate.sh '$ACTOR_RELEASE' '$ACTOR_HOST' '$ACTOR_GAME_VERSION'"
 printf 'Deployed %s to http://%s/\n' "$ACTOR_RELEASE" "$ACTOR_HOST"

@@ -32,6 +32,26 @@ namespace Actor.Networking
         private readonly Dictionary<ulong, JoinTicketClaims> approvals = new();
         private readonly Dictionary<ulong, int> spawnSlots = new();
         private readonly Dictionary<string, long> consumedTickets = new();
+        private ResumeAdmissionRegistry resumeRegistry;
+        private readonly Dictionary<string, NetworkObject> retainedActors = new();
+        private readonly Dictionary<string, Vector3> lastRoots = new();
+        private double nextCredentialRenewal;
+        // Memory only, transport/controller-private. Never PlayerPrefs, report,
+        // protobuf observations, Runtime, Brain context or diagnostic logging.
+        private string resumeCredential, resumeRoom, resumeMatch;
+        private long resumeExpires;
+        private ulong resumeGeneration;
+        private int resumeAttemptEpoch;
+        public bool IsResuming { get; private set; }
+        public bool IsReturningToLobby => returningToLobby;
+        public long ResumeExpiresAtUnixMs => resumeExpires;
+        public bool CanResume => !IsConnected && !IsResuming && !returningToLobby && GameMode == "SocialDeduction"
+            && !string.IsNullOrEmpty(resumeCredential) && resumeRoom == roomCode && resumeMatch == matchId
+            && resumeExpires > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        internal IEnumerable<NetworkCharacter> RetainedSocialPlayers => retainedActors.Values.Where(p => p != null && p.IsSpawned)
+            .Select(p => p.GetComponent<NetworkCharacter>()).Where(p => p != null
+                && resumeRegistry?.Find(p.AuthoritativeActorId) is { Connected: false } binding
+                && binding.GraceUntil > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
         public event Action Connected;
         public event Action<string> Disconnected;
         public string RoomCode => roomCode;
@@ -39,6 +59,7 @@ namespace Actor.Networking
         public string GameMode { get; private set; } = "Sandbox";
         private string GameplayScene => GameMode == "SocialDeduction" ? "SocialDeduction" : settings.gameplayScene;
         internal int ApprovedJoinOrder(ulong clientId) => spawnSlots.TryGetValue(clientId, out int slot) ? slot : int.MaxValue;
+        internal int CosmeticIndexForActor(string actorId) => (resumeRegistry?.Find(actorId)?.Slot ?? 0) % 6;
         public bool IsConnected => manager != null && manager.IsConnectedClient;
 
         private void Awake()
@@ -72,13 +93,20 @@ namespace Actor.Networking
 
         public void Connect(JoinInfo admission)
         {
-            if (manager.IsListening) throw new InvalidOperationException("A network session is already active.");
+            if (manager.IsListening || returningToLobby) throw new InvalidOperationException("A network session is already active or closing.");
+            if (!admission.resume) ForgetResume();
             Diagnostic("admission-received", $"host={DiagnosticHost(admission.host)} port={admission.port}");
             roomCode = admission.roomCode;
             matchId = admission.lobbyId;
             GameMode = admission.gameMode == "SocialDeduction" ? "SocialDeduction" : "Sandbox";
             SocialVisibilitySystem.Ensure(manager);
-            transport.SetConnectionData(admission.host, (ushort)admission.port);
+            // Explicit headless QA only: a loopback UDP relay can drop this
+            // client's transport while its private in-memory credential lives.
+            string[] localArgs = Environment.GetCommandLineArgs();
+            int proxyPort = 0;
+            bool proxyProbe = Application.isBatchMode && GameMode == "SocialDeduction" && Argument(localArgs, "--social-resume-report") != null
+                && int.TryParse(Argument(localArgs, "--resume-probe-proxy-port"), out proxyPort) && proxyPort >= 1024 && proxyPort <= 65535;
+            transport.SetConnectionData(proxyProbe ? "127.0.0.1" : admission.host, proxyProbe ? (ushort)proxyPort : (ushort)admission.port);
             manager.NetworkConfig.ConnectionData = Encoding.UTF8.GetBytes(admission.joinTicket);
             bool started = manager.StartClient();
             Diagnostic("client-start", $"started={started} listening={manager.IsListening}");
@@ -102,7 +130,87 @@ namespace Actor.Networking
 
         public void Disconnect()
         {
-            if (!returningToLobby) StartCoroutine(ReturnToLobby("Disconnected from the room."));
+            ForgetResume();
+            if (!returningToLobby) StartCoroutine(LeaveAndReturn());
+        }
+        public void ForgetResume()
+        { ++resumeAttemptEpoch; IsResuming = false; resumeCredential = resumeRoom = resumeMatch = null; resumeExpires = 0; resumeGeneration = 0; }
+        public void ResumeConnection()
+        {
+            if (!CanResume) return;
+            StartCoroutine(ResumeRoutine());
+        }
+        private IEnumerator ResumeRoutine()
+        {
+            int epoch = resumeAttemptEpoch; IsResuming = true; JoinInfo admission = null; string error = null;
+            yield return new LobbyApiClient(settings).Resume(resumeRoom, resumeCredential, value => admission = value, message => error = message);
+            if (epoch != resumeAttemptEpoch || returningToLobby) yield break;
+            if (admission == null) { IsResuming = false; Disconnected?.Invoke(error ?? "Could not resume this match."); yield break; }
+            try { admission.resume = true; Connect(admission); }
+            catch (InvalidOperationException) { IsResuming = false; Disconnected?.Invoke("The previous connection is still closing. Please retry shortly."); }
+        }
+        private IEnumerator LeaveAndReturn()
+        {
+            var owner = NetworkSocialMatch.LocalOwner;
+            if (IsConnected && owner != null && GameMode == "SocialDeduction")
+            {
+                owner.RequestExplicitLeave();
+                double until = Time.realtimeSinceStartupAsDouble + 1;
+                while (IsConnected && !owner.ExplicitLeaveAcknowledged && Time.realtimeSinceStartupAsDouble < until) yield return null;
+            }
+            yield return ReturnToLobby("Disconnected from the room.");
+        }
+        internal void AcceptResumeCredential(string actor, ulong generation, string credential, long expires)
+        {
+            var owner = NetworkSocialMatch.LocalOwner;
+            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (!IsConnected || owner == null || !owner.IsOwner || owner.Self != actor || credential == null
+                || credential.Length > ResumeCredentialCodec.MaximumLength || !credential.StartsWith("ar1.", StringComparison.Ordinal)
+                || generation == 0 || generation < resumeGeneration || generation < owner.Own.ConnectionGeneration
+                || expires <= now || expires > now + 180000) return;
+            resumeCredential = credential; resumeExpires = expires; resumeGeneration = generation; resumeRoom = roomCode; resumeMatch = matchId;
+            owner.AcknowledgeResumeCredential(generation);
+        }
+        internal void BindSocialPlayer(ulong clientId, NetworkObject player)
+        {
+            if (!manager.IsServer || GameMode != "SocialDeduction" || !approvals.TryGetValue(clientId, out var claims)) return;
+            player.DontDestroyWithOwner = true; retainedActors[claims.actorId] = player;
+            lastRoots[claims.actorId] = player.transform.position;
+            nextCredentialRenewal = 0;
+        }
+        internal void AcknowledgeResume(string actor, ulong generation, ulong clientId) => resumeRegistry?.Acknowledge(actor, generation, clientId);
+        internal void RevokeResume(string actor) => resumeRegistry?.Revoke(actor);
+        internal bool HasPrivateResumeCredential => !string.IsNullOrEmpty(resumeCredential) && resumeExpires > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        internal IEnumerator ProbeConnectedResumeRejected(Action<bool> completed)
+        {
+            if (!Application.isBatchMode || Argument(Environment.GetCommandLineArgs(), "--social-resume-report") == null
+                || !IsConnected || !HasPrivateResumeCredential) { completed(false); yield break; }
+            JoinInfo admission = null; string code = null;
+            yield return new LobbyApiClient(settings).Resume(resumeRoom, resumeCredential, value => admission = value,
+                _ => { }, value => code = value);
+            completed(admission == null && code == "resume_busy");
+        }
+        private void Update()
+        {
+            if (manager == null || !manager.IsServer || resumeRegistry == null) return;
+            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            foreach (var pair in retainedActors.ToArray())
+            {
+                var binding = resumeRegistry.Find(pair.Key);
+                if (pair.Value == null || !pair.Value.IsSpawned) { retainedActors.Remove(pair.Key); continue; }
+                lastRoots[pair.Key] = pair.Value.GetComponent<NetworkCharacter>().AuthoritativePosition;
+                if (binding != null && !binding.Connected && binding.GraceUntil <= now)
+                { pair.Value.Despawn(); retainedActors.Remove(pair.Key); }
+            }
+            if (Time.realtimeSinceStartupAsDouble < nextCredentialRenewal) return;
+            nextCredentialRenewal = Time.realtimeSinceStartupAsDouble + 20;
+            foreach (var binding in resumeRegistry.Bindings.Where(b => b.Connected).ToArray())
+            {
+                if (!retainedActors.TryGetValue(binding.Actor, out var player) || player == null || !player.IsSpawned) continue;
+                var credential = resumeRegistry.Credential(binding.Actor, matchId, gameVersion, protocolVersion, now);
+                if (credential != null) player.GetComponent<NetworkSocialMatch>().SendResumeCredential(
+                    ResumeCredentialCodec.Sign(JsonUtility.ToJson(credential), secret), credential.expiresAt * 1000, binding.Generation);
+            }
         }
 
         private IEnumerator StartDedicatedServer()
@@ -134,6 +242,16 @@ namespace Actor.Networking
             {
                 Debug.LogError("ACTOR: invalid dedicated server configuration.");
                 Application.Quit(2); yield break;
+            }
+            if (GameMode == "SocialDeduction")
+            {
+                try
+                {
+                    var json = Environment.GetEnvironmentVariable("ACTOR_SOCIAL_CONFIG");
+                    var config = string.IsNullOrEmpty(json) ? new ResumeConfiguration() : JsonUtility.FromJson<ResumeConfiguration>(json);
+                    resumeRegistry = new ResumeAdmissionRegistry(maxPlayers, config.ReconnectGraceMs);
+                }
+                catch (ArgumentException) { Debug.LogError("ACTOR: invalid resume configuration."); Application.Quit(2); yield break; }
             }
             transport.SetConnectionData("0.0.0.0", (ushort)port, "0.0.0.0");
             manager.ConnectionApprovalCallback = Approve;
@@ -170,9 +288,10 @@ namespace Actor.Networking
                 string[] connectedNonces = manager.ConnectedClientsIds.Where(id => approvals.ContainsKey(id)).Select(id => approvals[id].nonce).ToArray();
                 var heartbeat = new Heartbeat
                 {
-                    currentPlayers = manager.ConnectedClientsIds.Count,
+                    currentPlayers = resumeRegistry != null ? resumeRegistry.Bindings.Count(b => b.Connected || b.GraceUntil > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : manager.ConnectedClientsIds.Count,
                     serverState = manager.ConnectedClientsIds.Count > 0 ? "Running" : "Ready",
-                    connectedNonces = connectedNonces
+                    connectedNonces = connectedNonces,
+                    connectedActorIds = approvals.Values.Select(c => c.actorId).Where(id => Guid.TryParseExact(id, "N", out _)).ToArray()
                 };
                 bool accepted = false;
                 yield return Callback("heartbeat", JsonUtility.ToJson(heartbeat), success => accepted = success);
@@ -212,15 +331,25 @@ namespace Actor.Networking
             foreach (string nonce in consumedTickets.Where(p => p.Value <= now).Select(p => p.Key).ToArray()) consumedTickets.Remove(nonce);
             if (consumedTickets.ContainsKey(claims.nonce))
             { response.Reason = "Join ticket has already been used."; ApprovalRejected(request.ClientNetworkId, "ticket-replayed"); return; }
-            if (manager.ConnectedClientsIds.Count >= maxPlayers || spawnSlots.Count >= maxPlayers)
+            ResumeAdmissionRegistry.Binding binding = null;
+            if (resumeRegistry != null && !resumeRegistry.TryAdmit(claims, request.ClientNetworkId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), out binding, out string resumeReason))
+            { response.Reason = "This connection cannot be admitted. Retry resume or return to the lobby."; ApprovalRejected(request.ClientNetworkId, resumeReason); return; }
+            if (resumeRegistry == null && (manager.ConnectedClientsIds.Count >= maxPlayers || spawnSlots.Count >= maxPlayers))
             { response.Reason = "The room is full."; ApprovalRejected(request.ClientNetworkId, "room-full"); return; }
-            int slot = Enumerable.Range(0, maxPlayers).First(i => !spawnSlots.ContainsValue(i));
+            int slot = binding?.Slot ?? Enumerable.Range(0, maxPlayers).First(i => !spawnSlots.ContainsValue(i));
+            Vector3 position = SpawnPosition(slot);
+            if (claims.resume)
+            {
+                if (retainedActors.TryGetValue(claims.actorId, out var previous) && previous != null && previous.IsSpawned)
+                { position = previous.GetComponent<NetworkCharacter>().AuthoritativePosition; lastRoots[claims.actorId] = position; previous.Despawn(); retainedActors.Remove(claims.actorId); }
+                else if (lastRoots.TryGetValue(claims.actorId, out var last)) position = last;
+            }
             approvals[request.ClientNetworkId] = claims;
             spawnSlots[request.ClientNetworkId] = slot;
             consumedTickets[claims.nonce] = claims.expiresAt;
             response.Approved = true;
             response.CreatePlayerObject = true;
-            response.Position = SpawnPosition(slot);
+            response.Position = position;
             response.Rotation = Quaternion.identity;
             response.Reason = "";
             Diagnostic("approval-accepted", $"client={request.ClientNetworkId} approved={approvals.Count} players={manager.ConnectedClientsIds.Count}");
@@ -241,6 +370,7 @@ namespace Actor.Networking
             Diagnostic("ngo-connected", $"client={clientId} players={manager.ConnectedClientsIds.Count}");
             if (manager.IsServer) Debug.Log($"ACTOR_PLAYER_CONNECTED client={clientId} players={manager.ConnectedClientsIds.Count}");
             if (!manager.IsClient || clientId != manager.LocalClientId) return;
+            IsResuming = false;
             if (lobbyCamera != null) lobbyCamera.gameObject.SetActive(false);
             Connected?.Invoke();
         }
@@ -250,6 +380,9 @@ namespace Actor.Networking
             Diagnostic("ngo-disconnected", $"client={clientId} event={transport.DisconnectEvent} players={manager.ConnectedClientsIds.Count}");
             if (manager.IsServer)
             {
+                if (approvals.TryGetValue(clientId, out var lost) && retainedActors.TryGetValue(lost.actorId ?? "", out var player)
+                    && player != null && player.IsSpawned) player.GetComponent<NetworkCharacter>().HaltForTransportLoss();
+                resumeRegistry?.Disconnected(clientId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                 approvals.Remove(clientId); spawnSlots.Remove(clientId);
                 Debug.Log($"ACTOR_PLAYER_DISCONNECTED client={clientId} players={manager.ConnectedClientsIds.Count}");
                 return;
@@ -261,14 +394,16 @@ namespace Actor.Networking
 
         private IEnumerator ReturnToLobby(string reason)
         {
+            if (returningToLobby) yield break;
             ++connectionAttempt;
             Diagnostic("return-to-lobby", $"connected={manager.IsConnectedClient} listening={manager.IsListening}");
             returningToLobby = true;
+            IsResuming = false;
             manager.Shutdown();
             yield return null;
             while (manager.ShutdownInProgress) yield return null;
             ObserveSceneEvents();
-            Scene gameplay = SceneManager.GetSceneByName(settings.gameplayScene);
+            Scene gameplay = SceneManager.GetSceneByName(GameplayScene);
             if (gameplay.IsValid() && gameplay.isLoaded) yield return SceneManager.UnloadSceneAsync(gameplay);
             if (lobbyCamera != null) lobbyCamera.gameObject.SetActive(true);
             returningToLobby = false;
@@ -356,7 +491,8 @@ namespace Actor.Networking
             int index = Array.IndexOf(args, name);
             return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
         }
-        [Serializable] private sealed class Heartbeat { public int currentPlayers; public string serverState; public string[] connectedNonces; }
+        [Serializable] private sealed class Heartbeat { public int currentPlayers; public string serverState; public string[] connectedNonces, connectedActorIds; }
+        [Serializable] private sealed class ResumeConfiguration { public long ReconnectGraceMs = 30000; }
 
         private void OnDestroy()
         {

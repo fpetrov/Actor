@@ -1,0 +1,32 @@
+{
+  "case": "movement",
+  "diagnosis": {
+    "automatic_join_skips_probe_role": true,
+    "failure_stage": "release_probe_startup",
+    "movement_measurement_performed": false,
+    "own_actor_spawn_observed": false,
+    "prediction_report_available": false,
+    "requires_opt_in_release_probe_rebuild": true,
+    "source_development_only_probe_gate_identified": true
+  },
+  "executed": true,
+  "limitations": [
+    "Only the named case was run; no model intelligence or full M6 benchmark claim.",
+    "Prediction uses synthetic owned input on a headless client, not native keyboard/display response.",
+    "Raw local reports, plan and logs remain private; this acceptance publishes no authorization, chat, actor/session IDs or credentials."
+  ],
+  "owned_launchers_remaining": 0,
+  "owned_runtime_client_pids_checked": 0,
+  "owned_runtime_clients_remaining": 0,
+  "passed": false,
+  "public_projection": true,
+  "reason": "regression_deadline",
+  "schema": "actor.sandbox-regression.v1",
+  "source_acceptance_sha256": "81b99ee115b3d17c111f1ea07e1e2e1cdab130bcd8597b9f1bd1639137bab4d5",
+  "target": {
+    "admission_protocol_version": "4",
+    "game_version": "0.9.0",
+    "mode": "Sandbox",
+    "room_origin": "fresh ordinary public API room"
+  }
+}

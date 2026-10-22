@@ -1,0 +1,30 @@
+{
+  "schema": "actor.m8-offline-test-snapshot.v1",
+  "source_runtime": {
+    "passed": 545,
+    "scope": "Previously frozen source Runtime current with stream collector; no model/SDK/auth"
+  },
+  "installed_wheel": {
+    "passed": 545,
+    "sha256": "2aee36a2a60079ba56d53c954d40635b4b9524bf037f7eaa603765ffe0cdee5b",
+    "scope": "Fresh outside-checkout installation; base+dev; SDK/auth absent"
+  },
+  "scripts": {
+    "passed": 124,
+    "subtests_passed": 96,
+    "seconds": 52.59
+  },
+  "release_resume_validation_fixture_art_group": {
+    "passed": 153,
+    "subtests_passed": 282,
+    "seconds": 3.31,
+    "scope": "One loopback UDP relay test needs sandbox escalation; no game/VPS/model execution. Initial environment attempts failed for absent Pillow path, then sandbox UDP bind; corrected environment pass is recorded, not an actual network-game proof."
+  },
+  "node_web_dom_fixtures": {
+    "passed": 9
+  },
+  "generated_freshness": {
+    "artifacts": 54
+  },
+  "scope": "Different scoped executions; overlapping subsets and generated checks are not summed into an invented test count. Native/game/provider/release gates remain separate."
+}

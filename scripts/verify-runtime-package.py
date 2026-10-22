@@ -6,6 +6,7 @@ in a fresh venv, then runs the copied Runtime suite outside the repository.
 The default safe summary is build/milestone5-package.json. No model is invoked,
 and neither provider SDK nor authentication is needed. First run needs network
 access for ordinary package dependencies.
+Use --export-wheel-dir to retain exactly the verified wheel for packaging.
 """
 
 from __future__ import annotations
@@ -34,6 +35,28 @@ MODEL_ENV_KEYS = {"ACTOR_BRIDGE_TOKEN", "OPENAI_API_KEY", "CODEX_API_KEY", "TYPE
 class VerificationError(Exception):
     def __init__(self, stage, kind, returncode=None):
         self.stage, self.kind, self.returncode = stage, kind, returncode
+
+
+def export_wheel(wheel: Path, directory: Path, expected_sha256: str) -> Path:
+    """Publish exact verified bytes without replacing an earlier artifact."""
+    if hashlib.sha256(wheel.read_bytes()).hexdigest() != expected_sha256:
+        raise VerificationError("export verified wheel", "verified_bytes_changed")
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory.resolve() / wheel.name
+    if target.is_symlink() or target.exists() and (not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != expected_sha256):
+        raise VerificationError("export verified wheel", "existing_artifact_mismatch")
+    if not target.exists():
+        with tempfile.TemporaryDirectory(prefix=".actor-wheel-export-", dir=directory) as temporary:
+            candidate = Path(temporary) / wheel.name
+            shutil.copyfile(wheel, candidate)
+            if hashlib.sha256(candidate.read_bytes()).hexdigest() != expected_sha256:
+                raise VerificationError("export verified wheel", "copied_bytes_changed")
+            try:
+                os.link(candidate, target)  # Atomic, exclusive publication in the same filesystem.
+            except FileExistsError:
+                if target.is_symlink() or not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != expected_sha256:
+                    raise VerificationError("export verified wheel", "existing_artifact_mismatch") from None
+    return target
 
 
 def command(stage, arguments, *, cwd, env, timeout=300):
@@ -78,6 +101,9 @@ modules = [
     "actor_standard", "actor_standard_communication", "actor_standard_communication.skills",
     "actor_agents_arena.calibration", "actor_agents_arena.cooperative_brain",
     "actor_agents_arena.investigation", "actor_agents_arena.investigation_brain", "actor_agents_arena.investigation_events",
+    "actor_runtime.control", "actor_runtime.launching", "actor_runtime.knowledge_skills", "actor_runtime.telemetry",
+    "actor_agents_arena.social_agent", "actor_agents_arena.social_discussion", "actor_agents_arena.social_pursuit",
+    "actor_agents_arena.launcher", "actor_codex.catalog", "actor_codex.stream",
     "actor.core.v1.bridge_pb2_grpc", "actor.standard.communication.v1.communication_pb2",
     "extensions.agents_arena.v1.calibration_pb2", "extensions.agents_arena.v1.incidents_pb2",
     "actor_codex.brain", "actor_jev.classifier",
@@ -87,6 +113,8 @@ for name in modules:
     assert Path(module.__file__).resolve().is_relative_to(prefix), "Import escaped the installed wheel"
 assert importlib.util.find_spec("openai_codex") is None
 assert importlib.util.find_spec("typesafe_sdk") is None
+import actor_runtime
+assert actor_runtime.__version__ == metadata.version("actor-runtime")
 from actor_runtime.extensions import ExtensionRegistry
 from actor_runtime.skills import SkillRegistry
 from actor_runtime.brains import BrainRegistry
@@ -100,7 +128,9 @@ assert {"actor.wait", "actor.send-message", "actor.wait-for-message",
         "agents-arena.select-role", "agents-arena.wait-for-incident", "agents-arena.inspect-cooling",
         "agents-arena.inspect-security-records", "agents-arena.repair-cooling", "agents-arena.maintenance-override",
         "agents-arena.share-investigation-evidence", "agents-arena.submit-investigation-report",
-        "agents-arena.wait-for-incident-resolved", "agents-arena.cancel-investigation"} <= set(skills.definitions)
+        "agents-arena.wait-for-incident-resolved", "agents-arena.cancel-investigation",
+        "actor.remember-contradiction", "agents-arena.discuss", "agents-arena.await-discussion-update",
+        "agents-arena.follow-visible-actor", "agents-arena.perform-task"} <= set(skills.definitions)
 brains = BrainRegistry.discover()
 assert {"scripted", "codex", "calibration-coordinator", "calibration-technician", "investigation-engineer",
         "investigation-sheriff", "maintenance-operator", "investigation-claimant"} <= set(brains.factories)
@@ -110,6 +140,15 @@ from actor_agents_arena import OWN_INVESTIGATION_VIEW, OwnInvestigationViewObser
 private_view_rule = rules.rules[(OWN_INVESTIGATION_VIEW, "agents-arena", type_url(OwnInvestigationViewObservation))]
 assert private_view_rule.data_policy == "session_only"
 assert private_view_rule.expiry_field == "expires_at_unix_ms"
+from actor_runtime.launching import profiles
+assert set(profiles()) == {"agents-arena"}
+import subprocess
+doctor_process = subprocess.run([sys.executable, "-I", "-m", "actor_runtime.control", "doctor"],
+    capture_output=True, text=True, timeout=15)
+assert doctor_process.returncode == 0
+doctor = json.loads(doctor_process.stdout)
+assert doctor["authentication"] == "not_checked" and doctor["game_profiles"] == ["agents-arena"]
+assert doctor["optional_providers"] == {"codex_sdk": None, "jev_sdk": None}
 for package, basename in [("actor.metadata", "standard.v1"),
     ("actor.communication.metadata", "communication.v1"),
     ("extensions.agents_arena.metadata", "agents_arena.v1")]:
@@ -121,6 +160,8 @@ print(json.dumps({
     "imports_from_installed_wheel": True,
     "optional_sdk_modules_absent": True,
     "generated_resources_present": True,
+    "installed_actorctl_doctor_auth_free": True,
+    "discovered_game_profiles": len(profiles()),
     "extension_versions": {name: package.version for name, package in extensions.packages.items()},
     "extension_schema_hashes": {name: package.schema_hash for name, package in extensions.packages.items()},
     "discovered_skills": len(skills.definitions), "discovered_brains": len(brains.factories),
@@ -164,6 +205,9 @@ def verify(args, report):
                 "actor_standard_communication/skills.py", "actor_runtime/privacy.py", "actor_runtime/inbox.py",
                 "actor_agents_arena/investigation.py", "actor_agents_arena/investigation_brain.py",
                 "actor_agents_arena/investigation_events.py",
+                "actor_runtime/control.py", "actor_runtime/launching.py", "actor_runtime/knowledge_skills.py",
+                "actor_agents_arena/social_discussion.py", "actor_agents_arena/social_pursuit.py",
+                "actor_agents_arena/launcher.py", "actor_agents_arena/social_layout.json", "actor_codex/catalog.py",
             }
             if not required <= names or any(".egg-info/" in name for name in names):
                 raise VerificationError("inspect wheel", "missing_or_invalid_package_files")
@@ -218,6 +262,11 @@ def verify(args, report):
             raise failure
         if not report.get("tests", {}).get("passed"):
             raise VerificationError("test evidence", "missing_test_result")
+        if args.export_wheel_dir is not None:
+            retained = export_wheel(wheel, args.export_wheel_dir, report["wheel"]["sha256"])
+            report["wheel"]["retained_artifact"] = {
+                "file": retained.name, "sha256": report["wheel"]["sha256"], "exact_verified_bytes": True,
+                "path": retained.relative_to(ROOT).as_posix() if retained.is_relative_to(ROOT) else "[external output directory]"}
         report["passed"] = True
 
 
@@ -225,6 +274,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=ROOT / "build/milestone5-package.json")
     parser.add_argument("--test-timeout", type=float, default=180)
+    parser.add_argument("--export-wheel-dir", type=Path, help="Retain the exact wheel only after verification passes; refuses different existing bytes")
     args = parser.parse_args()
     if not 30 <= args.test_timeout <= 1800:
         parser.error("--test-timeout must be between 30 and 1800 seconds")

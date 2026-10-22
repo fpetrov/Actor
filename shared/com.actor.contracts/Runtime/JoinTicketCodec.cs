@@ -14,6 +14,12 @@ namespace Actor.Contracts
         public string protocolVersion;
         public long expiresAt;
         public string nonce;
+        public string actorId;
+        public ulong connectionGeneration;
+        public bool resume;
+        public ulong resumeGeneration;
+        public string resumeCredentialId;
+        public override string ToString() => "JoinTicketClaims [private]";
     }
 
     public static class JoinTicketCodec
@@ -53,7 +59,10 @@ namespace Actor.Contracts
             => claims != null && claims.lobbyId == lobbyId && claims.gameVersion == gameVersion
                 && claims.protocolVersion == protocolVersion && claims.expiresAt > now
                 && claims.expiresAt <= now + 300 && IsPlayerNameValid(claims.playerName)
-                && Guid.TryParseExact(claims.nonce, "N", out _);
+                && Guid.TryParseExact(claims.nonce, "N", out _)
+                && (protocolVersion != "4" || Guid.TryParseExact(claims.actorId, "N", out _)
+                    && (claims.resume ? claims.resumeGeneration > 0 && Guid.TryParseExact(claims.resumeCredentialId, "N", out _)
+                        : claims.connectionGeneration == 1 && claims.resumeGeneration == 0 && string.IsNullOrEmpty(claims.resumeCredentialId)));
 
         public static bool IsPlayerNameValid(string name)
         {
