@@ -41,7 +41,18 @@ from .window import OwnedWindowLocator
 
 
 class NativeError(RuntimeError):
-    def __init__(self, code): self.code = code; super().__init__(code)
+    def __init__(self, code, *, prepare_code=None, cleanup_stages=()):
+        self.code = code; self.prepare_code = prepare_code; self.cleanup_stages = tuple(cleanup_stages)
+        super().__init__(code)
+
+
+def _prepare_code(error):
+    if isinstance(error, asyncio.CancelledError): return "broadcast_prepare_cancelled"
+    code = getattr(error, "code", None)
+    if (isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9_]{0,63}", code)
+            and code.startswith(("broadcast_", "obs_", "pf_", "speech_", "commentary_", "admission_", "observer_", "twitch_", "audio_"))):
+        return code
+    return "broadcast_prepare_failed"
 
 
 def private_directory(path, *, create=True):
@@ -228,9 +239,12 @@ class NativeBroadcastFactory:
         try:
             await run.prepare()
             return run
-        except BaseException:
+        except BaseException as error:
+            run.prepare_failure_code = _prepare_code(error)
             try: await _cleanup(run.close(emergency=True), 35)
-            except Exception: raise NativeError("broadcast_prepare_cleanup_incomplete") from None
+            except Exception:
+                raise NativeError("broadcast_prepare_cleanup_incomplete", prepare_code=run.prepare_failure_code,
+                    cleanup_stages=run.cleanup_failures) from None
             raise
         finally: self._preparing = False
 
@@ -261,6 +275,8 @@ class PreparedNativeRun:
         self._activated = False; self._record_directory_original = None; self._decoder = None
         self._admission_pending = None
         self._close_task = None
+        self.prepare_failure_code = None
+        self.cleanup_failures = (); self.recovered_cleanup_stages = ()
 
     def readiness(self): return dict(self._flags)
 
@@ -362,8 +378,6 @@ class PreparedNativeRun:
             channel_guard=self._verify_channel, on_unsafe=self._obs_event)
         await self._stage(self.obs.prepare(self._binding, self.sink.renderer_url,
             protected_backup_confirmed=True, adopt_empty_collection=True), 20)
-        if not (await self.obs.audit()).passed: raise NativeError("obs_graph_audit_failed")
-        self._ready("obs")
         if not await self._verify_channel(c.channel): raise NativeError("obs_channel_binding_unverified")
         # Synthetic setup scope must never enter the spoken-coverage ledger.
         callback, self.sink.on_ack = self.sink.on_ack, None
@@ -373,6 +387,12 @@ class PreparedNativeRun:
             if not isinstance(result, dict) or result.get("passed") is not True:
                 raise NativeError("audio_route_probe_unproven")
         finally: self.sink.on_ack = callback
+        # First activation may legitimately materialize browser geometry. Do
+        # not latch OBS readiness until the actual probe and final strict
+        # idle/quiet audit have finished; route_guard still revokes immediately.
+        if not (await self._stage(self.obs.complete_startup(), 4)).passed: raise NativeError("obs_graph_audit_failed")
+        self._require_ready_route()
+        self._ready("obs")
         self._ready("audio")
         if c.chat_enabled:
             if not c.twitch_client_id: raise NativeError("twitch_client_id_required")
@@ -385,7 +405,12 @@ class PreparedNativeRun:
             # welcome and accepted subscription. Merely validating OAuth is insufficient.
             self._task(self._chat_loop())
             await self._stage(self._wait_chat(), 15)
+        self._require_ready_route()
+
+    def _require_ready_route(self):
         self._check()
+        if not self._route_guard(): raise NativeError("obs_route_unverified")
+        if self.sink.public_status.get("renderer_ready") is not True: raise NativeError("audio_renderer_unavailable")
         if not self.scheduler._fresh(): raise NativeError("broadcast_presented_view_stale")
 
     def _obs_event(self, _):
@@ -540,7 +565,7 @@ class PreparedNativeRun:
     async def _close_owned(self, *, emergency):
         async with self._close_lock:
             if self._closed: return
-            self._closing = True; failures = []
+            self._closing = True; failures = []; recovered = []
             async def finish(name, operation, timeout=8):
                 value = getattr(self, name)
                 if value is None: return
@@ -618,8 +643,16 @@ class PreparedNativeRun:
                     except BaseException: failures.append("obs_owned_inputs"); clean_inputs = False
                 if clean_inputs:
                     await finish("obs_client", lambda value: value.close(), 4)
-                    if self.obs_client is None: self.obs = None
-            if failures: raise NativeError("broadcast_owned_cleanup_incomplete")
+                    if self.obs_client is None:
+                        self.obs = None
+                        # A prior mute/scene request can fail after a previous
+                        # attempt already removed VOICE. Fresh idle+empty-owned
+                        # input proof and actual client close supersede that
+                        # route-stop failure; an active output cannot reach here.
+                        if "obs_stop" in failures:
+                            failures.remove("obs_stop"); recovered.append("obs_stop")
+            self.cleanup_failures = tuple(failures); self.recovered_cleanup_stages = tuple(recovered)
+            if failures: raise NativeError("broadcast_owned_cleanup_incomplete", cleanup_stages=self.cleanup_failures)
             if self.lease is not None: self.lease.release(); self.lease = None
             self._closed = True
             if self in self.factory._owned: self.factory._owned.remove(self)

@@ -227,6 +227,8 @@ class ObsController:
     SCENES = ("ACTOR Preparing", "ACTOR Match", "ACTOR Ending", "ACTOR Safe")
     VOICE = "ACTOR Voice"
     VIDEO = "ACTOR Observer Window"
+    STABILIZE_TIMEOUT_SECONDS = 3.0
+    STABILIZE_QUIET_SECONDS = .15
 
     def __init__(self, client: ObsClient, *, window_guard, channel_guard, on_unsafe=None):
         self.client = client; self.window_guard = window_guard; self.channel_guard = channel_guard
@@ -236,6 +238,7 @@ class ObsController:
         self._last_audit_at = -float("inf")
         self._owner_nonce = secrets.token_hex(16); self._owned_inputs = {}; self._creating_inputs = set()
         self._expected_scene = "ACTOR Preparing"
+        self._startup_pending = True
         self._setup_lock = asyncio.Lock(); self._stream_lock = asyncio.Lock(); self._record_owned = False
         self._audit_lock = asyncio.Lock()
         self._old_callback = client.on_event; client.on_event = self._event
@@ -344,7 +347,7 @@ class ObsController:
         async with self._setup_lock:
             if self._prepared:
                 if binding != self._binding or renderer_url != self._renderer_url: raise ObsError("obs_setup_identity_changed")
-                return await self.audit()
+                return await self.stabilize() if self._startup_pending else await self.audit()
             if protected_backup_confirmed is not True: raise ObsError("obs_protected_backup_required")
             p = urlsplit(renderer_url)
             capability = p.fragment.removeprefix("cap=")
@@ -409,7 +412,7 @@ class ObsController:
                         "boundsAlignment": 0, "alignment": 5}})
                 self._binding = binding; self._renderer_url = renderer_url; self._prepared = True
                 await self.client.request("SetCurrentProgramScene", {"sceneName": "ACTOR Preparing"})
-                return await self.audit()
+                return await self.stabilize()
             except BaseException:
                 # Retain ownership markers for explicit cleanup/retry even
                 # when CreateInput's response was lost after OBS committed it.
@@ -450,7 +453,7 @@ class ObsController:
                 try: UUID(identity)
                 except (ValueError, TypeError, AttributeError): raise ObsError("obs_input_uuid_required") from None
                 self._owned_inputs[name] = identity
-            self._creating_inputs.discard(name)
+        verified = set()
         for name, identity in list(self._owned_inputs.items()):
             candidates = [value for value in inputs if value.get("inputUuid") == identity]
             if len(candidates) > 1: raise ObsError("obs_owned_cleanup_ambiguous")
@@ -458,14 +461,121 @@ class ObsController:
                 settings = (await self.client.request("GetInputSettings", {"inputUuid": identity})).get("inputSettings", {})
                 if settings.get("actor_broadcast_owner") != self._owner_nonce:
                     raise ObsError("obs_owned_cleanup_foreign_input")
+                verified.add(identity)
+            elif any(row.get("inputName") == name for row in inputs):
+                raise ObsError("obs_owned_cleanup_foreign_input")
+        scenes = (await self.client.request("GetSceneList")).get("scenes")
+        if (not isinstance(scenes, list) or len(scenes) > len(self.SCENES)
+                or any(not isinstance(row, dict) or row.get("sceneName") not in self.SCENES for row in scenes)
+                or len({row["sceneName"] for row in scenes}) != len(scenes)):
+            raise ObsError("obs_owned_cleanup_scene_changed")
+        scene_ids = []
+        for row in scenes:
+            identity = row.get("sceneUuid")
+            try: UUID(identity)
+            except (ValueError, TypeError, AttributeError): raise ObsError("obs_owned_cleanup_scene_changed") from None
+            if identity in scene_ids: raise ObsError("obs_owned_cleanup_scene_changed")
+            scene_ids.append(identity)
+
+        async def scene_items(identity):
+            rows = (await self.client.request("GetSceneItemList", {"sceneUuid": identity})).get("sceneItems")
+            if (not isinstance(rows, list) or len(rows) > 64
+                    or any(not isinstance(row, dict) or type(row.get("sceneItemId")) is not int
+                           or row["sceneItemId"] < 0 for row in rows)
+                    or len({row["sceneItemId"] for row in rows}) != len(rows)):
+                raise ObsError("obs_owned_cleanup_scene_changed")
+            for row in rows:
+                try: UUID(row.get("sourceUuid"))
+                except (ValueError, TypeError, AttributeError): raise ObsError("obs_owned_cleanup_scene_changed") from None
+            return rows
+
+        # libobs 32 prunes removed sources only while their scenes render. Safe
+        # is deliberately current here, so detach the exact owned references
+        # explicitly instead of waiting for inactive Match/Ending to render.
+        for scene_id in scene_ids:
+            for row in await scene_items(scene_id):
+                if row.get("sourceUuid") in verified:
+                    await self.client.request("RemoveSceneItem", {"sceneUuid": scene_id, "sceneItemId": row["sceneItemId"]})
+        owned_ids = set(self._owned_inputs.values())
+        for scene_id in scene_ids:
+            if any(row.get("sourceUuid") in owned_ids for row in await scene_items(scene_id)):
+                raise ObsError("obs_owned_cleanup_references_retained")
+        # The last detached scene item may already have released the source.
+        # Never issue a name-based removal or assume the UUID still exists.
+        collections = await self.client.request("GetSceneCollectionList")
+        profile, _ = _profile_list(await self.client.request("GetProfileList"))
+        if collections.get("currentSceneCollectionName") != self.OWNED_NAME or profile != self.OWNED_NAME:
+            raise ObsError("obs_owned_cleanup_collection_changed")
+        current = (await self.client.request("GetInputList"))["inputs"]
+        for identity in owned_ids:
+            candidates = [row for row in current if row.get("inputUuid") == identity]
+            if len(candidates) > 1: raise ObsError("obs_owned_cleanup_ambiguous")
+            if candidates:
+                settings = (await self.client.request("GetInputSettings", {"inputUuid": identity})).get("inputSettings", {})
+                if settings.get("actor_broadcast_owner") != self._owner_nonce:
+                    raise ObsError("obs_owned_cleanup_foreign_input")
                 await self.client.request("RemoveInput", {"inputUuid": identity})
-            self._owned_inputs.pop(name)
         remaining = (await self.client.request("GetInputList"))["inputs"]
         if remaining: raise ObsError("obs_owned_cleanup_foreign_input")
+        # Keep both UUID and lost-response markers until absence is confirmed.
+        self._owned_inputs.clear(); self._creating_inputs.clear()
         self._graph_ok = False; self._prepared = False
 
     async def audit(self):
         async with self._audit_lock: return await self._audit()
+
+    async def stabilize(self):
+        """During startup only, wait for full strict audits in a quiet graph.
+
+        No event or generation check is weakened. This bounded startup wait is
+        never available while a stream/recording is owned or actually active.
+        """
+        async with self._audit_lock:
+            if not self._startup_pending: raise ObsError("obs_startup_already_completed")
+            return await self._stabilize_audit()
+
+    async def complete_startup(self):
+        """Seal startup settling after the actual local audio/video probe."""
+        async with self._audit_lock:
+            if not self._startup_pending: return await self._audit()
+            result = await self._stabilize_audit()
+            self._startup_pending = False
+            return result
+
+    async def _stabilize_audit(self):
+        self._graph_ok = False
+        generation = None; valid_since = None
+        try:
+            async with asyncio.timeout(self.STABILIZE_TIMEOUT_SECONDS):
+                if self._owned_stream or self._record_owned: raise ObsError("obs_stabilization_requires_idle")
+                await self.require_idle()
+                while True:
+                    if self._owned_stream or self._record_owned: raise ObsError("obs_stabilization_requires_idle")
+                    result = await self._audit()
+                    now = time.monotonic()
+                    if result.passed:
+                        if generation != self._graph_generation or valid_since is None:
+                            generation = self._graph_generation; valid_since = now
+                        if (generation == self._graph_generation and valid_since is not None
+                                and now - valid_since >= self.STABILIZE_QUIET_SECONDS):
+                            self._graph_ok = False
+                            await self.require_idle()
+                            if (generation == self._graph_generation and not self._owned_stream
+                                    and not self._record_owned):
+                                self._graph_ok = True
+                                return result
+                    else:
+                        generation = None; valid_since = None
+                    # A first passing audit is not settled readiness. Pending
+                    # activation/initialization must never expose a ready route.
+                    self._graph_ok = False
+                    await asyncio.sleep(.05)
+        except TimeoutError:
+            self._graph_ok = False
+            raise ObsError("obs_graph_stabilization_timeout") from None
+        except BaseException:
+            self._graph_ok = False
+            raise
 
     async def _audit(self):
         # Keep a previously verified, still-fresh proof during a normal poll.
@@ -569,17 +679,19 @@ class ObsController:
         # intermediate old-program/new-expected state from our own request.
         async with self._audit_lock:
             if scene != "ACTOR Safe":
-                audit = await self._audit()
+                audit = await self._stabilize_audit() if self._startup_pending else await self._audit()
                 if not audit.passed: raise ObsError(audit.reason)
+                if scene == self._expected_scene: return
             self._expected_scene = scene; self._graph_ok = False; self._graph_generation += 1
             await self.client.request("SetCurrentProgramScene", {"sceneName": scene})
             if scene != "ACTOR Safe":
-                audit = await self._audit()
+                audit = await self._stabilize_audit() if self._startup_pending else await self._audit()
                 if not audit.passed: raise ObsError(audit.reason)
 
     async def start_stream(self, permit: PublicStartPermit):
         async with self._stream_lock:
             if self._owned_stream: return
+            if self._startup_pending: raise ObsError("obs_startup_incomplete")
             if (not isinstance(permit, PublicStartPermit) or permit.explicit_public_start is not True
                 or permit.channel_login != "fedorr_codex" or type(permit.expires_at_monotonic) not in (int, float)
                 or not time.monotonic() < permit.expires_at_monotonic <= time.monotonic() + 60):

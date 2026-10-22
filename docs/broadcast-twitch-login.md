@@ -5,6 +5,15 @@
 `~/.config/actor/broadcast.json`. Пустой ID останавливает команду до запроса
 OAuth. Client secret, пароль аккаунта и stream key не нужны.
 
+Twitch требует 2FA для регистрации приложения. При первоначальном включении
+2FA необходим номер, принимающий SMS; Google Authenticator подключается после
+проверки номера. Если номер недоступен, оставьте `chat_enabled: false`:
+комментирование игровых событий и локальный предпросмотр работают без чата.
+Не используйте Client ID другого приложения или токены OBS для чтения чата.
+Это ограничение регистрации чата само по себе не доказывает недоступность
+вещания через уже привязанный OBS. См. [требование 2FA](https://dev.twitch.tv/docs/authentication/register-app/)
+и [порядок проверки номера](https://help.twitch.tv/s/article/not-receiving-sms).
+
 ```sh
 actorctl broadcast twitch-login --config ~/.config/actor/broadcast.json
 ```

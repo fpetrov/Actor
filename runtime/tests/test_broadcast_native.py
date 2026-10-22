@@ -149,6 +149,7 @@ class Fakes:
                 assert kwargs == {"protected_backup_confirmed": True, "adopt_empty_collection": True}
                 own.calls.append("obs-prepare")
             async def audit(self): return Obj(passed=True)
+            async def complete_startup(self): own.calls.append("obs-startup-complete"); return Obj(passed=True)
             async def emergency_stop(self): own.live = False; own.calls.append("obs-emergency")
             async def cleanup_owned_inputs(self): own.calls.append("obs-owned-inputs-removed")
         class Budget:
@@ -423,6 +424,56 @@ async def test_cleanup_failure_keeps_channel_lease_and_run_handle_until_retry(tm
     assert not fakes.lease.held and not factory._owned
 
 
+@pytest.mark.parametrize("blocked_output_stop", [False, True])
+async def test_real_obs_partial_remove_retry_preserves_prepare_reason_and_releases_only_after_idle_proof(tmp_path, blocked_output_stop):
+    from actor_broadcast.obs import ObsController, ObsError
+    from test_broadcast_obs import Graph
+
+    fakes=Fakes(tmp_path)
+    class PartialRemove(Graph):
+        def __init__(self):
+            super().__init__();self.inputs=[];self.settings={};self.items={key:[] for key in ObsController.SCENES}
+            self.current_scene="ACTOR Preparing";self.created=False;self.failed_empty=False;self.block_stop=False
+            # Actual controller audit rejects this graph before readiness.
+            self.voice_transforms["ACTOR Match"]["positionX"]=1
+        async def connect(self): fakes.calls.append("obs-connect")
+        async def close(self): fakes.calls.append("obs-close")
+        async def request(self,kind,data=None,**kwargs):
+            if kind=="SetInputMute" and not any(row["inputName"]==(data or {}).get("inputName") for row in self.inputs):
+                self.calls.append((kind,data));raise ObsError("obs_request_rejected")
+            if kind=="StopStream" and self.block_stop:
+                self.calls.append((kind,data));raise ObsError("obs_request_failed")
+            value=await super().request(kind,data,**kwargs)
+            if kind=="CreateInput": self.created=True
+            if kind=="GetInputList" and self.created and not self.inputs and not self.failed_empty:
+                self.failed_empty=True;raise ObsError("obs_request_failed")
+            return value
+
+    class FastObs(ObsController): STABILIZE_TIMEOUT_SECONDS=.08
+    graph=PartialRemove();deps=fakes.dependencies();deps.obs_client=lambda _:graph;deps.obs_controller=FastObs
+    factory=NativeBroadcastFactory(fakes.config,Store(),dependencies=deps)
+    with pytest.raises(NativeError,match="^broadcast_prepare_cleanup_incomplete$") as failure:
+        await factory.prepare("ABC123",uuid4().hex,CommentaryConfig(),on_ready=lambda _:None,
+            on_unsafe=lambda _:None,on_terminal=lambda:None)
+    run=factory._owned[0]
+    assert failure.value.prepare_code == run.prepare_failure_code == "obs_graph_stabilization_timeout"
+    assert failure.value.cleanup_stages == run.cleanup_failures == ("obs_owned_inputs",)
+    assert not graph.inputs and run.obs._prepared and fakes.lease.held
+    assert fakes.process.poll()==0 and "obs-close" not in fakes.calls
+    if blocked_output_stop:
+        graph.active=True;graph.block_stop=True;run.obs._owned_stream=True
+        with pytest.raises(NativeError,match="^broadcast_factory_cleanup_incomplete$"):
+            await factory.aclose()
+        assert graph.active and run.obs._owned_stream and fakes.lease.held and factory._owned==[run]
+        assert run.cleanup_failures == ("obs_stop",) and not run.recovered_cleanup_stages
+        assert "obs-close" not in fakes.calls
+        graph.block_stop=False
+    await factory.aclose()
+    assert not graph.active and not factory._owned and not fakes.lease.held and run._closed
+    assert run.recovered_cleanup_stages == ("obs_stop",) and not run.cleanup_failures
+    assert run.prepare_failure_code == "obs_graph_stabilization_timeout" and fakes.calls.count("obs-close")==1
+
+
 async def test_cancelled_cleanup_wait_keeps_owned_job_and_all_handles_until_actual_drain(tmp_path):
     fakes = Fakes(tmp_path); factory, run, _, _, _ = await prepared(fakes)
     entered, drained = asyncio.Event(), asyncio.Event()
@@ -444,3 +495,50 @@ def test_recorded_pcm_probe_requires_real_energy_and_known_envelope_correlation(
     unrelated = array("f", [.1] * (len(reference)//4)).tobytes()
     assert not audio_probe_measurement(unrelated, reference)["passed"]
     with pytest.raises(NativeError): audio_probe_measurement(b"broken", reference)
+
+
+async def test_obs_readiness_latches_only_after_actual_probe_and_final_startup_audit(tmp_path):
+    fakes = Fakes(tmp_path); deps = fakes.dependencies(); phases = []
+    async def probe(run):
+        assert not run.readiness()['obs'] and not run.readiness()['audio']
+        assert run._route_guard()
+        run._obs_event('obs_graph_changed')
+        assert run._failure is None  # Startup still requires actual final audit.
+        phases.append('probe')
+        return {'passed': True}
+    deps.audio_probe = probe
+    factory = NativeBroadcastFactory(fakes.config, Store(), dependencies=deps)
+    flags = []; unsafe = []
+    try:
+        run = await factory.prepare('ABC123', uuid4().hex, CommentaryConfig(),
+            on_ready=flags.append, on_unsafe=unsafe.append, on_terminal=lambda: None)
+        assert phases == ['probe']
+        assert any(row['obs'] and not row['audio'] for row in flags)
+        assert flags[-1]['obs'] and flags[-1]['audio']
+        assert 'obs-startup-complete' in fakes.calls and not unsafe
+        run._obs_event('obs_graph_changed')
+        assert run._failure == 'obs_graph_changed' and unsafe == ['obs_graph_changed']
+        assert not run._route_guard()
+    finally:
+        await factory.aclose()
+
+
+@pytest.mark.parametrize('invalidate', ['route', 'renderer', 'feed'])
+async def test_startup_audit_return_cannot_latch_stale_ready_proof(tmp_path, invalidate):
+    fakes = Fakes(tmp_path); deps = fakes.dependencies(); base = deps.obs_controller
+    class InvalidatedAfterAudit(base):
+        async def complete_startup(self):
+            # Reproduce invalidation between a successful audit and the
+            # Native _stage waiter consuming that result.
+            if invalidate == 'route': self.route_verified = False
+            elif invalidate == 'renderer': fakes.renderer_ready = False
+            else: fakes.scheduler._fresh = lambda: False
+            return Obj(passed=True)
+    deps.obs_controller = InvalidatedAfterAudit
+    factory = NativeBroadcastFactory(fakes.config, Store(), dependencies=deps)
+    flags = []
+    with pytest.raises(NativeError):
+        await factory.prepare('ABC123', uuid4().hex, CommentaryConfig(),
+            on_ready=flags.append, on_unsafe=lambda _: None, on_terminal=lambda: None)
+    assert all(not row['obs'] and not row['audio'] for row in flags)
+    assert not factory._owned and not fakes.lease.held and fakes.process.poll() == 0

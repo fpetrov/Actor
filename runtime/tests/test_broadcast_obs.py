@@ -42,10 +42,11 @@ class Graph:
                        ObsController.VOICE: {str(i): i == 1 for i in range(1, 7)}}
         self.items = {"ACTOR Preparing": [], "ACTOR Safe": [], "ACTOR Ending": [self.item(ObsController.VOICE)],
                       "ACTOR Match": [self.item(ObsController.VIDEO), self.item(ObsController.VOICE, 1)]}
+        self.scene_ids = {scene:str(uuid4()) for scene in self.items}
     @staticmethod
-    def item(name, index=0):
+    def item(name, index=0, source_uuid=None):
         return {"sourceName": name, "sceneItemId": 1 if name == ObsController.VIDEO else 2,
-            "sceneItemIndex": index, "sceneItemBlendMode": "OBS_BLEND_NORMAL", "sceneItemEnabled": True, "isGroup": False}
+            "sourceUuid":source_uuid,"sceneItemIndex": index, "sceneItemBlendMode": "OBS_BLEND_NORMAL", "sceneItemEnabled": True, "isGroup": False}
     async def request(self, kind, data=None, **kwargs):
         data = data or {}; self.calls.append((kind, data)); name = data.get("inputName")
         if kind.endswith("Status"): return {"outputActive": self.active or self.foreign, "outputReconnecting": False}
@@ -62,8 +63,11 @@ class Graph:
         if kind == "GetInputAudioTracks": return {"inputAudioTracks": self.tracks[name]}
         if kind == "GetInputAudioMonitorType": return {"monitorType": "OBS_MONITORING_TYPE_NONE"}
         if kind == "GetSourceFilterList": return {"filters": self.filters.get(data["sourceName"], [])}
-        if kind == "GetSceneList": return {"scenes": [{"sceneName": x} for x in self.items]}
-        if kind == "GetSceneItemList": return {"sceneItems": self.items[data["sceneName"]]}
+        if kind == "GetSceneList": return {"scenes": [{"sceneName": x,"sceneUuid":self.scene_ids[x]} for x in self.items]}
+        if kind in ("GetSceneItemList","RemoveSceneItem"):
+            scene=data.get("sceneName") or next(name for name,identity in self.scene_ids.items() if identity==data.get("sceneUuid"))
+            if kind=="GetSceneItemList": return {"sceneItems": self.items[scene]}
+            self.items[scene]=[row for row in self.items[scene] if row["sceneItemId"]!=data["sceneItemId"]]
         if kind == "GetCurrentProgramScene": return {"currentProgramSceneName": self.current_scene}
         if kind == "GetSceneItemTransform":
             return {"sceneItemTransform": self.voice_transforms[data["sceneName"]] if data["sceneItemId"] == 2 else self.transform}
@@ -71,10 +75,11 @@ class Graph:
         if kind == "CreateInput":
             identity = str(uuid4()); self.inputs.append({"inputName": name, "inputKind": data["inputKind"], "inputUuid": identity})
             self.settings[name] = data["inputSettings"]
-            self.items[data["sceneName"]].append(self.item(name, len(self.items[data["sceneName"]])))
+            self.items[data["sceneName"]].append(self.item(name, len(self.items[data["sceneName"]]), identity))
             return {"inputUuid": identity, "sceneItemId": 1}
         if kind == "CreateSceneItem":
-            self.items[data["sceneName"]].append(self.item(data["sourceName"], len(self.items[data["sceneName"]])))
+            identity=next(row["inputUuid"] for row in self.inputs if row["inputName"]==data["sourceName"])
+            self.items[data["sceneName"]].append(self.item(data["sourceName"], len(self.items[data["sceneName"]]),identity))
         if kind == "RemoveInput":
             target = next(x for x in self.inputs if x.get("inputUuid") == data["inputUuid"])
             self.inputs.remove(target)
@@ -89,6 +94,7 @@ def controller(graph=None):
     graph = graph or Graph(); c = ObsController(graph, window_guard=lambda w: w == WindowBinding(123, 456), channel_guard=lambda login: login == "fedorr_codex")
     c._prepared = True; c._binding = WindowBinding(123, 456); c._renderer_url = URL
     c._expected_scene = "ACTOR Match"
+    c._startup_pending = False
     return c, graph
 
 
@@ -473,6 +479,78 @@ async def test_lost_create_response_is_removed_only_using_own_marker_and_exact_u
     assert not graph.inputs and ("RemoveInput", {"inputUuid": identity}) in graph.calls
 
 
+class InactiveScenes(Graph):
+    """libobs-like removal: unrendered scene references retain removed sources."""
+    def __init__(self):
+        super().__init__();self.inputs=[];self.settings={};self.items={key:[] for key in ObsController.SCENES}
+        self.current_scene="ACTOR Preparing";self.removed=set();self.lost=None;self.lost_once=False
+    async def request(self,kind,data=None,**kwargs):
+        if kind=="RemoveInput":
+            self.calls.append((kind,data));self.removed.add(data["inputUuid"]);result={}
+        else:result=await super().request(kind,data,**kwargs)
+        references={row.get("sourceUuid") for rows in self.items.values() for row in rows}
+        self.inputs[:]=[row for row in self.inputs if row["inputUuid"] not in self.removed or row["inputUuid"] in references]
+        if kind==self.lost and not self.lost_once:
+            self.lost_once=True;raise ObsError("obs_request_failed")
+        return result
+
+
+async def inactive_prepared():
+    graph=InactiveScenes();c=ObsController(graph,window_guard=lambda _:True,channel_guard=lambda _:True)
+    assert (await c.prepare(WindowBinding(123,456),URL,protected_backup_confirmed=True,adopt_empty_collection=True)).passed
+    graph.current_scene="ACTOR Safe"
+    return c,graph
+
+
+async def test_inactive_match_and_ending_detach_all_exact_uuid_references_before_removing_inputs():
+    c,graph=await inactive_prepared();owned=dict(c._owned_inputs)
+    expected={(graph.scene_ids[scene],row["sceneItemId"]) for scene,rows in graph.items.items() for row in rows}
+    before=len(graph.calls)
+    await c.cleanup_owned_inputs();calls=graph.calls[before:]
+    detached=[(data["sceneUuid"],data["sceneItemId"]) for kind,data in calls if kind=="RemoveSceneItem"]
+    assert len(detached)==3 and set(detached)==expected
+    assert max(i for i,(kind,_) in enumerate(calls) if kind=="RemoveSceneItem") < min(i for i,(kind,_) in enumerate(calls) if kind=="RemoveInput")
+    assert {data["inputUuid"] for kind,data in calls if kind=="RemoveInput"}==set(owned.values())
+    assert not graph.inputs and not any(graph.items.values()) and not c._owned_inputs and not c._creating_inputs
+    assert graph.current_scene=="ACTOR Safe" and not any(kind=="SetCurrentProgramScene" for kind,_ in calls)
+
+
+@pytest.mark.parametrize("lost",["RemoveSceneItem","RemoveInput"])
+async def test_lost_cleanup_mutation_response_retains_uuid_ownership_until_retry_proves_absence(lost):
+    c,graph=await inactive_prepared();owned=dict(c._owned_inputs);graph.lost=lost
+    with pytest.raises(ObsError,match="request_failed"):await c.cleanup_owned_inputs()
+    assert c._owned_inputs==owned and c._prepared
+    first=[data for kind,data in graph.calls if kind==lost][-1]
+    await c.cleanup_owned_inputs()
+    assert not graph.inputs and not any(graph.items.values()) and not c._owned_inputs
+    assert sum(kind==lost and data==first for kind,data in graph.calls)==1
+
+
+async def test_cleanup_never_detaches_same_name_foreign_scene_item_or_input():
+    c,graph=await inactive_prepared();foreign=str(uuid4())
+    row=Graph.item(c.VOICE,2,foreign);row["sceneItemId"]=99
+    graph.items["ACTOR Match"].append(row)
+    graph.inputs.append({"inputName":"Foreign source","inputUuid":foreign,"inputKind":"browser_source"})
+    before=len(graph.calls)
+    with pytest.raises(ObsError,match="foreign_input"):await c.cleanup_owned_inputs()
+    assert row in graph.items["ACTOR Match"] and any(x["inputUuid"]==foreign for x in graph.inputs)
+    assert not any(kind=="RemoveSceneItem" and data["sceneItemId"]==99 for kind,data in graph.calls[before:])
+    assert not any(kind=="RemoveInput" and data["inputUuid"]==foreign for kind,data in graph.calls[before:])
+    assert c._owned_inputs  # no successful completion was claimed
+
+
+@pytest.mark.parametrize("mutation",["marker","unknown_scene","missing_source_uuid"])
+async def test_cleanup_rejects_unverified_marker_or_scene_before_destructive_mutation(mutation):
+    c,graph=await inactive_prepared();owned=dict(c._owned_inputs)
+    if mutation=="marker":graph.settings[c.VIDEO]["actor_broadcast_owner"]="foreign"
+    elif mutation=="unknown_scene":
+        graph.items["Foreign scene"]=[];graph.scene_ids["Foreign scene"]=str(uuid4())
+    else:graph.items["ACTOR Preparing"]=[{"sceneItemId":10,"sourceName":c.VIDEO}]
+    before=len(graph.calls)
+    with pytest.raises(ObsError):await c.cleanup_owned_inputs()
+    assert c._owned_inputs==owned and not any(kind.startswith("Remove") for kind,_ in graph.calls[before:])
+
+
 async def test_async_destination_guard_is_awaited_and_drift_before_start_is_rejected():
     c, graph = controller(); calls = []
     async def guard(login): calls.append(login); return len(calls) == 1
@@ -528,3 +606,119 @@ async def test_v5_authenticated_handshake_and_request_correlation_no_secret_sett
         assert "PRIVATE_SERVER_COMMENT" not in str(error.value) + repr(error.value) + repr(vars(error.value))
     finally: await client.close()
     assert ws.closed
+
+
+async def test_startup_fast_audits_accumulate_quiet_time_without_exposing_early_route():
+    c, graph = controller(); c._startup_pending = True
+    c.STABILIZE_TIMEOUT_SECONDS = .5
+    # Reproduce effectively instant local audits: the first success must not
+    # reset on every 50ms poll, nor become route readiness during the wait.
+    task = asyncio.create_task(c.complete_startup())
+    await asyncio.sleep(.08)
+    assert not task.done() and not c.route_verified and c._startup_pending
+    assert (await task).passed and c.route_verified and not c._startup_pending
+    assert sum(kind == 'GetCurrentProgramScene' for kind, _ in graph.calls) >= 4
+    with pytest.raises(ObsError, match='obs_startup_already_completed'):
+        await c.stabilize()
+
+
+async def test_startup_activation_reaudits_full_graph_after_real_generation_race():
+    class Activation(Graph):
+        changed = False
+        async def request(self, kind, data=None, **kwargs):
+            result = await super().request(kind, data, **kwargs)
+            if (kind == 'GetSceneItemList' and self.current_scene == 'ACTOR Match'
+                    and (data or {}).get('sceneName') == 'ACTOR Match' and not self.changed):
+                self.changed = True
+                self.on_event('SceneItemTransformChanged', {'sceneName': 'ACTOR Match', 'sceneItemId': 2})
+            return result
+    c, graph = controller(Activation()); c._startup_pending = True
+    c._expected_scene = graph.current_scene = 'ACTOR Preparing'
+    await c.show('ACTOR Match')
+    assert graph.changed and c.route_verified and c._graph_generation == 2
+    assert sum(kind == 'GetCurrentProgramScene' for kind, _ in graph.calls) >= 8
+    assert (await c.complete_startup()).passed
+
+
+async def test_prepare_waits_for_actual_capture_dimensions_to_materialize():
+    class Initializing(InactiveScenes):
+        samples = 0
+        async def request(self, kind, data=None, **kwargs):
+            result = await super().request(kind, data, **kwargs)
+            if kind == 'GetSceneItemTransform' and (data or {}).get('sceneItemId') == 1:
+                self.samples += 1
+                if self.samples <= 2:
+                    return {'sceneItemTransform': {**self.transform, 'sourceWidth': 0, 'sourceHeight': 0}}
+            return result
+    graph = Initializing(); c = ObsController(graph, window_guard=lambda _: True, channel_guard=lambda _: True)
+    assert (await c.prepare(WindowBinding(123,456), URL, protected_backup_confirmed=True,
+        adopt_empty_collection=True)).passed
+    assert graph.samples >= 6 and c._startup_pending
+    assert not c.route_verified  # Preparing never authorizes audio playback.
+
+
+@pytest.mark.parametrize('hung_query', ['GetStreamStatus', 'GetSceneCollectionList'])
+async def test_startup_deadline_covers_hung_idle_and_complete_audit_queries(hung_query):
+    c, graph = controller(); c._startup_pending = True; c.STABILIZE_TIMEOUT_SECONDS = .1
+    original = graph.request; entered = asyncio.Event()
+    async def hung(kind, *args, **kwargs):
+        if kind == hung_query: entered.set(); await asyncio.Event().wait()
+        return await original(kind, *args, **kwargs)
+    graph.request = hung
+    with pytest.raises(ObsError, match='obs_graph_stabilization_timeout'):
+        await asyncio.wait_for(c.complete_startup(), .5)
+    assert entered.is_set() and not c.route_verified and c._startup_pending
+
+
+async def test_startup_continuous_events_timeout_and_cannot_publish_readiness():
+    c, graph = controller(); c._startup_pending = True; c.STABILIZE_TIMEOUT_SECONDS = .15
+    original = graph.request
+    async def changing(kind, *args, **kwargs):
+        result = await original(kind, *args, **kwargs)
+        if kind == 'GetCurrentProgramScene': c._event('SceneItemTransformChanged', {})
+        return result
+    graph.request = changing
+    with pytest.raises(ObsError, match='obs_graph_stabilization_timeout'): await c.complete_startup()
+    assert not c.route_verified and c._startup_pending
+
+
+async def test_startup_rejects_actual_foreign_output_before_scene_mutation():
+    c, graph = controller(); c._startup_pending = True; graph.foreign = True
+    with pytest.raises(ObsError, match='obs_foreign_output_active'): await c.show('ACTOR Ending')
+    assert not any(kind == 'SetCurrentProgramScene' for kind, _ in graph.calls)
+    assert not c.route_verified
+
+
+@pytest.mark.parametrize('owned_flag', ['_owned_stream', '_record_owned'])
+async def test_completed_startup_never_grants_audit_retry_for_live_scene_change(owned_flag):
+    c, graph = controller(); setattr(c, owned_flag, True)
+    original = graph.request; fired = False
+    async def changing(kind, data=None, **kwargs):
+        nonlocal fired
+        result = await original(kind, data, **kwargs)
+        if kind == 'GetSceneItemList' and graph.current_scene == 'ACTOR Ending' and not fired:
+            fired = True; c._event('SceneItemTransformChanged', {})
+        return result
+    graph.request = changing
+    with pytest.raises(ObsError, match='obs_graph_audit_failed'): await c.show('ACTOR Ending')
+    assert fired and not c.route_verified
+    assert sum(kind == 'GetCurrentProgramScene' for kind, _ in graph.calls) == 2
+
+
+async def test_public_start_preserves_existing_preview_route_and_same_scene_without_settling():
+    c, graph = controller(); assert (await c.audit()).passed
+    original = graph.request; route_observations = []
+    async def checked(kind, *args, **kwargs):
+        route_observations.append(c.route_verified)
+        return await original(kind, *args, **kwargs)
+    graph.request = checked
+    await c.start_stream(PublicStartPermit('fedorr_codex', time.monotonic()+5, True))
+    assert all(route_observations) and c._owned_stream
+    assert not any(kind == 'SetCurrentProgramScene' for kind, _ in graph.calls)
+
+
+async def test_public_start_cannot_run_before_probe_seals_startup():
+    c, graph = controller(); c._startup_pending = True
+    with pytest.raises(ObsError, match='obs_startup_incomplete'):
+        await c.start_stream(PublicStartPermit('fedorr_codex', time.monotonic()+5, True))
+    assert not any(kind == 'StartStream' for kind, _ in graph.calls)
