@@ -371,7 +371,12 @@ async def test_cli_guardian_registers_isolated_controller_and_keeps_secrets_out_
     monkeypatch.setenv("ACTOR_BRIDGE_TOKEN","private-token")
     monkeypatch.setenv("TWITCH_TOKEN","private-token")
     monkeypatch.setattr(cli.subprocess,"Popen",spawn)
-    monkeypatch.setattr(cli,"process_identity",lambda pid:{"pid":pid,"started":"fake-start","command_sha256":"a"*64})
+    def identity(pid):
+        if pid == 321: assert "hello-accepted" in events, "Never seal the pre-exec bootstrap command"
+        return {"pid":pid,"started":"fake-start","command_sha256":"b"*64 if pid == 321 else "a"*64}
+    monkeypatch.setattr(cli,"process_identity",identity)
+    monkeypatch.setattr(cli.os,"getpgid",lambda pid:pid)
+    monkeypatch.setattr(cli.os,"getsid",lambda pid:pid)
     if receipt_failure:monkeypatch.setattr(cli,"_write_guardian_state",lambda *args:False)
     class Services:
         cleanup_error_codes = {"output":"obs_owned_stream_start_pending"}
@@ -381,6 +386,7 @@ async def test_cli_guardian_registers_isolated_controller_and_keeps_secrets_out_
     class Retained:
         def __init__(self,process,**k):
             assert process is processes[0]; events.append("registered"); self.closed=False
+            self.process=process;self.pid=process.pid;self.leader_exited=lambda pid:self.closed
         async def terminate(self): self.closed=True; return True
     class Host:
         def __init__(self,channel,group,services):
@@ -389,12 +395,14 @@ async def test_cli_guardian_registers_isolated_controller_and_keeps_secrets_out_
         def fail(self,*a): pass
         async def serve(self,transport):
             assert events.index("registered") > events.index("spawn")
+            events.append("hello-accepted")
+            await transport.send({"v":1,"id":1,"ok":True,"value":{"controller_pid":321,"supervised":True},"output_status":{}})
             await self.group.terminate(); await self.services.close(); self.closed=True; return True
     monkeypatch.setattr(guardian_services,"GuardianServices",Services)
     monkeypatch.setattr(secrets,"MacOSKeychainSecretStore",lambda:object())
     monkeypatch.setattr(supervisor,"RetainedControllerGroup",Retained)
     monkeypatch.setattr(supervisor,"GuardianHost",Host)
-    monkeypatch.setattr(supervisor,"FramedSocket",lambda _:Obj(aclose=async_true))
+    monkeypatch.setattr(supervisor,"FramedSocket",lambda _:Obj(aclose=async_true,send=async_true))
     loop=asyncio.get_running_loop()
     monkeypatch.setattr(loop,"add_signal_handler",lambda number,callback:signals.__setitem__(number,callback))
     monkeypatch.setattr(loop,"remove_signal_handler",lambda number:signals.pop(number))
@@ -407,6 +415,7 @@ async def test_cli_guardian_registers_isolated_controller_and_keeps_secrets_out_
         import json
         report=json.loads((args.output/"guardian.json").read_text())
         assert report["closed"]is True and report["identity_complete"]is True
+        assert report["processes"]["controller"]["command_sha256"]=="b"*64
         assert report["cleanup_error_codes"]=={"output":"obs_owned_stream_start_pending"}
         assert (args.output/"guardian.json").stat().st_mode&0o077==0
     assert events.index("forward")<events.index("spawn")<events.index("registered")

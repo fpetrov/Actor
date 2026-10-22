@@ -218,6 +218,14 @@ failed fault/probe receipts remain failures; real post-fix containment requires
 Root's separate execution. Apple's [public signal codes](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/signal.h#L320-L329)
 identify trap/stop/continue as nonterminal notifications.
 
+The controller's command identity is sealed once, before forwarding the accepted
+private hello acknowledgement. Darwin's Python framework launcher can change its
+command representation just after `Popen` returns. The seal therefore waits for
+the real child to reach Python, while checking the same retained, unreaped direct
+child and its PID, process group and session before and after metadata collection.
+Receipts remain identity-incomplete until this seal; later identity changes never
+rebind ownership.
+
 The managed OBS profile must explicitly disable `Stream1.EnableMultitrackVideo`.
 OBS can otherwise queue an automatic replacement start after a terminal stop.
 An accepted Start RPC followed only by inactive status remains pending; cleanup

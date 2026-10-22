@@ -25,6 +25,60 @@ from .installation import BroadcastInstallation
 DEFAULT_CONFIG = Path.home() / ".config/actor/broadcast.json"
 
 
+def _controller_identity(process, group):
+    """Seal only the still-reserved direct child after its Python hello."""
+    def reserved():
+        pid = process.pid
+        if (type(pid) is not int or pid <= 1 or group.process is not process or group.pid != pid
+                or group.closed or process.returncode is not None or group.leader_exited(pid) is not False
+                or os.getpgid(pid) != pid or os.getsid(pid) != pid):
+            raise CoordinatorError("broadcast_guardian_identity_unverified")
+    try:
+        reserved()
+        identity = process_identity(process.pid)
+        if (not isinstance(identity, dict) or set(identity) != {"pid", "started", "command_sha256"}
+                or type(identity["pid"]) is not int or identity["pid"] != process.pid
+                or not isinstance(identity["started"], str) or not 1 <= len(identity["started"]) <= 128
+                or any(ord(character) < 32 or ord(character) > 126 for character in identity["started"])
+                or not isinstance(identity["command_sha256"], str)
+                or re.fullmatch(r"[0-9a-f]{64}", identity["command_sha256"]) is None):
+            raise CoordinatorError("broadcast_guardian_identity_unverified")
+        reserved()
+        return dict(identity)
+    except CoordinatorError: raise
+    except Exception:
+        raise CoordinatorError("broadcast_guardian_identity_unverified") from None
+
+
+class _IdentitySealedTransport:
+    """Transparent transport hook for the host's accepted private hello ACK.
+
+    The host alone authenticates/parses requests. No frame is synthesized or
+    changed; the first successful hello reply waits for one immutable identity
+    seal before it can let the child import Native/provider code.
+    """
+    def __init__(self, transport, controller_pid, seal):
+        self.transport, self.controller_pid, self.seal = transport, controller_pid, seal
+        self.sealed = False; self._attempted = False
+
+    async def receive(self): return await self.transport.receive()
+
+    async def send(self, message):
+        value = message.get("value") if isinstance(message, dict) else None
+        if (isinstance(message, dict) and type(message.get("v")) is int and message["v"] == 1
+                and type(message.get("id")) is int and message["id"] > 0 and message.get("ok") is True
+                and isinstance(value, dict) and set(value) == {"controller_pid", "supervised"}
+                and type(value["controller_pid"]) is int and value["controller_pid"] == self.controller_pid
+                and value["supervised"] is True):
+            if self._attempted: raise CoordinatorError("broadcast_guardian_identity_reseal_forbidden")
+            self._attempted = True
+            await self.seal()
+            self.sealed = True
+        await self.transport.send(message)
+
+    async def aclose(self): await self.transport.aclose()
+
+
 def _write_guardian_state(directory, value):
     """Small private diagnostic receipt; its failure never gates cleanup."""
     path=Path(directory)/"guardian.json";pending=path.with_suffix(".partial");created=False
@@ -209,7 +263,7 @@ async def _supervised_serve(args, config):
     receipts=None;receipt_stop=asyncio.Event();receipt_failed=False;identities={"guardian":None,"controller":None}
     async def receipt():
         nonlocal receipt_failed
-        document={"schema":"actor.broadcast-guardian.v1","owner_uid":os.geteuid(),"processes":identities,
+        document={"schema":"actor.broadcast-guardian.v1","owner_uid":os.geteuid(),"processes":dict(identities),
             "identity_complete":all(x is not None for x in identities.values()),
             "terminal":host is not None and host.terminal,"reason":host.reason if host is not None else None,
             "closed":host is not None and host.closed,
@@ -248,10 +302,19 @@ async def _supervised_serve(args, config):
         child.close(); environment.clear()
         group = RetainedControllerGroup(process, group_members=controller_group_members)
         host = GuardianHost(config.channel, group, services)
-        transport = FramedSocket(parent)
+        async def seal_controller():
+            nonlocal receipt_failed
+            try:
+                identity = await asyncio.to_thread(_controller_identity, process, group)
+                if identities["controller"] is not None:
+                    raise CoordinatorError("broadcast_guardian_identity_reseal_forbidden")
+                identities["controller"] = identity
+            except BaseException:
+                receipt_failed=True; host.fail("supervisor_identity_unverified")
+                raise
+        transport = _IdentitySealedTransport(FramedSocket(parent),process.pid,seal_controller)
         identities["guardian"]=await asyncio.to_thread(process_identity,os.getpid())
-        identities["controller"]=await asyncio.to_thread(process_identity,process.pid)
-        if not all(identities.values()):
+        if identities["guardian"] is None:
             receipt_failed=True;host.fail("supervisor_identity_unverified")
         receipts=asyncio.create_task(receipt_loop(),name="broadcast-guardian-receipts")
         if stop_requested: host.fail("supervisor_operator_stop")
