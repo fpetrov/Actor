@@ -1,6 +1,7 @@
 """Rootless Unix-socket fakes; no sudo/PF/OBS/listener modifications."""
 import asyncio
 import json
+import hashlib
 import os
 from pathlib import Path
 import sys
@@ -12,6 +13,14 @@ import pytest
 import actor_broadcast.obs_firewall_attestor as attestor_module
 from actor_broadcast.obs_firewall_attestor import (AttestationError, CLOCK_DOMAIN,
     FirewallAttestationClient, PfAttestor, attestation_clock_ns, peer_uid, verify_path)
+from actor_broadcast.ownership import ChannelLease
+
+
+@pytest.fixture(autouse=True)
+def isolated_query_mutex(tmp_path, monkeypatch):
+    # Exercise the real persistent lock without writing the account namespace.
+    monkeypatch.setattr(attestor_module, "_client_query_lease", lambda path: ChannelLease("pf_query",
+        directory=tmp_path / "query-locks" / hashlib.sha256(str(path).encode()).hexdigest()))
 
 
 @pytest.fixture

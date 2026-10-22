@@ -197,6 +197,20 @@ root attestor issues fresh challenged proofs to the unprivileged controller.
 Stopping that checker leaves firewall protection installed. Firewall removal is
 an explicit administrator action after the OBS listener has been disabled.
 
+The controller and its guardian serialize read-only PF queries with a private
+per-account, per-service lock. Waiting and the challenged exchange share the
+existing request deadline; the proof lifetime is unchanged. The persistent lock
+inode is never unlinked, and its namespace comes from the OS account home rather
+than the selected Codex home or run configuration. This prevents the legitimate
+clients from colliding with the checker's single in-flight inspection.
+
+During OBS preparation, the guardian's mutation connection and final quiet graph
+audit are the startup authority. Delayed graph events on the controller's second,
+read-only connection cannot erase that audited preparation. Transport/profile
+loss and guardian failure still latch immediately. Startup ends only with a fresh
+successful parent seal; afterward the read-only graph fence also remains strict
+and a later audit never clears a recorded failure.
+
 The concrete administrator installer is `scripts/install-broadcast-firewall.py`.
 Its default `plan` action changes nothing. Review the current digest, then use
 that exact digest with `install --execute --expected-digest DIGEST`; explicitly

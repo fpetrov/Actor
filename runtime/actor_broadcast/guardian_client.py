@@ -230,21 +230,27 @@ class GuardianObsController:
     SCENES, VIDEO, VOICE = ObsController.SCENES, ObsController.VIDEO, ObsController.VOICE
     def __init__(self, guardian, client, *, window_guard, channel_guard, on_unsafe=None):
         self.guardian, self.client, self.window_guard, self.on_unsafe = guardian, client, window_guard, on_unsafe
-        self._binding = None; self._invalid = False; self._expected_scene = "ACTOR Preparing"
+        self._binding = None; self._invalid = False; self._startup_pending = True
+        self._expected_scene = "ACTOR Preparing"
         self._old_callback = client.on_event; client.on_event = self._event
         guardian.on_unsafe(self._unsafe)
     def _unsafe(self, code):
         self._invalid = True
         if self.on_unsafe is not None: self.on_unsafe(code)
     def _event(self, name, data):
-        if (name == "CurrentProgramSceneChanged" and data.get("sceneName") != self._expected_scene
-                or name in {"ConnectionLost", "CurrentSceneCollectionChanging", "CurrentSceneCollectionChanged",
-                    "CurrentProfileChanging", "CurrentProfileChanged", "InputCreated", "InputRemoved", "InputNameChanged",
+        # The parent's mutation connection is the sole startup graph authority:
+        # this second read-only connection can deliver an already audited setup
+        # event later. Identity/transport loss and parent unsafe stay permanent.
+        hard = name in {"ConnectionLost", "CurrentSceneCollectionChanging", "CurrentSceneCollectionChanged",
+                    "CurrentProfileChanging", "CurrentProfileChanged"}
+        graph = (name == "CurrentProgramSceneChanged" and data.get("sceneName") != self._expected_scene
+                or name in {"InputCreated", "InputRemoved", "InputNameChanged",
                     "SceneCreated", "SceneRemoved", "SceneNameChanged", "SceneListChanged", "InputSettingsChanged",
                     "InputMuteStateChanged", "InputVolumeChanged", "InputAudioTracksChanged", "InputAudioMonitorTypeChanged",
                     "InputAudioSyncOffsetChanged", "SourceFilterCreated", "SourceFilterRemoved", "SourceFilterEnableStateChanged",
                     "SourceFilterSettingsChanged", "SourceFilterNameChanged", "SourceFilterListReindexed", "SceneItemCreated",
-                    "SceneItemRemoved", "SceneItemEnableStateChanged", "SceneItemTransformChanged", "SceneItemListReindexed"}):
+                    "SceneItemRemoved", "SceneItemEnableStateChanged", "SceneItemTransformChanged", "SceneItemListReindexed"})
+        if hard or graph and not self._startup_pending:
             self._unsafe("obs_graph_changed")
         if self._old_callback is not None: self._old_callback(name, data)
     @property
@@ -260,7 +266,7 @@ class GuardianObsController:
         result = await self.guardian.call("prepare_output", {"binding": asdict(binding), "renderer_url": renderer_url,
             "native_size": list(native_size), "protected_backup_confirmed": protected_backup_confirmed,
             "adopt_empty_collection": adopt_empty_collection})
-        self._binding = binding; self._invalid = False
+        self._binding = binding
         return GraphAudit(**result)
     async def audit(self):
         result = GraphAudit(**await self.guardian.call("audit_output"))
@@ -269,16 +275,15 @@ class GuardianObsController:
         return result
     async def complete_startup(self):
         result = GraphAudit(**await self.guardian.call("complete_output_startup"))
-        if result.passed: self._invalid = False
+        if result.passed:
+            if (self._invalid or self.guardian.output_status.get("startup_pending") is not False
+                    or not self.guardian.route_verified):
+                raise GuardianError("guardian_startup_seal_unverified")
+            self._startup_pending = False
         return result
     async def show(self, scene):
-        startup = self.guardian.output_status.get("startup_pending") is True
         self._expected_scene = scene
         await self.guardian.call("show_output", {"scene": scene})
-        if startup and self.guardian.output_status.get("startup_pending") is True and self.guardian.route_verified:
-            # An owned activation can materialise geometry. Only the parent's
-            # full quiet startup audit may refresh this local startup fence.
-            self._invalid = False
     async def require_idle(self):
         await self.guardian.call("require_output_idle")
     async def start_stream(self, permit):

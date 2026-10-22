@@ -183,14 +183,17 @@ class PfAttestor:
 
 class FirewallAttestationClient:
     def __init__(self, socket_path, *, port=4455, timeout=1.5, max_age_seconds=1.5,
-                 verify_filesystem=verify_path, get_peer_uid=peer_uid, administrator_uid=0):
+                 verify_filesystem=verify_path, get_peer_uid=peer_uid, administrator_uid=0,
+                 query_lease_factory=None):
         if not .1 <= timeout <= 3 or not .1 <= max_age_seconds <= 3: raise AttestationError("pf_attestor_time_bound")
         self.socket_path = Path(socket_path); self.port = port; self.timeout = timeout
         self.max_age_ns = int(max_age_seconds * 1e9)
         self.verify_filesystem, self.get_peer_uid = verify_filesystem, get_peer_uid
         self.administrator_uid = administrator_uid
+        self._query_lease_factory = query_lease_factory
         self._verified_at = None; self.last_error = "pf_attestation_missing"
         self._lock = asyncio.Lock()
+        self._query_lease = None
 
     @property
     def verified(self):
@@ -205,12 +208,27 @@ class FirewallAttestationClient:
     async def _refresh(self):
         # A still-fresh previous proof remains valid during the bounded query;
         # starting a poll must not itself create a false audio unsafe event.
-        writer = None
+        writer = lease = None
+        deadline = asyncio.get_running_loop().time() + self.timeout
         try:
-            self.verify_filesystem(self.socket_path)
-            challenge = secrets.token_hex(32); started = attestation_clock_ns()
             async def exchange():
-                nonlocal writer
+                nonlocal writer, lease
+                # Import client-only ownership lazily. The immutable root-run
+                # service snapshot has no new package/file dependency.
+                from .ownership import LeaseError
+                self.verify_filesystem(self.socket_path)
+                lease = (self._query_lease_factory or _client_query_lease)(self.socket_path)
+                self._query_lease = lease  # retained before the first await
+                while True:
+                    if asyncio.get_running_loop().time() >= deadline: raise asyncio.TimeoutError
+                    try:
+                        lease.acquire()
+                        break
+                    except LeaseError as error:
+                        if error.code != "channel_already_owned": raise
+                        await asyncio.sleep(.01)
+                if asyncio.get_running_loop().time() >= deadline: raise asyncio.TimeoutError
+                challenge = secrets.token_hex(32); started = attestation_clock_ns()
                 reader, writer = await asyncio.open_unix_connection(self.socket_path, limit=2048)
                 if self.get_peer_uid(writer.get_extra_info("socket")) != self.administrator_uid:
                     raise AttestationError("pf_attestor_peer_unverified")
@@ -218,20 +236,21 @@ class FirewallAttestationClient:
                     "port": self.port, "clock_domain": CLOCK_DOMAIN}).encode() + b"\n")
                 await writer.drain(); raw = await reader.readuntil(b"\n")
                 if len(raw) > 1024: raise AttestationError("pf_attestor_bound")
-                return json.loads(raw, object_pairs_hook=_unique)
-            value = await asyncio.wait_for(exchange(), self.timeout)
-            now = attestation_clock_ns()
-            if (set(value) != {"schema", "challenge", "port", "clock_domain", "verified", "checked_at_monotonic_ns", "loopback_allowed", "non_loopback_ipv4_ipv6_denied"}
-                    or value["schema"] != "actor.obs-pf-attestation.v2" or value["clock_domain"] != CLOCK_DOMAIN
-                    or value["challenge"] != challenge
-                    or type(value["port"]) is not int or value["port"] != self.port or value["verified"] is not True
-                    or value["loopback_allowed"] is not True or value["non_loopback_ipv4_ipv6_denied"] is not True
-                    or type(value["checked_at_monotonic_ns"]) is not int
-                    or not started <= value["checked_at_monotonic_ns"] <= now
-                    or now - value["checked_at_monotonic_ns"] > self.max_age_ns):
-                raise AttestationError("pf_attestor_proof_invalid")
-            self._verified_at = value["checked_at_monotonic_ns"]; self.last_error = None
-            return True
+                value = json.loads(raw, object_pairs_hook=_unique)
+                now = attestation_clock_ns()
+                if (set(value) != {"schema", "challenge", "port", "clock_domain", "verified", "checked_at_monotonic_ns", "loopback_allowed", "non_loopback_ipv4_ipv6_denied"}
+                        or value["schema"] != "actor.obs-pf-attestation.v2" or value["clock_domain"] != CLOCK_DOMAIN
+                        or value["challenge"] != challenge
+                        or type(value["port"]) is not int or value["port"] != self.port or value["verified"] is not True
+                        or value["loopback_allowed"] is not True or value["non_loopback_ipv4_ipv6_denied"] is not True
+                        or type(value["checked_at_monotonic_ns"]) is not int
+                        or not started <= value["checked_at_monotonic_ns"] <= now
+                        or now - value["checked_at_monotonic_ns"] > self.max_age_ns):
+                    raise AttestationError("pf_attestor_proof_invalid")
+                if asyncio.get_running_loop().time() >= deadline: raise asyncio.TimeoutError
+                self._verified_at = value["checked_at_monotonic_ns"]; self.last_error = None
+                return True
+            return await asyncio.wait_for(exchange(), self.timeout)
         except asyncio.CancelledError:
             self._verified_at = None; raise
         except Exception as error:
@@ -239,7 +258,44 @@ class FirewallAttestationClient:
             self.last_error = getattr(error, "code", "pf_attestation_unavailable")
             return False
         finally:
-            if writer is not None: writer.close()
+            try:
+                if writer is not None: writer.close()
+            finally:
+                try:
+                    if lease is not None: lease.release()
+                finally: self._query_lease = None
+
+
+def _client_query_lease(socket_path):
+    """One non-configurable per-account mutex for this root service path.
+
+    HOME/output/config cannot split the namespace. No inode is ever unlinked.
+    Only a client query loads these dependencies, never root service startup.
+    """
+    import hashlib
+    import pwd
+    from .ownership import ChannelLease
+    try:
+        uid = os.geteuid()
+        home = Path(pwd.getpwuid(uid).pw_dir)
+        service = Path(socket_path).absolute()
+        if (not home.is_absolute() or home.resolve() != home
+                or service.parent.resolve() != service.parent):
+            raise AttestationError("pf_attestor_query_lock_unsafe")
+        key = hashlib.sha256(str(service).encode("utf-8")).hexdigest()
+        directory = home / ".actor" / "broadcast" / "pf-attestor-query-locks" / str(uid) / key
+        # Check every existing ancestor before ChannelLease may mkdir. A
+        # writable ancestor must not let another UID replace the lock namespace.
+        for parent in reversed((directory, *directory.parents)):
+            try: info = parent.lstat()
+            except FileNotFoundError: break
+            if (not stat.S_ISDIR(info.st_mode) or info.st_uid not in {0, uid}
+                    or info.st_mode & 0o022):
+                raise AttestationError("pf_attestor_query_lock_unsafe")
+        return ChannelLease("pf_query", directory=directory)
+    except AttestationError: raise
+    except (OSError, ValueError, KeyError):
+        raise AttestationError("pf_attestor_query_lock_unsafe") from None
 
 
 async def _serve(args):
