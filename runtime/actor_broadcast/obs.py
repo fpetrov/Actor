@@ -259,6 +259,9 @@ class ObsController:
         self._stream_confirmed = False; self._stream_stopping = False
         self._stream_start_pending = False
         self._stream_start_task = None
+        self._stream_start_progressed = False; self._stream_start_terminal = False
+        self._stream_start_superseded = False
+        self._stream_single_start_verified = False
         self._stream_failure = None; self._stream_event_generation = 0
         self._graph_generation = 0
         self._last_audit_at = -float("inf")
@@ -283,8 +286,22 @@ class ObsController:
     def _event(self, name, data):
         if name == "StreamStateChanged":
             self._stream_event_generation += 1
+            state = data.get("outputState")
+            if self._owned_stream and self._stream_start_pending:
+                if self._stream_start_terminal and not (state == "OBS_WEBSOCKET_OUTPUT_STOPPED" and data.get("outputActive") is False):
+                    self._stream_start_superseded = True
+                # A bare inactive sample (or an old STOPPED notification) does
+                # not cancel an accepted frontend queue. Only the current
+                # attempt's observed progression followed by STOPPED proves
+                # that its start lifecycle has terminated.
+                if ((state == "OBS_WEBSOCKET_OUTPUT_STARTING" and data.get("outputActive") is False)
+                        or (state == "OBS_WEBSOCKET_OUTPUT_STARTED" and data.get("outputActive") is True)):
+                    self._stream_start_progressed = True
+                elif (state == "OBS_WEBSOCKET_OUTPUT_STOPPED" and data.get("outputActive") is False
+                        and self._stream_start_progressed):
+                    self._stream_start_terminal = True
+                    self._fail_stream("obs_owned_stream_start_failed")
             if self._owned_stream and self._stream_confirmed and not self._stream_stopping:
-                state = data.get("outputState")
                 if state in ("OBS_WEBSOCKET_OUTPUT_RECONNECTING", "OBS_WEBSOCKET_OUTPUT_RECONNECTED"):
                     self._fail_stream("obs_owned_stream_reconnecting")
                 elif data.get("outputActive") is False:
@@ -793,6 +810,7 @@ class ObsController:
                 or not time.monotonic() < permit.expires_at_monotonic <= time.monotonic() + 60):
                 raise ObsError("obs_public_start_not_authorized")
             if not await self.verify_channel(permit.channel_login): raise ObsError("obs_channel_binding_unverified")
+            await self._require_single_stream_start()
             await self.require_idle()
             if not (await self.audit()).passed: raise ObsError("obs_graph_audit_failed")
             await self.show("ACTOR Match")
@@ -804,6 +822,9 @@ class ObsController:
             # A lost response must not turn an owned output into an orphan.
             self._owned_stream = True
             self._stream_confirmed = False; self._stream_stopping = False; self._stream_start_pending = True
+            self._stream_start_progressed = self._stream_start_terminal = False
+            self._stream_start_superseded = False
+            self._stream_single_start_verified = True
             try:
                 try:
                     task = self._stream_start_task = asyncio.create_task(self.client.request("StartStream"))
@@ -817,8 +838,10 @@ class ObsController:
                     raise
                 deadline = time.monotonic() + 10
                 while time.monotonic() < deadline:
+                    if self._stream_failure is not None: raise ObsError(self._stream_failure)
                     generation = self._stream_event_generation
                     state = await self.client.request("GetStreamStatus", timeout=max(.1, min(2, deadline - time.monotonic())))
+                    if self._stream_failure is not None: raise ObsError(self._stream_failure)
                     if state.get("outputActive") is True: self._stream_start_pending = False
                     if not self._owned_stream or self._stream_stopping and not self._stream_start_pending:
                         raise ObsError("obs_start_interrupted")
@@ -837,6 +860,17 @@ class ObsController:
         value = self.channel_guard(login)
         if inspect.isawaitable(value): value = await asyncio.wait_for(value, 6)
         return value is True
+
+    async def _require_single_stream_start(self):
+        # OBS 32.2.2 can queue another StartStreaming *after* STOPPED when
+        # multitrack RestartOnError is enabled. The managed single-start
+        # contract excludes this mode; never infer it from an inactive status.
+        before, _ = _profile_list(await self.client.request("GetProfileList", timeout=1))
+        enabled = (await self.client.request("GetProfileParameter", {
+            "parameterCategory":"Stream1", "parameterName":"EnableMultitrackVideo"}, timeout=1)).get("parameterValue")
+        after, _ = _profile_list(await self.client.request("GetProfileList", timeout=1))
+        if before != self.OWNED_NAME or after != self.OWNED_NAME or type(enabled) is not str or enabled != "false":
+            raise ObsError("obs_stream_start_policy_unverified")
 
     async def stop_stream(self):
         if not self._owned_stream: return
@@ -866,13 +900,30 @@ class ObsController:
             while True:
                 state = await self.client.request("GetStreamStatus", timeout=max(.1, min(2, settle_deadline-time.monotonic())))
                 if state.get("outputActive") is True:
+                    if self._stream_start_terminal:
+                        # Our observed lifecycle ended; a later active output
+                        # may belong to someone else. Never stop it by name.
+                        raise ObsError("obs_owned_stream_ownership_unknown")
                     self._stream_start_pending = False
                     break
                 if state.get("outputActive") is not False: raise ObsError("obs_stop_unconfirmed")
+                if self._stream_start_terminal:
+                    if self._stream_start_superseded: raise ObsError("obs_owned_stream_ownership_unknown")
+                    if not self._stream_single_start_verified: raise ObsError("obs_stream_start_policy_unverified")
+                    await self._require_single_stream_start()
+                    generation = self._stream_event_generation
+                    state = await self.client.request("GetStreamStatus", timeout=1)
+                    if self._stream_start_superseded or state.get("outputActive") is True:
+                        raise ObsError("obs_owned_stream_ownership_unknown")
+                    if generation != self._stream_event_generation or state.get("outputActive") is not False:
+                        raise ObsError("obs_stop_unconfirmed")
+                    if state.get("outputReconnecting") is not False: raise ObsError("obs_stop_unconfirmed")
+                    self._stream_start_pending = False
                 if not self._stream_start_pending:
                     self._owned_stream = self._stream_confirmed = self._stream_stopping = False; return
                 if time.monotonic() >= settle_deadline: raise ObsError("obs_owned_stream_start_pending")
                 await asyncio.sleep(.05)
+            if self._stream_start_terminal: raise ObsError("obs_owned_stream_ownership_unknown")
             await self.client.request("StopStream")
             deadline = time.monotonic() + 10
             while time.monotonic() < deadline:

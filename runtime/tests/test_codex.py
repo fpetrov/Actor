@@ -20,6 +20,14 @@ from actor_runtime.snapshots import build_decision_context
 from actor_runtime.world import CachedPayload
 
 
+@pytest.fixture(autouse=True)
+def fake_codex_launch(monkeypatch):
+    # The public final-launcher seam has its own stand-in-process tests. These
+    # adapter fakes must not depend on an installed SDK/binary bundle at all.
+    monkeypatch.setattr("actor_codex.adapter.codex_launch_args",
+        lambda config: ("fake-filtered-launcher", *config.config_overrides))
+
+
 @dataclass
 class TextInput:
     text: str
@@ -52,6 +60,24 @@ class FakeSDK:
         self.usage = usage
         self.started_items, self.completed_items, self.terminal = started_items, completed_items, terminal
         self.streams_closed = 0
+        self.config_clients = []
+
+    def adapter(self, **options):
+        return OfficialCodexAdapter(sdk=self, config_client_factory=self.config_client,
+            config_response_model=object, **options)
+
+    def config_client(self, config):
+        class ConfigClient:
+            closed = False
+            async def start(self): pass
+            async def initialize(self): pass
+            async def request(self, method, params, *, response_model):
+                assert method == "config/read" and params == {"cwd": config.cwd, "includeLayers": False}
+                return SimpleNamespace(config=SimpleNamespace(model_extra={"mcp_servers": {}}))
+            async def close(self): self.closed = True
+        client = ConfigClient()
+        self.config_clients.append(client)
+        return client
 
     def CodexConfig(self, **options):
         return SimpleNamespace(**options)
@@ -154,7 +180,7 @@ async def test_pending_cold_sdk_import_keeps_real_bridge_heartbeat_alive(manifes
         finally:
             finished.set()
     monkeypatch.setattr(adapter_module, "sdk_module", cold_loader)
-    adapter = OfficialCodexAdapter()
+    adapter = OfficialCodexAdapter(config_client_factory=sdk.config_client, config_response_model=object)
     server = RuntimeServer(ExtensionRegistry.discover(), TOKEN, port=0)
     startup = None
     await server.start()
@@ -196,7 +222,7 @@ async def test_cancelled_cold_sdk_import_cannot_later_create_provider_resources(
         finally:
             finished.set()
     monkeypatch.setattr(adapter_module, "sdk_module", cold_loader)
-    adapter = OfficialCodexAdapter()
+    adapter = OfficialCodexAdapter(config_client_factory=sdk.config_client, config_response_model=object)
     startup = asyncio.create_task(adapter.start_episode("Wait briefly", []))
     try:
         assert await asyncio.wait_for(asyncio.to_thread(entered.wait, .5), timeout=.7)
@@ -218,7 +244,7 @@ async def test_game_injection_is_external_message_never_user_text(session, monke
         "actor-1", "test.chat", 3, 1, StringValue(value=malicious))
     monkeypatch.setenv("ACTOR_BRIDGE_TOKEN", "secret-bridge-token-never-forward-to-brain")
     sdk = FakeSDK()
-    adapter = OfficialCodexAdapter(sdk=sdk)
+    adapter = sdk.adapter()
     brain = CodexBrain(adapter=adapter)
     objective = Objective(text="Wait briefly and finish")
     catalog = registry().catalog(session)
@@ -241,7 +267,7 @@ async def test_game_injection_is_external_message_never_user_text(session, monke
 
 async def test_one_sdk_process_one_thread_reused_between_decisions(session):
     sdk = FakeSDK()
-    brain = CodexBrain(adapter=OfficialCodexAdapter(sdk=sdk))
+    brain = CodexBrain(adapter=sdk.adapter())
     runner = ObjectiveRunner(session, registry(), brain)
     result = await runner.run(Objective(text="Wait briefly and finish"))
     assert result.status == "succeeded" and result.decision_count == 2
@@ -254,7 +280,7 @@ async def test_one_sdk_process_one_thread_reused_between_decisions(session):
 
 async def test_cancel_during_model_turn_interrupts_sdk_no_skill_starts(session):
     sdk = FakeSDK(blocked=True)
-    brain = CodexBrain(adapter=OfficialCodexAdapter(sdk=sdk))
+    brain = CodexBrain(adapter=sdk.adapter())
     runner = ObjectiveRunner(session, registry(), brain)
     task = asyncio.create_task(runner.run(Objective(text="Wait briefly and finish")))
     await asyncio.wait_for(sdk.started.wait(), timeout=1)
@@ -268,7 +294,7 @@ async def test_cancel_during_model_turn_interrupts_sdk_no_skill_starts(session):
 
 async def test_brain_timeout_interrupts_public_sdk_handle(session):
     sdk = FakeSDK(blocked=True)
-    runner = ObjectiveRunner(session, registry(), CodexBrain(adapter=OfficialCodexAdapter(sdk=sdk)),
+    runner = ObjectiveRunner(session, registry(), CodexBrain(adapter=sdk.adapter()),
                              decision_timeout_seconds=0.03)
     result = await runner.run(Objective(text="Wait briefly and finish"))
     assert result.status == "failed" and result.reason == "brain_timeout"
@@ -332,7 +358,7 @@ async def test_cancelled_close_still_closes_sdk_and_removes_workspace(session):
             entered.set()
             await asyncio.Event().wait()
     sdk = FakeSDK()
-    adapter = Adapter(sdk=sdk)
+    adapter = Adapter(sdk=sdk, config_client_factory=sdk.config_client, config_response_model=object)
     await adapter.start_episode("Wait", registry().catalog(session))
     workspace = Path(adapter.workspace.name)
     task = asyncio.create_task(adapter.close())
@@ -346,7 +372,7 @@ async def test_cancelled_close_still_closes_sdk_and_removes_workspace(session):
 async def test_event_interrupts_public_turn_then_reuses_same_objective_thread(session):
     from test_preemption import routing, emit
     router, sdk = routing(session), FakeSDK(blocked=True)
-    adapter = OfficialCodexAdapter(sdk=sdk)
+    adapter = sdk.adapter()
     brain = CodexBrain(adapter=adapter)
     runner = ObjectiveRunner(session, registry(), brain, event_router=router)
     task = asyncio.create_task(runner.run(Objective(text="React to a strategic event then finish.")))
@@ -368,7 +394,7 @@ async def test_event_interrupts_public_turn_then_reuses_same_objective_thread(se
 
 async def test_adapter_single_flight_reserves_before_late_handle_reply_and_soft_resume(session):
     sdk, entered, release = FakeSDK(), asyncio.Event(), asyncio.Event()
-    adapter = OfficialCodexAdapter(sdk=sdk)
+    adapter = sdk.adapter()
     await adapter.start_episode("Finish after current state", registry().catalog(session))
     turn = adapter.thread.turn
 
@@ -447,7 +473,7 @@ async def test_interrupted_public_turn_usage_counts_toward_next_decision_budget(
     from test_preemption import routing, emit
     usage = SimpleNamespace(model_dump=lambda **_: {"last": {"total_tokens": 100}, "total": {"total_tokens": 100}})
     sdk, router = FakeSDK(blocked=True, usage=usage), routing(session)
-    adapter = OfficialCodexAdapter(sdk=sdk)
+    adapter = sdk.adapter()
     brain = CodexBrain(adapter=adapter, usage_warning_tokens=80, usage_limit_tokens=100)
     runner = ObjectiveRunner(session, registry(), brain, event_router=router)
     task = asyncio.create_task(runner.run(Objective(text="React then finish.")))

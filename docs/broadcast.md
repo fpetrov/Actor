@@ -218,6 +218,17 @@ failed fault/probe receipts remain failures; real post-fix containment requires
 Root's separate execution. Apple's [public signal codes](https://github.com/apple-oss-distributions/xnu/blob/main/bsd/sys/signal.h#L320-L329)
 identify trap/stop/continue as nonterminal notifications.
 
+The managed OBS profile must explicitly disable `Stream1.EnableMultitrackVideo`.
+OBS can otherwise queue an automatic replacement start after a terminal stop.
+An accepted Start RPC followed only by inactive status remains pending; cleanup
+requires its retained RPC to finish and the same attempt's observed STARTING or
+STARTED progression followed by STOPPED. With the single-start profile rechecked,
+a fresh inactive, non-reconnecting status and unchanged event generation can
+retire that failed intent without stopping a later output. A later start event
+or active output instead preserves unknown ownership. The private guardian receipt
+adds fixed allowlisted cleanup codes; it never serializes exception messages,
+stream settings or credentials. See the pinned [OBS stop and restart lifecycle](https://github.com/obsproject/obs-studio/blob/32.2.2/frontend/widgets/OBSBasic_Streaming.cpp#L269-L359).
+
 During OBS preparation, the guardian's mutation connection and final quiet graph
 audit are the startup authority. Delayed graph events on the controller's second,
 read-only connection cannot erase that audited preparation. Transport/profile

@@ -374,6 +374,7 @@ async def test_cli_guardian_registers_isolated_controller_and_keeps_secrets_out_
     monkeypatch.setattr(cli,"process_identity",lambda pid:{"pid":pid,"started":"fake-start","command_sha256":"a"*64})
     if receipt_failure:monkeypatch.setattr(cli,"_write_guardian_state",lambda *args:False)
     class Services:
+        cleanup_error_codes = {"output":"obs_owned_stream_start_pending"}
         def __init__(self,*a,**k): pass
         async def start_forward(self): events.append("forward")
         async def close(self): events.append("services-close")
@@ -406,6 +407,7 @@ async def test_cli_guardian_registers_isolated_controller_and_keeps_secrets_out_
         import json
         report=json.loads((args.output/"guardian.json").read_text())
         assert report["closed"]is True and report["identity_complete"]is True
+        assert report["cleanup_error_codes"]=={"output":"obs_owned_stream_start_pending"}
         assert (args.output/"guardian.json").stat().st_mode&0o077==0
     assert events.index("forward")<events.index("spawn")<events.index("registered")
     assert not signals

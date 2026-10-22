@@ -6,7 +6,6 @@ from dataclasses import dataclass
 import importlib
 from importlib.metadata import PackageNotFoundError, version
 import json
-import os
 import tempfile
 import time
 from typing import Protocol
@@ -15,6 +14,8 @@ from actor_runtime.errors import ActorError
 from .schema import decision_schema
 from .catalog import compact_catalog
 from .stream import ToolObservation, collect_turn
+from .launch import codex_launch_args, filtered_environment
+from .policy import PolicyPreflight, RESTRICTIVE_OVERRIDES, mcp_disable_override
 
 SDK_VERSION = "0.162.1"
 BASE_INSTRUCTIONS = (
@@ -58,19 +59,56 @@ def sdk_module():
     return sdk
 
 
-def configuration(sdk, cwd):
-    environment = {key: value for key, value in os.environ.items() if key != "ACTOR_BRIDGE_TOKEN"}
+def configuration(sdk, cwd, *, mcp_names=()):
     try:
         runtime_version = version("actor-runtime")
     except PackageNotFoundError:
         runtime_version = "source"
-    return sdk.CodexConfig(cwd=cwd, env=environment, client_name="actor_runtime", client_title="ACTOR Runtime",
-        client_version=runtime_version, config_overrides=("features.shell_tool=false", "features.apps=false",
-            "features.plugins=false", "features.multi_agent=false", "web_search=\"disabled\"", "mcp_servers={}"))
+    config = sdk.CodexConfig(cwd=cwd, env=filtered_environment(), client_name="actor_runtime", client_title="ACTOR Runtime",
+        client_version=runtime_version, config_overrides=RESTRICTIVE_OVERRIDES + (mcp_disable_override(mcp_names),))
+    # CodexConfig.env is merged by the SDK, so filter the final child through
+    # the supported launcher rather than relying on the supplied mapping.
+    config.launch_args_override = codex_launch_args(config)
+    return config
+
+
+def _mcp_names(response):
+    """Copy only bounded effective server names, never private server values.
+
+    Pinned Codex recursively merges tables: mcp_servers={} does not remove
+    inherited entries. Its official temporary_structured_request.rs disables
+    each effective name before ThreadStart; use that same public boundary.
+    """
+    config = getattr(response, "config", None)
+    missing = object()
+    servers = getattr(config, "mcp_servers", missing)
+    if servers is missing:
+        extras = getattr(config, "model_extra", None)
+        if not isinstance(extras, dict):
+            raise ActorError("codex_policy_config_invalid", "Codex game-only policy could not be verified")
+        servers = extras.get("mcp_servers", {})
+    if not isinstance(servers, dict) or len(servers) > 64:
+        raise ActorError("codex_policy_config_invalid", "Codex game-only policy could not be verified")
+    names = []
+    for name in servers:
+        if (not isinstance(name, str) or not 1 <= len(name) <= 128
+                or any(ord(character) < 32 or ord(character) > 126 for character in name)):
+            raise ActorError("codex_policy_config_invalid", "Codex game-only policy could not be verified")
+        names.append(name)
+    return tuple(sorted(names))
+
+
+def _thread_policy(names):
+    config = {value.rsplit("=", 1)[0]: value.rsplit("=", 1)[1] == "true"
+        for value in RESTRICTIVE_OVERRIDES if value.endswith(("=true", "=false"))}
+    config.update(project_doc_max_bytes=0, web_search="disabled",
+        mcp_servers={name: {"enabled": False} for name in names})
+    return config
 
 
 class OfficialCodexAdapter:
-    def __init__(self, *, model: str | None = None, sdk=None):
+    def __init__(self, *, model: str | None = None, sdk=None,
+                 config_client_factory=None, config_response_model=None):
         self.model = model
         self.sdk = sdk
         self.client = self.thread = self.workspace = None
@@ -93,10 +131,45 @@ class OfficialCodexAdapter:
         self.authentication_mode = None
         self.closed = False
         self.catalog_metrics = {}
+        # Explicit fake-IO seam; production resolves these public SDK types
+        # lazily, without requiring any private high-level client internals.
+        self._config_client_factory = config_client_factory
+        self._config_response_model = config_response_model
+        self._policy_preflight = None
+        self._mcp_server_count = 0
+
+    async def _read_mcp_names(self):
+        factory, response_model = self._config_client_factory, self._config_response_model
+        if factory is None:
+            from openai_codex.async_client import AsyncCodexClient
+            from openai_codex.generated.v2_all import ConfigReadResponse
+            factory, response_model = AsyncCodexClient, ConfigReadResponse
+        if response_model is None:
+            raise ActorError("codex_policy_config_invalid", "Codex game-only policy could not be verified")
+        owner = self._policy_preflight = PolicyPreflight()
+        try:
+            client = factory(configuration(self.sdk, self.workspace.name))
+            owner.register(client)
+            async with asyncio.timeout(10):
+                await owner.start()
+                await client.initialize()
+                response = await client.request("config/read",
+                    {"cwd": self.workspace.name, "includeLayers": False}, response_model=response_model)
+                return _mcp_names(response)
+        except asyncio.CancelledError:
+            raise
+        except ActorError:
+            raise
+        except Exception:
+            raise ActorError("codex_policy_preflight_failed", "Codex game-only policy could not be verified") from None
+        finally:
+            await owner.close()
 
     async def start_episode(self, objective: str, catalog: list[dict]):
         if self.thread is not None:
             raise ActorError("codex_episode_busy", "A Codex objective episode is already active")
+        if self._policy_preflight is not None and not self._policy_preflight.closed:
+            raise ActorError("codex_episode_busy", "Codex preparation cleanup is still pending")
         if self.sdk is None:
             # Cold SDK import builds many generated types. Keep that work off
             # the bridge loop so its heartbeats and input reader stay live.
@@ -118,7 +191,11 @@ class OfficialCodexAdapter:
             "unique_schemas": len(compact["schemas"])}
         try:
             self.workspace = tempfile.TemporaryDirectory(prefix="actor-codex-")
-            self.client = self.sdk.AsyncCodex(configuration(self.sdk, self.workspace.name))
+            self.closed = False
+            self._mcp_server_count = 0
+            names = await self._read_mcp_names()
+            self._mcp_server_count = len(names)
+            self.client = self.sdk.AsyncCodex(configuration(self.sdk, self.workspace.name, mcp_names=names))
             await self.client.__aenter__()
             account = await self.client.account()
             self.authentication_mode = account.account.root.type if account.account else None
@@ -127,6 +204,7 @@ class OfficialCodexAdapter:
             self.thread = await self.client.thread_start(cwd=self.workspace.name,
                 sandbox=self.sdk.Sandbox.read_only, approval_mode=self.sdk.ApprovalMode.deny_all,
                 ephemeral=True, model=self.model, base_instructions=BASE_INSTRUCTIONS,
+                config=_thread_policy(names),
                 developer_instructions="Available Runtime Skill catalog (trusted installed metadata):\n" +
                     trusted_catalog)
             self.objective = objective
@@ -284,6 +362,10 @@ class OfficialCodexAdapter:
                 pass
 
     async def close(self):
+        # A cancelled public async start/close may still own its worker thread.
+        # Keep its workspace and owner until the retained preflight really closes.
+        if self._policy_preflight is not None:
+            await self._policy_preflight.close()
         try:
             await self.interrupt()
         finally:
@@ -315,4 +397,6 @@ class OfficialCodexAdapter:
                 "decision_epoch": self._decision_epoch, "decision_active": self._decision_task is not None,
                 "usage_totals": dict(self.usage_totals),
                 "catalog": dict(self.catalog_metrics),
+                "mcp_servers_disabled": self._mcp_server_count,
+                "policy_preflight_pending": self._policy_preflight is not None and not self._policy_preflight.closed,
                 "closed": self.closed}

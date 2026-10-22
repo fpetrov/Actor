@@ -214,7 +214,8 @@ async def _supervised_serve(args, config):
             "terminal":host is not None and host.terminal,"reason":host.reason if host is not None else None,
             "closed":host is not None and host.closed,
             "lease_held":host is not None and getattr(host,"lease",None)is not None,
-            "cleanup_failures":list(host.cleanup_failures)if host is not None else []}
+            "cleanup_failures":list(host.cleanup_failures)if host is not None else [],
+            "cleanup_error_codes":dict(services.cleanup_error_codes)}
         if not await asyncio.to_thread(_write_guardian_state,output,document):
             receipt_failed=True
             if host is not None and not host.closed:host.fail("supervisor_receipt_failed")

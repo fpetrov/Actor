@@ -11,11 +11,11 @@ from actor_runtime.errors import ActorError
 from actor_runtime.objectives import Objective
 from actor_runtime.snapshots import build_decision_context
 from actor_runtime.telemetry import provider_telemetry
-from test_codex import FakeSDK, registry
+from test_codex import FakeSDK, registry, fake_codex_launch
 
 
 async def start(session,sdk):
-    adapter=OfficialCodexAdapter(sdk=sdk);brain=CodexBrain(adapter=adapter)
+    adapter=sdk.adapter();brain=CodexBrain(adapter=adapter)
     objective=Objective(text="Use only the supplied game context")
     catalog=registry().catalog(session)
     await brain.start(objective,catalog)

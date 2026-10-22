@@ -18,14 +18,42 @@ import secrets
 import sys
 from uuid import UUID
 
-from .admission import AdmissionClient
-from .obs import ObsClient, ObsConnection, ObsController, PublicStartPermit, WindowBinding, _profile_list
+from .admission import AdmissionClient, AdmissionError
+from .obs import ObsClient, ObsConnection, ObsController, ObsError, PublicStartPermit, WindowBinding, _profile_list
 from .obs_firewall_attestor import FirewallAttestationClient
 from .window import OwnedWindowLocator
 
 
 class GuardianServiceError(RuntimeError):
     def __init__(self, code): self.code = code; super().__init__(code)
+
+
+CLEANUP_ERROR_CODES = frozenset({
+    "guardian_admission_pending", "guardian_output_ownership_unknown", "guardian_route_ownership_unknown",
+    "guardian_owned_output_cleanup_pending", "guardian_group_query_unavailable", "guardian_group_query_unverified",
+    "obs_owned_stream_start_pending", "obs_owned_stream_start_failed", "obs_owned_stream_ownership_unknown",
+    "obs_stream_start_policy_unverified",
+    "obs_stop_unconfirmed", "obs_record_start_pending", "obs_record_stop_unconfirmed",
+    "obs_record_directory_unverified", "obs_guardian_ownership_lost", "obs_request_failed",
+    "obs_request_rejected", "obs_request_unavailable", "obs_response_shape", "obs_not_connected",
+    "obs_owned_cleanup_ambiguous", "obs_owned_cleanup_collection_changed", "obs_owned_cleanup_foreign_input",
+    "obs_owned_cleanup_references_retained", "obs_owned_cleanup_scene_changed",
+    "admission_connection_failed", "admission_response_invalid", "admission_response_bound",
+    "admission_redirect_rejected", "observer_admission_rejected",
+})
+
+
+def _cleanup_error_code(error):
+    """Fixed diagnostics only; never serialize exception text/arguments."""
+    result = "guardian_cleanup_error_unclassified"
+    for _ in range(4):
+        if isinstance(error, (GuardianServiceError, ObsError, AdmissionError)):
+            code = error.code
+            if isinstance(code, str) and code in CLEANUP_ERROR_CODES: result = code
+        cause = getattr(error, "__cause__", None)
+        if cause is None or cause is error: break
+        error = cause
+    return result
 
 
 def controller_group_members(group_id):
@@ -74,6 +102,7 @@ class GuardianServices:
         self._output_identity_lost = self._route_identity_lost = False
         self._stream_identity_lost = self._record_identity_lost = False
         self._scene_ids = {}
+        self.cleanup_error_codes = {}
 
     def bind_controller(self, controller):
         if self.controller is not None: raise GuardianServiceError("guardian_controller_already_bound")
@@ -94,6 +123,7 @@ class GuardianServices:
         self._output_identity_lost = self._route_identity_lost = False
         self._stream_identity_lost = self._record_identity_lost = False
         self._scene_ids = {}
+        self.cleanup_error_codes = {}
         await self.start_forward()
 
     def validate_call(self, op, args):
@@ -159,7 +189,8 @@ class GuardianServices:
 
     def _mutation_allowed(self, request, data):
         if self._output_identity_lost: return False
-        if request == "StopStream" and self._stream_identity_lost: return False
+        if request == "StopStream" and (self._stream_identity_lost
+                or getattr(self.obs, "_stream_start_terminal", False)): return False
         if request == "StopRecord" and self._record_identity_lost: return False
         if request in ("SetInputMute", "SetCurrentProgramScene") and self._route_identity_lost: return False
         if request in ("StartStream", "StartRecord") and (self._route_identity_lost or self._stream_identity_lost or self._record_identity_lost): return False
@@ -337,7 +368,7 @@ class GuardianServices:
             except BaseException as error: stop_error = error
             if self._output_identity_lost: raise GuardianServiceError("guardian_output_ownership_unknown")
             if self.obs._owned_stream or self.obs._record_owned:
-                raise GuardianServiceError("guardian_owned_output_cleanup_pending") from None
+                raise GuardianServiceError("guardian_owned_output_cleanup_pending") from stop_error
             await self.obs.restore_record_directory()
             await self.obs.cleanup_owned_inputs()
         if self.obs_client is not None:
@@ -347,15 +378,20 @@ class GuardianServices:
         # the recovery proof, never merely a stop boolean or unavailable ACK.
 
     async def cleanup_run(self):
-        failures = []
+        failures = []; codes = {}
         try: await self._close_output()
-        except BaseException: failures.append("output")
+        except BaseException as error:
+            failures.append("output"); codes["output"] = _cleanup_error_code(error)
         try: await self._release_observer()
-        except BaseException: failures.append("admission")
+        except BaseException as error:
+            failures.append("admission"); codes["admission"] = _cleanup_error_code(error)
         if self.controller is not None and not self.controller.closed:
             try:
-                if set(self.controller.members()) != {self.controller.pid}: failures.append("children")
-            except BaseException: failures.append("children")
+                if set(self.controller.members()) != {self.controller.pid}:
+                    failures.append("children"); codes["children"] = "guardian_children_unverified"
+            except BaseException as error:
+                failures.append("children"); codes["children"] = _cleanup_error_code(error)
+        self.cleanup_error_codes = codes
         if failures: raise GuardianServiceError("guardian_cleanup_pending")
         self.room = self.session = None; self.admission = self.window = self.attestor = None
         return True

@@ -53,6 +53,8 @@ class Graph:
         if kind == "GetVideoSettings": return self.video_settings
         if kind == "GetSceneCollectionList": return {"currentSceneCollectionName": "ACTOR Broadcast", "sceneCollections": ["ACTOR Broadcast"]}
         if kind == "GetProfileList": return copy.deepcopy(self.profiles)
+        if kind == "GetProfileParameter" and data == {"parameterCategory":"Stream1", "parameterName":"EnableMultitrackVideo"}:
+            return {"parameterValue":"false", "defaultParameterValue":None}
         if kind == "GetSpecialInputs": return self.special
         if kind == "GetInputList": return {"inputs": self.inputs}
         if kind == "GetInputSettings":

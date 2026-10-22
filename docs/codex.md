@@ -68,6 +68,16 @@ no ACTOR direct game tools are registered. Bridge credential is removed from the
 Codex process environment. Read-only sandbox and denied approval requests provide
 the computer access boundary. Runtime Skills are separate from Codex `SkillInput`.
 
+Before the episode process starts, a short owned public `config/read` preflight
+copies only bounded effective MCP server names, then closes. Each inherited server
+is explicitly disabled at process launch and thread creation: the pinned Codex
+configuration recursively merges tables, so `mcp_servers={}` alone does not remove
+inherited entries. This preparation starts no model turn or game thread and receives
+no objective, observations or Skill catalog. Unknown configuration or unconfirmed
+preflight cleanup blocks the episode. Model choice and default reasoning stay under
+the ordinary Brain configuration; this is not the commentator's model-specific
+capability catalog or a claim of zero built-in tool definitions for every model.
+
 ## Authority separation
 
 User objective enters once as **`TextInput`**. Small trusted base instructions

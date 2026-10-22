@@ -6,7 +6,7 @@ from actor_codex.adapter import OfficialCodexAdapter
 from actor_codex.brain import CodexBrain
 from actor_runtime.episodes import MatchEpisodeController
 from actor_runtime.telemetry import provider_telemetry
-from test_codex import FakeSDK
+from test_codex import FakeSDK, fake_codex_launch
 from test_episodes import Policy, registry
 
 
@@ -44,7 +44,7 @@ async def test_failed_official_adapter_episode_exposes_only_aggregate_counts(ses
     usage=SimpleNamespace(model_dump=lambda **_: {"last":{"total_tokens":100},
         "total":{"input_tokens":90,"cached_input_tokens":60,"output_tokens":10,"total_tokens":100}})
     sdk=FakeSDK(usage=usage)
-    adapter=OfficialCodexAdapter(sdk=sdk)
+    adapter=sdk.adapter()
     controller=MatchEpisodeController(session,registry(),lambda:CodexBrain(adapter=adapter,
         usage_warning_tokens=80,usage_limit_tokens=100),Policy())
     result=await controller.run("Use only permitted observations")
