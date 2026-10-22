@@ -119,8 +119,12 @@ def api_url(value):
 def process_identity(pid):
     if type(pid) is not int or pid<=1 or os.name!="posix":return None
     try:
-        result=subprocess.run(["ps","-p",str(pid),"-o","lstart=","-o","command="],capture_output=True,text=True,timeout=2,check=False)
-    except (OSError,subprocess.TimeoutExpired):return None
+        # Width, locale and ps personality belong to this metadata query, not
+        # the invoking terminal. Hash the full command under the same format
+        # when join, status and stop run from different caller environments.
+        result=subprocess.run(["/bin/ps","-ww","-p",str(pid),"-o","lstart=","-o","command="],
+            capture_output=True,text=True,timeout=2,check=False,env={"PATH":os.defpath,"LC_ALL":"C"})
+    except (OSError,subprocess.TimeoutExpired,UnicodeError):return None
     fields=result.stdout.strip().split(maxsplit=5)
     if result.returncode or len(fields)!=6:return None
     return {"pid":pid,"started":" ".join(fields[:5]),"command_sha256":hashlib.sha256(fields[5].encode()).hexdigest()}
