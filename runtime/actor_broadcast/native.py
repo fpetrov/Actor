@@ -32,7 +32,7 @@ from .bridge import BroadcastBridge
 from .budget import BudgetLedger
 from .chat import TokenPair, TwitchChatSource, TwitchDeviceAuth
 from .contracts import EditorialFact, PcmChunk, Scope, SegmentKey, SpeechSegment, SynthesisDone
-from .obs import ObsClient, ObsConnection, ObsController
+from .obs import ObsClient, ObsConnection, ObsController, ObsError, capture_content_crop
 from .obs_firewall_attestor import FirewallAttestationClient
 from .ownership import ChannelLease
 from .scheduler import CommentaryScheduler
@@ -376,8 +376,9 @@ class PreparedNativeRun:
         await self._stage(self.obs_client.connect(), 10)
         self.obs = d.obs_controller(self.obs_client, window_guard=self.window.verify,
             channel_guard=self._verify_channel, on_unsafe=self._obs_event)
+        self.native_size = read_native_size(self.native_probe_path)
         await self._stage(self.obs.prepare(self._binding, self.sink.renderer_url,
-            protected_backup_confirmed=True, adopt_empty_collection=True), 20)
+            protected_backup_confirmed=True, adopt_empty_collection=True, native_size=self.native_size), 20)
         if not await self._verify_channel(c.channel): raise NativeError("obs_channel_binding_unverified")
         # Synthetic setup scope must never enter the spoken-coverage ledger.
         callback, self.sink.on_ack = self.sink.on_ack, None
@@ -761,12 +762,39 @@ def video_similarity(actual, expected):
 
 
 def content_top_fraction(width, height, binding, native_size):
-    ratio = width/height; native_ratio = native_size[0]/native_size[1]
-    if abs(ratio/native_ratio - 1) <= .02: return 0.0  # SCK already excludes chrome
-    if abs(ratio/(binding.width/binding.height) - 1) > .02: raise NativeError("video_probe_window_aspect_unverified")
-    overhead = 1-binding.width*native_size[1]/(native_size[0]*binding.height)
-    if not 0 <= overhead <= .12: raise NativeError("video_probe_window_chrome_unverified")
-    return overhead
+    try: return capture_content_crop(width, height, binding, native_size) / height
+    except ObsError as error: raise NativeError(error.code.replace("obs_capture_", "video_probe_", 1)) from None
+
+
+def read_native_size(path):
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+    with os.fdopen(fd, "rb") as stream:
+        metadata = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.geteuid()
+                or metadata.st_mode & 0o077 or metadata.st_nlink != 1 or metadata.st_size > 4*1024**2):
+            raise NativeError("video_probe_native_artifact_unsafe")
+        return png_dimensions(stream.read(4*1024**2+1))
+
+
+def recorded_content_roi(transform, video):
+    """OBS scale-inner fits the cropped source, not its raw SCK dimensions."""
+    dims = [video.get(key) for key in ("baseWidth", "baseHeight", "outputWidth", "outputHeight")]
+    if any(type(value) is not int or not 1 <= value <= 7680 for value in dims):
+        raise NativeError("video_probe_output_geometry_unverified")
+    base_w, base_h, out_w, out_h = dims
+    values = [transform.get(key) for key in ("sourceWidth", "sourceHeight", "cropLeft", "cropRight", "cropTop", "cropBottom")]
+    if any(type(value) not in (int, float) or not math.isfinite(value) or not 0 <= value <= 7680 for value in values):
+        raise NativeError("video_probe_output_geometry_unverified")
+    raw_w, raw_h, left, right, top, bottom = values
+    width, height = raw_w-left-right, raw_h-top-bottom
+    if min(width, height) <= 0: raise NativeError("video_probe_output_geometry_unverified")
+    scale = min(1280/width, 720/height)
+    visible_w, visible_h = width*scale, height*scale
+    crop = (round((1280-visible_w)/2*out_w/base_w), round((720-visible_h)/2*out_h/base_h),
+        round(visible_w*out_w/base_w), round(visible_h*out_h/base_h))
+    if crop[0]+crop[2] > out_w or crop[1]+crop[3] > out_h:
+        raise NativeError("video_probe_output_crop_unverified")
+    return crop
 
 
 async def _decode_gray(run, path, *, crop=None, movie=False):
@@ -794,15 +822,12 @@ async def video_probe_measurement(run, recording):
     # Read only this child's one-shot coherent rendered artifact. It is never
     # an observation/control/audio IPC channel or a public screenshot dump.
     path = run.native_probe_path
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
-    with os.fdopen(fd, "rb") as stream:
-        metadata = os.fstat(stream.fileno())
-        if (not stat.S_ISREG(metadata.st_mode) or metadata.st_uid != os.geteuid()
-                or metadata.st_mode & 0o077 or metadata.st_nlink != 1 or metadata.st_size > 4*1024**2):
-            raise NativeError("video_probe_native_artifact_unsafe")
-        native_size = png_dimensions(stream.read(4*1024**2+1))
+    native_size = read_native_size(path)
+    if native_size != run.native_size: raise NativeError("video_probe_native_dimensions_changed")
+    # 5.7.4 TakeSourceScreenshot scales axes independently when both sizes are
+    # supplied. Width alone preserves the raw window/decorations aspect.
     response = await run.obs_client.request("GetSourceScreenshot", {"sourceName": run.obs.VIDEO,
-        "imageFormat": "png", "imageWidth": 800, "imageHeight": 600})
+        "imageFormat": "png", "imageWidth": 800})
     encoded = response.get("imageData")
     if not isinstance(encoded, str) or len(encoded) > 6*1024**2 or not encoded.startswith("data:image/png;base64,"):
         raise NativeError("video_probe_obs_screenshot_invalid")
@@ -817,16 +842,7 @@ async def video_probe_measurement(run, recording):
     expected = await _decode_gray(run, path)
     transform = run.obs.video_transform
     video = await run.obs_client.request("GetVideoSettings")
-    dims = [video.get(k) for k in ("baseWidth","baseHeight","outputWidth","outputHeight")]
-    if any(type(v) is not int or not 1 <= v <= 7680 for v in dims): raise NativeError("video_probe_output_geometry_unverified")
-    base_w,base_h,out_w,out_h = dims
-    scale = min(1280/transform["sourceWidth"],720/transform["sourceHeight"])
-    visual_w,visual_h = transform["sourceWidth"]*scale,transform["sourceHeight"]*scale
-    fraction = content_top_fraction(transform["sourceWidth"],transform["sourceHeight"],run._binding,native_size)
-    crop = (round((1280-visual_w)/2*out_w/base_w),
-        round(((720-visual_h)/2+visual_h*fraction)*out_h/base_h),
-        round(visual_w*out_w/base_w), round(visual_h*(1-fraction)*out_h/base_h))
-    if crop[0]+crop[2] > out_w or crop[1]+crop[3] > out_h: raise NativeError("video_probe_output_crop_unverified")
+    crop = recorded_content_roi(transform, video)
     final = await _decode_gray(run, recording, crop=crop, movie=True)
     a,b = video_similarity(source,expected),video_similarity(final,expected)
     return {"passed": a["passed"] and b["passed"], "source": a, "recorded": b,

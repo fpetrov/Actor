@@ -72,6 +72,8 @@ class Graph:
         if kind == "GetSceneItemTransform":
             return {"sceneItemTransform": self.voice_transforms[data["sceneName"]] if data["sceneItemId"] == 2 else self.transform}
         if kind == "SetCurrentProgramScene": self.current_scene = data["sceneName"]
+        if kind == "SetSceneItemTransform" and data["sceneItemId"] == 1:
+            self.transform.update(data["sceneItemTransform"])
         if kind == "CreateInput":
             identity = str(uuid4()); self.inputs.append({"inputName": name, "inputKind": data["inputKind"], "inputUuid": identity})
             self.settings[name] = data["inputSettings"]
@@ -722,3 +724,53 @@ async def test_public_start_cannot_run_before_probe_seals_startup():
     with pytest.raises(ObsError, match='obs_startup_incomplete'):
         await c.start_stream(PublicStartPermit('fedorr_codex', time.monotonic()+5, True))
     assert not any(kind == 'StartStream' for kind, _ in graph.calls)
+
+
+@pytest.mark.parametrize('raw_size,expected_top', [((800,664),64), ((1600,1328),128),
+    ((800,600),0), ((1600,1200),0)])
+async def test_owned_window_crop_pins_raw_capture_and_exact_content_only(raw_size, expected_top):
+    from actor_broadcast.obs import capture_content_crop
+    graph = InactiveScenes(); graph.transform.update(sourceWidth=raw_size[0], sourceHeight=raw_size[1])
+    binding = WindowBinding(123,456,800,664)
+    c = ObsController(graph, window_guard=lambda value: value == binding, channel_guard=lambda _: True)
+    assert capture_content_crop(*raw_size,binding,(800,600)) == expected_top
+    assert (await c.prepare(binding,URL,protected_backup_confirmed=True,
+        adopt_empty_collection=True,native_size=(800,600))).passed
+    assert c._capture_shape == raw_size and c._capture_crop_top == expected_top
+    assert graph.transform['cropTop'] == expected_top
+    assert all(graph.transform[key] == 0 for key in ('cropBottom','cropLeft','cropRight'))
+    crop_calls = [data for kind,data in graph.calls if kind == 'SetSceneItemTransform' and 'cropTop' in data['sceneItemTransform']]
+    assert len(crop_calls) == (1 if expected_top else 0)
+    if crop_calls:
+        assert crop_calls[0]['sceneName'] == 'ACTOR Match' and crop_calls[0]['sceneItemId'] == 1
+        assert next(row for row in graph.items['ACTOR Match'] if row['sceneItemId']==1)['sourceUuid'] == c._owned_inputs[c.VIDEO]
+    await c.show('ACTOR Match'); assert (await c.complete_startup()).passed and c.route_verified
+    # The same aspect at a new Retina resolution is still a new capture and
+    # cannot be silently re-cropped during the public/preview-ready lifetime.
+    graph.transform['sourceWidth'] *= 2; graph.transform['sourceHeight'] *= 2
+    c._event('SceneItemTransformChanged',{})
+    assert not c.route_verified and not (await c.audit()).passed
+    assert c._capture_shape == raw_size and c._capture_crop_top == expected_top
+
+
+@pytest.mark.parametrize('width,height,binding,native_size', [
+    (1920,1080,WindowBinding(123,456,800,664),(800,600)),
+    (800,800,WindowBinding(123,456,800,800),(800,600)),
+    (800,0,WindowBinding(123,456,800,664),(800,600)),
+    (True,664,WindowBinding(123,456,800,664),(800,600)),
+    (800,664,WindowBinding(123,456,800,664),(800,0)),
+])
+def test_crop_rejects_unproven_aspect_excessive_decoration_or_invalid_dimensions(width,height,binding,native_size):
+    from actor_broadcast.obs import capture_content_crop
+    with pytest.raises(ObsError): capture_content_crop(width,height,binding,native_size)
+
+
+async def test_any_manual_crop_change_after_pin_fails_strict_audit_without_recrop():
+    graph=InactiveScenes(); graph.transform.update(sourceWidth=800,sourceHeight=664)
+    c=ObsController(graph,window_guard=lambda _:True,channel_guard=lambda _:True)
+    await c.prepare(WindowBinding(123,456,800,664),URL,protected_backup_confirmed=True,
+        adopt_empty_collection=True,native_size=(800,600))
+    await c.show('ACTOR Match'); await c.complete_startup()
+    before=len(graph.calls); graph.transform['cropTop']=63
+    assert not (await c.audit()).passed and not c.route_verified
+    assert not any(kind.startswith('Set') for kind,_ in graph.calls[before:])

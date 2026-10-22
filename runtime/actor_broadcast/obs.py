@@ -208,6 +208,22 @@ class WindowBinding:
         if self.width > 3840 or self.height > 2160: raise ObsError("obs_window_size_bound")
 
 
+def capture_content_crop(width, height, binding, native_size):
+    """Remove only a bounded top decoration band of this exact owned window."""
+    if (any(type(value) not in (int, float) or not math.isfinite(value) or not 1 <= value <= 7680
+            or int(value) != value for value in (width, height))
+            or not isinstance(native_size, tuple) or len(native_size) != 2
+            or any(type(value) is not int or not 1 <= value <= 3840 for value in native_size)):
+        raise ObsError("obs_capture_dimensions_unavailable")
+    ratio = width / height; native_ratio = native_size[0] / native_size[1]
+    if abs(ratio / native_ratio - 1) <= .02: return 0  # SCK already excludes decorations.
+    if abs(ratio / (binding.width / binding.height) - 1) > .02:
+        raise ObsError("obs_capture_window_aspect_unverified")
+    top = round(height - width * native_size[1] / native_size[0])
+    if not 0 <= top <= height * .12: raise ObsError("obs_capture_window_chrome_unverified")
+    return top
+
+
 @dataclass(frozen=True)
 class PublicStartPermit:
     channel_login: str
@@ -239,6 +255,7 @@ class ObsController:
         self._owner_nonce = secrets.token_hex(16); self._owned_inputs = {}; self._creating_inputs = set()
         self._expected_scene = "ACTOR Preparing"
         self._startup_pending = True
+        self._native_size = None; self._capture_shape = None; self._capture_crop_top = 0
         self._setup_lock = asyncio.Lock(); self._stream_lock = asyncio.Lock(); self._record_owned = False
         self._audit_lock = asyncio.Lock()
         self._old_callback = client.on_event; client.on_event = self._event
@@ -337,7 +354,7 @@ class ObsController:
                 raise ObsError("obs_safe_overlay_order_unverified")
 
     async def prepare(self, binding: WindowBinding, renderer_url: str, *, protected_backup_confirmed=False,
-                      adopt_empty_collection=False):
+                      adopt_empty_collection=False, native_size=None):
         """Create an owned graph, only after caller backed up profile+collection.
 
         Does not read/change service credentials, encoder, VOD or start output.
@@ -346,7 +363,8 @@ class ObsController:
         """
         async with self._setup_lock:
             if self._prepared:
-                if binding != self._binding or renderer_url != self._renderer_url: raise ObsError("obs_setup_identity_changed")
+                if binding != self._binding or renderer_url != self._renderer_url or native_size != self._native_size:
+                    raise ObsError("obs_setup_identity_changed")
                 return await self.stabilize() if self._startup_pending else await self.audit()
             if protected_backup_confirmed is not True: raise ObsError("obs_protected_backup_required")
             p = urlsplit(renderer_url)
@@ -410,13 +428,32 @@ class ObsController:
                     "sceneItemTransform": {"positionX": 0.0, "positionY": 0.0,
                         "boundsType": "OBS_BOUNDS_SCALE_INNER", "boundsWidth": 1280.0, "boundsHeight": 720.0,
                         "boundsAlignment": 0, "alignment": 5}})
-                self._binding = binding; self._renderer_url = renderer_url; self._prepared = True
+                self._binding = binding; self._renderer_url = renderer_url; self._native_size = native_size; self._prepared = True
                 await self.client.request("SetCurrentProgramScene", {"sceneName": "ACTOR Preparing"})
-                return await self.stabilize()
+                return await self._pin_capture()
             except BaseException:
                 # Retain ownership markers for explicit cleanup/retry even
                 # when CreateInput's response was lost after OBS committed it.
                 raise
+
+    async def _pin_capture(self):
+        async with self._audit_lock:
+            # Dimensions must come from the same full, generation-stable graph
+            # audit as the owned window/UUID/marker proof, never a guessed size.
+            await self._stabilize_audit()
+            width, height = (self.video_transform[key] for key in ("sourceWidth", "sourceHeight"))
+            top = capture_content_crop(width, height, self._binding, self._native_size) if self._native_size is not None else 0
+            self._capture_shape = (width, height); self._capture_crop_top = top
+            if top:
+                rows = (await self.client.request("GetSceneItemList", {"sceneName": "ACTOR Match"}))["sceneItems"]
+                matches = [row for row in rows if row.get("sourceUuid") == self._owned_inputs.get(self.VIDEO)
+                           and row.get("sourceName") == self.VIDEO]
+                if len(matches) != 1: raise ObsError("obs_capture_ownership_changed")
+                self._graph_ok = False
+                await self.client.request("SetSceneItemTransform", {"sceneName": "ACTOR Match",
+                    "sceneItemId": matches[0]["sceneItemId"], "sceneItemTransform": {
+                        "cropTop": top, "cropBottom": 0, "cropLeft": 0, "cropRight": 0}})
+            return await self._stabilize_audit()
 
     async def _create_input(self, data):
         name = data["inputName"]; self._creating_inputs.add(name)
@@ -650,10 +687,12 @@ class ObsController:
                         "sceneItemId": item["sceneItemId"]})).get("sceneItemTransform", {})
                     expected_geometry = {"positionX": 0, "positionY": 0, "rotation": 0, "alignment": 5,
                         "boundsType": "OBS_BOUNDS_SCALE_INNER", "boundsAlignment": 0, "boundsWidth": 1280,
-                        "boundsHeight": 720, "cropTop": 0, "cropBottom": 0, "cropLeft": 0, "cropRight": 0}
+                        "boundsHeight": 720, "cropTop": self._capture_crop_top, "cropBottom": 0, "cropLeft": 0, "cropRight": 0}
                     if any(transform.get(k) != v for k,v in expected_geometry.items()): raise ObsError("obs_capture_geometry_changed")
                     if any(type(transform.get(k)) not in (int,float) or not 0 < transform[k] <= 7680 for k in ("sourceWidth","sourceHeight")):
                         raise ObsError("obs_capture_dimensions_unavailable")
+                    if self._capture_shape is not None and tuple(transform[key] for key in ("sourceWidth", "sourceHeight")) != self._capture_shape:
+                        raise ObsError("obs_capture_dimensions_changed")
                     self.video_transform = dict(transform)
                 checks += 1
             if not self.window_guard(self._binding): raise ObsError("obs_window_identity_unavailable")

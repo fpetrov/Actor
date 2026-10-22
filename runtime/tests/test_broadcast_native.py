@@ -131,6 +131,9 @@ class Fakes:
             def wait(self, *a): return 0
         def spawn(args, **kwargs):
             own.calls.append(("spawn", args, dict(kwargs["env"])))
+            path=Path(kwargs['env']['ACTOR_BROADCAST_PROBE_PNG'])
+            path.write_bytes(b'\x89PNG\r\n\x1a\n' + bytes(4) + b'IHDR' + (800).to_bytes(4,'big') + (600).to_bytes(4,'big'))
+            path.chmod(0o600)
             own.process = Process(); return own.process
         class Window:
             def __init__(self, pid, **kwargs): assert pid == 12345
@@ -146,7 +149,7 @@ class Fakes:
             route_verified = True
             def __init__(self, client, **k): self.client = client; self.channel_guard = k["channel_guard"]
             async def prepare(self, *a, **kwargs):
-                assert kwargs == {"protected_backup_confirmed": True, "adopt_empty_collection": True}
+                assert kwargs == {"protected_backup_confirmed": True, "adopt_empty_collection": True, "native_size": (800,600)}
                 own.calls.append("obs-prepare")
             async def audit(self): return Obj(passed=True)
             async def complete_startup(self): own.calls.append("obs-startup-complete"); return Obj(passed=True)
@@ -542,3 +545,63 @@ async def test_startup_audit_return_cannot_latch_stale_ready_proof(tmp_path, inv
             on_ready=flags.append, on_unsafe=lambda _: None, on_terminal=lambda: None)
     assert all(not row['obs'] and not row['audio'] for row in flags)
     assert not factory._owned and not fakes.lease.held and fakes.process.poll() == 0
+
+
+@pytest.mark.parametrize('raw_size,top,output,expected', [
+    ((800,664),64,(1280,720),(160,0,960,720)),
+    ((1600,1328),128,(1280,720),(160,0,960,720)),
+    ((800,600),0,(1280,720),(160,0,960,720)),
+    ((800,664),64,(1920,1080),(240,0,1440,1080)),
+    ((1280,720),0,(1280,720),(0,0,1280,720)),
+])
+def test_recorded_content_roi_fits_already_cropped_scene_without_double_titlebar_trim(raw_size,top,output,expected):
+    from actor_broadcast.native import recorded_content_roi
+    transform={'sourceWidth':raw_size[0],'sourceHeight':raw_size[1],
+        'cropTop':top,'cropBottom':0,'cropLeft':0,'cropRight':0}
+    video={'baseWidth':1280,'baseHeight':720,'outputWidth':output[0],'outputHeight':output[1]}
+    assert recorded_content_roi(transform,video) == expected
+
+
+async def test_video_probe_preserves_source_aspect_and_uses_actual_cropped_record_roi(tmp_path,monkeypatch):
+    import base64
+    import actor_broadcast.native as native
+    path=tmp_path/'native.png'
+    def png(width,height):
+        return b'\x89PNG\r\n\x1a\n'+bytes(4)+b'IHDR'+width.to_bytes(4,'big')+height.to_bytes(4,'big')
+    path.write_bytes(png(800,600));path.chmod(0o600)
+    requests=[];decoded=[]
+    class Client:
+        async def request(self,kind,data=None):
+            requests.append((kind,data))
+            if kind=='GetSourceScreenshot':
+                assert data=={'sourceName':'owned-video','imageFormat':'png','imageWidth':800}
+                return {'imageData':'data:image/png;base64,'+base64.b64encode(png(800,664)).decode()}
+            assert kind=='GetVideoSettings'
+            return {'baseWidth':1280,'baseHeight':720,'outputWidth':1280,'outputHeight':720}
+    async def decode(run,path,**kwargs):
+        decoded.append((path,kwargs))
+        return bytes((x*7+y*11)%256 for y in range(48) for x in range(64))
+    monkeypatch.setattr(native,'_decode_gray',decode)
+    run=Obj(native_probe_path=path,native_size=(800,600),directory=tmp_path,obs_client=Client(),
+        _binding=WindowBinding(1,10,800,664),obs=Obj(VIDEO='owned-video',video_transform={
+            'sourceWidth':800,'sourceHeight':664,'cropTop':64,'cropBottom':0,'cropLeft':0,'cropRight':0}))
+    result=await native.video_probe_measurement(run,tmp_path/'recording.mkv')
+    assert result['passed']
+    assert decoded[0][1]=={'crop':(0,64,800,600)}
+    assert decoded[1][1]=={}
+    assert decoded[2][1]=={'crop':(160,0,960,720),'movie':True}
+
+
+async def test_production_prepare_requires_own_native_png_before_obs_graph_mutation(tmp_path):
+    fakes=Fakes(tmp_path);deps=fakes.dependencies();spawn=deps.spawn
+    def missing_probe(*args,**kwargs):
+        process=spawn(*args,**kwargs)
+        Path(kwargs['env']['ACTOR_BROADCAST_PROBE_PNG']).unlink()
+        return process
+    deps.spawn=missing_probe
+    factory=NativeBroadcastFactory(fakes.config,Store(),dependencies=deps)
+    with pytest.raises(FileNotFoundError):
+        await factory.prepare('ABC123',uuid4().hex,CommentaryConfig(),on_ready=lambda _:None,
+            on_unsafe=lambda _:None,on_terminal=lambda:None)
+    assert 'obs-prepare' not in fakes.calls and not factory._owned
+    assert fakes.process.poll()==0 and not fakes.lease.held
