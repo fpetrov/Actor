@@ -295,6 +295,7 @@ class PreparedNativeRun:
         self._admission_pending = None
         self.director = None; self._director_selection = None
         self._director_commands = self._director_results_accepted = self._director_results_rejected = 0
+        self._director_boundary_waits = 0
         self._close_task = None
         self.prepare_failure_code = None
         self.cleanup_failures = (); self.recovered_cleanup_stages = ()
@@ -508,7 +509,7 @@ class PreparedNativeRun:
         # unsafe until a later explicitly prepared run; no silent rebinding.
         if self._flags["obs"]:
             self._trip(code if code in {"obs_owned_stream_inactive", "obs_owned_stream_reconnecting",
-                "obs_owned_stream_status_unverified"} else "obs_graph_changed")
+                "obs_owned_stream_status_unverified", "obs_owned_stream_start_failed"} else "obs_graph_changed")
 
     async def _obtain_admission(self):
         # An HTTP POST may reach CP even when its local await is cancelled.
@@ -625,8 +626,18 @@ class PreparedNativeRun:
             # Still match the event above; neither ordering invents a frame.
             if view is None or view.scope != intent.scope or time.monotonic() - pending.sent_at >= 5:
                 self._director_selection = None
-        if self._director_selection is not None: return
-        if not getattr(self.scheduler, "camera_change_allowed", False): return
+        if not self.scheduler._fresh():
+            self.scheduler.release_camera_change()
+            return
+        due=self.director.change_due
+        if not due:
+            self.scheduler.release_camera_change()
+            return
+        if view is None or not self.scheduler.request_camera_change(view.scope):return
+        if self._director_selection is not None:return
+        if not getattr(self.scheduler,"camera_change_allowed",False):
+            self._director_boundary_waits=min(1000000,self._director_boundary_waits+1)
+            return
         intent = self.director.next_intent()
         if intent is None: return
         # All checks and enqueue remain synchronous in this event-loop turn:
@@ -734,7 +745,8 @@ class PreparedNativeRun:
             "feed_health": self.feed_health_report(),
             "director": {**(self.director.report() if self.director is not None else {}),
                 "commands_dispatched": self._director_commands, "selection_results_accepted": self._director_results_accepted,
-                "selection_results_rejected": self._director_results_rejected}}
+                "selection_results_rejected": self._director_results_rejected,
+                "speech_boundary_wait_polls":self._director_boundary_waits}}
 
     async def close(self, *, emergency=True):
         if self._closed: return

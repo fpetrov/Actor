@@ -30,6 +30,12 @@ message BroadcastActor {
   uint32 facing = 7;
   uint32 cosmetic_index = 8;
 }
+// Public camera-selector identity, not a sighting or a live-player roster.
+// Membership is stable for the match; no role, life, room or position is sent.
+message BroadcastCameraTarget {
+  string actor_id = 1;
+  string display_name = 2;
+}
 message BroadcastBody {
   string body_id = 1;
   string victim_actor_id = 2;
@@ -103,6 +109,7 @@ message BroadcastView {
   SocialAlignment winning_side = 21;
   string win_reason = 22;
   repeated BroadcastFinalPlayer final_players = 23; // <=6, terminal-only.
+  repeated BroadcastCameraTarget camera_targets = 24; // <=6, public selector identities only.
 }
 message BroadcastEvidenceRef {
   string evidence_id = 1;
@@ -117,6 +124,7 @@ message BroadcastPresentationAck {
   uint32 width = 5;
   uint32 height = 6;
   repeated BroadcastEvidenceRef presented_evidence = 7; // <=96 unique IDs, exact frame subset.
+  bool camera_targets_presented = 8; // Entire selector was readable in this real rendered frame.
 }
 message BroadcastPresentedViewObservation {
   BroadcastView view = 1;
@@ -126,7 +134,7 @@ message BroadcastSelectViewCommand {
   BroadcastScope scope = 1;
   string correlation_id = 2;
   string anchor_id = 3; // main-hall|engineering|security|storage, OR focus ID.
-  string focus_actor_id = 4; // Must already be in the current permitted view.
+  string focus_actor_id = 4; // Must be an actually presented public camera target (or visible legacy actor).
   int64 expires_at_unix_ms = 5;
 }
 message BroadcastViewSelectionResultEvent {

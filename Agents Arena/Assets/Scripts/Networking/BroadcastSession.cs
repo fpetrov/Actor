@@ -273,12 +273,14 @@ namespace Actor.Networking
             if (!Fresh || command == null || command.CalculateSize() > 1024 || !BroadcastObserverRules.SameScope(command.Scope, Received.Scope)) return false;
             Send(SelectMessage, NetworkManager.ServerClientId, command); return true;
         }
-        internal bool MarkPresented(BroadcastView frame, IEnumerable<BroadcastEvidenceRef> references, ulong frameCounter, int width, int height)
+        internal bool MarkPresented(BroadcastView frame, IEnumerable<BroadcastEvidenceRef> references, ulong frameCounter, int width, int height,
+            bool cameraTargetsPresented = false)
         {
             if (!Fresh || !BroadcastPresentationRules.SameIdentity(frame?.Scope, ExpectedScope) || Received.Sequence != frame.Sequence || !Received.Scope.Equals(frame.Scope)
                 || Application.isBatchMode || SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null) return false;
             var ack = new BroadcastPresentationAck { Scope = frame.Scope.Clone(), RenderedSequence = frame.Sequence, FrameCounter = frameCounter,
-                PresentedAtMonotonicMs = Time.realtimeSinceStartupAsDouble * 1000, Width = (uint)width, Height = (uint)height };
+                PresentedAtMonotonicMs = Time.realtimeSinceStartupAsDouble * 1000, Width = (uint)width, Height = (uint)height,
+                CameraTargetsPresented = cameraTargetsPresented };
             ack.PresentedEvidence.Add(references.Select(r => r.Clone()));
             if (!BroadcastPresentationRules.CanAcknowledge(frame, ack, false)) return false;
             var cognitive = BroadcastPresentationRules.ForCognition(frame, ack, nativeKnown);

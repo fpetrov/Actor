@@ -50,6 +50,9 @@ class CommentaryScheduler:
         self._speech_pending = OrderedDict()
         self._active = None
         self._active_request = None
+        self._camera_scope = self._camera_boundary_key = None
+        self._camera_requested_at = None
+        self._camera_wait_max = 0.0
         self._epoch = 1
         self._ready = False
         self._closed = False
@@ -174,6 +177,10 @@ class CommentaryScheduler:
             self.view.expires_at_unix_ms > int(self.wall_clock()*1000))
 
     def _invalidate(self, reason):
+        if reason in ("view_changed","phase_changed","match_ended"):
+            self.release_camera_change()
+        elif reason!="camera_boundary":
+            self._camera_boundary_key=None
         if reason not in ('important_event_boundary','important_event_deadline'):
             self._p1_deadline = None
             self._p1_preempting_refs.clear(); self._p1_cooldown_bypass.clear()
@@ -313,8 +320,38 @@ class CommentaryScheduler:
     def camera_change_allowed(self):
         """The director waits for actual speech drain; P0/P1 always keep focus."""
         return bool(self._ready and self._fresh() and not self._closed and not self.view.terminal
+            and self.view.phase=="Exploration"
+            and not self._provider_failed
             and not self._needs_cancel and not self._active and not self._speech_pending
             and not any(priority<=1 for priority,_ in self._pending.values()))
+
+    def request_camera_change(self,scope):
+        """Reserve the next actual clause boundary, without cutting playing audio.
+
+        A due director owns one normal-admission pause. Important P0/P1 work
+        still wins. Any remaining old-focus provider/queued audio is cancelled
+        through the existing real FlushAck path after that clause settles.
+        """
+        if (self._closed or not self._ready or not self._fresh() or self.view.scope!=scope
+                or self.view.terminal or self.view.phase!="Exploration"):return False
+        if self._camera_scope is None:
+            self._camera_scope=scope;self._camera_requested_at=self.clock()
+            self._counts["camera_boundary_requests"]+=1
+        if self._camera_scope!=scope:return False
+        if not self._needs_cancel and self._camera_boundary_key is None:
+            normal=[key for key,(segment,_) in self._speech_pending.items() if segment.priority>1]
+            if normal:self._camera_boundary_key=normal[0]
+            elif self._active and self._active_request is not None and self._active_request.candidate.priority>1:
+                self._invalidate("important_event_boundary" if self._p1_deadline is not None else "camera_boundary")
+        self._wake.set()
+        return True
+
+    def release_camera_change(self):
+        held=self._camera_scope is not None
+        if self._camera_requested_at is not None:
+            self._camera_wait_max=max(self._camera_wait_max,max(0,self.clock()-self._camera_requested_at))
+        self._camera_scope=self._camera_boundary_key=self._camera_requested_at=None
+        if held:self._wake.set()
 
     def _select_idle(self):
         now,wall=self.clock(),int(self.wall_clock()*1000)
@@ -377,9 +414,17 @@ class CommentaryScheduler:
         if ack.status in ("completed","interrupted"):
             self._speech_pending.pop(key,None)
             self.last_commentary_playback_end_at=self.clock()
+            camera_boundary=key==self._camera_boundary_key
+            if camera_boundary:
+                self._camera_boundary_key=None
+                self._counts["camera_clause_boundaries"]+=1
             self._capacity.set();self._wake.set()
             if self._p1_deadline is not None:
                 self._invalidate("important_event_boundary")
+            elif camera_boundary:
+                # Fence synchronously before capacity wakes a queued next
+                # clause; Completed coverage above remains genuine.
+                self._invalidate("camera_boundary")
         return True
 
     async def _capacity_for(self, request, seconds):
@@ -557,6 +602,9 @@ class CommentaryScheduler:
         if self._provider_failed:self._suppress("provider_unavailable");return
         if self._active or self._speech_pending:self._suppress("speaking" if self._speech_pending else "llm_active");return
         self._pending=OrderedDict((ref,row) for ref,row in self._pending.items() if self.evidence.resolve(ref))
+        if (self._camera_scope==self.view.scope and self.view.phase=="Exploration"
+                and not any(priority<=1 for priority,_ in self._pending.values())):
+            self._suppress("camera_boundary");return
         heard=heard_materials(self.evidence,self.spoken,now)
         for ref,(priority,_) in tuple(self._pending.items()):
             source=self.evidence.resolve(ref)
@@ -632,6 +680,9 @@ class CommentaryScheduler:
         # SDK call. A cancelled reservation remains charged conservatively.
         if not self._valid(request):
             self._counts["stale_admissions"]+=1;return
+        if self._camera_scope==self.view.scope and candidate.priority>1:
+            self._counts["camera_superseded_admissions"]+=1
+            self._suppress("camera_boundary");return
         if any(priority<candidate.priority and self.evidence.resolve(ref) is not None
                 for ref,(priority,_) in self._pending.items()):
             # A higher-priority fact can arrive during durable reservation even
@@ -707,6 +758,7 @@ class CommentaryScheduler:
     async def stop(self, *, emergency=True):
         if self._stop_complete:return
         self._closed=True;self._ready=False;self._epoch+=1
+        self.release_camera_change()
         self._pending.clear();self._offered.clear();self._wake.set();self._capacity.set()
         self._p1_preempting_refs.clear();self._p1_cooldown_bypass.clear();self._p1_deadline=None
         if self._stop_task is None or self._stop_task.done():
@@ -772,7 +824,10 @@ class CommentaryScheduler:
         if self.evidence:self.spoken.prune(self.evidence)
         finished=self._outro_courtesy_started and self._outro_result_finished()
         last=self.spoken.recent(1)
+        camera_wait=max(0,self.clock()-self._camera_requested_at) if self._camera_requested_at is not None else 0.0
         return {"calls_by_mode":dict(self._calls_by_mode),"counts":dict(self._counts),
+            "camera_boundary":{"requested":self._camera_scope is not None,"waiting_seconds":camera_wait,
+                "maximum_wait_seconds":max(self._camera_wait_max,camera_wait)},
             "suppressed":dict(self._suppressions),"silence_reason":self.last_suppression,
             "provider_active":self._active is not None and not self._active.done(),
             "pending_segments":len(self._speech_pending),"pending_facts":len(self._pending),

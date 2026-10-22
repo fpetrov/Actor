@@ -40,10 +40,15 @@ kill does not create an observer event, revision, camera switch or diagnostic co
 Body discovery does not establish a killer. Only an independently checked pre-action
 visible witness may identify a visible attack. Player claims remain attributed claims.
 
-The initial camera uses a public Hall anchor. Camera requests are server checked;
-following is limited to an already permitted actor, with a minimum eight-second
-dwell. Automatic choices use only current permitted data and public authored anchors.
-No global actor minimap or hidden-event camera director is provided.
+The initial camera uses a public Hall anchor. A bounded stable public selector
+contains only participant identities/names; selection permission requires its
+actual readable native-frame ACK, or a currently visible legacy actor. The server
+checks scope, freshness and an eight-second minimum dwell without exposing private
+life or pose availability through selection success. Its canonical eye is smoothed
+before radius/viewport/LOS projection; the client applies and acknowledges that
+same eye and fog. Normal speech yields at a real clause/flush boundary so sustained
+commentary cannot starve fair rotation. No global actor minimap or hidden-event
+camera director is provided. See [camera and speech boundaries](broadcast-editorial.md).
 
 Each coherent view is bound to match, broadcast session, connection generation,
 view epoch, observer-local sequence, server observation time and freshness. Positions
@@ -171,7 +176,6 @@ parses or copies that storage.
 ```sh
 actorctl broadcast doctor --config ~/.config/actor/broadcast.json
 actorctl broadcast codex-status --config ~/.config/actor/broadcast.json
-actorctl broadcast codex-login --config ~/.config/actor/broadcast.json
 actorctl broadcast ui --config ~/.config/actor/broadcast.json
 actorctl broadcast preview ROOM12 --config ~/.config/actor/broadcast.json
 actorctl broadcast status --run /absolute/path/to/run
@@ -181,8 +185,11 @@ actorctl broadcast emergency-stop --run /absolute/path/to/run
 ```
 
 `doctor` performs no account check, provider call, Keychain mutation or model load.
-`codex-login` explicitly opens the official managed-auth flow for the dedicated
-profile; `codex-status` checks only that profile, without starting a model turn.
+Initial dedicated-profile sign-in uses the explicit one-time setup command
+`actorctl broadcast codex-login --config ~/.config/actor/broadcast.json`.
+`codex-status` checks that profile without starting a model turn. Normal launches
+reuse the existing authenticated profile and owned Keychain items; do not recreate
+or rotate them as routine setup.
 Normal preview never starts an interactive sign-in or imports the main profile's
 credentials. A missing/unauthenticated dedicated profile fails closed.
 `ui` opens a loopback operator service and prints its non-secret URL. `preview`
@@ -190,7 +197,23 @@ prepares a selected room and leaves publication waiting for the explicit public
 action. Start requires the current preview session; repeated Start cannot create
 a second stream. Ctrl-C cleans up the owned controller, observer and SSH forward.
 
-OBS authentication and the macOS capture permission are established interactively.
+Initial OBS authentication and macOS capture permission are established
+interactively. Later launches preserve the already-connected Twitch/OBS session:
+never log out, disconnect, revoke credentials or run a reconnect/login wizard as
+a default preflight or ingest-error fallback. Separate optional chat provisioning
+with `twitch-login` does not repair or replace OBS stream authentication.
+An unexpected identity or authorization mismatch stops for operator review.
+
+Changing only the ingest server is explicit operator maintenance while outputs
+are idle. Preserve the protected backup and verify the same owned profile,
+collection, Twitch account and service type before and after the change; every
+non-server service setting and authentication value must remain unchanged.
+The service fingerprint covers the full canonical settings, including the server.
+Only after this continuity check may its owned binding fingerprint be updated,
+retaining the same channel/profile/collection; never accept an arbitrary mismatch
+or expose raw settings or credentials. There is no server-overlay CLI command.
+The next preview must pass the existing checks and still needs explicit Start.
+
 The authenticated websocket listener also requires verified local isolation before
 it is enabled. The PF helper only changes a separate owned anchor; its check-only
 root attestor issues fresh challenged proofs to the unprivileged controller.
@@ -310,8 +333,25 @@ historical fault's cause. No source expiry, ACK, epoch or visibility rule is rel
 
 ## Validation status
 
-These are measured checkpoints on the implementation branch, not a declaration
-of production acceptance:
+The 2026-10-23 public attempt04 used source `75b1ed8` and installed Runtime RC19.
+It reached confirmed Live at elapsed 43.37 s through an authentication-preserving
+Frankfurt server-only overlay; Twitch Inspector reported Excellent, 720p and about
+4 Mbps. Four ordinary Codex participants recorded 22 unique model turns/22 decisions
+and 650,962 tokens. The attempt remained **FAIL**: at total 137.97 s the cumulative
+Warning interval reached 61.927 s, exceeding the 60 s resource limit. Owned cleanup
+and the independent Root postflight passed with all owned resources closed.
+This was not a completed match or sustained-load acceptance. Per-player Unity/SDK
+RSS was not retained, so these observations do not attribute pressure to a component;
+recording quality and viewer-audible speech still require their separate checks.
+
+Station rendering assets and project settings are unchanged from `97cddb4` through
+`75b1ed8`. Earlier `8beafb4` dark-fog and `97cddb4` short-ray inward-feather checks
+therefore describe the same rendering source, retaining the opaque outside seal.
+Those native shader/window and fog-performance observations remain historical;
+they are not fresh FPS/CPU measurements under the current four-player/BF16/OBS load.
+
+The following earlier measured checkpoints are historical, not a declaration of
+current production acceptance or current output state:
 
 | Check | Actual result | Limit |
 | --- | --- | --- |
@@ -348,10 +388,10 @@ completed in 9.601 s and left no owned process group. It does not establish
 generation peak memory, sustained throughput, or capacity alongside the rendered
 observer and an active OBS encoder.
 
-Native window/capture acceptance, joint-load BF16 performance, final
-OBS audio/video recording, a complete autonomous match, the sustained fault run,
-Twitch ingest and visual fog-motion cost are still unmeasured. No public stream
-or successful audio route is claimed from unit tests, synthetic ACKs or text-only
+At that earlier checkpoint, native window/capture acceptance, joint-load BF16
+performance, final OBS audio/video recording, a complete autonomous match, the
+sustained fault run, Twitch ingest and visual fog-motion cost were unmeasured.
+No public stream or successful audio route is claimed from unit tests, synthetic ACKs or text-only
 benchmarks. Preserve that distinction in release notes and operator readiness.
 
 A later real zero-turn policy startup check correctly stopped with
@@ -367,13 +407,13 @@ returned `authenticated=false`, `signin_required=true`, `model_calls=0` and
 real profile and credentials were untouched. This verifies the status/setup
 plumbing, not a completed commentator sign-in.
 
-The real OBS login was verified as `fedorr_codex`; its protected authenticated
-backup and opaque service binding are local-only. Global audio inputs are
-disabled and all current outputs are idle. The separate Twitch chat application
+At the initial login checkpoint, OBS was verified as `fedorr_codex`; its protected
+authenticated backup and opaque service binding remained local-only. Global audio
+inputs were disabled and outputs were idle. The separate Twitch chat application
 could not be created: Twitch requires account 2FA, whose initial setup requires
-an SMS-capable phone number. The current staging preview explicitly disables
-chat; no chat OAuth token, EventSub connection or public-ingest success is
-claimed. See [Twitch login provisioning](broadcast-twitch-login.md).
+an SMS-capable phone number. That staging preview explicitly disabled chat; it
+established no chat OAuth token, EventSub connection or public-ingest success.
+See [Twitch login provisioning](broadcast-twitch-login.md).
 
 The first real window diagnostic acknowledged native frame 66 / wire sequence 1,
 then became stale. The server's receipt handler checked total buffer length even

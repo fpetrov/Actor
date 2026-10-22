@@ -22,11 +22,12 @@ class Rng:
 
 
 def view(clock, *, sequence=1, epoch=1, generation=1, actors=("Анна", "Борис", "Вера"),
-         anchor="main-hall", focus="", phase="Exploration", terminal=False):
+         anchor="main-hall", focus="", phase="Exploration", terminal=False,targets=()):
     scope = Scope("broadcast", "match", generation, epoch)
     return PresentedView(scope, sequence, sequence, int(clock.wall()*1000), int(clock.wall()*1000)+500,
         phase, {"camera": {"anchor_id": anchor, "focus_actor_id": focus},
             "visible_actor_ids": list(actors), "actors": [{"actor_id": actor} for actor in actors],
+            "camera_targets":[{"actor_id":actor,"display_name":"Имя "+actor} for actor in targets],
             # Neither a roll-call nor old facts grant focus permission.
             "meeting": {"participants": [{"actor_id": "hidden"}]}, "hidden_field": "never_used"},
         (), PresentationAck(scope, sequence, sequence, clock.monotonic()), terminal)
@@ -47,6 +48,53 @@ def refresh(director, clock, **options):
 def due(director, clock, **options):
     clock.advance(18); assert refresh(director, clock, **options)
     return director.next_intent()
+
+
+def test_public_identity_roster_rotates_every_participant_before_repeat_without_hidden_poses():
+    director,clock,_=system();roster=("first","second","third","fourth")
+    refresh(director,clock,actors=("first",),targets=roster)
+    selected=[]
+    for epoch in range(2,7):
+        current=director.view.current["camera"]
+        clock.advance(18);refresh(director,clock,actors=("first",),targets=roster,
+            anchor=current["anchor_id"],focus=current["focus_actor_id"])
+        assert director.change_due
+        intent=director.next_intent();selected.append(intent.focus_actor_id)
+        count=director.report()["confirmed_presented_switches"]
+        assert director.selection_result(intent,True)
+        assert director.report()["confirmed_presented_switches"]==count
+        assert director.next_intent() is None
+        refresh(director,clock,epoch=epoch,anchor="",focus=intent.focus_actor_id,
+            actors=(intent.focus_actor_id,),targets=roster)
+        assert director.report()["confirmed_presented_switches"]==count+1
+        assert not director.change_due
+    assert len(set(selected[:4]))==4 and selected[4]==selected[0]
+
+
+def test_rejected_target_is_not_a_visit_and_cannot_monopolize_the_public_roster():
+    director,clock,_=system();roster=("first","second","third","fourth")
+    refresh(director,clock,actors=(),targets=roster)
+    clock.advance(18);refresh(director,clock,actors=(),targets=roster)
+    initial=director.next_intent();assert director.selection_result(initial,False)
+    assert director.report()["confirmed_presented_switches"]==0
+    assert director.report()["remembered_focus_count"]==0
+    clock.advance(18);refresh(director,clock,actors=(),targets=roster)
+    retry=director.next_intent()
+    assert retry.focus_actor_id and retry.focus_actor_id!=initial.focus_actor_id
+    assert director.report()["deferred_target_count"]==1
+
+
+@pytest.mark.parametrize("targets",[
+    [{"actor_id":"x","display_name":"Имя","x":1}],
+    [{"actor_id":"x","display_name":"Имя","life":"Alive"}],
+    [{"actor_id":"x","display_name":""}],
+    [{"actor_id":"x","display_name":"Имя"}]*2,
+    [{"actor_id":str(i),"display_name":"Имя"} for i in range(7)],
+])
+def test_camera_target_contract_cannot_carry_hidden_candidate_data(targets):
+    director,clock,_=system();source=view(clock);source.current["camera_targets"]=targets
+    with pytest.raises(ValueError):director.observe(source)
+    assert director.report()["intents"]==0
 
 
 def test_one_dwell_sample_per_camera_not_per_frame_poll_and_never_before_server_dwell():

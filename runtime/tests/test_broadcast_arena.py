@@ -30,6 +30,29 @@ def test_only_presented_permitted_typed_projection_no_player_fields_or_cross_clo
     assert "own_alignment" not in str(result.current) and "replay" not in str(result.current)
 
 
+def test_public_camera_roster_requires_its_own_actual_render_ack_and_exposes_only_identity():
+    source=presented();source.view.camera_targets.add(actor_id="offscreen",display_name="Мира")
+    with pytest.raises(ValueError):projector().project(source)
+    source.presentation.camera_targets_presented=True
+    result=projector().project(source)
+    assert result.current["camera_targets"]==[{"actor_id":"offscreen","display_name":"Мира"}]
+    assert result.current["actors"]==[] and result.current["visible_actor_ids"]==[] and result.facts==()
+    source.view.ClearField("camera_targets");source.presentation.camera_targets_presented=False
+    assert projector().project(source).current["camera_targets"]==[]
+
+
+@pytest.mark.parametrize("mutation",["duplicate","overbound","empty_id","empty_name"])
+def test_camera_roster_rejects_ambiguous_or_unbounded_identity(mutation):
+    source=presented();source.presentation.camera_targets_presented=True
+    source.view.camera_targets.add(actor_id="one",display_name="Мира")
+    if mutation=="duplicate":source.view.camera_targets.add(actor_id="one",display_name="Иное имя")
+    if mutation=="overbound":
+        for i in range(6):source.view.camera_targets.add(actor_id=str(i),display_name="Имя")
+    if mutation=="empty_id":source.view.camera_targets[0].actor_id=""
+    if mutation=="empty_name":source.view.camera_targets[0].display_name=""
+    with pytest.raises(ValueError):projector().project(source)
+
+
 @pytest.mark.parametrize("mutation",[
     lambda value:setattr(value.view.scope,"observer_id","foreign"),
     lambda value:setattr(value.view.scope,"match_id","old-match"),

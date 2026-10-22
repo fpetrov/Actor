@@ -612,6 +612,6 @@
   "descriptor_set": "agents_arena.v1.pb",
   "extension_id": "agents-arena",
   "extension_version": "0.7.0",
-  "schema_hash": "4030dcbab5969a839ac27032b29c4207609a44c3c38a59ffc01cfeac78439d15",
+  "schema_hash": "1aab2c58c91cbd9123292e99b12750c2a7a6f2637e7eed550f6b328bb3e749b0",
   "supported_protocol_major": 1
 }

@@ -43,7 +43,11 @@ namespace Actor.Presentation
         private readonly Queue<string> attackOrder = new();
         private readonly NameplateLayoutRules.Entry[] labels = new NameplateLayoutRules.Entry[8];
         private readonly List<Proxy> labelSources = new();
-        private VisualElement hud, notesHud; private Label publicState;
+        private VisualElement hud, notesHud, rosterHud; private Label publicState, rosterLabel, watchingLabel;
+        private BroadcastScope rosterScope;
+        private ulong rosterSequence;
+        private Matrix4x4 canonicalProjection;
+        private bool projectionSet;
         private readonly Label[] factLabels = new Label[3];
         private BroadcastEditorialFact[] displayedFacts = Array.Empty<BroadcastEditorialFact>();
         private readonly Dictionary<string, ulong> confirmed = new(StringComparer.Ordinal);
@@ -169,10 +173,11 @@ namespace Actor.Presentation
         {
             var follow = camera.GetComponent<CameraFollow2D>(); if (follow != null) follow.enabled = false;
             camera.orthographic = true; camera.orthographicSize = frame.Camera.OrthographicSize;
-            camera.transform.position = new Vector3(frame.Camera.X, frame.Camera.Y, -10); camera.aspect = frame.Camera.Aspect;
+            camera.transform.position = new Vector3(frame.Camera.X, frame.Camera.Y, -10); camera.transform.rotation = Quaternion.identity; camera.aspect = frame.Camera.Aspect;
             float target = frame.Camera.Aspect, actual = (float)Screen.width / Math.Max(1, Screen.height);
             camera.rect = actual > target ? new Rect((1 - target / actual) / 2, 0, target / actual, 1)
                 : new Rect(0, (1 - actual / target) / 2, 1, actual / target);
+            camera.ResetProjectionMatrix(); canonicalProjection = camera.projectionMatrix; projectionSet = true;
             foreach (string key in actors.Keys.Where(k => !frame.Actors.Any(a => a.ActorId == k)).ToArray()) RemoveActor(key);
             foreach (var actor in frame.Actors)
             {
@@ -236,26 +241,31 @@ namespace Actor.Presentation
             {
                 hud = ArenaUI.Element("panel", layer); hud.pickingMode = PickingMode.Ignore;
                 hud.style.position = Position.Absolute; hud.style.left = 16; hud.style.top = 16; hud.style.width = 260;
+                watchingLabel = ReadableLabel(hud); watchingLabel.style.fontSize = 14; watchingLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
                 publicState = ReadableLabel(hud);
                 notesHud = ArenaUI.Element("panel", layer); notesHud.pickingMode = PickingMode.Ignore;
                 notesHud.style.position = Position.Absolute; notesHud.style.right = 16; notesHud.style.top = 16;
                 for (int i = 0; i < factLabels.Length; i++) factLabels[i] = ReadableLabel(notesHud);
+                rosterHud = ArenaUI.Element("panel", layer); rosterHud.pickingMode = PickingMode.Ignore;
+                rosterHud.style.position = Position.Absolute; rosterHud.style.left = 16; rosterHud.style.right = 16; rosterHud.style.bottom = 16;
+                rosterLabel = ReadableLabel(rosterHud);
             }
+            ArenaUI.Show(rosterHud, frame.CameraTargets.Count > 0);
+            rosterLabel.text = BroadcastPresentationRules.CameraTargetsText(frame);
+            rosterScope = frame.Scope.Clone(); rosterSequence = frame.Sequence;
             ArenaUI.Show(notesHud, true);
             float available = layer.resolvedStyle.width;
             notesHud.style.width = float.IsFinite(available) && available > 0 ? Mathf.Clamp(available - 308, 180, 620) : 430;
             var text = new StringBuilder();
             text.Append("Broadcast · ").Append(frame.Phase).Append("\nTasks ").Append(frame.CrewTasksCompleted).Append('/').Append(frame.TaskThreshold);
             if (frame.PhaseEndsAtUnixMs > 0) text.Append(" · ").Append(Math.Max(0, (frame.PhaseEndsAtUnixMs - frame.ObservedAtUnixMs) / 1000)).Append("s");
-            var focus = frame.Actors.FirstOrDefault(actor => actor.ActorId == frame.Camera.FocusActorId);
-            if (focus != null) text.Append("\nWatching · ").Append(focus.DisplayName);
-            else if (frame.Camera.AnchorId.Length > 0) text.Append("\nView · ").Append(frame.Camera.AnchorId);
+            string focusName = frame.CameraTargets.FirstOrDefault(actor => actor.ActorId == frame.Camera.FocusActorId)?.DisplayName
+                ?? frame.Actors.FirstOrDefault(actor => actor.ActorId == frame.Camera.FocusActorId)?.DisplayName;
+            watchingLabel.text = focusName != null ? "Watching · " + focusName
+                : frame.Camera.AnchorId.Length > 0 ? "View · " + frame.Camera.AnchorId : "Broadcast view";
             if (frame.EmergencyActive) text.Append("\nEmergency · ").Append(frame.EmergencyRoomId).Append(" · ")
                 .Append(Math.Max(0, (frame.EmergencyEndsAtUnixMs - frame.ObservedAtUnixMs) / 1000)).Append("s");
-            foreach (var actor in frame.Actors) text.Append("\n").Append(actor.DisplayName).Append(" · ").Append(actor.X.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
-                .Append(',').Append(actor.Y.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
-            foreach (var body in frame.Bodies) text.Append("\nBody · ").Append(body.VictimDisplayName).Append(" · ").Append(body.X.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
-                .Append(',').Append(body.Y.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
+            foreach (var body in frame.Bodies) text.Append("\nBody · ").Append(body.VictimDisplayName);
             if (frame.Meeting != null)
             {
                 foreach (var row in frame.Meeting.Participants) text.Append("\nRoll call · ").Append(row.DisplayName).Append(" · ").Append(row.Life);
@@ -349,16 +359,24 @@ namespace Actor.Presentation
             capturePending = true; yield return new WaitForEndOfFrame();
             if (motionReportPath != null) ackAttempts++;
             if (this != null && isActiveAndEnabled && camera != null && camera.isActiveAndEnabled && renderedFrame == Time.frameCount
-                && !ArenaUI.InputCaptured && Applied != null && Applied.Sequence == frame.Sequence && Applied.Scope.Equals(frame.Scope))
+                && !ArenaUI.InputCaptured && Applied != null && Applied.Sequence == frame.Sequence && Applied.Scope.Equals(frame.Scope)
+                && BroadcastPresentationRules.CameraPoseMatches(frame.Camera, camera.orthographic, camera.transform.position.x,
+                    camera.transform.position.y, camera.transform.position.z, camera.orthographicSize, camera.aspect,
+                    camera.transform.rotation.x, camera.transform.rotation.y, camera.transform.rotation.z, camera.transform.rotation.w)
+                && BroadcastPresentationRules.CameraViewportMatches(frame.Camera.Aspect, Screen.width, Screen.height,
+                    camera.rect.x, camera.rect.y, camera.rect.width, camera.rect.height) && ProjectionMatches())
             {
                 fog ??= FindAnyObjectByType<SocialFogRenderer>();
-                if (fog != null && fog.MatchesPresentedSight(new Vector2(frame.Camera.X, frame.Camera.Y), frame.Scope.ViewEpoch) && FullyVisible(publicState))
+                if (fog != null && fog.MatchesPresentedSight(new Vector2(frame.Camera.X, frame.Camera.Y), frame.Scope.ViewEpoch)
+                    && FullyVisible(publicState) && FullyVisible(watchingLabel))
                 {
                     var references = frame.Facts.Where(f => confirmed.TryGetValue(f.EvidenceId, out ulong version) && version == f.Version)
                         .Select(f => new BroadcastEvidenceRef { EvidenceId = f.EvidenceId, Version = f.Version }).ToList();
                     for (int i = 0; i < displayedFacts.Length; i++) if (FullyVisible(factLabels[i]))
                         references.Add(new BroadcastEvidenceRef { EvidenceId = displayedFacts[i].EvidenceId, Version = displayedFacts[i].Version });
-                    if (session.MarkPresented(frame, references, (ulong)Math.Max(1, Time.frameCount), Screen.width, Screen.height))
+                    bool rosterPresented = BroadcastPresentationRules.CameraTargetsWerePresented(frame, rosterScope, rosterSequence,
+                        rosterLabel?.text, FullyVisible(rosterLabel));
+                    if (session.MarkPresented(frame, references, (ulong)Math.Max(1, Time.frameCount), Screen.width, Screen.height, rosterPresented))
                     {
                         if (motionReportPath != null) { ackCompleted++; presentedIntervals.Record(Time.realtimeSinceStartupAsDouble); }
                         foreach (var reference in references) confirmed[reference.EvidenceId] = reference.Version;
@@ -370,6 +388,14 @@ namespace Actor.Presentation
             }
             else if (motionReportPath != null) rejectedRender++;
             capturePending = false;
+        }
+        private bool ProjectionMatches()
+        {
+            if (!projectionSet) return false;
+            var actual = camera.projectionMatrix;
+            for (int i = 0; i < 16; i++) if (!float.IsFinite(actual[i]) || !float.IsFinite(canonicalProjection[i])
+                || Math.Abs(actual[i] - canonicalProjection[i]) >= .0001f) return false;
+            return true;
         }
         private static bool SafeProbePath(string path) => SafeProofPath(path, ".png");
         private static bool SafeProofPath(string path, string extension)
@@ -440,9 +466,10 @@ namespace Actor.Presentation
             finally { if (texture != null) Destroy(texture); }
         }
         private void RemoveActor(string key) { var proxy = actors[key]; proxy.Name?.RemoveFromHierarchy(); Destroy(proxy.Root); actors.Remove(key); }
-        private void Clear() { foreach (string key in actors.Keys.ToArray()) RemoveActor(key); foreach (var body in bodies.Values) Destroy(body.Root); bodies.Clear(); Applied = null; applied = 0; }
+        private void Clear() { foreach (string key in actors.Keys.ToArray()) RemoveActor(key); foreach (var body in bodies.Values) Destroy(body.Root); bodies.Clear(); Applied = null; applied = 0;
+            rosterScope = null; rosterSequence = 0; projectionSet = false; if (rosterHud != null) ArenaUI.Show(rosterHud, false); }
         private void OnApplicationQuit() => SaveMotionReport(true);
-        private void OnDisable() { SaveMotionReport(true); RenderPipelineManager.endCameraRendering -= Rendered; StopAllCoroutines(); capturePending = false; Clear(); hud?.RemoveFromHierarchy(); notesHud?.RemoveFromHierarchy(); hud = notesHud = null; confirmed.Clear(); if (Current == this) Current = null; }
+        private void OnDisable() { SaveMotionReport(true); RenderPipelineManager.endCameraRendering -= Rendered; StopAllCoroutines(); capturePending = false; Clear(); hud?.RemoveFromHierarchy(); notesHud?.RemoveFromHierarchy(); rosterHud?.RemoveFromHierarchy(); hud = notesHud = rosterHud = null; rosterLabel = null; confirmed.Clear(); if (Current == this) Current = null; }
 #else
         internal bool Sight(out Vector2 eye, out float radius, out ulong epoch) { eye = Vector2.zero; radius = 0; epoch = 0; return false; }
 #endif

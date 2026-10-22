@@ -19,6 +19,13 @@ namespace Actor.Networking
         { internal string Id, Victim, Name; internal float X, Y; internal uint Cosmetic; }
         private readonly BroadcastScope scope;
         private readonly Func<float, float, float, float, bool> sight;
+        private readonly Func<double> monotonic;
+        private readonly Dictionary<string, string> cameraTargets = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, (float X, float Y)> currentPoses = new(StringComparer.Ordinal);
+        private double lastClock = -1, cameraAt = -1, worldAt = -1;
+        private long worldObservedAt;
+        private float previousTargetX, previousTargetY;
+        private bool hasTarget;
         private readonly List<BroadcastEditorialFact> facts = new();
         private readonly Queue<string> revoked = new();
         private readonly HashSet<string> seen = new(StringComparer.Ordinal);
@@ -41,10 +48,44 @@ namespace Actor.Networking
         private int movementState, reportedMovement;
         private ulong sequence, semantic = 1;
         private string publicSignature = "";
-        internal BroadcastViewProjector(BroadcastScope identity, Func<float, float, float, float, bool> lineOfSight, long at)
+        internal BroadcastViewProjector(BroadcastScope identity, Func<float, float, float, float, bool> lineOfSight, long at,
+            Func<double> monotonicClock = null)
         {
             if (!BroadcastObserverRules.ValidScope(identity)) throw new ArgumentException("Invalid observer scope.");
             scope = identity.Clone(); sight = lineOfSight ?? throw new ArgumentNullException(nameof(lineOfSight)); switchedAt = at;
+            monotonic = monotonicClock ?? (() => System.Diagnostics.Stopwatch.GetTimestamp() / (double)System.Diagnostics.Stopwatch.Frequency);
+        }
+        private bool TryClock(out double value)
+        {
+            try { value = monotonic(); }
+            catch { value = -1; return false; }
+            if (!double.IsFinite(value) || value < 0 || lastClock >= 0 && value < lastClock) return false;
+            lastClock = value; return true;
+        }
+        private void ResetCamera(double at)
+        { cameraAt = at; previousTargetX = camera.X; previousTargetY = camera.Y; hasTarget = camera.FocusActorId.Length > 0; }
+        private void FollowCurrentTarget(double at)
+        {
+            if (camera.FocusActorId.Length == 0) { hasTarget = false; cameraAt = at; return; }
+            if (!currentPoses.TryGetValue(camera.FocusActorId, out var target))
+            { hasTarget = false; cameraAt = at; return; } // Missing pose never announces private life/membership.
+            double elapsed = cameraAt < 0 ? 0 : at - cameraAt;
+            double dx = (double)target.X - previousTargetX, dy = (double)target.Y - previousTargetY;
+            // Only the server moves the canonical eye. A cut, long source gap
+            // or discontinuous target pose snaps; ordinary motion is damped
+            // before ALL radius/viewport/LOS and editorial-fact projection.
+            if (!hasTarget || elapsed > .25 || dx * dx + dy * dy > 2.25)
+            { camera.X = target.X; camera.Y = target.Y; }
+            else if (elapsed > 0)
+            {
+                double blend = 1 - Math.Exp(-Math.Min(elapsed, .1) / .12);
+                float x = (float)(camera.X + ((double)target.X - camera.X) * blend);
+                float y = (float)(camera.Y + ((double)target.Y - camera.Y) * blend);
+                if (!sight(camera.X, camera.Y, x, y) || !sight(x, y, target.X, target.Y))
+                { x = target.X; y = target.Y; } // Never damp an eye through an occluding corner.
+                camera.X = x; camera.Y = y;
+            }
+            previousTargetX = target.X; previousTargetY = target.Y; cameraAt = at; hasTarget = true;
         }
         internal BroadcastScope Scope => scope.Clone();
         internal BroadcastView Last => last?.Clone();
@@ -58,9 +99,10 @@ namespace Actor.Networking
         }
         internal BroadcastViewSelectionResultEvent Select(BroadcastSelectViewCommand command, long at)
         {
+            bool clockValid = TryClock(out double clock);
             bool allowed = command != null && BroadcastObserverRules.SameScope(scope, command.Scope)
                 && BroadcastObserverRules.Id(command.CorrelationId) && command.ExpiresAtUnixMs > at && command.ExpiresAtUnixMs <= at + 5000
-                && at - switchedAt >= 8000 && (string.IsNullOrEmpty(command.AnchorId) != string.IsNullOrEmpty(command.FocusActorId));
+                && clockValid && at - switchedAt >= 8000 && (string.IsNullOrEmpty(command.AnchorId) != string.IsNullOrEmpty(command.FocusActorId));
             BroadcastCamera next = camera.Clone();
             if (allowed && command.AnchorId.Length > 0)
             {
@@ -69,11 +111,21 @@ namespace Actor.Networking
             }
             else if (allowed)
             {
-                var actor = presented != null && at - presented.ObservedAtUnixMs <= 500 ? presented.Actors.FirstOrDefault(p => p.ActorId == command.FocusActorId) : null;
-                allowed = actor != null;
-                if (allowed) { next.AnchorId = ""; next.FocusActorId = actor.ActorId; next.X = actor.X; next.Y = actor.Y; }
+                bool presentedTarget = presented != null && at >= presented.ObservedAtUnixMs && at - presented.ObservedAtUnixMs <= 500
+                    && (presented.CameraTargets.Any(p => p.ActorId == command.FocusActorId)
+                        || presented.Actors.Any(p => p.ActorId == command.FocusActorId)); // Legacy visible target.
+                // The success bit proves only public roster permission, never
+                // private life, connectivity or current pose availability.
+                allowed = presentedTarget;
+                if (allowed)
+                {
+                    next.AnchorId = ""; next.FocusActorId = command.FocusActorId;
+                    if (at >= worldObservedAt && at - worldObservedAt <= 500 && worldAt >= 0
+                        && clock >= worldAt && clock - worldAt <= .5 && currentPoses.TryGetValue(command.FocusActorId, out var pose))
+                    { next.X = pose.X; next.Y = pose.Y; }
+                }
             }
-            if (allowed) { camera = next; ++scope.ViewEpoch; switchedAt = at; last = presented = null; prepared.Clear(); lastRooms.Clear(); ResetMovement(); }
+            if (allowed) { camera = next; ResetCamera(clock); ++scope.ViewEpoch; switchedAt = at; last = presented = null; prepared.Clear(); lastRooms.Clear(); ResetMovement(); }
             return new BroadcastViewSelectionResultEvent { Scope = scope.Clone(), CorrelationId = command?.CorrelationId?.Length <= 64 ? command.CorrelationId : "",
                 Accepted = allowed, ReasonCode = allowed ? "view_selected" : "view_unavailable" };
         }
@@ -154,18 +206,28 @@ namespace Actor.Networking
             IEnumerable<Actor> actorInputs, IEnumerable<Body> bodyInputs, SocialMatchSummary terminal, long at)
         {
             if (state == null || state.MatchId != scope.MatchId) throw new ArgumentException("Wrong match.");
+            if (!TryClock(out double clock)) throw new ArgumentException("Invalid observer clock.");
             now = Math.Max(now, at); Trim(now);
             var actors = actorInputs.Take(7).ToArray(); var bodies = bodyInputs.Take(7).ToArray();
             if (actors.Length > 6 || bodies.Length > 6) throw new ArgumentException("Observer world bound.");
-            if (camera.FocusActorId.Length > 0)
+            currentPoses.Clear();
+            foreach (var actor in actors)
             {
-                var focus = actors.FirstOrDefault(a => a.Id == camera.FocusActorId && a.Alive && float.IsFinite(a.X) && float.IsFinite(a.Y));
-                if (focus != null) { camera.X = focus.X; camera.Y = focus.Y; } else camera.FocusActorId = "";
+                if (!BroadcastObserverRules.Id(actor.Id) || !global::Actor.Contracts.JoinTicketCodec.IsPlayerNameValid(actor.Name)) continue;
+                // Public identity membership is monotonic for this match. Do
+                // not remove/annotate it on death, disconnect or loss of LOS.
+                if (!cameraTargets.ContainsKey(actor.Id) && cameraTargets.Count < 6) cameraTargets.Add(actor.Id, actor.Name);
+                if (float.IsFinite(actor.X) && float.IsFinite(actor.Y) && !currentPoses.ContainsKey(actor.Id))
+                    currentPoses.Add(actor.Id, (actor.X, actor.Y));
             }
+            worldAt = clock; worldObservedAt = now;
+            FollowCurrentTarget(clock);
             camera.VisibilityRadius = float.IsFinite(state.VisibilityRadius) ? Math.Clamp(state.VisibilityRadius, 1, 8) : 3.5f;
             var view = new BroadcastView { Scope = scope.Clone(), Sequence = ++sequence, SemanticRevision = semantic, ObservedAtUnixMs = now, ExpiresAtUnixMs = now + 500,
                 Camera = camera.Clone(), Phase = state.Phase, PhaseRevision = state.PhaseRevision, PhaseEndsAtUnixMs = state.PhaseEndsAtUnixMs,
                 CrewTasksCompleted = state.CrewTasksCompleted, TaskThreshold = state.TaskThreshold, Terminal = state.Phase == SocialPhase.GameOver };
+            view.CameraTargets.Add(cameraTargets.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new BroadcastCameraTarget { ActorId = p.Key, DisplayName = p.Value }));
             foreach (var a in actors.Where(a => a.Alive && Permits(a.X, a.Y)).OrderBy(a => a.Id))
             {
                 if (!BroadcastObserverRules.Id(a.Id) || !global::Actor.Contracts.JoinTicketCodec.IsPlayerNameValid(a.Name) || !float.IsFinite(a.VelocityX) || !float.IsFinite(a.VelocityY)) continue;

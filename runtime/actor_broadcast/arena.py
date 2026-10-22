@@ -38,6 +38,14 @@ class ArenaBroadcastProjector:
             raise ValueError("Premature terminal disclosure")
         if len(view.actors)>6 or len(view.bodies)>6 or len(view.facts)>96 or len(view.final_players)>6 or len(view.revoked_evidence_ids)>96:
             raise ValueError("Observer projection cardinality exceeded")
+        if len(view.camera_targets)>6 or view.camera_targets and not ack.camera_targets_presented:
+            raise ValueError("Camera targets require an actually presented public roster")
+        targets=[];target_ids=set()
+        for target in view.camera_targets:
+            bounded_text(target.actor_id,128);bounded_text(target.display_name,128)
+            if target.actor_id in target_ids:raise ValueError("Duplicate public camera target")
+            target_ids.add(target.actor_id)
+            targets.append({"actor_id":target.actor_id,"display_name":target.display_name})
         if len(ack.presented_evidence)>96:raise ValueError("Native evidence acknowledgement bound exceeded")
         refs=tuple(EvidenceRef(row.evidence_id,str(row.version)) for row in ack.presented_evidence)
         if any(row.version<1 for row in ack.presented_evidence) or len({ref.id for ref in refs})!=len(refs):
@@ -48,6 +56,7 @@ class ArenaBroadcastProjector:
             "phase_revision":view.phase_revision,"phase_ends_at_unix_ms":view.phase_ends_at_unix_ms,
             "crew_tasks_completed":view.crew_tasks_completed,"task_threshold":view.task_threshold,
             "visible_actor_ids":[actor.actor_id for actor in view.actors],
+            "camera_targets":targets,
             "actors":[{"actor_id":actor.actor_id,"display_name":actor.display_name,"x":actor.x,"y":actor.y,
                 "velocity_x":actor.velocity_x,"velocity_y":actor.velocity_y} for actor in view.actors],
             "bodies":[{"body_id":body.body_id,"victim_actor_id":body.victim_actor_id,"victim_display_name":body.victim_display_name,

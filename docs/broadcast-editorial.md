@@ -4,22 +4,45 @@ The commentator follows the broadcast observer's permitted view. It never reads
 the players' private roles, tasks, memories, observations or ballots. Public
 in-game discussion works independently of optional Twitch chat OAuth.
 
-`CameraDirector` samples an 18–26 second dwell once per confirmed camera. When
-the scheduler has no active provider/speech and no pending P0/P1, Native may
-request the least recently watched **currently visible** player. The server
-still checks the scope, freshness, visibility and its eight-second minimum
-dwell. If no other player is visible, the director rotates between the four
-authored room anchors; it cannot look up a hidden player's position. A
-continuously fresh empty view can seek another public anchor after ten seconds
-on the confirmed camera and at least five seconds of observed emptiness.
-Missing/stale frames do not count toward that interval. A successful
-selection response is only acceptance. A later matching actually presented
-camera epoch confirms the cut. Rejections and missing confirmations back off;
-discussion, voting and GameOver hold camera selection. Thus fair rotation is an
-opportunity among visible players, not a guarantee of omniscient coverage.
+The native HUD presents up to six stable public camera-selector identities and
+names. This list carries no position, room, life, role or private task information;
+membership is not removed on death, disconnect or loss of sight. Its separate
+`camera_targets_presented` ACK requires the full list to be readable in the exact
+rendered scope/sequence. An unshown list is removed from both the server's
+presented permissions and the cognitive view. Legacy views can still select a
+currently visible actor. Neither a selector name nor a rejected selection is
+evidence of a player's current life, visibility or position.
 
-The public HUD names the followed player. The speech context names that same
-visible player and supplies relevant dated evidence. A coarse `movement-seen`
+`CameraDirector` samples an 18–26 second dwell once per confirmed camera and
+rotates through the least recently watched identities in the current presented
+selector. When due, it pauses new normal commentary admission at an actual speech
+clause boundary, fences and cancels remaining old-focus speech/provider work, and
+requires the existing confirmed audio flush before dispatching a camera request. This
+prevents continuous P2 commentary from starving rotation. P0/P1 retain priority;
+failed cancellation never authorizes a cut. Normal commentary stays paused until
+a matching newer presented camera epoch, rejection or the five-second timeout.
+An accepted command alone never confirms a camera or advances a target's visit.
+
+The server checks public roster permission, exact scope, freshness and its
+eight-second minimum dwell. Selection success does not depend on private life or
+pose availability. A fresh finite pose may position the canonical camera; otherwise
+the selected identity and current eye are retained without announcing why. The
+server damps ordinary following before radius, viewport, LOS and fact projection;
+cuts, long gaps, discontinuities and blocked wall corners snap instead. The client
+uses that canonical eye directly, with actual render-pose/projection and fog checks
+before ACK; it never interpolates a hole between camera epochs.
+
+If no alternate selector target is eligible, the director uses authored room
+anchors. A continuously fresh empty view can seek another target after ten seconds
+on the confirmed camera and five seconds of observed emptiness. Missing/stale
+frames do not count. Rejections and missing confirmations back off, without
+treating a rejected target as visited; discussion, voting and GameOver hold
+selection. Fair selection does not promise a visible player in every frame.
+
+The public HUD names the selected player. Narration of that player's actions
+still requires a currently visible actor and relevant dated evidence; a selected
+but unseen identity does not create a `player_watch` observation. A coarse
+`movement-seen`
 fact describes visible movement at its observation time, never a destination or
 private intention. Its label is the public name, room is the observed room, and
 value is 1 north, 2 northeast, 3 east, 4 southeast, 5 south, 6 southwest, 7 west,

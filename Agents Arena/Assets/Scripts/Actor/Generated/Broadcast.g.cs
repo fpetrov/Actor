@@ -36,59 +36,63 @@ namespace AgentsArena.ActorProtocol.V1 {
             "Y3QYByABKAIingEKDkJyb2FkY2FzdEFjdG9yEhAKCGFjdG9yX2lkGAEgASgJ",
             "EhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIJCgF4GAMgASgCEgkKAXkYBCABKAIS",
             "EgoKdmVsb2NpdHlfeBgFIAEoAhISCgp2ZWxvY2l0eV95GAYgASgCEg4KBmZh",
-            "Y2luZxgHIAEoDRIWCg5jb3NtZXRpY19pbmRleBgIIAEoDSKEAQoNQnJvYWRj",
-            "YXN0Qm9keRIPCgdib2R5X2lkGAEgASgJEhcKD3ZpY3RpbV9hY3Rvcl9pZBgC",
-            "IAEoCRIbChN2aWN0aW1fZGlzcGxheV9uYW1lGAMgASgJEgkKAXgYBCABKAIS",
-            "CQoBeRgFIAEoAhIWCg5jb3NtZXRpY19pbmRleBgGIAEoDSKmAwoWQnJvYWRj",
-            "YXN0RWRpdG9yaWFsRmFjdBITCgtldmlkZW5jZV9pZBgBIAEoCRIPCgd2ZXJz",
-            "aW9uGAIgASgEEkEKBGtpbmQYAyABKA4yMy5hY3Rvci5leHRlbnNpb25zLmFn",
-            "ZW50c19hcmVuYS52MS5Ccm9hZGNhc3RGYWN0S2luZBIXCg9zb3VyY2VfZXZl",
-            "bnRfaWQYBCABKAkSEwoLc3ViamVjdF9pZHMYBSADKAkSEQoJcHJlZGljYXRl",
-            "GAYgASgJEhsKE29ic2VydmVkX2F0X3VuaXhfbXMYByABKAMSJAoccmV0ZW50",
-            "aW9uX2V4cGlyZXNfYXRfdW5peF9tcxgIIAEoAxIQCghwcmlvcml0eRgJIAEo",
-            "DRIRCgl0b3BpY19rZXkYCiABKAkSEgoKdW5yZXNvbHZlZBgLIAEoCBIMCgR0",
-            "ZXh0GAwgASgJEg8KB3Jvb21faWQYDSABKAkSEAoIYWN0b3JfaWQYDiABKAkS",
-            "FwoPdGFyZ2V0X2FjdG9yX2lkGA8gASgJEg0KBXZhbHVlGBAgASgSEg0KBWxh",
-            "YmVsGBEgASgJIukBChBCcm9hZGNhc3RNZWV0aW5nEhIKCm1lZXRpbmdfaWQY",
-            "ASABKAkSUAoMcGFydGljaXBhbnRzGAIgAygLMjouYWN0b3IuZXh0ZW5zaW9u",
-            "cy5hZ2VudHNfYXJlbmEudjEuU29jaWFsTWVldGluZ1BhcnRpY2lwYW50EkEK",
-            "BnJlc3VsdBgDIAMoCzIxLmFjdG9yLmV4dGVuc2lvbnMuYWdlbnRzX2FyZW5h",
-            "LnYxLlNvY2lhbFZvdGVUYWxseRIYChBlamVjdGVkX2FjdG9yX2lkGAQgASgJ",
-            "EhIKCnJlc29sdXRpb24YBSABKAkiwAEKFEJyb2FkY2FzdEZpbmFsUGxheWVy",
-            "EhAKCGFjdG9yX2lkGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRJECglh",
-            "bGlnbm1lbnQYAyABKA4yMS5hY3Rvci5leHRlbnNpb25zLmFnZW50c19hcmVu",
-            "YS52MS5Tb2NpYWxBbGlnbm1lbnQSOgoEbGlmZRgEIAEoDjIsLmFjdG9yLmV4",
-            "dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLlNvY2lhbExpZmUi6QcKDUJyb2Fk",
-            "Y2FzdFZpZXcSPwoFc2NvcGUYASABKAsyMC5hY3Rvci5leHRlbnNpb25zLmFn",
-            "ZW50c19hcmVuYS52MS5Ccm9hZGNhc3RTY29wZRIQCghzZXF1ZW5jZRgCIAEo",
-            "BBIZChFzZW1hbnRpY19yZXZpc2lvbhgDIAEoBBIbChNvYnNlcnZlZF9hdF91",
-            "bml4X21zGAQgASgDEhoKEmV4cGlyZXNfYXRfdW5peF9tcxgFIAEoAxJBCgZj",
-            "YW1lcmEYBiABKAsyMS5hY3Rvci5leHRlbnNpb25zLmFnZW50c19hcmVuYS52",
-            "MS5Ccm9hZGNhc3RDYW1lcmESPAoFcGhhc2UYByABKA4yLS5hY3Rvci5leHRl",
-            "bnNpb25zLmFnZW50c19hcmVuYS52MS5Tb2NpYWxQaGFzZRIWCg5waGFzZV9y",
-            "ZXZpc2lvbhgIIAEoBBIdChVwaGFzZV9lbmRzX2F0X3VuaXhfbXMYCSABKAMS",
-            "HAoUY3Jld190YXNrc19jb21wbGV0ZWQYCiABKA0SFgoOdGFza190aHJlc2hv",
-            "bGQYCyABKA0SQAoGYWN0b3JzGAwgAygLMjAuYWN0b3IuZXh0ZW5zaW9ucy5h",
-            "Z2VudHNfYXJlbmEudjEuQnJvYWRjYXN0QWN0b3ISPwoGYm9kaWVzGA0gAygL",
-            "Mi8uYWN0b3IuZXh0ZW5zaW9ucy5hZ2VudHNfYXJlbmEudjEuQnJvYWRjYXN0",
-            "Qm9keRJDCgdtZWV0aW5nGA4gASgLMjIuYWN0b3IuZXh0ZW5zaW9ucy5hZ2Vu",
-            "dHNfYXJlbmEudjEuQnJvYWRjYXN0TWVldGluZxIYChBlbWVyZ2VuY3lfYWN0",
-            "aXZlGA8gASgIEiEKGWVtZXJnZW5jeV9lbmRzX2F0X3VuaXhfbXMYECABKAMS",
-            "GQoRZW1lcmdlbmN5X3Jvb21faWQYESABKAkSRwoFZmFjdHMYEiADKAsyOC5h",
-            "Y3Rvci5leHRlbnNpb25zLmFnZW50c19hcmVuYS52MS5Ccm9hZGNhc3RFZGl0",
-            "b3JpYWxGYWN0EhwKFHJldm9rZWRfZXZpZGVuY2VfaWRzGBMgAygJEhAKCHRl",
-            "cm1pbmFsGBQgASgIEkcKDHdpbm5pbmdfc2lkZRgVIAEoDjIxLmFjdG9yLmV4",
-            "dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLlNvY2lhbEFsaWdubWVudBISCgp3",
-            "aW5fcmVhc29uGBYgASgJEk0KDWZpbmFsX3BsYXllcnMYFyADKAsyNi5hY3Rv",
-            "ci5leHRlbnNpb25zLmFnZW50c19hcmVuYS52MS5Ccm9hZGNhc3RGaW5hbFBs",
-            "YXllciI8ChRCcm9hZGNhc3RFdmlkZW5jZVJlZhITCgtldmlkZW5jZV9pZBgB",
-            "IAEoCRIPCgd2ZXJzaW9uGAIgASgEIqMCChhCcm9hZGNhc3RQcmVzZW50YXRp",
-            "b25BY2sSPwoFc2NvcGUYASABKAsyMC5hY3Rvci5leHRlbnNpb25zLmFnZW50",
-            "c19hcmVuYS52MS5Ccm9hZGNhc3RTY29wZRIZChFyZW5kZXJlZF9zZXF1ZW5j",
-            "ZRgCIAEoBBIVCg1mcmFtZV9jb3VudGVyGAMgASgEEiEKGXByZXNlbnRlZF9h",
-            "dF9tb25vdG9uaWNfbXMYBCABKAESDQoFd2lkdGgYBSABKA0SDgoGaGVpZ2h0",
-            "GAYgASgNElIKEnByZXNlbnRlZF9ldmlkZW5jZRgHIAMoCzI2LmFjdG9yLmV4",
-            "dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLkJyb2FkY2FzdEV2aWRlbmNlUmVm",
+            "Y2luZxgHIAEoDRIWCg5jb3NtZXRpY19pbmRleBgIIAEoDSI/ChVCcm9hZGNh",
+            "c3RDYW1lcmFUYXJnZXQSEAoIYWN0b3JfaWQYASABKAkSFAoMZGlzcGxheV9u",
+            "YW1lGAIgASgJIoQBCg1Ccm9hZGNhc3RCb2R5Eg8KB2JvZHlfaWQYASABKAkS",
+            "FwoPdmljdGltX2FjdG9yX2lkGAIgASgJEhsKE3ZpY3RpbV9kaXNwbGF5X25h",
+            "bWUYAyABKAkSCQoBeBgEIAEoAhIJCgF5GAUgASgCEhYKDmNvc21ldGljX2lu",
+            "ZGV4GAYgASgNIqYDChZCcm9hZGNhc3RFZGl0b3JpYWxGYWN0EhMKC2V2aWRl",
+            "bmNlX2lkGAEgASgJEg8KB3ZlcnNpb24YAiABKAQSQQoEa2luZBgDIAEoDjIz",
+            "LmFjdG9yLmV4dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLkJyb2FkY2FzdEZh",
+            "Y3RLaW5kEhcKD3NvdXJjZV9ldmVudF9pZBgEIAEoCRITCgtzdWJqZWN0X2lk",
+            "cxgFIAMoCRIRCglwcmVkaWNhdGUYBiABKAkSGwoTb2JzZXJ2ZWRfYXRfdW5p",
+            "eF9tcxgHIAEoAxIkChxyZXRlbnRpb25fZXhwaXJlc19hdF91bml4X21zGAgg",
+            "ASgDEhAKCHByaW9yaXR5GAkgASgNEhEKCXRvcGljX2tleRgKIAEoCRISCgp1",
+            "bnJlc29sdmVkGAsgASgIEgwKBHRleHQYDCABKAkSDwoHcm9vbV9pZBgNIAEo",
+            "CRIQCghhY3Rvcl9pZBgOIAEoCRIXCg90YXJnZXRfYWN0b3JfaWQYDyABKAkS",
+            "DQoFdmFsdWUYECABKBISDQoFbGFiZWwYESABKAki6QEKEEJyb2FkY2FzdE1l",
+            "ZXRpbmcSEgoKbWVldGluZ19pZBgBIAEoCRJQCgxwYXJ0aWNpcGFudHMYAiAD",
+            "KAsyOi5hY3Rvci5leHRlbnNpb25zLmFnZW50c19hcmVuYS52MS5Tb2NpYWxN",
+            "ZWV0aW5nUGFydGljaXBhbnQSQQoGcmVzdWx0GAMgAygLMjEuYWN0b3IuZXh0",
+            "ZW5zaW9ucy5hZ2VudHNfYXJlbmEudjEuU29jaWFsVm90ZVRhbGx5EhgKEGVq",
+            "ZWN0ZWRfYWN0b3JfaWQYBCABKAkSEgoKcmVzb2x1dGlvbhgFIAEoCSLAAQoU",
+            "QnJvYWRjYXN0RmluYWxQbGF5ZXISEAoIYWN0b3JfaWQYASABKAkSFAoMZGlz",
+            "cGxheV9uYW1lGAIgASgJEkQKCWFsaWdubWVudBgDIAEoDjIxLmFjdG9yLmV4",
+            "dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLlNvY2lhbEFsaWdubWVudBI6CgRs",
+            "aWZlGAQgASgOMiwuYWN0b3IuZXh0ZW5zaW9ucy5hZ2VudHNfYXJlbmEudjEu",
+            "U29jaWFsTGlmZSK6CAoNQnJvYWRjYXN0VmlldxI/CgVzY29wZRgBIAEoCzIw",
+            "LmFjdG9yLmV4dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLkJyb2FkY2FzdFNj",
+            "b3BlEhAKCHNlcXVlbmNlGAIgASgEEhkKEXNlbWFudGljX3JldmlzaW9uGAMg",
+            "ASgEEhsKE29ic2VydmVkX2F0X3VuaXhfbXMYBCABKAMSGgoSZXhwaXJlc19h",
+            "dF91bml4X21zGAUgASgDEkEKBmNhbWVyYRgGIAEoCzIxLmFjdG9yLmV4dGVu",
+            "c2lvbnMuYWdlbnRzX2FyZW5hLnYxLkJyb2FkY2FzdENhbWVyYRI8CgVwaGFz",
+            "ZRgHIAEoDjItLmFjdG9yLmV4dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLlNv",
+            "Y2lhbFBoYXNlEhYKDnBoYXNlX3JldmlzaW9uGAggASgEEh0KFXBoYXNlX2Vu",
+            "ZHNfYXRfdW5peF9tcxgJIAEoAxIcChRjcmV3X3Rhc2tzX2NvbXBsZXRlZBgK",
+            "IAEoDRIWCg50YXNrX3RocmVzaG9sZBgLIAEoDRJACgZhY3RvcnMYDCADKAsy",
+            "MC5hY3Rvci5leHRlbnNpb25zLmFnZW50c19hcmVuYS52MS5Ccm9hZGNhc3RB",
+            "Y3RvchI/CgZib2RpZXMYDSADKAsyLy5hY3Rvci5leHRlbnNpb25zLmFnZW50",
+            "c19hcmVuYS52MS5Ccm9hZGNhc3RCb2R5EkMKB21lZXRpbmcYDiABKAsyMi5h",
+            "Y3Rvci5leHRlbnNpb25zLmFnZW50c19hcmVuYS52MS5Ccm9hZGNhc3RNZWV0",
+            "aW5nEhgKEGVtZXJnZW5jeV9hY3RpdmUYDyABKAgSIQoZZW1lcmdlbmN5X2Vu",
+            "ZHNfYXRfdW5peF9tcxgQIAEoAxIZChFlbWVyZ2VuY3lfcm9vbV9pZBgRIAEo",
+            "CRJHCgVmYWN0cxgSIAMoCzI4LmFjdG9yLmV4dGVuc2lvbnMuYWdlbnRzX2Fy",
+            "ZW5hLnYxLkJyb2FkY2FzdEVkaXRvcmlhbEZhY3QSHAoUcmV2b2tlZF9ldmlk",
+            "ZW5jZV9pZHMYEyADKAkSEAoIdGVybWluYWwYFCABKAgSRwoMd2lubmluZ19z",
+            "aWRlGBUgASgOMjEuYWN0b3IuZXh0ZW5zaW9ucy5hZ2VudHNfYXJlbmEudjEu",
+            "U29jaWFsQWxpZ25tZW50EhIKCndpbl9yZWFzb24YFiABKAkSTQoNZmluYWxf",
+            "cGxheWVycxgXIAMoCzI2LmFjdG9yLmV4dGVuc2lvbnMuYWdlbnRzX2FyZW5h",
+            "LnYxLkJyb2FkY2FzdEZpbmFsUGxheWVyEk8KDmNhbWVyYV90YXJnZXRzGBgg",
+            "AygLMjcuYWN0b3IuZXh0ZW5zaW9ucy5hZ2VudHNfYXJlbmEudjEuQnJvYWRj",
+            "YXN0Q2FtZXJhVGFyZ2V0IjwKFEJyb2FkY2FzdEV2aWRlbmNlUmVmEhMKC2V2",
+            "aWRlbmNlX2lkGAEgASgJEg8KB3ZlcnNpb24YAiABKAQixQIKGEJyb2FkY2Fz",
+            "dFByZXNlbnRhdGlvbkFjaxI/CgVzY29wZRgBIAEoCzIwLmFjdG9yLmV4dGVu",
+            "c2lvbnMuYWdlbnRzX2FyZW5hLnYxLkJyb2FkY2FzdFNjb3BlEhkKEXJlbmRl",
+            "cmVkX3NlcXVlbmNlGAIgASgEEhUKDWZyYW1lX2NvdW50ZXIYAyABKAQSIQoZ",
+            "cHJlc2VudGVkX2F0X21vbm90b25pY19tcxgEIAEoARINCgV3aWR0aBgFIAEo",
+            "DRIOCgZoZWlnaHQYBiABKA0SUgoScHJlc2VudGVkX2V2aWRlbmNlGAcgAygL",
+            "MjYuYWN0b3IuZXh0ZW5zaW9ucy5hZ2VudHNfYXJlbmEudjEuQnJvYWRjYXN0",
+            "RXZpZGVuY2VSZWYSIAoYY2FtZXJhX3RhcmdldHNfcHJlc2VudGVkGAggASgI",
             "IrQBCiFCcm9hZGNhc3RQcmVzZW50ZWRWaWV3T2JzZXJ2YXRpb24SPQoEdmll",
             "dxgBIAEoCzIvLmFjdG9yLmV4dGVuc2lvbnMuYWdlbnRzX2FyZW5hLnYxLkJy",
             "b2FkY2FzdFZpZXcSUAoMcHJlc2VudGF0aW9uGAIgASgLMjouYWN0b3IuZXh0",
@@ -111,13 +115,14 @@ namespace AgentsArena.ActorProtocol.V1 {
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastScope), global::AgentsArena.ActorProtocol.V1.BroadcastScope.Parser, new[]{ "BroadcastSessionId", "MatchId", "ObserverId", "ConnectionGeneration", "ViewEpoch" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastCamera), global::AgentsArena.ActorProtocol.V1.BroadcastCamera.Parser, new[]{ "AnchorId", "FocusActorId", "X", "Y", "VisibilityRadius", "OrthographicSize", "Aspect" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastActor), global::AgentsArena.ActorProtocol.V1.BroadcastActor.Parser, new[]{ "ActorId", "DisplayName", "X", "Y", "VelocityX", "VelocityY", "Facing", "CosmeticIndex" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastCameraTarget), global::AgentsArena.ActorProtocol.V1.BroadcastCameraTarget.Parser, new[]{ "ActorId", "DisplayName" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastBody), global::AgentsArena.ActorProtocol.V1.BroadcastBody.Parser, new[]{ "BodyId", "VictimActorId", "VictimDisplayName", "X", "Y", "CosmeticIndex" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastEditorialFact), global::AgentsArena.ActorProtocol.V1.BroadcastEditorialFact.Parser, new[]{ "EvidenceId", "Version", "Kind", "SourceEventId", "SubjectIds", "Predicate", "ObservedAtUnixMs", "RetentionExpiresAtUnixMs", "Priority", "TopicKey", "Unresolved", "Text", "RoomId", "ActorId", "TargetActorId", "Value", "Label" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastMeeting), global::AgentsArena.ActorProtocol.V1.BroadcastMeeting.Parser, new[]{ "MeetingId", "Participants", "Result", "EjectedActorId", "Resolution" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastFinalPlayer), global::AgentsArena.ActorProtocol.V1.BroadcastFinalPlayer.Parser, new[]{ "ActorId", "DisplayName", "Alignment", "Life" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastView), global::AgentsArena.ActorProtocol.V1.BroadcastView.Parser, new[]{ "Scope", "Sequence", "SemanticRevision", "ObservedAtUnixMs", "ExpiresAtUnixMs", "Camera", "Phase", "PhaseRevision", "PhaseEndsAtUnixMs", "CrewTasksCompleted", "TaskThreshold", "Actors", "Bodies", "Meeting", "EmergencyActive", "EmergencyEndsAtUnixMs", "EmergencyRoomId", "Facts", "RevokedEvidenceIds", "Terminal", "WinningSide", "WinReason", "FinalPlayers" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastView), global::AgentsArena.ActorProtocol.V1.BroadcastView.Parser, new[]{ "Scope", "Sequence", "SemanticRevision", "ObservedAtUnixMs", "ExpiresAtUnixMs", "Camera", "Phase", "PhaseRevision", "PhaseEndsAtUnixMs", "CrewTasksCompleted", "TaskThreshold", "Actors", "Bodies", "Meeting", "EmergencyActive", "EmergencyEndsAtUnixMs", "EmergencyRoomId", "Facts", "RevokedEvidenceIds", "Terminal", "WinningSide", "WinReason", "FinalPlayers", "CameraTargets" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastEvidenceRef), global::AgentsArena.ActorProtocol.V1.BroadcastEvidenceRef.Parser, new[]{ "EvidenceId", "Version" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastPresentationAck), global::AgentsArena.ActorProtocol.V1.BroadcastPresentationAck.Parser, new[]{ "Scope", "RenderedSequence", "FrameCounter", "PresentedAtMonotonicMs", "Width", "Height", "PresentedEvidence" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastPresentationAck), global::AgentsArena.ActorProtocol.V1.BroadcastPresentationAck.Parser, new[]{ "Scope", "RenderedSequence", "FrameCounter", "PresentedAtMonotonicMs", "Width", "Height", "PresentedEvidence", "CameraTargetsPresented" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastPresentedViewObservation), global::AgentsArena.ActorProtocol.V1.BroadcastPresentedViewObservation.Parser, new[]{ "View", "Presentation" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastSelectViewCommand), global::AgentsArena.ActorProtocol.V1.BroadcastSelectViewCommand.Parser, new[]{ "Scope", "CorrelationId", "AnchorId", "FocusActorId", "ExpiresAtUnixMs" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::AgentsArena.ActorProtocol.V1.BroadcastViewSelectionResultEvent), global::AgentsArena.ActorProtocol.V1.BroadcastViewSelectionResultEvent.Parser, new[]{ "Scope", "CorrelationId", "Accepted", "ReasonCode" }, null, null, null, null)
@@ -1365,6 +1370,245 @@ namespace AgentsArena.ActorProtocol.V1 {
 
   }
 
+  /// <summary>
+  /// Public camera-selector identity, not a sighting or a live-player roster.
+  /// Membership is stable for the match; no role, life, room or position is sent.
+  /// </summary>
+  [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
+  public sealed partial class BroadcastCameraTarget : pb::IMessage<BroadcastCameraTarget>
+  #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      , pb::IBufferMessage
+  #endif
+  {
+    private static readonly pb::MessageParser<BroadcastCameraTarget> _parser = new pb::MessageParser<BroadcastCameraTarget>(() => new BroadcastCameraTarget());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pb::MessageParser<BroadcastCameraTarget> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[3]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public BroadcastCameraTarget() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public BroadcastCameraTarget(BroadcastCameraTarget other) : this() {
+      actorId_ = other.actorId_;
+      displayName_ = other.displayName_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public BroadcastCameraTarget Clone() {
+      return new BroadcastCameraTarget(this);
+    }
+
+    /// <summary>Field number for the "actor_id" field.</summary>
+    public const int ActorIdFieldNumber = 1;
+    private string actorId_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string ActorId {
+      get { return actorId_; }
+      set {
+        actorId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "display_name" field.</summary>
+    public const int DisplayNameFieldNumber = 2;
+    private string displayName_ = "";
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public string DisplayName {
+      get { return displayName_; }
+      set {
+        displayName_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override bool Equals(object other) {
+      return Equals(other as BroadcastCameraTarget);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool Equals(BroadcastCameraTarget other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (ActorId != other.ActorId) return false;
+      if (DisplayName != other.DisplayName) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (ActorId.Length != 0) hash ^= ActorId.GetHashCode();
+      if (DisplayName.Length != 0) hash ^= DisplayName.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void WriteTo(pb::CodedOutputStream output) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      output.WriteRawMessage(this);
+    #else
+      if (ActorId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(ActorId);
+      }
+      if (DisplayName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DisplayName);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
+      if (ActorId.Length != 0) {
+        output.WriteRawTag(10);
+        output.WriteString(ActorId);
+      }
+      if (DisplayName.Length != 0) {
+        output.WriteRawTag(18);
+        output.WriteString(DisplayName);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(ref output);
+      }
+    }
+    #endif
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public int CalculateSize() {
+      int size = 0;
+      if (ActorId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ActorId);
+      }
+      if (DisplayName.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(DisplayName);
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(BroadcastCameraTarget other) {
+      if (other == null) {
+        return;
+      }
+      if (other.ActorId.Length != 0) {
+        ActorId = other.ActorId;
+      }
+      if (other.DisplayName.Length != 0) {
+        DisplayName = other.DisplayName;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public void MergeFrom(pb::CodedInputStream input) {
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+      input.ReadRawMessage(this);
+    #else
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 10: {
+            ActorId = input.ReadString();
+            break;
+          }
+          case 18: {
+            DisplayName = input.ReadString();
+            break;
+          }
+        }
+      }
+    #endif
+    }
+
+    #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    void pb::IBufferMessage.InternalMergeFrom(ref pb::ParseContext input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+      if ((tag & 7) == 4) {
+        // Abort on any end group tag.
+        return;
+      }
+      switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
+            break;
+          case 10: {
+            ActorId = input.ReadString();
+            break;
+          }
+          case 18: {
+            DisplayName = input.ReadString();
+            break;
+          }
+        }
+      }
+    }
+    #endif
+
+  }
+
   [global::System.Diagnostics.DebuggerDisplayAttribute("{ToString(),nq}")]
   public sealed partial class BroadcastBody : pb::IMessage<BroadcastBody>
   #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
@@ -1380,7 +1624,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[3]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[4]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1763,7 +2007,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[4]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[5]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2551,7 +2795,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[5]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[6]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -2881,7 +3125,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[6]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[7]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3197,7 +3441,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[7]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[8]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -3240,6 +3484,7 @@ namespace AgentsArena.ActorProtocol.V1 {
       winningSide_ = other.winningSide_;
       winReason_ = other.winReason_;
       finalPlayers_ = other.finalPlayers_.Clone();
+      cameraTargets_ = other.cameraTargets_.Clone();
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -3535,6 +3780,20 @@ namespace AgentsArena.ActorProtocol.V1 {
       get { return finalPlayers_; }
     }
 
+    /// <summary>Field number for the "camera_targets" field.</summary>
+    public const int CameraTargetsFieldNumber = 24;
+    private static readonly pb::FieldCodec<global::AgentsArena.ActorProtocol.V1.BroadcastCameraTarget> _repeated_cameraTargets_codec
+        = pb::FieldCodec.ForMessage(194, global::AgentsArena.ActorProtocol.V1.BroadcastCameraTarget.Parser);
+    private readonly pbc::RepeatedField<global::AgentsArena.ActorProtocol.V1.BroadcastCameraTarget> cameraTargets_ = new pbc::RepeatedField<global::AgentsArena.ActorProtocol.V1.BroadcastCameraTarget>();
+    /// <summary>
+    /// &lt;=6, public selector identities only.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public pbc::RepeatedField<global::AgentsArena.ActorProtocol.V1.BroadcastCameraTarget> CameraTargets {
+      get { return cameraTargets_; }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -3573,6 +3832,7 @@ namespace AgentsArena.ActorProtocol.V1 {
       if (WinningSide != other.WinningSide) return false;
       if (WinReason != other.WinReason) return false;
       if(!finalPlayers_.Equals(other.finalPlayers_)) return false;
+      if(!cameraTargets_.Equals(other.cameraTargets_)) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -3603,6 +3863,7 @@ namespace AgentsArena.ActorProtocol.V1 {
       if (WinningSide != global::AgentsArena.ActorProtocol.V1.SocialAlignment.Unspecified) hash ^= WinningSide.GetHashCode();
       if (WinReason.Length != 0) hash ^= WinReason.GetHashCode();
       hash ^= finalPlayers_.GetHashCode();
+      hash ^= cameraTargets_.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -3698,6 +3959,7 @@ namespace AgentsArena.ActorProtocol.V1 {
         output.WriteString(WinReason);
       }
       finalPlayers_.WriteTo(output, _repeated_finalPlayers_codec);
+      cameraTargets_.WriteTo(output, _repeated_cameraTargets_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -3785,6 +4047,7 @@ namespace AgentsArena.ActorProtocol.V1 {
         output.WriteString(WinReason);
       }
       finalPlayers_.WriteTo(ref output, _repeated_finalPlayers_codec);
+      cameraTargets_.WriteTo(ref output, _repeated_cameraTargets_codec);
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -3854,6 +4117,7 @@ namespace AgentsArena.ActorProtocol.V1 {
         size += 2 + pb::CodedOutputStream.ComputeStringSize(WinReason);
       }
       size += finalPlayers_.CalculateSize(_repeated_finalPlayers_codec);
+      size += cameraTargets_.CalculateSize(_repeated_cameraTargets_codec);
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -3934,6 +4198,7 @@ namespace AgentsArena.ActorProtocol.V1 {
         WinReason = other.WinReason;
       }
       finalPlayers_.Add(other.finalPlayers_);
+      cameraTargets_.Add(other.cameraTargets_);
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -4052,6 +4317,10 @@ namespace AgentsArena.ActorProtocol.V1 {
           }
           case 186: {
             finalPlayers_.AddEntriesFrom(input, _repeated_finalPlayers_codec);
+            break;
+          }
+          case 194: {
+            cameraTargets_.AddEntriesFrom(input, _repeated_cameraTargets_codec);
             break;
           }
         }
@@ -4174,6 +4443,10 @@ namespace AgentsArena.ActorProtocol.V1 {
             finalPlayers_.AddEntriesFrom(ref input, _repeated_finalPlayers_codec);
             break;
           }
+          case 194: {
+            cameraTargets_.AddEntriesFrom(ref input, _repeated_cameraTargets_codec);
+            break;
+          }
         }
       }
     }
@@ -4196,7 +4469,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[8]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[9]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4434,7 +4707,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[9]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[10]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -4461,6 +4734,7 @@ namespace AgentsArena.ActorProtocol.V1 {
       width_ = other.width_;
       height_ = other.height_;
       presentedEvidence_ = other.presentedEvidence_.Clone();
+      cameraTargetsPresented_ = other.cameraTargetsPresented_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -4556,6 +4830,21 @@ namespace AgentsArena.ActorProtocol.V1 {
       get { return presentedEvidence_; }
     }
 
+    /// <summary>Field number for the "camera_targets_presented" field.</summary>
+    public const int CameraTargetsPresentedFieldNumber = 8;
+    private bool cameraTargetsPresented_;
+    /// <summary>
+    /// Entire selector was readable in this real rendered frame.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
+    public bool CameraTargetsPresented {
+      get { return cameraTargetsPresented_; }
+      set {
+        cameraTargetsPresented_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override bool Equals(object other) {
@@ -4578,6 +4867,7 @@ namespace AgentsArena.ActorProtocol.V1 {
       if (Width != other.Width) return false;
       if (Height != other.Height) return false;
       if(!presentedEvidence_.Equals(other.presentedEvidence_)) return false;
+      if (CameraTargetsPresented != other.CameraTargetsPresented) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -4592,6 +4882,7 @@ namespace AgentsArena.ActorProtocol.V1 {
       if (Width != 0) hash ^= Width.GetHashCode();
       if (Height != 0) hash ^= Height.GetHashCode();
       hash ^= presentedEvidence_.GetHashCode();
+      if (CameraTargetsPresented != false) hash ^= CameraTargetsPresented.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -4635,6 +4926,10 @@ namespace AgentsArena.ActorProtocol.V1 {
         output.WriteUInt32(Height);
       }
       presentedEvidence_.WriteTo(output, _repeated_presentedEvidence_codec);
+      if (CameraTargetsPresented != false) {
+        output.WriteRawTag(64);
+        output.WriteBool(CameraTargetsPresented);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -4670,6 +4965,10 @@ namespace AgentsArena.ActorProtocol.V1 {
         output.WriteUInt32(Height);
       }
       presentedEvidence_.WriteTo(ref output, _repeated_presentedEvidence_codec);
+      if (CameraTargetsPresented != false) {
+        output.WriteRawTag(64);
+        output.WriteBool(CameraTargetsPresented);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -4699,6 +4998,9 @@ namespace AgentsArena.ActorProtocol.V1 {
         size += 1 + pb::CodedOutputStream.ComputeUInt32Size(Height);
       }
       size += presentedEvidence_.CalculateSize(_repeated_presentedEvidence_codec);
+      if (CameraTargetsPresented != false) {
+        size += 1 + 1;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -4733,6 +5035,9 @@ namespace AgentsArena.ActorProtocol.V1 {
         Height = other.Height;
       }
       presentedEvidence_.Add(other.presentedEvidence_);
+      if (other.CameraTargetsPresented != false) {
+        CameraTargetsPresented = other.CameraTargetsPresented;
+      }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
 
@@ -4781,6 +5086,10 @@ namespace AgentsArena.ActorProtocol.V1 {
           }
           case 58: {
             presentedEvidence_.AddEntriesFrom(input, _repeated_presentedEvidence_codec);
+            break;
+          }
+          case 64: {
+            CameraTargetsPresented = input.ReadBool();
             break;
           }
         }
@@ -4833,6 +5142,10 @@ namespace AgentsArena.ActorProtocol.V1 {
             presentedEvidence_.AddEntriesFrom(ref input, _repeated_presentedEvidence_codec);
             break;
           }
+          case 64: {
+            CameraTargetsPresented = input.ReadBool();
+            break;
+          }
         }
       }
     }
@@ -4855,7 +5168,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[10]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[11]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5108,7 +5421,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[11]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[12]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -5185,7 +5498,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     public const int FocusActorIdFieldNumber = 4;
     private string focusActorId_ = "";
     /// <summary>
-    /// Must already be in the current permitted view.
+    /// Must be an actually presented public camera target (or visible legacy actor).
     /// </summary>
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
@@ -5469,7 +5782,7 @@ namespace AgentsArena.ActorProtocol.V1 {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public static pbr::MessageDescriptor Descriptor {
-      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[12]; }
+      get { return global::AgentsArena.ActorProtocol.V1.BroadcastReflection.Descriptor.MessageTypes[13]; }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]

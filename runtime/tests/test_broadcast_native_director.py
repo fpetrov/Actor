@@ -30,8 +30,11 @@ class Clock:
 
 
 class Scheduler:
-    def __init__(self): self.view=None; self.camera_change_allowed=True; self.run_calls=0
+    def __init__(self): self.view=None; self.camera_change_allowed=True; self.run_calls=0;self.camera_requested=False
     def observe(self,view): self.view=view; return True
+    def _fresh(self):return self.view is not None
+    def request_camera_change(self,scope):self.camera_requested=True;return self.view.scope==scope
+    def release_camera_change(self):self.camera_requested=False
     async def run(self): self.run_calls+=1; await asyncio.Event().wait()
     def report(self): return {}
     idle_deadline=0
@@ -61,7 +64,7 @@ class Harness:
         self.run.observer_id=OBSERVER;self.run.scheduler=Scheduler();self.run.session=Session()
         self.run.projector=ArenaBroadcastProjector(observer_id=OBSERVER,broadcast_session_id=SESSION,
             match_id=MATCH,clock=clock.monotonic)
-    def frame(self,*,epoch=1,generation=1,anchor="main-hall",focus="",actors=("first","second"),terminal=False):
+    def frame(self,*,epoch=1,generation=1,anchor="main-hall",focus="",actors=("first","second"),terminal=False,targets=(),facts=()):
         self.source_sequence+=1;self.frame_sequence+=1
         value=pb.BroadcastPresentedViewObservation()
         value.view.scope.CopyFrom(pb.BroadcastScope(broadcast_session_id=SESSION,match_id=MATCH,
@@ -72,8 +75,12 @@ class Harness:
         value.view.phase=social.SOCIAL_PHASE_GAME_OVER if terminal else social.SOCIAL_PHASE_EXPLORATION
         value.view.terminal=terminal
         for actor in actors:value.view.actors.add(actor_id=actor,display_name="Имя "+actor)
+        for actor in targets:value.view.camera_targets.add(actor_id=actor,display_name="Имя "+actor)
+        for fact in facts:value.view.facts.add().CopyFrom(fact)
         value.presentation.scope.CopyFrom(value.view.scope);value.presentation.rendered_sequence=value.view.sequence
         value.presentation.frame_counter=value.view.sequence;value.presentation.width=800;value.presentation.height=600
+        value.presentation.camera_targets_presented=bool(targets)
+        for fact in facts:value.presentation.presented_evidence.add(evidence_id=fact.evidence_id,version=fact.version)
         entry=CachedPayload(OBSERVER,PRESENTED,self.source_sequence,self.frame_sequence,value,self.clock.monotonic())
         self.run.session.world.apply_observations([entry],self.source_sequence,self.frame_sequence)
         self.run.session.last_received_sequence=self.source_sequence
@@ -242,3 +249,11 @@ async def test_terminal_capture_and_numeric_only_director_status(harness):
     assert report["terminal"] is True and all(type(value)in(int,bool)for value in report.values())
     encoded=json.dumps(report)
     assert all(identity not in encoded for identity in (SESSION,MATCH,OBSERVER,"first","correlation_id"))
+
+
+@pytest.mark.parametrize("event,expected",[("obs_owned_stream_start_failed","obs_owned_stream_start_failed"),
+    ("unrecognized_graph_event","obs_graph_changed")])
+async def test_stream_start_failure_keeps_exact_safe_diagnostic_without_loosening_unknown_events(harness,event,expected):
+    run=harness.run;run._flags["obs"]=True
+    run._obs_event(event)
+    assert run._failure==expected and run._failed.is_set()
