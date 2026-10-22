@@ -145,8 +145,14 @@ namespace Actor.Lobby
             view.PlayerName = view.PlayerName.Trim();
             if (!JoinTicketCodec.IsPlayerNameValid(view.PlayerName))
             { view.Status = "Use 2–24 letters, numbers, spaces, dots, underscores or hyphens for your name."; return false; }
-            PlayerPrefs.SetString("Actor.PlayerName", view.PlayerName);
-            PlayerPrefs.Save(); return true;
+            // Several local agents share Unity's preferences. Launcher-owned
+            // names belong to that launch and must not replace the Human's name.
+            if (!Application.isBatchMode && Array.IndexOf(Environment.GetCommandLineArgs(), "--auto-room") < 0)
+            {
+                PlayerPrefs.SetString("Actor.PlayerName", view.PlayerName);
+                PlayerPrefs.Save();
+            }
+            return true;
         }
         private void OnConnected()
         {

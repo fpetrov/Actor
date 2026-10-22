@@ -1,0 +1,54 @@
+{
+  "cognitive": {
+    "brain": {
+      "decision_timeout": 120,
+      "max_decisions": 24,
+      "objective_timeout": 1100,
+      "usage_limit_tokens": 1500000,
+      "usage_warning_tokens": 800000
+    },
+    "participation": {
+      "duration_seconds": 1100,
+      "max_decisions": 384,
+      "max_episodes": 64,
+      "max_tokens": 3000000
+    }
+  },
+  "environment": {
+    "attempts": [
+      9,
+      10,
+      11,
+      12
+    ],
+    "basis": "Root notified after attempt10 completed and attempt11 started.",
+    "condition": "Concurrent local Unity QA client/Linux server builds were run by the lease owner during this series; exact overlap and CPU contention were not instrumented.",
+    "local_client_output_and_remote_staging_unchanged_by_owner": true,
+    "performance_or_winrate_benchmark": false,
+    "purpose": "Functional actual independent Codex multiplayer and stream-counter acceptance",
+    "recorded_at_unix_ms": 1792627756542,
+    "schema": "actor.acceptance-environment.v1"
+  },
+  "profile": {
+    "calibration_step_ms": 2500,
+    "discussion_ms": 90000,
+    "kill_cooldown_ms": 30000,
+    "maintenance_hold_ms": 12000,
+    "match_duration_ms": 900000,
+    "sensor_sample_delay_ms": 8000,
+    "task_threshold": 8,
+    "voting_ms": 60000
+  },
+  "provider_reported_cost_usd": null,
+  "reported_usage": {
+    "cached_input_tokens": 3608960,
+    "input_tokens": 5203251,
+    "output_tokens": 38872,
+    "total_tokens": 5242123
+  },
+  "runtime_tests": 545,
+  "schema": "actor.release-series-conditions.v1",
+  "scope": "No limits or objectives changed across09\u201312; pricing was not inferred.",
+  "source": "Unchanged copied cognitive config and lease-owner-confirmed public model profile",
+  "source_sha256": "28a5b4e45288b11a3d75baffc2bdee38733ab96805e3c0675209ee59287c8ad9"
+}

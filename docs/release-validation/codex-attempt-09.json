@@ -1,0 +1,222 @@
+{
+  "checks": {
+    "agent-01_no_cleanup_errors": true,
+    "agent-01_no_direct_model_tools": true,
+    "agent-01_official_model_turns": true,
+    "agent-01_postgame_fields": true,
+    "agent-01_postgame_identity": true,
+    "agent-01_terminal_identity": true,
+    "agent-02_no_cleanup_errors": true,
+    "agent-02_no_direct_model_tools": true,
+    "agent-02_official_model_turns": true,
+    "agent-02_postgame_fields": true,
+    "agent-02_postgame_identity": true,
+    "agent-02_terminal_identity": true,
+    "agent-03_no_cleanup_errors": true,
+    "agent-03_no_direct_model_tools": true,
+    "agent-03_official_model_turns": true,
+    "agent-03_postgame_fields": true,
+    "agent-03_postgame_identity": true,
+    "agent-03_terminal_identity": true,
+    "agent-04_no_cleanup_errors": true,
+    "agent-04_no_direct_model_tools": true,
+    "agent-04_official_model_turns": true,
+    "agent-04_postgame_fields": true,
+    "agent-04_postgame_identity": true,
+    "agent-04_terminal_identity": true,
+    "all_participants_present": true,
+    "bounded_ordered_terminal_replay": true,
+    "client_runtime_terminal_agreement": true,
+    "composition": true,
+    "distinct_actor_sessions": true,
+    "identical_authoritative_summaries": true,
+    "independent_agent_profile": true,
+    "independent_bridge_credential_sha256": true,
+    "independent_launches": true,
+    "independent_memory_database": true,
+    "isolated_processes": true,
+    "known_terminal_outcome": true,
+    "owned_process_cleanup": true,
+    "recorded_process_identities": true,
+    "required_real_codex_on_both_sides": true,
+    "required_real_gameplay": true,
+    "supervisor_completed": true
+  },
+  "display_fps_measured": false,
+  "duration_ms": 288414,
+  "gameplay_counts": {
+    "body_reports": 0,
+    "crew_tasks_completed": 2,
+    "kills": 1,
+    "meetings": 1,
+    "sabotages": 0,
+    "votes": 3
+  },
+  "headless_clients": true,
+  "participants": [
+    {
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+      "brain": "codex",
+      "codex_turns": 13,
+      "codex_usage": {
+        "cached_input_tokens": 160896,
+        "input_tokens": 294030,
+        "output_tokens": 3621,
+        "total_tokens": 297651
+      },
+      "decisions": 13,
+      "delivered_messages_received": 8,
+      "episodes": 6,
+      "grpc_bytes_received": 306451,
+      "grpc_bytes_sent": 15416750,
+      "headless_loop_rate": 58.185850131188225,
+      "life": "SOCIAL_LIFE_ALIVE",
+      "model_tool_calls": 0,
+      "participant": "agent-01",
+      "skills": {
+        "agents-arena.call-meeting": 1,
+        "agents-arena.cast-vote": 1,
+        "agents-arena.evade-threat": 1,
+        "agents-arena.navigate-social-room": 1,
+        "agents-arena.perform-task": 2,
+        "agents-arena.ready-for-match": 1,
+        "agents-arena.wait-for-match-event": 2,
+        "other": 2
+      },
+      "survival_ms": 288414,
+      "survived": true,
+      "team_won": true,
+      "turn_latency_seconds": {
+        "count": 13,
+        "max": 27.574125375016592,
+        "mean": 11.807721990465115
+      }
+    },
+    {
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+      "brain": "codex",
+      "codex_turns": 14,
+      "codex_usage": {
+        "cached_input_tokens": 256512,
+        "input_tokens": 382480,
+        "output_tokens": 2953,
+        "total_tokens": 385433
+      },
+      "decisions": 14,
+      "delivered_messages_received": 8,
+      "episodes": 5,
+      "grpc_bytes_received": 359268,
+      "grpc_bytes_sent": 15382429,
+      "headless_loop_rate": 58.13488060071069,
+      "life": "SOCIAL_LIFE_ALIVE",
+      "model_tool_calls": 0,
+      "participant": "agent-02",
+      "skills": {
+        "agents-arena.cast-vote": 1,
+        "agents-arena.navigate-social-room": 1,
+        "agents-arena.perform-task": 5,
+        "agents-arena.ready-for-match": 1,
+        "agents-arena.wait-for-match-event": 1,
+        "other": 3
+      },
+      "survival_ms": 288414,
+      "survived": true,
+      "team_won": true,
+      "turn_latency_seconds": {
+        "count": 14,
+        "max": 21.203881166002247,
+        "mean": 9.5651440741328
+      }
+    },
+    {
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_IMPOSTOR",
+      "brain": "codex",
+      "codex_turns": 19,
+      "codex_usage": {
+        "cached_input_tokens": 374528,
+        "input_tokens": 547052,
+        "output_tokens": 5446,
+        "total_tokens": 552498
+      },
+      "decisions": 19,
+      "delivered_messages_received": 8,
+      "episodes": 5,
+      "grpc_bytes_received": 223447,
+      "grpc_bytes_sent": 15009745,
+      "headless_loop_rate": 58.38785774292299,
+      "life": "SOCIAL_LIFE_EJECTED",
+      "model_tool_calls": 0,
+      "participant": "agent-03",
+      "skills": {
+        "actor.send-message": 1,
+        "actor.wait": 1,
+        "agents-arena.cast-vote": 1,
+        "agents-arena.fake-task": 1,
+        "agents-arena.kill-visible-actor": 2,
+        "agents-arena.navigate-social-room": 3,
+        "agents-arena.ready-for-match": 1,
+        "agents-arena.sabotage": 1,
+        "agents-arena.wait-for-match-event": 2,
+        "other": 5
+      },
+      "survival_ms": 288414,
+      "survived": false,
+      "team_won": false,
+      "turn_latency_seconds": {
+        "count": 19,
+        "max": 28.50791358295828,
+        "mean": 9.73707686400188
+      }
+    },
+    {
+      "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+      "brain": "codex",
+      "codex_turns": 5,
+      "codex_usage": {
+        "cached_input_tokens": 60160,
+        "input_tokens": 105025,
+        "output_tokens": 797,
+        "total_tokens": 105822
+      },
+      "decisions": 5,
+      "delivered_messages_received": 0,
+      "episodes": 2,
+      "grpc_bytes_received": 209106,
+      "grpc_bytes_sent": 13910864,
+      "headless_loop_rate": 58.16532573368712,
+      "life": "SOCIAL_LIFE_DEAD",
+      "model_tool_calls": 0,
+      "participant": "agent-04",
+      "skills": {
+        "agents-arena.navigate-social-room": 1,
+        "agents-arena.perform-task": 2,
+        "agents-arena.ready-for-match": 1
+      },
+      "survival_ms": 75818,
+      "survived": false,
+      "team_won": true,
+      "turn_latency_seconds": {
+        "count": 5,
+        "max": 15.45325545797823,
+        "mean": 6.9893450000090525
+      }
+    }
+  ],
+  "passed": true,
+  "privacy": "postgame outcomes and whitelisted aggregate counters only",
+  "real_codex_on_both_sides": true,
+  "reason": "impostors_eliminated",
+  "replay_kind_counts": {
+    "ejection": 1,
+    "kill": 1,
+    "match_ended": 1,
+    "match_started": 1,
+    "meeting": 1,
+    "phase": 6,
+    "task": 2,
+    "vote": 3
+  },
+  "schema": "actor.social-match-evaluation.v1",
+  "scope": "consistent dedicated-server postgame summaries, ordinary client terminal proofs and independent Runtime reports",
+  "winner": "SOCIAL_ALIGNMENT_CREW"
+}

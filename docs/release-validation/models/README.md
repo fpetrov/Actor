@@ -88,3 +88,23 @@ python3 -m unittest discover -s spikes/release-validation -p 'test_series.py'
 ```
 
 Exit 1 ожидаем: snapshot сохраняется, но общие gates серии не выполнены. Число последующих незарегистрированных директорий при повторе может увеличиться. Исторический JSON здесь фиксирован. 26 offline-тестов helper проходят; это тесты строгого санитайзера на синтетических данных, а не дополнительные живые матчи. Новый bounded provider telemetry fallback проверен против production scalar projector; он не дописывает прежние01–07 и не ослабляет GameOver. Публичные JSON содержат только разрешённые агрегаты и metadata; промпты, рассуждения, сообщения, credentials, actor/session IDs, PID и частные файловые деревья не копируются.
+
+
+## Продолжение09–12: финальный full-binding cohort
+
+[Реестр01–12](attempts-01-12-registry.json) и [строгий индекс01–12](attempts-01-12.json) сохраняют все12 попыток:6 принятых GameOver и6 прежних неудач (2 setup,4 Runtime). Исторические JSON не перезаписываются. [Cohort08–12](full-binding-08-12.json) отдельно подтверждает пять полных матчей: во всех20 точных accepted sessions присутствуют новые WaitingPlayers, TaskWork, TaskStep и KillPresentation capabilities. Снимок08 использует Runtime534;09–12 — Runtime545 с новым public SDK stream collector.
+
+| Попытка | Authoritative outcome | Длительность | Kills / tasks / body reports / meetings / votes | Typed Discussion senders | Полный цикл |
+|---|---|---:|---|---:|---|
+|09|Crew, impostors_eliminated|288,414 с|1 /2 /0 /1 /3|3|Нет: body report отсутствует|
+|10|Impostor, parity|137,881 с|2 /4 /0 /0 /0|0|Нет|
+|11|Crew, tasks_completed|169,599 с|0 /8 /0 /0 /0|0|Нет: валидная победа по задачам|
+|12|Crew, impostors_eliminated|274,770 с|1 /6 /1 /1 /3|3|Да|
+
+Каждая строка повторно проверена неизменённым строгим evaluator по четырём официальным независимым CodexBrain, собственным terminal client proofs и одинаковому server-authoritative summary. Full cycle12 дополнительно соединяет actual model-selected Skills с kill, body-report и ballot replay; succeeded typed Discuss требует настоящего server receipt и подтверждается counters отправителей/получателей. Это не доказательство того, что конкретный текст был прочитан чужим Brain, и не вывод о внутренней мотивации модели.
+
+[Фактическая проверка collector](attempts-09-12-stream.json):195 SDK turns,28 interrupted decisions; все28 прерванных и все остальные решения имеют наблюдённые sdk_item_lifecycle counters, всего0 model tools. Ноль не выведен из конфигурации. Первичная публичная subscription собирает started/completed items до actual terminal; неизвестный item, неполный stream или отмена до terminal оставляют coverage неизвестным. Старые отсутствующие counters не восстановлены задним числом.
+
+[Условия](attempts-09-12-conditions.json): четыре plain Codex peers с одной Objective, свежими bridge ports, SQLite/profile/process groups. Публичный профиль и budgets неизменны. Во время серии root параллельно выполнял локальные Unity QA builds; точное пересечение и CPU contention не измерялись. Поэтому результаты не являются сравнением FPS, latency или win rate. Известный расход09–12:input5 203 251 (из них cached3 608 960), output38 872, всего5 242 123 токена. Cached input входит в input; стоимость неизвестна, долларовой оценки нет.
+
+[Очистка](attempts-09-12-cleanup.json): все принадлежащие четырём запускам группы завершены, staging API показывает0 rooms, дополнительных13 AI-v-AI запусков нет. UDP socket этот helper отдельно не измерял. Ручной review08 сохранён только в прежнем узком смысле attempted behavioral disguise; он не доказывает убедительную ложь или изменение чужих убеждений. Общий helper gate не является полным release/native/TLS acceptance.

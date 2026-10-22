@@ -1,0 +1,290 @@
+{
+  "actual_model_tools": 0,
+  "audits": [
+    {
+      "attempt": 9,
+      "owned_cleanup_complete": true,
+      "participants": [
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 13,
+          "interrupted_decisions": 2,
+          "interrupted_with_observed_counter": 2,
+          "participant": 1,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 11,
+            "interrupted": 2
+          },
+          "sdk_unique_turns": 13
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 14,
+          "interrupted_decisions": 2,
+          "interrupted_with_observed_counter": 2,
+          "participant": 2,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 12,
+            "interrupted": 2
+          },
+          "sdk_unique_turns": 14
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 19,
+          "interrupted_decisions": 1,
+          "interrupted_with_observed_counter": 1,
+          "participant": 3,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 18,
+            "interrupted": 1
+          },
+          "sdk_unique_turns": 19
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 5,
+          "interrupted_decisions": 1,
+          "interrupted_with_observed_counter": 1,
+          "participant": 4,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 4,
+            "interrupted": 1
+          },
+          "sdk_unique_turns": 5
+        }
+      ],
+      "passed": true,
+      "runtime_tests": 545,
+      "schema": "actor.sdk-stream-live-coverage.v1",
+      "scope": "Own postgame official SDK lifecycle counters and accepted session metadata; no prompts/items/identities/arguments retained"
+    },
+    {
+      "attempt": 10,
+      "owned_cleanup_complete": true,
+      "participants": [
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 11,
+          "interrupted_decisions": 2,
+          "interrupted_with_observed_counter": 2,
+          "participant": 1,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 9,
+            "interrupted": 2
+          },
+          "sdk_unique_turns": 11
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 12,
+          "interrupted_decisions": 0,
+          "interrupted_with_observed_counter": 0,
+          "participant": 2,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 12
+          },
+          "sdk_unique_turns": 12
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 12,
+          "interrupted_decisions": 1,
+          "interrupted_with_observed_counter": 1,
+          "participant": 3,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 11,
+            "interrupted": 1
+          },
+          "sdk_unique_turns": 12
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 6,
+          "interrupted_decisions": 1,
+          "interrupted_with_observed_counter": 1,
+          "participant": 4,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 5,
+            "interrupted": 1
+          },
+          "sdk_unique_turns": 6
+        }
+      ],
+      "passed": true,
+      "runtime_tests": 545,
+      "schema": "actor.sdk-stream-live-coverage.v1",
+      "scope": "Own postgame official SDK lifecycle counters and accepted session metadata; no prompts/items/identities/arguments retained"
+    },
+    {
+      "attempt": 11,
+      "owned_cleanup_complete": true,
+      "participants": [
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 16,
+          "interrupted_decisions": 2,
+          "interrupted_with_observed_counter": 2,
+          "participant": 1,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 14,
+            "interrupted": 2
+          },
+          "sdk_unique_turns": 16
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 8,
+          "interrupted_decisions": 2,
+          "interrupted_with_observed_counter": 2,
+          "participant": 2,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 6,
+            "interrupted": 2
+          },
+          "sdk_unique_turns": 8
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 10,
+          "interrupted_decisions": 3,
+          "interrupted_with_observed_counter": 3,
+          "participant": 3,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 7,
+            "interrupted": 3
+          },
+          "sdk_unique_turns": 10
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 10,
+          "interrupted_decisions": 2,
+          "interrupted_with_observed_counter": 2,
+          "participant": 4,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 8,
+            "interrupted": 2
+          },
+          "sdk_unique_turns": 10
+        }
+      ],
+      "passed": true,
+      "runtime_tests": 545,
+      "schema": "actor.sdk-stream-live-coverage.v1",
+      "scope": "Own postgame official SDK lifecycle counters and accepted session metadata; no prompts/items/identities/arguments retained"
+    },
+    {
+      "attempt": 12,
+      "owned_cleanup_complete": true,
+      "participants": [
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 18,
+          "interrupted_decisions": 2,
+          "interrupted_with_observed_counter": 2,
+          "participant": 1,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 16,
+            "interrupted": 2
+          },
+          "sdk_unique_turns": 18
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 20,
+          "interrupted_decisions": 4,
+          "interrupted_with_observed_counter": 4,
+          "participant": 2,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 16,
+            "interrupted": 4
+          },
+          "sdk_unique_turns": 20
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 3,
+          "interrupted_decisions": 0,
+          "interrupted_with_observed_counter": 0,
+          "participant": 3,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 3
+          },
+          "sdk_unique_turns": 3
+        },
+        {
+          "actual_tool_calls": 0,
+          "all_decisions_with_observed_counter": true,
+          "all_m8_bindings_present": true,
+          "decision_rows": 18,
+          "interrupted_decisions": 3,
+          "interrupted_with_observed_counter": 3,
+          "participant": 4,
+          "sdk_status_coverage_complete": true,
+          "sdk_terminal_status_counts": {
+            "completed": 15,
+            "interrupted": 3
+          },
+          "sdk_unique_turns": 18
+        }
+      ],
+      "passed": true,
+      "runtime_tests": 545,
+      "schema": "actor.sdk-stream-live-coverage.v1",
+      "scope": "Own postgame official SDK lifecycle counters and accepted session metadata; no prompts/items/identities/arguments retained"
+    }
+  ],
+  "interrupted_decisions": 28,
+  "interrupted_with_actual_counter": 28,
+  "passed": true,
+  "runtime_source_tests": 545,
+  "schema": "actor.sdk-stream-live-coverage-set.v1",
+  "scope": "Four actual postgame official SDK stream lifecycle audits; no items/prompts/identities/arguments retained",
+  "sdk_unique_turns": 195
+}

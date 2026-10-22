@@ -1,0 +1,48 @@
+{
+  "attempts": [
+    {
+      "all_four_accepted_session_bindings": true,
+      "attempt": "codex-08",
+      "runtime_counter_snapshot": "534 before public stream collector",
+      "strict_authoritative_gameover": true
+    },
+    {
+      "all_four_accepted_session_bindings": true,
+      "attempt": "codex-09",
+      "runtime_counter_snapshot": "545 public SDK lifecycle collector",
+      "strict_authoritative_gameover": true
+    },
+    {
+      "all_four_accepted_session_bindings": true,
+      "attempt": "codex-10",
+      "runtime_counter_snapshot": "545 public SDK lifecycle collector",
+      "strict_authoritative_gameover": true
+    },
+    {
+      "all_four_accepted_session_bindings": true,
+      "attempt": "codex-11",
+      "runtime_counter_snapshot": "545 public SDK lifecycle collector",
+      "strict_authoritative_gameover": true
+    },
+    {
+      "all_four_accepted_session_bindings": true,
+      "attempt": "codex-12",
+      "runtime_counter_snapshot": "545 public SDK lifecycle collector",
+      "strict_authoritative_gameover": true
+    }
+  ],
+  "limits": [
+    "Runtime counter instrumentation changed after08; no historical tool counter was backfilled.",
+    "This is functional launch/gameplay evidence, not a controlled performance or win-rate experiment."
+  ],
+  "matches": 5,
+  "participants_per_match": 4,
+  "passed": true,
+  "required_capabilities": [
+    "agents-arena.social-waiting-players",
+    "agents-arena.social-task-work",
+    "agents-arena.social-task-step",
+    "agents-arena.social-kill-presentation"
+  ],
+  "schema": "actor.m8-full-binding-cohort.v1"
+}

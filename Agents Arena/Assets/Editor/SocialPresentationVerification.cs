@@ -28,10 +28,33 @@ namespace Actor.Editor
             public string schema="actor.social-static-presentation.v2";
             public string scope="Actual saved Social world, scene camera configuration and URP 2D rendering. No actors, fog, IMGUI, Human input or native-window visual acceptance.";
             public bool passed, rendered, source_map_unchanged, saved_scene_unchanged, atmospheric_art_active, legacy_atlas_inactive, all_enabled_sprites_original, bounded_art, floor_bounds_match,
-                scene_setup_restored, render_request_supported, actual_renderer_2d;
-            public int width=Width,height=Height,quantized_colors, enabled_sprite_count, original_texture_count, disabled_legacy_atlas_sprites, maximum_texture_dimension;
+                scene_setup_restored, render_request_supported, actual_renderer_2d, production_shaders_validated, error_magenta_absent;
+            public int width=Width,height=Height,quantized_colors, enabled_sprite_count, original_texture_count, disabled_legacy_atlas_sprites, maximum_texture_dimension, error_magenta_pixels;
             public string graphics_api, pipeline, renderer, failure_code="", source_map_sha256, saved_scene_sha256;
             public CameraSetup camera;
+        }
+
+        // Build callers use this after BuildPlayer has compiled target variants.
+        // A Null graphics device cannot prove runtime support; it must still
+        // reject compiler errors, without failing on unrelated URP warnings.
+        public static void ValidateProductionShaders(bool requireSupported=false)
+        {
+            bool graphics=SystemInfo.graphicsDeviceType!=GraphicsDeviceType.Null;
+            foreach(string filename in new[]{"AtmosphericPalette","StaticSurface"})
+            {
+                var shader=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Art/Atmospheric/"+filename+".shader");
+                if(shader==null)throw new InvalidOperationException("Missing production shader: "+filename);
+                if(graphics)
+                {
+                    var material=new Material(shader){hideFlags=HideFlags.HideAndDontSave};
+                    try{ShaderUtil.CompilePass(material,0,true);}
+                    finally{UnityEngine.Object.DestroyImmediate(material);}
+                }
+                if(ShaderUtil.ShaderHasError(shader))
+                    throw new InvalidOperationException("Production shader compilation failed: "+filename);
+                if(requireSupported&&graphics&&!shader.isSupported)
+                    throw new InvalidOperationException("Production shader is unsupported on this graphics device: "+filename);
+            }
         }
 
         [MenuItem("Actor/Render Static Social World")]
@@ -58,6 +81,7 @@ namespace Actor.Editor
                 }
                 if(SystemInfo.graphicsDeviceType==GraphicsDeviceType.Null)
                     throw new InvalidOperationException("A real Editor graphics device is required.");
+                ValidateProductionShaders(true);report.production_shaders_validated=true;
                 mapBefore=Hash(Atlas);sceneBefore=Hash(SocialWorldBuilder.SocialScene);
                 EditorSceneManager.OpenScene(SocialWorldBuilder.SocialScene,OpenSceneMode.Single);changedScenes=true;
                 var source=UnityEngine.Object.FindObjectsByType<Camera>().Single(camera=>camera.GetComponent<CameraFollow2D>()!=null);
@@ -111,9 +135,15 @@ namespace Actor.Editor
                 image=new Texture2D(Width,Height,TextureFormat.RGB24,false){hideFlags=HideFlags.HideAndDontSave};
                 image.ReadPixels(new Rect(0,0,Width,Height),0,0);image.Apply(false,false);
                 // A blank/failed render is not successful visual evidence.
-                report.quantized_colors=image.GetPixels32().Where((_,index)=>index%23==0)
+                var pixels=image.GetPixels32();
+                report.quantized_colors=pixels.Where((_,index)=>index%23==0)
                     .Select(pixel=>(pixel.r>>4)<<8|(pixel.g>>4)<<4|(pixel.b>>4)).Distinct().Count();
                 if(report.quantized_colors<16)throw new InvalidOperationException("The render target is unexpectedly flat.");
+                // None of the twelve immutable world textures contains opaque
+                // error magenta. Colour diversity alone can accept a failed pass.
+                report.error_magenta_pixels=pixels.Count(pixel=>pixel.r>240&&pixel.g<32&&pixel.b>240);
+                report.error_magenta_absent=report.error_magenta_pixels==0;
+                if(!report.error_magenta_absent)throw new InvalidOperationException("The render target contains shader-error magenta.");
                 File.WriteAllBytes(imagePath,image.EncodeToPNG());report.rendered=true;
             }
             catch(Exception error){failure=error;report.failure_code=error.GetType().Name;}
@@ -134,7 +164,7 @@ namespace Actor.Editor
                 }
                 catch(Exception error){if(failure==null)failure=error;report.failure_code=error.GetType().Name;}
                 report.passed=report.rendered&&report.source_map_unchanged&&report.saved_scene_unchanged&&report.atmospheric_art_active&&report.legacy_atlas_inactive&&report.all_enabled_sprites_original&&report.bounded_art&&report.floor_bounds_match
-                    &&report.scene_setup_restored&&report.render_request_supported&&report.actual_renderer_2d&&failure==null;
+                    &&report.scene_setup_restored&&report.render_request_supported&&report.actual_renderer_2d&&report.production_shaders_validated&&report.error_magenta_absent&&failure==null;
                 File.WriteAllText(Path.Combine(directory,"presentation.json"),JsonUtility.ToJson(report,true)+"\n");
             }
             if(failure!=null)throw new InvalidOperationException("Static Social presentation rendering failed ("+report.failure_code+").",failure);

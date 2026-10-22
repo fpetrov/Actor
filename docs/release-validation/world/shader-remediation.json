@@ -1,0 +1,16 @@
+{
+  "schema": "actor.m8-static-shader-remediation.v1",
+  "native_failed_source": "35e99afa5f17d7115435902590b22242bae54fb0",
+  "native_failure": "Actor/Static Surface Vision unsupported; solid error-magenta wall landmark in800x600 windowed client extracted from verified archive. No gameplay/role assignment in this attempt.",
+  "diagnosis": "All four cached StaticSurface shader variants report syntax error: unexpected token point. HLSL primitive keyword used as local identifier.",
+  "fix": "Rename only vertex/fragment local identifiers; no material GUID, geometry, dynamic fog, LOS/range policy or actor/event/audio changes.",
+  "static_recheck": {
+    "graphics": "Metal",
+    "production_shaders_validated": true,
+    "error_magenta_pixels": 0,
+    "enabled_sprites": 125,
+    "proof": "shader-fix-static-world.json"
+  },
+  "added_gates": "BuildPlayer success is followed by checks of the two authored shaders before code signing/build stamp. Static renderer force-compiles and rejects unsupported shaders/error magenta. Null graphics builds check compiler errors without claiming runtime graphics support.",
+  "remaining_gate": "Actual fixed native fog/landmark visibility and full-client gameplay are separate, still pending at this snapshot."
+}

@@ -19,8 +19,8 @@ Shader "Actor/Static Surface Vision"
             Varyings Vert(Attributes i)
             {
                 UNITY_SETUP_INSTANCE_ID(i);SetUpSpriteInstanceProperties();Varyings o;
-                float3 point=UnityFlipSprite(i.positionOS,unity_SpriteProps.xy);
-                o.positionCS=TransformObjectToHClip(point);o.world=TransformObjectToWorld(point).xy;
+                float3 localPosition=UnityFlipSprite(i.positionOS,unity_SpriteProps.xy);
+                o.positionCS=TransformObjectToHClip(localPosition);o.world=TransformObjectToWorld(localPosition).xy;
                 o.uv=i.uv;o.color=i.color*unity_SpriteColor;return o;
             }
             half4 Frag(Varyings i):SV_Target
@@ -31,12 +31,12 @@ Shader "Actor/Static Surface Vision"
                 // East-facing cargo uses its sprite's vertical axis instead.
                 if(abs(_SurfaceEnd.y-_SurfaceStart.y)>abs(_SurfaceEnd.x-_SurfaceStart.x))
                     support=lerp(_SurfaceStart.xy,_SurfaceEnd.xy,saturate(i.uv.y));
-                float2 point=lerp(i.world,support,_SurfaceEye.w);
+                float2 visiblePosition=lerp(i.world,support,_SurfaceEye.w);
                 // Edit-mode art review has no local observer. Runtime renderers
                 // are disabled until the component installs a positive radius.
                 if(_SurfaceEye.z>0)
                 {
-                    float2 delta=point-_SurfaceEye.xy;
+                    float2 delta=visiblePosition-_SurfaceEye.xy;
                     clip(_SurfaceEye.z*_SurfaceEye.z-dot(delta,delta));
                 }
                 return SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv)*i.color;

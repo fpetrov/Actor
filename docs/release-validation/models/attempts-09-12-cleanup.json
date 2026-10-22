@@ -1,0 +1,16 @@
+{
+  "all_owned_cleanup_complete": true,
+  "control_plane_process_and_configuration_unchanged": true,
+  "created_at_unix_ms": 1792628284645,
+  "no_new_attempts_after_twelve": true,
+  "owned_attempt_process_groups_clear": {
+    "10": true,
+    "11": true,
+    "12": true,
+    "9": true
+  },
+  "schema": "actor.m8-model-lease-release.v1",
+  "source_untouched": true,
+  "staging_lobbies_zero": true,
+  "udp_port_observation": "not_measured_by_this_helper; lease owner may independently inspect"
+}

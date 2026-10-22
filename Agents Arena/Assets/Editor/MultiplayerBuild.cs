@@ -251,6 +251,7 @@ namespace Actor.Editor
             BuildReport report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result != BuildResult.Succeeded)
                 throw new InvalidOperationException("Build failed: " + report.summary.result + ", errors=" + report.summary.totalErrors);
+            SocialPresentationVerification.ValidateProductionShaders();
             if (options.target == BuildTarget.StandaloneOSX)
             {
                 // Unity can rewrite a nested library while retaining its old
