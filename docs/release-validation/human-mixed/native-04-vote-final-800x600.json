@@ -1,0 +1,20 @@
+{
+  "schema": "actor.rendered-ui.v2",
+  "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+  "phase": "Voting",
+  "screenshot": "native-04-vote-final-800x600.png",
+  "unity": "6000.6.4f1",
+  "graphics": "Metal",
+  "version": "0.9.0",
+  "width": 800,
+  "height": 600,
+  "frames": 4077,
+  "focused_frames": 4077,
+  "sample_seconds": 34.1994267757982,
+  "mean_fps": 119.21252442994621,
+  "frame_ms_p50": 8.329039439558983,
+  "frame_ms_p95": 9.128578938543797,
+  "frame_ms_p99": 9.333956986665726,
+  "headless": false,
+  "fullscreen": false
+}

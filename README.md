@@ -1,6 +1,6 @@
 # ACTOR
 
-ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Milestone 7 adds a separate Social Deduction mode with authoritative visibility, hidden affiliations, meetings and match-long agent participation. Sandbox preserves the station duties, asymmetric investigation, calibration and private communication from earlier milestones.
+ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Agents Arena 0.9.0 is the Milestone 8 limited test release candidate: a redesigned Social Deduction game for people and autonomous agents, with authoritative visibility, hidden affiliations, discussion and voting. Sandbox preserves the station duties, asymmetric investigation, calibration and private communication from earlier milestones.
 
 ## What ACTOR is
 
@@ -34,12 +34,12 @@ Action pipeline: Brain → typed Skill → cleanup/ownership → Game
 
 - **ACTOR SDK** — local UPM `packages/com.actor.sdk`, engine-independent Core/Standard protocol and typed registration.
 - **gRPC transport** — local UPM `com.actor.transport.grpc`, Grpc.Net.Client + native YetAnotherHttpHandler.
-- **Python Runtime 0.6.0** — descriptors/plugins, state cache, typed Skills, bounded message inboxes, event routing, context, private-data retention policies, memory, ObjectiveRunner and a generic match-episode coordinator.
+- **Python Runtime 0.7.0** — descriptors/plugins, typed Skills, event-driven cognition, bounded provenance and memory, match episodes, and installed `actorctl` onboarding and process ownership.
 - **Brains** — deterministic SequenceBrain and optional official `openai-codex==0.162.1`; model decisions occur at Skill boundaries or justified strategic events, with one active turn.
-- **Agents Arena 0.8.0** — Unity 6000.6.4f1; Sandbox's Main Hall ↔ Engineering and a separate four-room Social Deduction scene, with server physics, permitted observations and responsive owner prediction.
+- **Agents Arena 0.9.0** — Unity 6000.6.4f1; retained UI Toolkit player flows, original station/character art, tasks and recipient-scoped kill/death presentation; server physics, permitted observations and responsive owner prediction.
 - **Control Plane** — .NET 10 Minimal APIs, SQLite admission/process lifecycle; static website via nginx.
 
-Game 0.8.0, Arena extension 0.5.0, Runtime 0.6.0, ACTOR Core 1.0 and multiplayer admission protocol 3 are independent versions. Both Standard packages remain 0.1.0.
+Game 0.9.0, Arena extension 0.6.0, Runtime 0.7.0, ACTOR Core 1.0 and multiplayer admission protocol 4 are independent versions. Both Standard packages remain 0.1.0. Use matching game/admission versions together.
 
 **Website:** http://5.181.134.236/
 
@@ -47,7 +47,9 @@ Game 0.8.0, Arena extension 0.5.0, Runtime 0.6.0, ACTOR Core 1.0 and multiplayer
 
 ## Play
 
-Open `Agents Arena/` in Unity and `Assets/Scenes/Lobby.unity`, then press Play. Enter a player name and join a room from the list, enter a six-character RoomCode, or create a room. The macOS client is built at ignored `build/agents-arena-client/AgentsArena.app`. Move with WASD/arrow keys or a gamepad; use Leave room to return to the lobby.
+For Human play, use a matching macOS [release](https://github.com/fpetrov/Actor/releases) and follow the [installation instructions](docs/installation.md). The app defaults to an 800×600 window; Python, ACTOR Runtime and model credentials are optional and are not needed for Human play. Downloads use GitHub HTTPS; the current HTTP/UDP gameplay service remains a limited test RC, not a secure production service.
+
+For development, open `Agents Arena/` in Unity and `Assets/Scenes/Lobby.unity`, then press Play. Enter a player name and join a room from the list, enter a six-character RoomCode, or create a room. The macOS client is built at ignored `build/agents-arena-client/AgentsArena.app`. Move with WASD/arrow keys; E opens nearby actions and T opens communications. Select and explicitly confirm a ballot during Voting. Use Return to rooms after a match, or New expedition for a fresh room.
 
 Choose `Sandbox` for the existing investigation/calibration world or `SocialDeduction` for a social match. A room's mode is immutable. Social rules come from validated deployment configuration copied by the Control Plane to its dedicated server; players choose neither hidden assignments nor a scenario seed. See [Social Deduction](docs/social-deduction.md).
 
@@ -88,7 +90,9 @@ The six original sheets provide 48 complete character poses. Twelve idle/walk cl
 
 ## Verification and limits
 
-The final Milestone 7 Runtime source passed **491 Python tests**. A fresh Runtime 0.6.0 wheel also passed all **491 tests outside the checkout**, with generated resources and installed plugins, without Codex/Jev extras or model authentication. This verifies local Runtime behavior and packaging; it does not establish deployment, NGO privacy, Human acceptance or model intelligence. Actual runs, failures and exclusions belong to the [Social Deduction validation report](docs/social-deduction-validation/README.md). The four-real-Codex match finished Crew/tasks_completed; a separate real Crew case confirmed permitted body reporting, Discussion communication and voting. Production0.8.0 is deployed from89c00dd with matching build hashes and a passing ordinary-client admission smoke. Native Discussion/Voting/death screens remain visually unverified.
+Milestone 8 has **302 SDK/bridge C# tests**, **29 Control Plane tests** and **545 Runtime tests**, including a fresh auth-free wheel installation outside the checkout. Five accepted independent M8 Codex starts include two full social cycles. Two strict Human + three-Codex matches now join real native input and screenshots to matching authoritative results; one includes a server-recorded Human ballot. Native 800×600 checks cover discussion, voting, death, six-person rosters and a fresh rematch. These are bounded results: the [54-section release validation report](docs/release-validation/README.md) preserves failed attempts and the remaining audiovisual, performance, transport and platform limits. Full production acceptance is not claimed.
+
+Historical Milestone 7 Runtime source and its fresh Runtime 0.6.0 wheel passed **491 tests** each. Its four-real-Codex match finished Crew/tasks_completed; a separate real Crew case confirmed body reporting, Discussion and voting. At that milestone, release0.8.0 from89c00dd passed ordinary-client admission, while native Discussion/Voting/death screens were still unverified. See the [Milestone 7 validation report](docs/social-deduction-validation/README.md).
 
 Historical Milestone 6 local authority/protocol coverage included **162 SDK/bridge C# tests** and **52 schema-freshness checks**, including 40 incident-authority cases and 7 incident-protocol cases. Paired cases hold either role's complete evidence view equal, apart from opaque GUIDs, while the other view changes the supported origin. See the [Milestone 6 report](docs/investigation-validation/README.md) and [investigation architecture](docs/investigation.md) for its separate evidence and limits.
 
@@ -173,7 +177,7 @@ See [launch and isolation](docs/multi-agent.md),
 
 ## Sandbox role-based investigation
 
-With a matching 0.8.0 Sandbox lobby/client, launch the Engineer and Sheriff:
+With a matching 0.9.0 Sandbox lobby/client, launch the Engineer and Sheriff:
 
 ```bash
 python3 scripts/launch-investigation-agents.py --room ABC123

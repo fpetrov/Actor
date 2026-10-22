@@ -1,0 +1,119 @@
+{
+  "schema": "actor.human-mixed-evaluation.v1",
+  "category": "human_mixed",
+  "passed": true,
+  "status": "accepted",
+  "recorded_supervisor_status": "authoritative_match_completed",
+  "checks": {
+    "supervisor_completed": true,
+    "owned_model_cleanup_declared": true,
+    "isolation_declared": true,
+    "exactly_three_model_participants": true,
+    "all_model_artifacts_present": true,
+    "model_1_terminal_identity": true,
+    "model_1_ordinary_game_binding": true,
+    "model_1_official_closed_model": true,
+    "model_1_cleanup_errors_absent": true,
+    "model_2_terminal_identity": true,
+    "model_2_ordinary_game_binding": true,
+    "model_2_official_closed_model": true,
+    "model_2_cleanup_errors_absent": true,
+    "model_3_terminal_identity": true,
+    "model_3_ordinary_game_binding": true,
+    "model_3_official_closed_model": true,
+    "model_3_cleanup_errors_absent": true,
+    "independent_launches": true,
+    "independent_memory_database": true,
+    "independent_agent_profile": true,
+    "independent_bridge_credential_sha256": true,
+    "recorded_process_identities": true,
+    "three_model_process_groups_cleaned": true,
+    "identical_authoritative_summaries": true,
+    "distinct_three_runtime_sessions": true,
+    "exact_four_player_composition": true,
+    "known_gameplay_terminal_outcome": true,
+    "frozen_human_terminal_identity": true,
+    "complete_ordered_terminal_replay": true,
+    "summary_gameplay_counters_match_replay": true,
+    "postgame_lives_supported_by_replay": true,
+    "terminal_outcome_supported_by_gameplay": true,
+    "native_operator_identity": true,
+    "native_input_explicitly_declared": true,
+    "native_screenshots_bound_and_intact": true,
+    "claimed_human_report_has_server_replay": true,
+    "claimed_human_vote_has_server_replay": true
+  },
+  "winner": "SOCIAL_ALIGNMENT_IMPOSTOR",
+  "reason": "parity",
+  "duration_ms": 230017,
+  "gameplay_counts": {
+    "kills": 2,
+    "body_reports": 0,
+    "meetings": 0,
+    "votes": 0,
+    "crew_tasks_completed": 4,
+    "sabotages": 1
+  },
+  "model_participants": [
+    {
+      "codex_turns": 17,
+      "model_tool_calls": 0,
+      "reported_usage": {
+        "input_tokens": 664348,
+        "cached_input_tokens": 490496,
+        "output_tokens": 2511,
+        "total_tokens": 666859
+      }
+    },
+    {
+      "codex_turns": 15,
+      "model_tool_calls": 0,
+      "reported_usage": {
+        "input_tokens": 495184,
+        "cached_input_tokens": 378752,
+        "output_tokens": 2607,
+        "total_tokens": 497791
+      }
+    },
+    {
+      "codex_turns": 11,
+      "model_tool_calls": 0,
+      "reported_usage": {
+        "input_tokens": 311688,
+        "cached_input_tokens": 224128,
+        "output_tokens": 1338,
+        "total_tokens": 313026
+      }
+    }
+  ],
+  "human_server_actions": {
+    "body_reports": 0,
+    "votes": 0
+  },
+  "native_screenshot_count": 2,
+  "human_exit_evaluated": false,
+  "scope": "Three isolated official Codex terminal reports, four-player authoritative summary and frozen Human client/native operator consistency; screenshots and input declarations are not signed attestation",
+  "privacy": "Whitelisted aggregate counts and booleans only; no identities, paths, PIDs, chat, arguments or model context",
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "validation_mode": "default strict Human plus three official Codex",
+  "required_human_vote_checked": false,
+  "required_human_report_checked": false,
+  "full_social_cycle_claimed": false,
+  "human_actions_operator_declared": [
+    "move",
+    "ready"
+  ],
+  "observed_model_turns": 43,
+  "observed_interrupted_turns": 5,
+  "all_turn_tool_counts_observed": true,
+  "tool_counter_scope": "sdk_item_lifecycle",
+  "source_scope": "Clean source72b Human executable hash matches the extracted artifact. The reviewed supervisor pins this same extracted client path for all three Codex peers; no fresh per-peer executable process readback is claimed.",
+  "input_digests": {
+    "evaluation_sha256": "85fefb78c8464a74b13142446af370796530c04c052173a19297a4b8133f6a96",
+    "human-proof_sha256": "49a656e7dfa603f202316830f4476a8233308378aca49045dd3fe8d99bdf67e5",
+    "native-operator_sha256": "7cf2b86a2f3ffaca96cddace0f18a6a76f98f1a8e7dc77e5f0efe74de87cdb53",
+    "mixed-supervisor_sha256": "d31610eaf145e30949cda854326b4543be33fa977b1ce83703d62e9ac41a517c",
+    "processes_sha256": "09e30edb70cf66d3443210b4e6c11f10b1e5f90a84014367019702a189864db6",
+    "processes-after-cleanup_sha256": "3c1681e5ad67700ab07f14ef1069a6a6e17a9b9b0dba32bc7ac4cb39c64c42cd"
+  }
+}

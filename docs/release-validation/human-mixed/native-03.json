@@ -1,0 +1,106 @@
+{
+  "schema": "actor.native-mixed-observation.v1",
+  "category": "human_mixed",
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "strict_mixed_acceptance": true,
+  "strict_evaluation": "attempt-03.json",
+  "authoritative_gameplay_completed": true,
+  "duration_ms": 230017,
+  "winner": "SOCIAL_ALIGNMENT_IMPOSTOR",
+  "reason": "parity",
+  "gameplay_counts": {
+    "kills": 2,
+    "body_reports": 0,
+    "meetings": 0,
+    "votes": 0,
+    "crew_tasks_completed": 4,
+    "sabotages": 1
+  },
+  "human_server_actions": {
+    "body_reports": 0,
+    "votes": 0
+  },
+  "native_input_operator_declared": [
+    "ready",
+    "move"
+  ],
+  "human_eliminated": true,
+  "human_team_won": false,
+  "human_survived": false,
+  "own_death_replay_records": 1,
+  "native_alive_death_terminal_views_captured": true,
+  "native_human_terminal_frozen_before_leave": true,
+  "native_human_owner_executable_bound_to_clean72b": true,
+  "native_process_exit_evaluated": false,
+  "owned_model_process_groups_remaining": 0,
+  "owned_model_runtime_client_pids_remaining": 0,
+  "model_participants": 3,
+  "official_model_turns": 43,
+  "interrupted_model_turns": 5,
+  "observed_model_tool_calls": 0,
+  "all_turn_tool_counts_observed": true,
+  "tool_counter_scope": "sdk_item_lifecycle",
+  "full_social_cycle_claimed": false,
+  "frames": [
+    {
+      "view": "alive",
+      "image": "native-03-alive-800x600.png",
+      "image_sha256": "6582491c36128a7066a4c9ec5ae040a99a34a9dbd3165ec149fdb8d990e4678a",
+      "report": "native-03-alive-800x600.json",
+      "original_report_sha256": "1b780e5bc116d0bda1554f96084d4de618ecc4a257df62d37496547a66aa3120",
+      "phase": "Exploration",
+      "width": 800,
+      "height": 600,
+      "headless": false,
+      "fullscreen": false,
+      "metadata_copy_change": "Only screenshot basename rewritten; original frame metrics retained.",
+      "report_sha256": "b924817fd29eec5a4d870cbf2346bf6a65dba4c95ece6bc381de32c6a709963d"
+    },
+    {
+      "view": "death_view",
+      "image": "native-03-death-800x600.png",
+      "image_sha256": "bd3a2be8a4c997d07aca86b0824fd03133bd2fffe0d0c3c1afd3a329e200c53e",
+      "report": "native-03-death-800x600.json",
+      "original_report_sha256": "e89631c261240b9ed2e9c78e32edf4fc916d1b5b289aabeb41e4f524684608f0",
+      "phase": "Exploration",
+      "width": 800,
+      "height": 600,
+      "headless": false,
+      "fullscreen": false,
+      "metadata_copy_change": "Only screenshot basename rewritten; original frame metrics retained.",
+      "report_sha256": "962f1b906a809ee1c8ca31641e8c831f4f1afb4c04e6f2b2d0656ba80148bb52"
+    },
+    {
+      "view": "terminal",
+      "image": "native-03-gameover-800x600.png",
+      "image_sha256": "0faab23d42d1a4b352176a29820868a731802024275d01e8b182fff962499a08",
+      "report": "native-03-gameover-800x600.json",
+      "original_report_sha256": "547cdca406dae8f1bfbc742d7760a82e438657b218fc2a50273a9c037e40d430",
+      "phase": "GameOver",
+      "width": 800,
+      "height": 600,
+      "headless": false,
+      "fullscreen": false,
+      "metadata_copy_change": "Only screenshot basename rewritten; original frame metrics retained.",
+      "report_sha256": "1c2c288269b98ff28a7f41ec27d33d969dd750f3fe97105faa3bc381d07f8c14"
+    }
+  ],
+  "input_digests": {
+    "evaluation_sha256": "85fefb78c8464a74b13142446af370796530c04c052173a19297a4b8133f6a96",
+    "human-proof_sha256": "49a656e7dfa603f202316830f4476a8233308378aca49045dd3fe8d99bdf67e5",
+    "native-operator_sha256": "7cf2b86a2f3ffaca96cddace0f18a6a76f98f1a8e7dc77e5f0efe74de87cdb53",
+    "mixed-supervisor_sha256": "d31610eaf145e30949cda854326b4543be33fa977b1ce83703d62e9ac41a517c",
+    "processes_sha256": "09e30edb70cf66d3443210b4e6c11f10b1e5f90a84014367019702a189864db6",
+    "processes-after-cleanup_sha256": "3c1681e5ad67700ab07f14ef1069a6a6e17a9b9b0dba32bc7ac4cb39c64c42cd",
+    "native_owner_sha256": "223bbcea65eb69cf3b63c6d44f79fcd84f016d7f469e8cb40d87e1574aae241b"
+  },
+  "scope": "Completed native Human plus three official Codex peers on source72b. Actual Ready/movement declarations, own death view and common parity terminal; no native input attestation or complete social-cycle claim.",
+  "limits": [
+    "No Human chat, ballot, body report, task completion or kill input is claimed.",
+    "No Discussion, Voting or body-report phase occurred in this match.",
+    "Dead-keyboard blocking, kill-animation/audio timing and native process exit were not evaluated by this case.",
+    "Three unchanged PNGs are authorised ended-game views with synthetic QA nicknames and an ephemeral test room code; metadata contains no actor/session/match GUID, PID, credentials, raw chat or context.",
+    "Historical mixed attempts01/02 remain failed and are not overwritten.",
+    "No full screen-resolution or full release acceptance is inferred."
+  ]
+}

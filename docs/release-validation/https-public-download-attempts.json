@@ -1,0 +1,48 @@
+{
+  "schema": "actor.m8-public-download-attempts.v1",
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "release_url": "https://github.com/fpetrov/Actor/releases/tag/v0.9.0-rc.2",
+  "supervisor_attempts": 4,
+  "local_setup_failures": 3,
+  "accepted_download_attempts": 1,
+  "attempts": [
+    {
+      "attempt": 1,
+      "passed": false,
+      "stage": "release_metadata_tls",
+      "category": "python_certificate_verification_failed",
+      "asset_downloads_completed": 0,
+      "retained_log_sha256": "ba3b0fcb13e60ce9c97c462c1695437f84de19378d32f6dfa4417b94bb79280a",
+      "original_empty_output_preserved": true
+    },
+    {
+      "attempt": 2,
+      "passed": false,
+      "stage": "fresh_output_guard",
+      "category": "existing_output_directory_rejected",
+      "network_or_asset_download_started": false,
+      "retained_log_sha256": "8642bd08a8c94e7308108074a00606e8b5f80c2c91a6c3fbebc281e3f9ce6f50",
+      "ca_or_trust_change_performed": false
+    },
+    {
+      "attempt": 3,
+      "passed": false,
+      "stage": "prior_failure_metadata_preflight",
+      "category": "second_failure_category_unverified",
+      "network_or_asset_download_started": false,
+      "retained_log_sha256": "94d1033e474d58644253145499a80a5357177daa0b8d42ba8fae4897af53258e",
+      "failure_record_sha256": "87ef014a63a3b14803d5a423602a64ebfa8d89067de8b6f283c4067910e89acc",
+      "ca_or_trust_change_performed": false
+    },
+    {
+      "attempt": 4,
+      "passed": true,
+      "stage": "normal_system_curl_https",
+      "verified_assets": 7,
+      "checksum_entries": 6,
+      "tls_bypass_used": false,
+      "new_fresh_output_used": true
+    }
+  ],
+  "scope": "Distribution validation attempts only; these are not gameplay/model attempts or runtime failures."
+}

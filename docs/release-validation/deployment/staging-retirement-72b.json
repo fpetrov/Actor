@@ -1,0 +1,1 @@
+{"schema": "actor.staging-retirement.v1", "passed": true, "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980", "production_room_count_before": 0, "staging_room_count_before": 0, "exact_owned_cp_pidfd_exit": true, "staging_tcp5081_and_udp7781_free": true, "production_signalled": false, "captured_at_unix_ms": 1792636692485}

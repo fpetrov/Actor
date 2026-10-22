@@ -33,6 +33,8 @@ Those tests verify bounded, privacy-preserving report validation. They are not e
 
 The isolated plugin in this directory registers one fixture Brain, one terminal-approach Skill and a local policy subclass. Production Runtime and entrypoints remain unchanged. Install it only in the local validation environment:
 
+This M8 fixture targets Runtime 0.7.0; historical M7 reproduction uses its original checkout and dependency versions.
+
 ```sh
 build/runtime-venv/bin/python -m pip install -e spikes/social-protocol --no-deps --no-build-isolation
 ```

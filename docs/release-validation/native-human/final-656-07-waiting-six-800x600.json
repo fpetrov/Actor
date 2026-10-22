@@ -1,0 +1,20 @@
+{
+  "schema": "actor.rendered-ui.v2",
+  "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+  "phase": "WaitingForPlayers",
+  "screenshot": "final-656-07-waiting-six-800x600.png",
+  "unity": "6000.6.4f1",
+  "graphics": "Metal",
+  "version": "0.9.0",
+  "width": 800,
+  "height": 600,
+  "frames": 10762,
+  "focused_frames": 10762,
+  "sample_seconds": 89.72481770860031,
+  "mean_fps": 119.94451785850148,
+  "frame_ms_p50": 8.326332084834576,
+  "frame_ms_p95": 9.165086783468723,
+  "frame_ms_p99": 9.33025125414133,
+  "headless": false,
+  "fullscreen": false
+}

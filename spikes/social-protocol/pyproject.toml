@@ -7,7 +7,7 @@ name = "actor-social-protocol-fixture"
 version = "0.1.0"
 description = "Optional local ordinary-game protocol validation fixture"
 requires-python = ">=3.11"
-dependencies = ["actor-runtime==0.6.0"]
+dependencies = ["actor-runtime==0.7.0"]
 
 [project.entry-points."actor.brains"]
 social-protocol-fixture = "actor_social_protocol:brain_factory"

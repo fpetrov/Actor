@@ -1,0 +1,20 @@
+{
+  "schema": "actor.rendered-ui.v2",
+  "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+  "phase": "Exploration",
+  "screenshot": "final-656-07-security-800x600.png",
+  "unity": "6000.6.4f1",
+  "graphics": "Metal",
+  "version": "0.9.0",
+  "width": 800,
+  "height": 600,
+  "frames": 22767,
+  "focused_frames": 22767,
+  "sample_seconds": 190.02497997693717,
+  "mean_fps": 119.81056386777765,
+  "frame_ms_p50": 8.32650251686573,
+  "frame_ms_p95": 9.134042076766491,
+  "frame_ms_p99": 9.325411170721054,
+  "headless": false,
+  "fullscreen": false
+}

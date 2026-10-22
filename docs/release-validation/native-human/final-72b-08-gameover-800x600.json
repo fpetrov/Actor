@@ -1,0 +1,20 @@
+{
+  "focused_frames": 1515,
+  "frame_ms_p50": 8.330541662871838,
+  "frame_ms_p95": 8.931703865528107,
+  "frame_ms_p99": 9.260962717235088,
+  "frames": 1515,
+  "fullscreen": false,
+  "graphics": "Metal",
+  "headless": false,
+  "height": 600,
+  "mean_fps": 119.7622261663934,
+  "phase": "GameOver",
+  "sample_seconds": 12.650065454654396,
+  "schema": "actor.rendered-ui.v2",
+  "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+  "screenshot": "final-72b-08-gameover-800x600.png",
+  "unity": "6000.6.4f1",
+  "version": "0.9.0",
+  "width": 800
+}

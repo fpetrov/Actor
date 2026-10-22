@@ -1,0 +1,47 @@
+{
+  "schema": "actor.m8-production-smoke.v1",
+  "executed": true,
+  "passed": true,
+  "reason": "public_admission_and_movement_pass",
+  "health_healthy": true,
+  "game_version_0_9_0_admission4": true,
+  "client_source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "server_source_binding": "Public API verifies game/protocol only; exact server source requires separate deployment hashes.",
+  "mode": "Sandbox",
+  "fresh_public_room_created": true,
+  "server_heartbeat_observed_occupied": true,
+  "own_room_naturally_retired": true,
+  "ambiguous_create_response_unresolved": false,
+  "owned_clients_remaining": 0,
+  "owned_process_groups_remaining": 0,
+  "proof": {
+    "movement": {
+      "passed": true,
+      "checks_passed": 13,
+      "checks_expected": 13,
+      "errors": 0,
+      "warnings": 0,
+      "metrics": {
+        "visualResponseMs": 32.32860565185547,
+        "authoritativeResponseMs": 315.5062255859375,
+        "releaseResponseMs": 115.81444549560547,
+        "idleError": 0.004983067512512207,
+        "maxSpeed": 2.5999999046325684
+      },
+      "input": "existing synthetic owned-input prediction probe; no physical keyboard or rendered-display claim"
+    },
+    "ordinary_ngo_owner_binding_verified": true,
+    "passed": true
+  },
+  "active_elapsed_seconds": 23.07084679196123,
+  "total_elapsed_seconds": 84.93071149999741,
+  "active_timeout_seconds": 60.0,
+  "natural_retirement_timeout_seconds": 120.0,
+  "limitations": [
+    "Headless synthetic owned-input probe; no physical keyboard, rendered-display latency or model claim.",
+    "Human NGO owner binding is verified; no ACTOR Runtime/Hello/Brain session is started.",
+    "A sixty-second occupied-room grace means natural retirement can extend beyond the active60s window. If occupied was never observed, untouched lifetime may be300s.",
+    "No DELETE/internal-finished/remote signal or server configuration change is used. Only our exact locally owned client process group is stopped.",
+    "Raw local reports/logs and room identity remain ignored/private. This aggregate contains no tickets, actorIDs, roomCodes or message content."
+  ]
+}

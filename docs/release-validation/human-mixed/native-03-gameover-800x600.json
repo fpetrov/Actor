@@ -1,0 +1,20 @@
+{
+  "schema": "actor.rendered-ui.v2",
+  "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+  "phase": "GameOver",
+  "screenshot": "native-03-gameover-800x600.png",
+  "unity": "6000.6.4f1",
+  "graphics": "Metal",
+  "version": "0.9.0",
+  "width": 800,
+  "height": 600,
+  "frames": 2758,
+  "focused_frames": 2758,
+  "sample_seconds": 23.03755808621645,
+  "mean_fps": 119.71754947631072,
+  "frame_ms_p50": 8.329832926392555,
+  "frame_ms_p95": 9.163832291960716,
+  "frame_ms_p99": 9.332079440355301,
+  "headless": false,
+  "fullscreen": false
+}

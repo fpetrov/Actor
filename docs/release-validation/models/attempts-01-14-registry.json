@@ -1,0 +1,135 @@
+{
+  "attempts": [
+    {
+      "attempt_id": "codex-01",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "none",
+      "folder": "codex-series/attempt-01/match",
+      "inventory_folder": "codex-series/attempt-01"
+    },
+    {
+      "attempt_id": "codex-02",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "setup",
+      "folder": "codex-series/attempt-02/match",
+      "inventory_folder": "codex-series/attempt-02"
+    },
+    {
+      "attempt_id": "codex-03",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "setup",
+      "folder": "codex-series/attempt-03/match",
+      "inventory_folder": "codex-series/attempt-03"
+    },
+    {
+      "attempt_id": "codex-04",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "runtime",
+      "folder": "codex-series/attempt-04/match",
+      "inventory_folder": "codex-series/attempt-04"
+    },
+    {
+      "attempt_id": "codex-05",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "runtime",
+      "folder": "codex-series/attempt-05/match",
+      "inventory_folder": "codex-series/attempt-05"
+    },
+    {
+      "attempt_id": "codex-06",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "runtime",
+      "folder": "codex-series/attempt-06/match",
+      "inventory_folder": "codex-series/attempt-06"
+    },
+    {
+      "attempt_id": "codex-07",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "runtime",
+      "folder": "codex-series/attempt-07/match",
+      "inventory_folder": "codex-series/attempt-07"
+    },
+    {
+      "attempt_id": "codex-08",
+      "category": "codex_series",
+      "deception_review": "reviews/attempt-08.json",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "none",
+      "folder": "codex-series/attempt-08/match",
+      "inventory_folder": "codex-series/attempt-08"
+    },
+    {
+      "attempt_id": "codex-09",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "none",
+      "folder": "codex-series/attempt-09/match",
+      "inventory_folder": "codex-series/attempt-09"
+    },
+    {
+      "attempt_id": "codex-10",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "none",
+      "folder": "codex-series/attempt-10/match",
+      "inventory_folder": "codex-series/attempt-10"
+    },
+    {
+      "attempt_id": "codex-11",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "none",
+      "folder": "codex-series/attempt-11/match",
+      "inventory_folder": "codex-series/attempt-11"
+    },
+    {
+      "attempt_id": "codex-12",
+      "category": "codex_series",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "none",
+      "folder": "codex-series/attempt-12/match",
+      "inventory_folder": "codex-series/attempt-12"
+    },
+    {
+      "attempt_id": "attempt-13",
+      "category": "controlled_codex",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "setup",
+      "folder": "codex-series/attempt-13/match",
+      "inventory_folder": "codex-series/attempt-13"
+    },
+    {
+      "attempt_id": "attempt-14",
+      "category": "controlled_codex",
+      "expected_codex": 4,
+      "expected_participants": 4,
+      "failure_stage": "none",
+      "folder": "codex-series/attempt-14/match",
+      "inventory_folder": "codex-series/attempt-14"
+    }
+  ],
+  "inventory_roots": [
+    "codex-series"
+  ],
+  "schema": "actor.release-series-input.v1"
+}

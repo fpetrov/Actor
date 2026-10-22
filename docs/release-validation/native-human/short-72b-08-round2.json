@@ -1,0 +1,53 @@
+{
+  "case": "native08-short-round2",
+  "category": "native_targeted_ui_coverage_attempt",
+  "coverage_gap": "Integrator missed the meeting during the short90s round; no technical failure is inferred.",
+  "denominator_scope": "Distinct completed short native UI attempt, separate from native08-round3 and all model series attempts.",
+  "deterministic_fixture_participants": 5,
+  "draft_only": false,
+  "duration_ms": 90000,
+  "fixture_launcher_exit_codes_all_zero": true,
+  "fixture_technical_completion": true,
+  "fixture_terminal_reports": 5,
+  "gameplay_counts": {
+    "body_reports": 0,
+    "crew_tasks_completed": 0,
+    "kills": 1,
+    "meetings": 0,
+    "votes": 0
+  },
+  "human_actions": {
+    "ballots_server_verified": 0,
+    "chat_claimed": false,
+    "move_claimed": false,
+    "report_body_server_verified": 0,
+    "task_work_claimed": false
+  },
+  "human_terminal_frozen_before_leave": true,
+  "input_digests": {
+    "cleanup_sha256": "22e01be31420f3b2184af60da94e4ec7ad90cb7ba6142ef138988806fbc85f1f",
+    "human_terminal_sha256": "3401090943d13abdbbfbb9bcc90e6ea6383ae56fcf36d8230e9ebfa9242610f3",
+    "supervisor_sha256": "ac67abc5cbe58b0bf93d4fa6bec8bfc8887230aecbd91b08a6ed3363214f540e"
+  },
+  "limits": [
+    "No Human report, ballot, move, chat or task action acceptance is inferred.",
+    "All5fixtures completed technically, but intended nameplate/meeting screen evidence remains unproven.",
+    "The native process continues under root ownership; exit, rematch and current live state are outside this projection."
+  ],
+  "model_participants": 0,
+  "native_client_source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "native_input_acceptance_claimed": false,
+  "operator_reported_nameplates_nonoverlapping": true,
+  "ordinary_players": 6,
+  "owned_fixture_groups_remaining": 0,
+  "owned_fixture_processes_remaining": 0,
+  "protobuf_default_normalization": "A missing summary winning_side encodes enum-zero Unspecified; no winner or tool count is inferred.",
+  "reason": "match_timeout",
+  "same_authoritative_six_player_summary": true,
+  "schema": "actor.m8-native-short-ui-attempt.v1",
+  "screenshot_limit": "The requested F12 sample followed a focus barrier and was not captured before GameOver; no screenshot PASS or Discussion coverage is published from this round.",
+  "six_person_discussion_roster_pass": false,
+  "source_scope": "Integrator-declared native72b client; this projection does not retag remote product stamps or infer binary equivalence.",
+  "targeted_nameplate_screenshot_pass": false,
+  "winner": null
+}

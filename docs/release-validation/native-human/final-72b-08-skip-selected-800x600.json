@@ -1,0 +1,20 @@
+{
+  "focused_frames": 842,
+  "frame_ms_p50": 8.329832926392555,
+  "frame_ms_p95": 9.07862838357687,
+  "frame_ms_p99": 9.333914145827293,
+  "frames": 2201,
+  "fullscreen": false,
+  "graphics": "Metal",
+  "headless": false,
+  "height": 600,
+  "mean_fps": 119.67389484810937,
+  "phase": "Voting",
+  "sample_seconds": 18.391646756324917,
+  "schema": "actor.rendered-ui.v2",
+  "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+  "screenshot": "final-72b-08-skip-selected-800x600.png",
+  "unity": "6000.6.4f1",
+  "version": "0.9.0",
+  "width": 800
+}

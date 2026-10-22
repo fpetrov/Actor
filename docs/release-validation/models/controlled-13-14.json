@@ -1,0 +1,523 @@
+{
+  "accepted_controlled_gameovers": 1,
+  "actual_attempt": {
+    "attempt": "attempt-14",
+    "authoritative_gameover": true,
+    "category": "controlled_codex",
+    "category_source": "registry_declaration",
+    "deception": {
+      "evidence_records": 0,
+      "grade": "unassessed",
+      "source": "no_sanitized_manual_review"
+    },
+    "declared_failure_stage": "none",
+    "duration_ms": 302373,
+    "full_social_cycle": {
+      "checks": {
+        "actual_received_message_counters": true,
+        "complete_postgame_replay": true,
+        "discussion_and_voting_in_replay": false,
+        "multiple_codex_discussion_senders": false,
+        "official_codex_on_both_sides": true,
+        "server_accepted_codex_ballot": false,
+        "server_accepted_codex_body_report": false,
+        "server_accepted_codex_kill": false
+      },
+      "codex_ballots": 0,
+      "codex_body_reports": 0,
+      "codex_discussion_senders": 0,
+      "codex_kills": 0,
+      "discussion_evidence_basis": "selected+succeeded typed discuss Skill requires a server acceptance receipt by its installed1.0.0 contract, corroborated by sender receipt counters and recipient message counters; redacted output stays private",
+      "evidence_limit": "Previously collected episodes can permanently mask Skill IDs; no inferred channel, sender action or zero-activity claim is made for those rows. Coverage may remain unproven despite actual gameplay.",
+      "masked_skill_results": 0,
+      "passed": false,
+      "scope": "postgame actor-bound selected Skills plus accepted server replay; no claim about internal motivation"
+    },
+    "gameplay_counts": {
+      "body_reports": 0,
+      "crew_tasks_completed": 8,
+      "kills": 0,
+      "meetings": 0,
+      "sabotages": 1,
+      "votes": 0
+    },
+    "gaps": [
+      "full_social_cycle_not_proven"
+    ],
+    "independence_checks": {
+      "bound_actor_session_match": true,
+      "declared_isolation": true,
+      "distinct_agent_profile": true,
+      "distinct_bridge_credential_sha256": true,
+      "distinct_memory_database": true,
+      "independent_pid_port_metadata": true,
+      "m8_game_contract": true,
+      "match_operation": true,
+      "recorded_process_identities": true,
+      "registered_provider_composition": true
+    },
+    "observed_match_started": true,
+    "outcome": "accepted",
+    "participants": [
+      {
+        "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+        "codex_turns": 18,
+        "context_bytes": {
+          "max": 29687,
+          "mean": 17752.166666666668,
+          "p95": 29687,
+          "samples": 18,
+          "sum": 319539
+        },
+        "delivered_messages_received": 1,
+        "episode_status_counts": {
+          "cancelled": 2
+        },
+        "failed_model_turns": 0,
+        "life": "SOCIAL_LIFE_ALIVE",
+        "masked_skill_results": 0,
+        "metrics_valid": true,
+        "model_tool_calls": 0,
+        "model_wait_seconds": {
+          "max": 20.724336999992374,
+          "mean": 7.379541923722071,
+          "p95": 20.724336999992374,
+          "samples": 18,
+          "sum": 132.83175462699728
+        },
+        "official_codex_started": true,
+        "participant": "agent-01",
+        "postgame_skill_counts": {
+          "actor.send-message": 1,
+          "agents-arena.evade-threat": 1,
+          "agents-arena.navigate-social-room": 1,
+          "agents-arena.perform-task": 6,
+          "agents-arena.ready-for-match": 1,
+          "agents-arena.repair-emergency": 4,
+          "agents-arena.wait-for-match-event": 1
+        },
+        "provider_cost_records": 0,
+        "provider_metadata_source": "safe_postgame_episodes",
+        "provider_reported_cost_usd": null,
+        "reported_participation_measured_tokens": 947376,
+        "reported_usage": {
+          "cached_input_tokens": 738944,
+          "input_tokens": 944900,
+          "output_tokens": 2476,
+          "total_tokens": 947376
+        },
+        "runtime_report_present": true,
+        "runtime_status": "completed",
+        "skill_status_counts": {
+          "cancelled": 1,
+          "failed": 7,
+          "succeeded": 7
+        },
+        "survival_ms": 302373,
+        "survived": true,
+        "team_won": true,
+        "usage_reporting": "complete"
+      },
+      {
+        "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+        "codex_turns": 14,
+        "context_bytes": {
+          "max": 28800,
+          "mean": 17493.5,
+          "p95": 28800,
+          "samples": 14,
+          "sum": 244909
+        },
+        "delivered_messages_received": 1,
+        "episode_status_counts": {
+          "cancelled": 2
+        },
+        "failed_model_turns": 0,
+        "life": "SOCIAL_LIFE_ALIVE",
+        "masked_skill_results": 0,
+        "metrics_valid": true,
+        "model_tool_calls": 0,
+        "model_wait_seconds": {
+          "max": 15.246589832997415,
+          "mean": 6.235063011853656,
+          "p95": 15.246589832997415,
+          "samples": 14,
+          "sum": 87.29088216595119
+        },
+        "official_codex_started": true,
+        "participant": "agent-02",
+        "postgame_skill_counts": {
+          "actor.send-message": 1,
+          "agents-arena.follow-visible-actor": 1,
+          "agents-arena.navigate-social-room": 1,
+          "agents-arena.perform-task": 6,
+          "agents-arena.ready-for-match": 1,
+          "agents-arena.repair-emergency": 4
+        },
+        "provider_cost_records": 0,
+        "provider_metadata_source": "safe_postgame_episodes",
+        "provider_reported_cost_usd": null,
+        "reported_participation_measured_tokens": 743962,
+        "reported_usage": {
+          "cached_input_tokens": 635904,
+          "input_tokens": 742129,
+          "output_tokens": 1833,
+          "total_tokens": 743962
+        },
+        "runtime_report_present": true,
+        "runtime_status": "completed",
+        "skill_status_counts": {
+          "cancelled": 4,
+          "failed": 5,
+          "succeeded": 5
+        },
+        "survival_ms": 302373,
+        "survived": true,
+        "team_won": true,
+        "usage_reporting": "complete"
+      },
+      {
+        "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_CREW",
+        "codex_turns": 18,
+        "context_bytes": {
+          "max": 30263,
+          "mean": 18120.833333333332,
+          "p95": 30263,
+          "samples": 18,
+          "sum": 326175
+        },
+        "delivered_messages_received": 3,
+        "episode_status_counts": {
+          "cancelled": 2
+        },
+        "failed_model_turns": 0,
+        "life": "SOCIAL_LIFE_ALIVE",
+        "masked_skill_results": 0,
+        "metrics_valid": true,
+        "model_tool_calls": 0,
+        "model_wait_seconds": {
+          "max": 17.90072637499543,
+          "mean": 6.394142439941384,
+          "p95": 17.90072637499543,
+          "samples": 18,
+          "sum": 115.09456391894491
+        },
+        "official_codex_started": true,
+        "participant": "agent-03",
+        "postgame_skill_counts": {
+          "actor.send-message": 1,
+          "agents-arena.navigate-social-room": 4,
+          "agents-arena.perform-task": 5,
+          "agents-arena.ready-for-match": 1,
+          "agents-arena.repair-emergency": 4
+        },
+        "provider_cost_records": 0,
+        "provider_metadata_source": "safe_postgame_episodes",
+        "provider_reported_cost_usd": null,
+        "reported_participation_measured_tokens": 909450,
+        "reported_usage": {
+          "cached_input_tokens": 731520,
+          "input_tokens": 907412,
+          "output_tokens": 2038,
+          "total_tokens": 909450
+        },
+        "runtime_report_present": true,
+        "runtime_status": "completed",
+        "skill_status_counts": {
+          "cancelled": 2,
+          "failed": 5,
+          "succeeded": 6,
+          "unknown": 2
+        },
+        "survival_ms": 302373,
+        "survived": true,
+        "team_won": true,
+        "usage_reporting": "complete"
+      },
+      {
+        "alignment_disclosed_postgame": "SOCIAL_ALIGNMENT_IMPOSTOR",
+        "codex_turns": 16,
+        "context_bytes": {
+          "max": 26166,
+          "mean": 17324.625,
+          "p95": 26166,
+          "samples": 16,
+          "sum": 277194
+        },
+        "delivered_messages_received": 2,
+        "episode_status_counts": {
+          "cancelled": 2
+        },
+        "failed_model_turns": 0,
+        "life": "SOCIAL_LIFE_ALIVE",
+        "masked_skill_results": 0,
+        "metrics_valid": true,
+        "model_tool_calls": 0,
+        "model_wait_seconds": {
+          "max": 19.190091333002783,
+          "mean": 8.478199838446017,
+          "p95": 19.190091333002783,
+          "samples": 16,
+          "sum": 135.65119741513627
+        },
+        "official_codex_started": true,
+        "participant": "agent-04",
+        "postgame_skill_counts": {
+          "actor.send-message": 1,
+          "agents-arena.approach-visible-actor": 1,
+          "agents-arena.fake-task": 2,
+          "agents-arena.follow-visible-actor": 1,
+          "agents-arena.navigate-social-room": 5,
+          "agents-arena.ready-for-match": 1,
+          "agents-arena.sabotage": 1,
+          "agents-arena.wait-for-match-event": 2
+        },
+        "provider_cost_records": 0,
+        "provider_metadata_source": "safe_postgame_episodes",
+        "provider_reported_cost_usd": null,
+        "reported_participation_measured_tokens": 763879,
+        "reported_usage": {
+          "cached_input_tokens": 661248,
+          "input_tokens": 761153,
+          "output_tokens": 2726,
+          "total_tokens": 763879
+        },
+        "runtime_report_present": true,
+        "runtime_status": "completed",
+        "skill_status_counts": {
+          "cancelled": 2,
+          "failed": 2,
+          "succeeded": 10
+        },
+        "survival_ms": 302373,
+        "survived": true,
+        "team_won": false,
+        "usage_reporting": "complete"
+      }
+    ],
+    "terminal_checks": {
+      "agent-01_no_cleanup_errors": true,
+      "agent-01_no_direct_model_tools": true,
+      "agent-01_official_model_turns": true,
+      "agent-01_postgame_fields": true,
+      "agent-01_postgame_identity": true,
+      "agent-01_terminal_identity": true,
+      "agent-02_no_cleanup_errors": true,
+      "agent-02_no_direct_model_tools": true,
+      "agent-02_official_model_turns": true,
+      "agent-02_postgame_fields": true,
+      "agent-02_postgame_identity": true,
+      "agent-02_terminal_identity": true,
+      "agent-03_no_cleanup_errors": true,
+      "agent-03_no_direct_model_tools": true,
+      "agent-03_official_model_turns": true,
+      "agent-03_postgame_fields": true,
+      "agent-03_postgame_identity": true,
+      "agent-03_terminal_identity": true,
+      "agent-04_no_cleanup_errors": true,
+      "agent-04_no_direct_model_tools": true,
+      "agent-04_official_model_turns": true,
+      "agent-04_postgame_fields": true,
+      "agent-04_postgame_identity": true,
+      "agent-04_terminal_identity": true,
+      "all_participants_present": true,
+      "bounded_ordered_terminal_replay": true,
+      "client_runtime_terminal_agreement": true,
+      "composition": true,
+      "distinct_actor_sessions": true,
+      "identical_authoritative_summaries": true,
+      "independent_agent_profile": true,
+      "independent_bridge_credential_sha256": true,
+      "independent_launches": true,
+      "independent_memory_database": true,
+      "isolated_processes": true,
+      "known_terminal_outcome": true,
+      "m8_game_contract": true,
+      "owned_process_cleanup": true,
+      "recorded_process_identities": true,
+      "registered_provider_composition": true,
+      "required_real_gameplay": true,
+      "supervisor_completed": true
+    },
+    "valid_independent_codex_start": true,
+    "win_reason": "tasks_completed",
+    "winner": "SOCIAL_ALIGNMENT_CREW"
+  },
+  "actual_four_codex_attempts": 1,
+  "actual_sdk_turns": 66,
+  "category": "controlled_codex",
+  "cleanup": {
+    "launcher_exit_codes_all_zero": true,
+    "observed_at_unix_ms": 1792636510737,
+    "owned_child_pids_checked": 12,
+    "owned_child_pids_remaining": 0,
+    "owned_process_groups_checked": 4,
+    "owned_process_groups_remaining": 0,
+    "recorded_runtime_client_cleanup_all_false": true,
+    "schema": "actor.controlled-owned-cleanup.v1",
+    "scope": "Read-only completed own process/group existence checks and leased staging room count; no foreign process signalled.",
+    "staging_rooms_remaining": 0
+  },
+  "complete_registered_inventory": true,
+  "complete_usage_known": true,
+  "conditions": {
+    "brain_usage_limit": 1500000,
+    "four_independent_official_codex_brains": true,
+    "model_actions_or_roles_injected": false,
+    "participation_usage_limit": 3000000,
+    "private_live_role_or_context_inspection": false,
+    "public_profile": {
+      "calibration_step_ms": 2500,
+      "discussion_ms": 90000,
+      "kill_cooldown_ms": 30000,
+      "maintenance_hold_ms": 30000,
+      "match_duration_ms": 900000,
+      "max_players": 6,
+      "min_players": 4,
+      "sensor_sample_delay_ms": 8000,
+      "task_threshold": 8,
+      "voting_ms": 60000
+    },
+    "same_trusted_objective_for_all": true,
+    "supervisor_deadline_seconds": 1100,
+    "windowed_or_headless": "ordinary_headless_clients"
+  },
+  "controlled_attempts": 2,
+  "extended_denominators": {
+    "accepted_gameovers": 7,
+    "categories": {
+      "codex_series": {
+        "accepted": 6,
+        "attempts": 12,
+        "authoritative_gameover": 6,
+        "failed": 6,
+        "full_social_cycle": 2,
+        "observed_match_started": 6,
+        "valid_independent_codex_start": 6
+      },
+      "controlled_codex": {
+        "accepted": 1,
+        "attempts": 2,
+        "authoritative_gameover": 1,
+        "failed": 1,
+        "full_social_cycle": 0,
+        "observed_match_started": 1,
+        "valid_independent_codex_start": 1
+      }
+    },
+    "failed_attempts": 7,
+    "incomplete_attempts": 0,
+    "registered_attempts": 14
+  },
+  "extended_registry_evidence": "attempts-01-14.json",
+  "hardened_replay_life_and_ballot_consistency": true,
+  "historical_cohort": {
+    "accepted_gameovers": 6,
+    "evidence": "attempts-01-12.json",
+    "failed_attempts": 6,
+    "independent_full_binding_starts": 5,
+    "registered_attempts": 12,
+    "retagged_or_overwritten": false,
+    "sha256": "583188155ef6cdd80408ecb6498ff6ebc8f36e6eeee205f73b376d672e86fc42"
+  },
+  "input_digests": {
+    "actual_ledger_sha256": "69b2b0136ad711ce0f3615de27c613aa94f58ede4bfcca0511421077a88df228",
+    "cleanup_sha256": "739a52048889ccf0238a28c2fea92f728a00c32a52f5ba995fabe61d31cdcf2d",
+    "plan_sha256": "99ff1c4f4cce649fc21e95a47dbf80db75dd0732725af9cd846223044af661f8",
+    "setup_ledger_sha256": "5a06918c2e45f7ce3123e4fc481f10bdb6a3225d3ad86d195cc9e174d4dc7607",
+    "supervisor_sha256": "8d5b012a38e7726066db021c02043b72bce4ebce71867621fcc10537da6a1b23"
+  },
+  "interrupted_sdk_turns": 8,
+  "limits": [
+    "The one controlled actual attempt is separate from the historical12 AI-vs-AI cohort and from Human mixed/native cases.",
+    "A valid GameOver without model-selected kill, body report, multiple typed Discussion senders and ballots does not satisfy section61.",
+    "Shared objective, public timers and ordinary model choices do not prescribe targets, hidden roles, claims or winner.",
+    "SDK tool evidence is actual lifecycle counting, not an inferred zero from sandbox configuration.",
+    "No performance, repeatable win rate, full privacy/native acceptance or internal model motivation is inferred."
+  ],
+  "provider_audit": [
+    {
+      "actual_sdk_turns": 18,
+      "all_m8_bindings_present": true,
+      "all_official_closed_readonly_ephemeral": true,
+      "all_tools_observed": true,
+      "closed_episodes": 2,
+      "decision_rows": 18,
+      "interrupted_turns": 3,
+      "participant": 1,
+      "passed": true,
+      "rows_match_unique_turns": true,
+      "status_coverage_complete": true,
+      "tool_calls": 0
+    },
+    {
+      "actual_sdk_turns": 14,
+      "all_m8_bindings_present": true,
+      "all_official_closed_readonly_ephemeral": true,
+      "all_tools_observed": true,
+      "closed_episodes": 2,
+      "decision_rows": 14,
+      "interrupted_turns": 0,
+      "participant": 2,
+      "passed": true,
+      "rows_match_unique_turns": true,
+      "status_coverage_complete": true,
+      "tool_calls": 0
+    },
+    {
+      "actual_sdk_turns": 18,
+      "all_m8_bindings_present": true,
+      "all_official_closed_readonly_ephemeral": true,
+      "all_tools_observed": true,
+      "closed_episodes": 2,
+      "decision_rows": 18,
+      "interrupted_turns": 3,
+      "participant": 3,
+      "passed": true,
+      "rows_match_unique_turns": true,
+      "status_coverage_complete": true,
+      "tool_calls": 0
+    },
+    {
+      "actual_sdk_turns": 16,
+      "all_m8_bindings_present": true,
+      "all_official_closed_readonly_ephemeral": true,
+      "all_tools_observed": true,
+      "closed_episodes": 2,
+      "decision_rows": 16,
+      "interrupted_turns": 2,
+      "participant": 4,
+      "passed": true,
+      "rows_match_unique_turns": true,
+      "status_coverage_complete": true,
+      "tool_calls": 0
+    }
+  ],
+  "reported_usage": {
+    "cached_input_tokens": 2767616,
+    "input_tokens": 3355594,
+    "output_tokens": 9073,
+    "total_tokens": 3364667
+  },
+  "reported_usage_scope": "Validated official Brain episode aggregate usage; cumulative per-turn SDK snapshots are not naively summed.",
+  "same_four_player_authoritative_summary": true,
+  "schema": "actor.m8-controlled-social-scenario.v1",
+  "sdk_terminal_status_counts": {
+    "completed": 58,
+    "interrupted": 8
+  },
+  "section61_full_social_cycle_accepted": false,
+  "setup_attempt": {
+    "attempt": 13,
+    "correction": "Production zero-room GET used its ordinary public origin for the authorised actual attempt; staging remained empty.",
+    "models_requested": false,
+    "reason_code": "local_production_forward_unavailable",
+    "room_allocated": false,
+    "status": "setup_failed"
+  },
+  "setup_failures": 1,
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "source_scope": "Client executable and clean72b stamp directly hashed before launch; root confirmed existing controlled72b staging products/profile. No new remote binary process readback is claimed.",
+  "strict_gameplay_acceptance": true,
+  "strict_official_stream_coverage": true
+}

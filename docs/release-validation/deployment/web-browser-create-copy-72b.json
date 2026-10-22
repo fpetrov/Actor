@@ -1,0 +1,36 @@
+{
+  "schema": "actor.m8-production-browser-observation.v1",
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "release_id": "20261022T023833Z-72bc5e5",
+  "scope": "Coordinator-operated actual public website Create and Copy UI receipt, plus the saved ended observation frame; not clipboard or native-game input acceptance.",
+  "operator_observation": {
+    "actual_public_website_used": true,
+    "one_own_sandbox_room_created": true,
+    "room_ready_observed": true,
+    "players": 0,
+    "capacity": 8,
+    "copy_button_clicked": true,
+    "copy_ui_success_receipt_observed_by_operator": true,
+    "copy_receipt_visible_in_saved_frame": false,
+    "clipboard_roundtrip_read": false,
+    "clipboard_contents_verified": false,
+    "natural_empty_room_retirement": "confirmed_by_later_public_get404"
+  },
+  "image": "web-browser-create-copy-72b.jpg",
+  "image_sha256": "0ace6f6ec828376ac0d881f5d12eb4df5afa7d710847e0bc865ad155157bb70b",
+  "width": 1280,
+  "height": 720,
+  "actual_encoding": "JPEG",
+  "copy_scope": "Original screenshot was named.png but contains JPEG/JFIF bytes. Published as.jpg without conversion; all bytes and SHA256 unchanged.",
+  "image_visually_reviewed": true,
+  "visible_content_scope": "Only synthetic test room label and ephemeral room code; no credentials, model or actual user content.",
+  "website_source_binding_evidence": "provenance-final-72b.json",
+  "limits": [
+    "The screenshot shows the created Sandbox room Ready0/8; the transient Copy receipt is operator-observed and absent from this saved frame.",
+    "Copy UI success does not prove clipboard contents or clipboard roundtrip.",
+    "The browser-created empty room later returned public GET404 while health stayed healthy; no forced finish, deletion or remote signal was used. This is distinct from the earlier client-smoke room.",
+    "Public HTTP website operation is not a TLS, anonymous release-download, Social match or full product acceptance claim."
+  ],
+  "retirement_evidence": "web-room-retirement-72b.json",
+  "retirement_evidence_sha256": "2e4766eda6a1601ce77f409c7a1e8a4bb4731ee2b40d2dd02d3b4fb9fcef729a"
+}

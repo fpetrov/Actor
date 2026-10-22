@@ -1,0 +1,123 @@
+{
+  "schema": "actor.human-mixed-evaluation.v1",
+  "category": "human_mixed",
+  "passed": true,
+  "status": "accepted",
+  "recorded_supervisor_status": "authoritative_match_completed",
+  "checks": {
+    "supervisor_completed": true,
+    "owned_model_cleanup_declared": true,
+    "isolation_declared": true,
+    "exactly_three_model_participants": true,
+    "all_model_artifacts_present": true,
+    "model_1_terminal_identity": true,
+    "model_1_ordinary_game_binding": true,
+    "model_1_official_closed_model": true,
+    "model_1_cleanup_errors_absent": true,
+    "model_2_terminal_identity": true,
+    "model_2_ordinary_game_binding": true,
+    "model_2_official_closed_model": true,
+    "model_2_cleanup_errors_absent": true,
+    "model_3_terminal_identity": true,
+    "model_3_ordinary_game_binding": true,
+    "model_3_official_closed_model": true,
+    "model_3_cleanup_errors_absent": true,
+    "independent_launches": true,
+    "independent_memory_database": true,
+    "independent_agent_profile": true,
+    "independent_bridge_credential_sha256": true,
+    "recorded_process_identities": true,
+    "three_model_process_groups_cleaned": true,
+    "identical_authoritative_summaries": true,
+    "distinct_three_runtime_sessions": true,
+    "exact_four_player_composition": true,
+    "known_gameplay_terminal_outcome": true,
+    "frozen_human_terminal_identity": true,
+    "complete_ordered_terminal_replay": true,
+    "summary_gameplay_counters_match_replay": true,
+    "postgame_lives_supported_by_replay": true,
+    "terminal_outcome_supported_by_gameplay": true,
+    "native_operator_identity": true,
+    "native_input_explicitly_declared": true,
+    "native_screenshots_bound_and_intact": true,
+    "claimed_human_report_has_server_replay": true,
+    "claimed_human_vote_has_server_replay": true,
+    "required_native_human_vote": true
+  },
+  "winner": "SOCIAL_ALIGNMENT_CREW",
+  "reason": "tasks_completed",
+  "duration_ms": 279088,
+  "gameplay_counts": {
+    "kills": 0,
+    "body_reports": 0,
+    "meetings": 1,
+    "votes": 4,
+    "crew_tasks_completed": 8,
+    "sabotages": 0
+  },
+  "model_participants": [
+    {
+      "codex_turns": 17,
+      "model_tool_calls": 0,
+      "reported_usage": {
+        "input_tokens": 532303,
+        "cached_input_tokens": 371840,
+        "output_tokens": 2784,
+        "total_tokens": 535087
+      }
+    },
+    {
+      "codex_turns": 15,
+      "model_tool_calls": 0,
+      "reported_usage": {
+        "input_tokens": 350609,
+        "cached_input_tokens": 226432,
+        "output_tokens": 2689,
+        "total_tokens": 353298
+      }
+    },
+    {
+      "codex_turns": 14,
+      "model_tool_calls": 0,
+      "reported_usage": {
+        "input_tokens": 349243,
+        "cached_input_tokens": 225408,
+        "output_tokens": 2570,
+        "total_tokens": 351813
+      }
+    }
+  ],
+  "human_server_actions": {
+    "body_reports": 0,
+    "votes": 1
+  },
+  "native_screenshot_count": 2,
+  "human_exit_evaluated": false,
+  "scope": "Three isolated official Codex terminal reports, four-player authoritative summary and frozen Human client/native operator consistency; screenshots and input declarations are not signed attestation",
+  "privacy": "Whitelisted aggregate counts and booleans only; no identities, paths, PIDs, chat, arguments or model context",
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "validation_mode": "strict Human plus three official Codex; require Human vote",
+  "required_human_vote_checked": true,
+  "required_human_report_checked": false,
+  "full_social_cycle_claimed": false,
+  "human_actions_operator_declared": [
+    "ready",
+    "move",
+    "chat",
+    "call_meeting",
+    "cast_vote"
+  ],
+  "observed_model_turns": 46,
+  "observed_interrupted_turns": 3,
+  "all_turn_tool_counts_observed": true,
+  "tool_counter_scope": "sdk_item_lifecycle",
+  "input_digests": {
+    "evaluation_sha256": "e4bfd0413a1be476d918d3916bb161ffe157f79320d7ccca573765c27be903ee",
+    "human-proof_sha256": "cc57446a757b0659206dd8c61a0ed0ad578892f3b2698f1b9be38bef8dcd46d3",
+    "native-operator_sha256": "d62b26498d552427625f73b416919a10ceb48d85b5c13d6c160439fccb5fd6c3",
+    "mixed-supervisor_sha256": "d31610eaf145e30949cda854326b4543be33fa977b1ce83703d62e9ac41a517c",
+    "processes_sha256": "e70fc9be1b8c6fe4cf22d4e28c3c49551385a974f8f3324d25ab4c721153240a",
+    "processes-after-cleanup_sha256": "abbd77d65214d6a7c3d86029a61400d0ef86713c158feffa3b273d07206f18f1"
+  },
+  "source_scope": "Clean source72b Human executable hash matches the extracted artifact; the reviewed three-peer supervisor pins the same extracted client path. No new per-peer executable process readback is claimed."
+}

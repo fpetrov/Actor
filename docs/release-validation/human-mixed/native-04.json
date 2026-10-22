@@ -1,0 +1,105 @@
+{
+  "schema": "actor.native-mixed-observation.v1",
+  "category": "human_mixed",
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "strict_mixed_acceptance": true,
+  "strict_evaluation": "attempt-04.json",
+  "required_native_human_vote_passed": true,
+  "authoritative_gameplay_completed": true,
+  "duration_ms": 279088,
+  "winner": "SOCIAL_ALIGNMENT_CREW",
+  "reason": "tasks_completed",
+  "gameplay_counts": {
+    "kills": 0,
+    "body_reports": 0,
+    "meetings": 1,
+    "votes": 4,
+    "crew_tasks_completed": 8,
+    "sabotages": 0
+  },
+  "human_server_actions": {
+    "body_reports": 0,
+    "votes": 1
+  },
+  "human_emergency_meetings_server_verified": 1,
+  "human_skip_ballots_server_verified": 1,
+  "native_input_operator_declared": [
+    "ready",
+    "move",
+    "chat",
+    "call_meeting",
+    "cast_vote"
+  ],
+  "native_vote_confirmation_text_observed": "Your ballot is final.",
+  "native_vote_confirmation_corroborated_by_own_server_replay": true,
+  "chat_receipt_event_counters": {
+    "receiptsServerAcceptedCount": 2,
+    "receiptsClientReceivedCount": 2,
+    "receiptsRejectedCount": 0
+  },
+  "human_chat_server_acceptance_observed": true,
+  "human_chat_brain_read_claimed": false,
+  "raw_discussion_prose_published": false,
+  "human_survived": true,
+  "human_team_won": false,
+  "native_process_exit_evaluated": false,
+  "native_human_terminal_frozen_before_leave": true,
+  "native_human_owner_executable_bound_to_clean72b": true,
+  "owned_model_process_groups_remaining": 0,
+  "owned_model_runtime_client_pids_remaining": 0,
+  "model_participants": 3,
+  "official_model_turns": 46,
+  "interrupted_model_turns": 3,
+  "observed_model_tool_calls": 0,
+  "all_turn_tool_counts_observed": true,
+  "tool_counter_scope": "sdk_item_lifecycle",
+  "full_social_cycle_claimed": false,
+  "frames": [
+    {
+      "view": "authoritative_final_ballot",
+      "phase": "Voting",
+      "width": 800,
+      "height": 600,
+      "headless": false,
+      "fullscreen": false,
+      "image": "native-04-vote-final-800x600.png",
+      "image_sha256": "6af15d511b676aa5a6f7e6244c8a77ef039afdef6b6cdfe598f4640cf585c4c6",
+      "report": "native-04-vote-final-800x600.json",
+      "original_report_sha256": "ef442c37ccb69764f39b7cd0652cb8d3e228d68e3caa49c57322ab347d41c2f8",
+      "metadata_copy_change": "Only screenshot basename rewritten; frame metrics unchanged.",
+      "report_sha256": "bac900514267c3dd4600185041ee9fb8e9ba1bab0538b52d25d1e274897bde77"
+    },
+    {
+      "view": "terminal",
+      "phase": "GameOver",
+      "width": 800,
+      "height": 600,
+      "headless": false,
+      "fullscreen": false,
+      "image": "native-04-gameover-800x600.png",
+      "image_sha256": "89d584ed1adeac4a5a19e3ccfdd65551adad74f5808c7d2afb1876da42e2d9eb",
+      "report": "native-04-gameover-800x600.json",
+      "original_report_sha256": "148d6dfabbaec064b3d5f9d73992779e919c2f59975072cd971c1e2c9b901f44",
+      "metadata_copy_change": "Only screenshot basename rewritten; frame metrics unchanged.",
+      "report_sha256": "bed0e387790e7817b06869e5b430cc21550f8a4465370bfb964ed7e3c190c43a"
+    }
+  ],
+  "input_digests": {
+    "evaluation_sha256": "e4bfd0413a1be476d918d3916bb161ffe157f79320d7ccca573765c27be903ee",
+    "human-proof_sha256": "cc57446a757b0659206dd8c61a0ed0ad578892f3b2698f1b9be38bef8dcd46d3",
+    "native-operator_sha256": "d62b26498d552427625f73b416919a10ceb48d85b5c13d6c160439fccb5fd6c3",
+    "mixed-supervisor_sha256": "d31610eaf145e30949cda854326b4543be33fa977b1ce83703d62e9ac41a517c",
+    "processes_sha256": "e70fc9be1b8c6fe4cf22d4e28c3c49551385a974f8f3324d25ab4c721153240a",
+    "processes-after-cleanup_sha256": "abbd77d65214d6a7c3d86029a61400d0ef86713c158feffa3b273d07206f18f1",
+    "native_owner_sha256": "223bbcea65eb69cf3b63c6d44f79fcd84f016d7f469e8cb40d87e1574aae241b"
+  },
+  "scope": "Completed source72b native Human plus three official Codex match, with actual own meeting and final Skip accepted by the server; Crew won by eight model-completed tasks. Operator declarations are not signed input attestation.",
+  "limits": [
+    "No kill, body report, Human task completion, model kill or full social cycle occurred or is claimed.",
+    "Receipt counters count transport events, not distinct message count or Brain reading/comprehension.",
+    "Discussion frame018 and all raw player/model text remain ignored and are not published.",
+    "Voting and GameOver PNGs are unchanged authorised ended-game views; visible names are synthetic QA nicknames.",
+    "Historical mixed attempts01/02 remain failed; attempt03 remains a separate default-strict pass.",
+    "No full screen-resolution, audio, native process-exit or overall release acceptance is inferred."
+  ]
+}

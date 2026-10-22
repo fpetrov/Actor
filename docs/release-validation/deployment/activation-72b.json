@@ -1,0 +1,129 @@
+{
+  "schema": "actor.m8-production-deployment-proof.v1",
+  "recorded_at_utc": "2026-10-22T02:51:12.095946+00:00",
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "release_id": "20261022T023833Z-72bc5e5",
+  "status": "actual_activation_and_bounded_smoke_pass_with_retained_initial_metadata_failure",
+  "full_release_acceptance": false,
+  "activation": {
+    "coordinator_reported_exit_code": 0,
+    "deployment_log_sha256": "d549e2ded63032811fd1577a520d5d486686a9b144a4508495a0787c592e7132",
+    "raw_log_published": false,
+    "systemd_unit_changed_on_disk_warning_observed_in_deployment_log": true,
+    "scope": "The deployment completed. Final read-only checks separately verify running executable/cwd, unit/config hashes, services and health; no full raw log is published."
+  },
+  "staging_retirement": {
+    "evidence": "staging-retirement-72b.json",
+    "passed": true,
+    "production_rooms_before": 0,
+    "staging_rooms_before": 0,
+    "exact_owned_staging_cp_pidfd_exit": true,
+    "staging_tcp_and_udp_free": true,
+    "production_signalled": false
+  },
+  "postdeployment": {
+    "attempts": 2,
+    "initial": {
+      "evidence": "provenance-attempt-01-72b.json",
+      "passed": false,
+      "checks_passed": 16,
+      "checks_expected": 17,
+      "failure": "One old regular.DS_Store made website inventory9 instead of8."
+    },
+    "remediation": {
+      "evidence": "web-metadata-quarantine-72b.json",
+      "regular_metadata_files_moved_to_existing_backup": 1,
+      "expected_public_files_changed": false,
+      "recoverable": true
+    },
+    "final": {
+      "evidence": "provenance-final-72b.json",
+      "passed": true,
+      "checks_passed": 17,
+      "checks_expected": 17,
+      "website_files": 8,
+      "unexpected_ds_store_count": 0
+    }
+  },
+  "deployed_inventory": {
+    "control_plane_files_or_links": 343,
+    "control_plane_packaged_payload_files_or_links": 343,
+    "raw_server_files_or_links": 217,
+    "server_packaged_payload_files_or_links": 216,
+    "additional_raw_server_file_count": 1,
+    "additional_raw_server_file_scope": "Generated Unity/Burst DontShip text marker retained by the raw-tree deployment caller; excluded from the published server archive.",
+    "scope": "Complete active file/link/mode inventories matched the fixed local expectations. Every published archive payload member was independently matched to those local bytes during preparation. Raw deployment and archive inventories are explicitly different."
+  },
+  "ordinary_client_smoke": {
+    "evidence": "sandbox-smoke-72b.json",
+    "coordinator_reported_exit_code": 0,
+    "passed": true,
+    "checks_passed": 13,
+    "checks_expected": 13,
+    "ordinary_ngo_owner_binding_verified": true,
+    "server_heartbeat_observed_occupied": true,
+    "own_room_naturally_retired": true,
+    "owned_clients_remaining": 0,
+    "owned_process_groups_remaining": 0,
+    "active_elapsed_seconds": 23.07084679196123,
+    "total_elapsed_seconds": 84.93071149999741,
+    "scope": "One fresh public Sandbox room and extracted72b headless Human client, using existing synthetic owned-input P checks. No ACTOR Runtime/Hello/Brain, native keyboard/display or Social gameplay is claimed."
+  },
+  "public_browser": {
+    "evidence": "web-browser-create-copy-72b.json",
+    "create_observed": true,
+    "copy_ui_receipt_observed": true,
+    "clipboard_content_verified": false,
+    "own_empty_room_retirement": "confirmed_by_later_public_get404",
+    "retirement_evidence": "web-room-retirement-72b.json"
+  },
+  "source_bound_package_evidence": "../release-integrity-72b.json",
+  "evidence_files": [
+    {
+      "file": "staging-retirement-72b.json",
+      "sha256": "649a5dd0bc8ba3f3388b20ecd4e6d465171fae6eb63867d6ee7f3e20f05d3147",
+      "copied_without_content_changes": true
+    },
+    {
+      "file": "provenance-attempt-01-72b.json",
+      "sha256": "0560c553800c1c85b8157b4eef3093c5eba5f8fd1483cb53ca17450d72e8d829",
+      "copied_without_content_changes": true
+    },
+    {
+      "file": "web-metadata-quarantine-72b.json",
+      "sha256": "b71707bbd348c7a7553c6744e60b9bb3b73c65e21c48caeb9cc84425dd170309",
+      "copied_without_content_changes": true
+    },
+    {
+      "file": "provenance-final-72b.json",
+      "sha256": "988681011de77685ae8db49db10e4cbb1954ce5816674e4a95f9e1e79db86e95",
+      "copied_without_content_changes": true
+    },
+    {
+      "file": "sandbox-smoke-72b.json",
+      "sha256": "0955857df5dbd1304c8154b07eaefb30b2f90bbc50e272e101d0fa456f259ab5",
+      "copied_without_content_changes": true
+    },
+    {
+      "file": "web-browser-create-copy-72b.json",
+      "sha256": "9f2d9df967e69e21a62689d5fa7ad38b7e318dd8e4dc639e7ce865958e7a6455"
+    },
+    {
+      "file": "web-browser-create-copy-72b.jpg",
+      "sha256": "0ace6f6ec828376ac0d881f5d12eb4df5afa7d710847e0bc865ad155157bb70b"
+    },
+    {
+      "file": "web-room-retirement-72b.json",
+      "sha256": "2e4766eda6a1601ce77f409c7a1e8a4bb4731ee2b40d2dd02d3b4fb9fcef729a",
+      "copied_without_content_changes": true
+    }
+  ],
+  "limitations": [
+    "Production activation and this bounded smoke are actual; full M8 acceptance and continuous availability are separate.",
+    "No actual rollback execution is claimed. The recovered single metadata file is not a deployment rollback.",
+    "HTTP control plane, public website and UDP gameplay remain limited-test transport; no TLS or transport confidentiality is claimed.",
+    "The VPS public-origin GETs and external ordinary-client/browser observations have distinct scopes; neither proves secure anonymous executable distribution.",
+    "Environment mode0600 was checked without reading/publishing its contents. No credentials, raw logs, journal, process argv, ActorIDs or model contexts are copied.",
+    "Both distinct owned smoke/browser rooms were observed retired. This does not assert that every production room remained empty after these observations."
+  ]
+}

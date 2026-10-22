@@ -1,0 +1,102 @@
+{
+  "schema": "actor.m8-postdeploy-provenance.v1",
+  "executed": true,
+  "passed": true,
+  "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "versions": {
+    "game": "0.9.0",
+    "admission": "4"
+  },
+  "checks": {
+    "active_aliases_same_bounded_release": true,
+    "control_plane_exact_source_stamp_and_complete_tree": true,
+    "server_exact_source_stamp_and_complete_tree": true,
+    "running_control_plane_exe_and_cwd_match_active_release": true,
+    "environment_regular_file_mode_0600_without_reading_contents": true,
+    "admission_drain_marker_absent": true,
+    "control_plane_service_active": true,
+    "nginx_service_active": true,
+    "systemd_unit_file_sha_matches": true,
+    "nginx_config_file_sha_matches": true,
+    "nginx_enabled_alias_matches_authored_config": true,
+    "website_exact_inventory_and_no_ds_store": true,
+    "public_health_healthy": true,
+    "public_game_0_9_0_admission_4": true,
+    "public_website_exact_bytes_and_security_headers": true,
+    "aliases_stable_through_check": true,
+    "drain_still_absent_at_end": true
+  },
+  "failure_categories": [],
+  "details": {
+    "release_id": "20261022T023833Z-72bc5e5",
+    "control_plane": {
+      "files_or_links": 343,
+      "expected_files_or_links": 343,
+      "packaged_payload_files_or_links": 343,
+      "additional_local_build_files_count": 0,
+      "critical_files": {
+        "Actor.ControlPlane": {
+          "sha256": "55478a3af2d7e76ba0cbacd8ab9aacccbc6ce17634bf90ba9febfd84dfca2b93",
+          "matches_expected": true
+        },
+        "Actor.ControlPlane.dll": {
+          "sha256": "66b9c0fa9bcb380e89d8527b3fccc143de9f8d9b70f908316bb4f6df7ec2672d",
+          "matches_expected": true
+        },
+        "build-info.json": {
+          "sha256": "9fc7a3fb2ebe54072443cbb92da75f55cfb27475534e48ce148ea0285f857916",
+          "matches_expected": true
+        }
+      }
+    },
+    "server": {
+      "files_or_links": 217,
+      "expected_files_or_links": 217,
+      "packaged_payload_files_or_links": 216,
+      "additional_local_build_files_count": 1,
+      "critical_files": {
+        "AgentsArenaServer": {
+          "sha256": "c9724c53ae3bc7a0ac1143ab71679b777055196707c1f2be3b65de355cd46e82",
+          "matches_expected": true
+        },
+        "build-info.json": {
+          "sha256": "e75848a359c8f1940e9748834c49568f8038638d991142b59018d221274f52a9",
+          "matches_expected": true
+        },
+        "AgentsArenaServer_Data/Managed/Assembly-CSharp.dll": {
+          "sha256": "cdf7b4d24fbde2a08a557a8050a3a2a23b069e4fb1d616c19629d92c988be189",
+          "matches_expected": true
+        },
+        "UnityPlayer.so": {
+          "sha256": "b5acc04baffa8b47be458791540e6f4aa5c6b098c34bcd0bdc97edec1f0765fe",
+          "matches_expected": true
+        }
+      }
+    },
+    "website": {
+      "files_or_links": 8,
+      "expected_files": 8,
+      "unexpected_ds_store_count": 0
+    },
+    "public_website": {
+      "exact_files_fetched": 8,
+      "expected_files": 8
+    },
+    "http_security_headers": {
+      "X-Content-Type-Options": true,
+      "Referrer-Policy": true,
+      "X-Frame-Options": true
+    },
+    "server_version_header_suppressed": true
+  },
+  "expected_inventory_sha256": "9f3ef8c22a03c03b022b9f5e545f4b140bc4c5119d1119477f22b6439e184039",
+  "transport_scope": "Public HTTP checks only; no TLS, transport confidentiality or secure-public-production claim.",
+  "limitations": [
+    "Read-only final-state provenance, service, filesystem and HTTP observations; not gameplay, rollback execution or continuous availability proof.",
+    "HTTP GETs originate on the VPS to its public origin; external-network reachability is a separate client smoke check.",
+    "Environment contents, journal, credentials and process argv were never read. PID is used internally only to bind executable/cwd and is not emitted.",
+    "Both current aliases are final-state consistent and reread unchanged; this does not claim that two distinct symlink renames are one atomic filesystem operation.",
+    "Exact known local file/link/mode inventories are required. Extra website files or.DS_Store fail; they are not silently excluded on the remote.",
+    "No service restart, file write, POST, DELETE, process signal, model or gameplay client is performed."
+  ]
+}

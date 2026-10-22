@@ -1,0 +1,9 @@
+{
+  "schema": "actor.browser-room-retirement.v1",
+  "passed": true,
+  "own_created_room_get_404": true,
+  "health_healthy": true,
+  "remote_process_signalled": false,
+  "captured_at_unix_ms": 1792637593464,
+  "scope": "Natural retirement of the exact synthetic room created once through the production browser UI; no forced finish or deletion."
+}

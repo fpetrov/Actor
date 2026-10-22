@@ -22,17 +22,45 @@
       "strict_independent_starts": 6
     },
     {
-      "actual_assigned_gameovers": 1,
-      "attempts": 2,
+      "accepted_cases": [
+        "human-mixed-03",
+        "human-mixed-04"
+      ],
+      "actual_assigned_gameovers": 3,
+      "actual_tool_counter_scope": "sdk_item_lifecycle",
+      "all_accepted_case_tool_counts_observed": true,
+      "attempts": 4,
       "category": "human_mixed",
-      "evidence": "human-mixed/attempt-02.json",
-      "reason": "historical_interrupted_turn_tool_counts_unknown",
-      "status": "strict_gate_failed",
-      "strict_passes": 0
+      "evidence": [
+        "human-mixed/attempt-01.json",
+        "human-mixed/attempt-02.json",
+        "human-mixed/attempt-03.json",
+        "human-mixed/native-03.json",
+        "human-mixed/attempt-04.json",
+        "human-mixed/native-04.json"
+      ],
+      "failed_attempts": 2,
+      "full_social_cycle_claimed": false,
+      "human_ballots_accepted_cases": 1,
+      "human_reports_accepted_cases": 0,
+      "interrupted_turns_accepted_cases": 8,
+      "not_proven": [
+        "Human body-report/task or model kill in accepted case04",
+        "native input attestation",
+        "separate controlled model-selected full social cycle"
+      ],
+      "official_turns_accepted_cases": 89,
+      "reason": "attempt03_default_strict_and_attempt04_required_human_vote_pass;attempt01_waiting_failure;attempt02_tool_count_unknown",
+      "required_human_vote_accepted_cases": 1,
+      "status": "passed_two_strict_cases_with_two_retained_failures",
+      "strict_passes": 2
     },
     {
       "authorized_victim_fold_frames": 5,
       "category": "native_human",
+      "completed_fixture_games": 4,
+      "completed_native_input_fixture_games": 3,
+      "completed_short_ui_attempts_without_input_acceptance": 1,
       "dead_native_key_movement_blocked": true,
       "deterministic_fixtures": [
         {
@@ -51,6 +79,43 @@
           "participants": 3,
           "terminal": "parity",
           "terminal_reports": 3
+        },
+        {
+          "case": "native-07",
+          "complete": true,
+          "native_exit_code": 0,
+          "owned_groups_remaining": 0,
+          "owned_processes_remaining": 0,
+          "participants": 5,
+          "retained_visual_failures": 2,
+          "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+          "terminal": "impostors_eliminated",
+          "terminal_reports": 5
+        },
+        {
+          "case": "native-08-short-round2",
+          "complete": true,
+          "native_input_acceptance": false,
+          "owned_groups_remaining": 0,
+          "owned_processes_remaining": 0,
+          "participants": 5,
+          "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+          "terminal": "match_timeout",
+          "terminal_reports": 5
+        },
+        {
+          "case": "native-08-round3",
+          "complete": true,
+          "human_ballots": 0,
+          "human_meetings": 1,
+          "native_exit_code_observed_by_integrator": 0,
+          "native_input_acceptance": true,
+          "owned_groups_remaining": 0,
+          "owned_processes_remaining": 0,
+          "participants": 5,
+          "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+          "terminal": "impostors_eliminated",
+          "terminal_reports": 5
         }
       ],
       "evidence": [
@@ -58,19 +123,34 @@
         "native-human/witness-02.json",
         "native-human/victim-01.json",
         "native-human/dead-keyboard.json",
-        "native-human/victim-presentation.json"
+        "native-human/victim-presentation.json",
+        "native-human/final-656-07.json",
+        "native-human/final-72b-08.json",
+        "native-human/short-72b-08-round2.json",
+        "human-mixed/native-03.json",
+        "human-mixed/native-04.json"
       ],
       "fresh_same_process_rematch": true,
+      "incomplete_fixture_games": 1,
+      "native72b_accepted_human_ballot": true,
+      "native72b_human_ballot_scope": "Accepted Human04; Native08 round3 own vote remains0.",
+      "native72b_six_person_life_rows": true,
+      "native72b_six_voting_cards": true,
+      "native72b_unconfigured_agent_hud_keyboard_suppression": true,
+      "native72b_visible_nameplate_sample": true,
       "native_body_report": true,
+      "native_four_room_landmarks_under_fog_source656": true,
       "native_mechanics_completed": 3,
       "not_proven": [
         "audibility/all-cue/LOS sound coverage",
         "complete screen-resolution matrix",
-        "Agent read-only HUD"
+        "attached Agent read-only HUD/recovery",
+        "all six simultaneous world nameplates in saved native frame"
       ],
       "own_death_view": true,
+      "retained_source656_nameplate_and_roster_failures": true,
       "sparse_local_dsp_output_measured": true,
-      "status": "partial"
+      "status": "partial_with_bounded72b_native_samples_and_retained_gaps"
     },
     {
       "accepted_case_attempts": 3,
@@ -176,30 +256,40 @@
     },
     {
       "all_downloaded_bytes_match": true,
+      "anonymous_https_verified": true,
       "category": "final_release_integrity",
       "checksum_entries": 6,
       "clean_source_build_stamps": true,
+      "current_release_draft": false,
+      "current_release_prerelease": true,
       "distribution_files": 7,
-      "draft_at_download": true,
+      "draft_at_original_download": true,
       "evidence": [
-        "release-integrity.json",
-        "https-draft-download.json"
+        "release-integrity-72b.json",
+        "https-draft-download-72b.json",
+        "component-delta-656-72b.json",
+        "https-public-download.json",
+        "https-public-download-attempts.json",
+        "deployment/activation-72b.json"
       ],
       "not_proven": [
-        "full final native gameplay acceptance",
-        "production activation",
-        "anonymous public HTTPS release distribution",
+        "full72b native screen/input acceptance",
+        "gameplay/control-plane TLS or confidentiality",
         "Apple notarization",
-        "Windows or IL2CPP support"
+        "Windows or IL2CPP support",
+        "full M8 release acceptance"
       ],
       "product_artifacts": 5,
-      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
-      "status": "passed_source_bound_authenticated_draft_scope"
+      "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+      "status": "passed_published_prerelease_integrity_and_separate_activation_scope",
+      "superseded_unpublished_source": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3"
     },
     {
       "category": "controlled_live_social_scenario",
-      "scope": "Ordinary accepted full cycles08/12 and deterministic Human fixtures are retained in their own categories; no forced model decisions or hidden observations are used.",
-      "status": "pending_separate_actual_case"
+      "evidence": "models/controlled-13-14.json",
+      "scope": "Separate controlled14 is a strict model-selected task win; no accepted kills/body reports/Discussion/ballots. Setup13 retained; ordinary full cycles08/12 and Human fixtures keep their own categories.",
+      "section61_accepted": false,
+      "status": "actual_case_executed_required_social_cycle_not_proven"
     },
     {
       "category": "official_sdk_stream_live_coverage",
@@ -216,7 +306,7 @@
     },
     {
       "category": "final_functional_ci",
-      "evidence": "release-integrity.json",
+      "evidence": "release-integrity-72b.json",
       "not_proven": [
         "native gameplay",
         "actual model execution",
@@ -225,48 +315,170 @@
       ],
       "runs": [
         {
-          "run_id": 39701158511,
-          "url": "https://github.com/fpetrov/Actor/actions/runs/39701158511",
+          "run_id": 39706613236,
+          "url": "https://github.com/fpetrov/Actor/actions/runs/39706613236",
           "workflow": "ControlPlane"
         },
         {
-          "run_id": 39701158421,
-          "url": "https://github.com/fpetrov/Actor/actions/runs/39701158421",
+          "run_id": 39706613217,
+          "url": "https://github.com/fpetrov/Actor/actions/runs/39706613217",
           "workflow": "SDK+Runtime"
         }
       ],
-      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+      "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
       "status": "passed"
     },
     {
       "category": "final_native_shader",
-      "evidence": "world/shader-remediation.json",
+      "evidence": [
+        "world/shader-remediation.json",
+        "native-human/final-656-07.json"
+      ],
+      "fixed_native_four_room_error_magenta_pixels": 0,
+      "fixed_native_source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
       "fixed_static_metal_render_error_magenta_pixels": 0,
       "not_proven": [
-        "final656 native fog and landmark gameplay visibility"
+        "every fog or audiovisual boundary",
+        "full72b native resolution/input matrix"
       ],
       "retained_failed_source": "35e99afa5f17d7115435902590b22242bae54fb0",
-      "status": "pending_final_native_acceptance"
+      "status": "passed_four_room_native_source656_bounded_scope"
+    },
+    {
+      "binary_equivalence_claimed": false,
+      "category": "source_component_delta_656_72b",
+      "evidence": "component-delta-656-72b.json",
+      "fresh_candidate_headless_execution_claimed": false,
+      "presentation_only_product_changes": 5,
+      "status": "passed_committed_source_comparison",
+      "unchanged_critical_components": 21
+    },
+    {
+      "actual_four_codex_starts": 1,
+      "actual_tool_counter_scope": "sdk_item_lifecycle",
+      "all_tool_counts_observed_zero": true,
+      "attempts": 2,
+      "category": "controlled_codex",
+      "evidence": "models/controlled-13-14.json",
+      "full_social_cycles": 0,
+      "interrupted_sdk_turns": 8,
+      "owned_child_pids_remaining": 0,
+      "owned_process_groups_remaining": 0,
+      "reason": "Natural task win without accepted kill,body-report,Discussion or ballot; no choices forced.",
+      "sdk_turns": 66,
+      "section61_accepted": false,
+      "setup_failures": 1,
+      "source_client_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+      "staging_rooms_remaining": 0,
+      "status": "executed_strict_gameplay_pass_social_cycle_not_proven",
+      "strict_gameovers": 1
+    },
+    {
+      "accepted_gameovers": 7,
+      "attempts": 14,
+      "category": "all_model_attempt_inventory",
+      "evidence": "models/attempts-01-14.json",
+      "failed_attempts": 7,
+      "incomplete_attempts": 0,
+      "inventory_complete": true,
+      "scope": "12primary series plus2controlled attempts; Human mixed/native cases separate. Historical01\u201312 files unchanged."
+    },
+    {
+      "actual_rollback_executed": false,
+      "category": "production_activation72b",
+      "evidence": "deployment/activation-72b.json",
+      "final_checks_expected": 17,
+      "final_checks_passed": 17,
+      "gameplay_tls_claimed": false,
+      "initial_provenance_passed": false,
+      "ordinary_ngo_binding_verified": true,
+      "owned_smoke_clients_remaining": 0,
+      "owned_smoke_groups_remaining": 0,
+      "payload_files_changed": false,
+      "provenance_attempts": 2,
+      "recoverable_metadata_files_quarantined": 1,
+      "runtime_hello_or_model_started": false,
+      "sandbox_smoke_checks_expected": 13,
+      "sandbox_smoke_checks_passed": 13,
+      "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+      "status": "passed_actual_activation_with_retained_metadata_failure"
+    },
+    {
+      "accepted_downloads": 1,
+      "asset_files": 7,
+      "category": "public_anonymous_https_distribution",
+      "checksum_entries": 6,
+      "credentials_or_tls_bypass": false,
+      "evidence": [
+        "https-public-download.json",
+        "https-public-download-attempts.json"
+      ],
+      "game_or_model_denominator": false,
+      "normal_certificate_verification": true,
+      "setup_failures": 3,
+      "status": "passed_exact_public_prerelease_integrity",
+      "supervisor_attempts": 4,
+      "total_bytes": 127653353
+    },
+    {
+      "category": "production_public_browser",
+      "clipboard_roundtrip_verified": false,
+      "copy_receipt_in_saved_frame": false,
+      "copy_receipt_operator_observed": true,
+      "evidence": [
+        "deployment/web-browser-create-copy-72b.json",
+        "deployment/web-room-retirement-72b.json"
+      ],
+      "full_gameplay_or_tls_claimed": false,
+      "ordinary_create_observed": true,
+      "own_browser_room_retired": true,
+      "status": "passed_bounded_operator_observation"
     }
   ],
   "local_deterministic_check_snapshot": {
     "control_plane_tests": 29,
+    "nameplate_layout_rules_included": 14,
     "passed": true,
     "schema_generated_artifacts": 54,
-    "scope": "Latest completed local runs reported by the integrator; not final GitHub CI or an artifact-source stamp.",
-    "sdk_tests": 288,
+    "scope": "Current release coordinator full dotnet runs plus exact72b source CI; Runtime545 remains its retained unchanged wheel proof. Native/model acceptance separate.",
+    "sdk_tests": 302,
     "static_surface_rules_included": 13,
     "web_tests": 9
   },
   "native_asset_formats": {
     "additional_final_lobby_png_images": 2,
+    "additional_human_mixed03_png_images": 3,
+    "additional_human_mixed04_png_images": 2,
+    "additional_native07_png_images": 8,
+    "additional_native08_png_images": 6,
+    "additional_public_browser_jpeg_images": 1,
     "extensions_match_magic": true,
     "f12_png_frames": 5,
     "jpeg_images": 4,
     "jpeg_rename_preserved_bytes": true
   },
   "public_asset_sha256": {
+    "deployment/web-browser-create-copy-72b.jpg": "0ace6f6ec828376ac0d881f5d12eb4df5afa7d710847e0bc865ad155157bb70b",
+    "human-mixed/native-03-alive-800x600.png": "6582491c36128a7066a4c9ec5ae040a99a34a9dbd3165ec149fdb8d990e4678a",
+    "human-mixed/native-03-death-800x600.png": "bd3a2be8a4c997d07aca86b0824fd03133bd2fffe0d0c3c1afd3a329e200c53e",
+    "human-mixed/native-03-gameover-800x600.png": "0faab23d42d1a4b352176a29820868a731802024275d01e8b182fff962499a08",
+    "human-mixed/native-04-gameover-800x600.png": "89d584ed1adeac4a5a19e3ccfdd65551adad74f5808c7d2afb1876da42e2d9eb",
+    "human-mixed/native-04-vote-final-800x600.png": "6af15d511b676aa5a6f7e6244c8a77ef039afdef6b6cdfe598f4640cf585c4c6",
     "native-human/death-800.jpg": "253c68d353c0159b97d3a60635a451d719d69b566d2c98b35af6f80e80556316",
+    "native-human/final-656-07-discussion-roster-defect-800x600.png": "6e99ef7438b719365ebb5f82dff440acd0cbd4e87054e58eeed375a68ad0e9c9",
+    "native-human/final-656-07-engineering-reactor-800x600.png": "cb9f97f57d0c36630f1251870af042c779ec293d5ae7911dec6b2797b8128778",
+    "native-human/final-656-07-gameover-800x600.png": "3ffdf6013914078d74bc286b9138c32e05a12cc755d0f77cfe22a076da399c87",
+    "native-human/final-656-07-main-hall-800x600.png": "26963e4d7b74356a41b2d5b4b79e2d05d48583cf7b55361914ff3b7b40252cde",
+    "native-human/final-656-07-nameplate-defect-800x600.png": "a10e681ff9e673c9d29c09885d940dc5a4dc29d24caa9ae7714e085de0379f97",
+    "native-human/final-656-07-security-800x600.png": "d98cf7cbaceb6f7835955d208c599c8b2f66d75d2e5ddbfb77218eb76bc76aa7",
+    "native-human/final-656-07-storage-800x600.png": "4452f7b93071367f6b2e505416fcb24963c28a1234be8127bb508887cb9b06eb",
+    "native-human/final-656-07-waiting-six-800x600.png": "f03729a5c62bab5a9cca90427aa410f827f544e96f44fd7aca2cc3bbf33a1ebd",
+    "native-human/final-72b-08-discussion-six-life-800x600.png": "910f25d5ff3032aecba7e4e4e71d8f8cbcac7aa304482d40cb0f69eef7756098",
+    "native-human/final-72b-08-gameover-800x600.png": "467476d95b9554965d21d7e5a1601d163a5e3abdfcca9ef4011a4e9d5084ed70",
+    "native-human/final-72b-08-nameplate-sample-800x600.png": "ec04c6c0b36f093d9087315caa30dcb95d4365491efc24bd869cf184b74efcf4",
+    "native-human/final-72b-08-skip-selected-800x600.png": "3205ecb522a149c9e387b6e0a70cd5efa6f6ed9665e1806f505e54735f753d0a",
+    "native-human/final-72b-08-unconfigured-agent-hud-800x600.png": "4376eb6cf0ab35919d05b0e8ae02dfe273196b2db5bc1fbdfa1f5a89e4a96093",
+    "native-human/final-72b-08-voting-six-cards-800x600.png": "2c9731fad725adc848ef6d3b8a13d985676c9a18a0e3ce7ea911b64e7948370b",
     "native-human/gameover-800.jpg": "25ba97b1ff8e30233d7366fb96c61ded49f83d083703a6e4b16aa069bd3870aa",
     "native-human/rematch-800.jpg": "b467b4a47976ed13602cc5fa505ac8194e8a07149ca2440b7447f734d5b82718",
     "native-human/victim-gameover-800.jpg": "f23f7708bceb0affe622ccb93807617e61236279f8d9e52937937e5b1b0a8e50",
@@ -285,18 +497,59 @@
     "codex-attempt-10.json": "2383d5f3d6007498428f1a7918f865605cfa4ac003abd71d171e9e935f25ffd2",
     "codex-attempt-11.json": "34b97a5ba2e53735592a45936e2ac73bee93c0239e8b7f867869f13db32d4a96",
     "codex-attempt-12.json": "da524cdec8cc078a15c0f39b80dd786d95c33388e02f004fd5353f88fdff67cb",
+    "component-delta-656-72b.json": "ab14a3865424df5813b4f06e87f337e24251b998e948c2aa7453466f361c5b79",
+    "deployment/activation-72b.json": "8c97f1ae300eb24734815c10dcf60d9a1a23c9be01dfea21b825164a7cb786d6",
+    "deployment/provenance-attempt-01-72b.json": "0560c553800c1c85b8157b4eef3093c5eba5f8fd1483cb53ca17450d72e8d829",
+    "deployment/provenance-final-72b.json": "988681011de77685ae8db49db10e4cbb1954ce5816674e4a95f9e1e79db86e95",
+    "deployment/sandbox-smoke-72b.json": "0955857df5dbd1304c8154b07eaefb30b2f90bbc50e272e101d0fa456f259ab5",
+    "deployment/staging-retirement-72b.json": "649a5dd0bc8ba3f3388b20ecd4e6d465171fae6eb63867d6ee7f3e20f05d3147",
+    "deployment/web-browser-create-copy-72b.json": "9f2d9df967e69e21a62689d5fa7ad38b7e318dd8e4dc639e7ce865958e7a6455",
+    "deployment/web-metadata-quarantine-72b.json": "b71707bbd348c7a7553c6744e60b9bb3b73c65e21c48caeb9cc84425dd170309",
+    "deployment/web-room-retirement-72b.json": "2e4766eda6a1601ce77f409c7a1e8a4bb4731ee2b40d2dd02d3b4fb9fcef729a",
+    "https-draft-download-72b.json": "9d995a1913777f3f0fcec6ffb48eccdca6c7e230c82164960970eef5d890d3a4",
     "https-draft-download.json": "6a1b400d01becc959361a3e9ae96ab99034bbee2fd09f603a36404a53da2faea",
+    "https-public-download-attempts.json": "2d0f14451b151ef03ef8d5b275b8f6c8ae0e61eebefda910743e0c6e9336314f",
+    "https-public-download.json": "7729dbc6c84e0da2a343d123d662a56d68e91bce79b791a9605f43fe5d58e152",
     "human-mixed/attempt-01.json": "e1d6067b88975529a8e2068b3d1a15ba6e95a84f476209e55f2437991f00c072",
     "human-mixed/attempt-02.json": "66c33265a437b1c9c6753661369c4cf1896bf715e99b0656cd7dbaf889febb9e",
+    "human-mixed/attempt-03.json": "7ecd12ebd6521776851aa4318a750b5caf24bd0bb0a430afde5fdc2db526df0a",
+    "human-mixed/attempt-04.json": "986d73776b72e62f823a19cb4be6bbb345a127aa245089c679ff8502aba91bf1",
     "human-mixed/native-02.json": "f534b1364d2792f0870bc8dacc9072e4544c9a2acb820ac4985b1ec1da7637f8",
+    "human-mixed/native-03-alive-800x600.json": "b924817fd29eec5a4d870cbf2346bf6a65dba4c95ece6bc381de32c6a709963d",
+    "human-mixed/native-03-death-800x600.json": "962f1b906a809ee1c8ca31641e8c831f4f1afb4c04e6f2b2d0656ba80148bb52",
+    "human-mixed/native-03-gameover-800x600.json": "1c2c288269b98ff28a7f41ec27d33d969dd750f3fe97105faa3bc381d07f8c14",
+    "human-mixed/native-03.json": "42ac2692b3143bad102fdab8b5ca105b2c2380e32530a87665b46b4cf16632ef",
+    "human-mixed/native-04-gameover-800x600.json": "bed0e387790e7817b06869e5b430cc21550f8a4465370bfb964ed7e3c190c43a",
+    "human-mixed/native-04-vote-final-800x600.json": "bac900514267c3dd4600185041ee9fb8e9ba1bab0538b52d25d1e274897bde77",
+    "human-mixed/native-04.json": "dad7e9549001b48f367abcd02e4efcfcfa507ce29e2950ef91d3ee5e23e606cc",
     "models/attempts-01-08.json": "bcd1d7edfc434118b2fbdd11e95314c68a55fb0e0f77aa76eada840882172f71",
     "models/attempts-01-12-registry.json": "0d5a0be27566ded6badedd42cb5a2ae9ed313adde669cc39b35fd478e8894bc6",
     "models/attempts-01-12.json": "583188155ef6cdd80408ecb6498ff6ebc8f36e6eeee205f73b376d672e86fc42",
+    "models/attempts-01-14-registry.json": "dc9929e9aa43a63eb9291839a1838d409d2298ee149af9f9bc47524596403d58",
+    "models/attempts-01-14.json": "c9310486bae8803c5b5f2f37e548b477ac41639f3719549c821c4af2989d20f3",
     "models/attempts-09-12-cleanup.json": "84353ff9afd93d00cb5df9269d01ce993156c587f986314a87d177e5db0f675b",
     "models/attempts-09-12-conditions.json": "0c288805664487f95a6becd281add1b5d7c57295b456dea8bfea46b1791c3209",
     "models/attempts-09-12-stream.json": "218f72f5555bdbbdb9c107e11f8c6656dad6008cc2ab9963df1316c06571c1f3",
+    "models/controlled-13-14.json": "9b85a805d712b07e814b7e502d66229a3d558b73625f27bdaa62963493e848ec",
     "models/full-binding-08-12.json": "b54ebd8c639c5d9c7395e3ce678662858b9e6664fb18cf5c9bf3a30b080d4534",
     "native-human/dead-keyboard.json": "9835a80e943362687a3637cb7de67066266340a0f74d42c84aac7db13c363638",
+    "native-human/final-656-07-discussion-roster-defect-800x600.json": "7aa551ba26d525fcfc0f2e3ae66f600dda9be057b384574814dd6625da8e5205",
+    "native-human/final-656-07-engineering-reactor-800x600.json": "e06793fa8bcbde4f3e3b57eed566c543bed6023e31419acda1cbf937714b1607",
+    "native-human/final-656-07-gameover-800x600.json": "90c3d49be9238c9a817924ff7d20bbf47e01899f901baafc0a5f319164721f8c",
+    "native-human/final-656-07-main-hall-800x600.json": "c0861d05d08b6faad3be22e84ca759a48da9474bef653397b475998e91d66959",
+    "native-human/final-656-07-nameplate-defect-800x600.json": "a049b109f339dba4408f26cbed2e990fcb8819aae41987f9ce961fc12d5e3447",
+    "native-human/final-656-07-security-800x600.json": "7cd83b7ace13b1f815b613db37608d2a2f526c5f4f5b44e7204dd432b0f9b3b3",
+    "native-human/final-656-07-storage-800x600.json": "69791310ede1e82cfd0c9cf20ec44150693aec0df68b43645295a1ae6fa75c31",
+    "native-human/final-656-07-waiting-six-800x600.json": "7b9c40ea0a49933dddbb8b8ae77a64aa5b7fbb89f09edeedbdb45d8aab2740c9",
+    "native-human/final-656-07.json": "1c3aed20f53525bc050574f677f6f5eff4cd5ccd987c94735f8b5bae3ee99b0e",
+    "native-human/final-72b-08-discussion-six-life-800x600.json": "9f84066bcc9051767fec1ff155f4b4121982a6a0411c3440c156a65c0826fac5",
+    "native-human/final-72b-08-gameover-800x600.json": "4b24e4d6d97aaf88e472cb2499f652cf0669f3ddebead5662ba71fd86920cb4a",
+    "native-human/final-72b-08-nameplate-sample-800x600.json": "f421540a873d28d01c7bb03e1e68546239af0bfaebd8ec68b08ba8a87ca9448c",
+    "native-human/final-72b-08-skip-selected-800x600.json": "28df055aaa3278d4b1c53829eefb1785f8f9979bca4214724a2d34b8e3de2c9e",
+    "native-human/final-72b-08-unconfigured-agent-hud-800x600.json": "af656ff5bb6931512a4660d72400d6eec1232db09979461afdabf74a8a1067fd",
+    "native-human/final-72b-08-voting-six-cards-800x600.json": "be2030546a1327190f146465a4430fae8190774604394354bfa08cfe6d7fe34b",
+    "native-human/final-72b-08.json": "d16364e5e3cc1cbc5a201b6579ce5450ca3e1e2f73c367efe7f5b3f517c14436",
+    "native-human/short-72b-08-round2.json": "7462c8b9c05e3f0e011238f03b8e2e27c7be7f92ad63f0c04bc2cdc7580101d6",
     "native-human/victim-01.json": "7f8dfaac07c525694d985c5235fe1d3db93f77d4a5f663f85194e92e231810e1",
     "native-human/victim-presentation.json": "cfbc97b7132e3c08f9c8cdac8f4bacadad50f135315b3ca0373f7c61083c08a3",
     "native-human/witness-02.json": "1605fe5377458c45b126eecfeebd9b938c6137bdc74a4305470e7f15c92851a9",
@@ -305,8 +558,11 @@
     "network/reconnect.json": "396de87276e4f3c31d4662033d259fe12761946aac37bb6eb6f3bd411da11dc7",
     "package-656/SHA256SUMS": "391a69ef851e01b6ef09d9ed1e2f3a2fe81d989270ee375582d77e3ee36b259d",
     "package-656/release-manifest.json": "5eb388220a32793a495c5c28a5b0b530c5b20c1799bed75b9bcffffdce6b10cf",
+    "package-72b/SHA256SUMS": "3196769df8d6f327bca8a5bad1b7456ff4a940792bd8ab210b5b15e8df4a97bc",
+    "package-72b/release-manifest.json": "2cca093f16abad3fa335c09b5b856b9920ba8989c6c37f1c08ac579225063ada",
     "performance/human-mixed-02-postgame.json": "e82a19f837c3b4703f0b56122b218e8e9b1f9b26feaf2f72ba311e6fc1d19891",
     "performance/mixed-server-03.json": "78fc6a69f752435bbf470a3ae9395e1c6603086e9d8f432f51af5523bb1d6d18",
+    "release-integrity-72b.json": "de8ccab12fc80cadf3a842ad5fc0ea8e87bb7bb786bbe74c2cd92313f9e03f43",
     "release-integrity.json": "49e333967bcec30db998f3d0b33986f4debbea764223486430bb7d4168d9d50a",
     "runtime-package.json": "3bfbcd11194847152f8794d28e6d9ffe77e7da445950d5f803a8510d931690f0",
     "sandbox/summary.json": "02d5dc453509479bb7c9fe0729984ceb93b7a439e5bfde4094724ab83edab198",
