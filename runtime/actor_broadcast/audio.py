@@ -22,6 +22,18 @@ class AudioError(RuntimeError):
     def __init__(self, code): self.code = code; super().__init__(code)
 
 
+class _SegmentRevokedRequested(Exception):
+    """Internal fence only; it is not success until the renderer flush ACK."""
+
+
+def _transport_error(error):
+    if isinstance(error,ConnectionError):return True
+    # Keep the optional package optional when importing the audio contracts.
+    try:from websockets.exceptions import ConnectionClosed
+    except ImportError:return False
+    return isinstance(error,ConnectionClosed)
+
+
 class BrowserAudioSink:
     def __init__(self, *, route_guard, on_ack=None, ack_timeout=4.0, port=0):
         if not callable(route_guard): raise ValueError("An explicit audited route guard is required")
@@ -36,9 +48,13 @@ class BrowserAudioSink:
         self._terminal = None; self._flushed = {}; self._started = False; self._ended = False
         self._heartbeat = None; self._origin = None
         self._validate = None
+        self._fenced = set(); self._flush_task = None; self._flush_request = None
+        self._renderer_failure_reason = None
         self.latency = None
         self.metrics = {"played_segments": 0, "interrupted_segments": 0, "underrun_frames": 0,
-                        "stale_packets": 0, "sent_frames": 0, "consumed_frames": 0}
+                        "stale_packets": 0, "sent_frames": 0, "consumed_frames": 0,
+                        "segment_revocations":0,"segment_expirations":0,"scope_flush_confirmed":0,
+                        "scope_flush_failed":0,"route_lost":0,"transport_lost":0,"protocol_invalid":0}
 
     @property
     def renderer_url(self):
@@ -85,22 +101,58 @@ class BrowserAudioSink:
     async def _send(self, kind, value, pcm=b""):
         if self._ws is None: raise AudioError("audio_renderer_disconnected")
         async with self._send_lock:
+            if kind in ('begin','pcm','end'):
+                segment=self._active
+                if (segment is None or value.get('scope')!=asdict(segment.scope) or
+                        value.get('key')!=asdict(segment.key)):
+                    raise AudioError('audio_send_identity')
+                self._check_current(segment)
+                if kind=='pcm':
+                    self._sent+=len(pcm)//4;self.metrics['sent_frames']+=len(pcm)//4
             await asyncio.wait_for(self._ws.send(frame_bytes(kind, value, pcm)), self.ack_timeout)
+
+    @staticmethod
+    def _utterance(segment):
+        return segment.scope,segment.key.utterance_id,segment.key.utterance_epoch
+
+    def _fence(self,segment,*,expired=False):
+        identity=self._utterance(segment)
+        if identity not in self._fenced:
+            if len(self._fenced)>=512:raise AudioError('audio_fence_capacity')
+            self._fenced.add(identity);self.metrics['segment_revocations']+=1
+            if expired:self.metrics['segment_expirations']+=1
+
+    def _check_current(self,segment):
+        # Hard route loss always wins, even when a semantic fence also changed.
+        if not self.route_guard():raise AudioError('audio_obs_route_lost')
+        expired=time.monotonic_ns()>=segment.expires_at_monotonic_ns
+        if (self._utterance(segment) in self._fenced or expired or
+                self._validate is not None and not self._validate(segment)):
+            self._fence(segment,expired=expired)
+            raise _SegmentRevokedRequested
+
+    async def _close_renderer(self,reason):
+        if self._renderer_failure_reason is None:
+            self._renderer_failure_reason=reason;self.metrics[reason]+=1
+        self._ready.clear()
+        if self._ws is not None:
+            await self._ws.close(code=1011,reason='controller_unavailable')
 
     async def _heartbeats(self):
         try:
             while True:
-                if self._active is not None and (not self.route_guard()
-                        or time.monotonic_ns() >= self._active.expires_at_monotonic_ns
-                        or (self._validate is not None and not self._validate(self._active))):
-                    # Stop heartbeat and close the socket. The worklet clears
-                    # on close, and also has its independent 1-second deadman.
-                    raise AudioError("audio_active_scope_revoked")
+                if self._active is not None:
+                    segment=self._active
+                    try:self._check_current(segment)
+                    except _SegmentRevokedRequested:
+                        # Stop only this fenced utterance. Keep authentication
+                        # only after a real matching render-thread flush ACK.
+                        await self.cancel(Cancel(*self._utterance(segment)),fade_seconds=0)
                 await self._send("heartbeat", {})
                 await asyncio.sleep(.25)
         except asyncio.CancelledError: pass
-        except BaseException:
-            if self._ws is not None: await self._ws.close(code=1011, reason="controller_unavailable")
+        except BaseException as error:
+            await self._close_renderer('route_lost' if isinstance(error,AudioError) and error.code=='audio_obs_route_lost' else 'transport_lost')
 
     async def _handle(self, ws):
         attached = False
@@ -114,18 +166,24 @@ class BrowserAudioSink:
             if set(auth) != {"type", "capability"} or auth["type"] != "authenticate" or not isinstance(auth["capability"], str) or not secrets.compare_digest(auth["capability"], self._capability):
                 raise AudioError("audio_auth_rejected")
             if self._ws is not None: raise AudioError("audio_renderer_already_attached")
-            self._ws = ws; attached = True
+            self._ws = ws; attached = True; self._renderer_failure_reason=None
             self._heartbeat = asyncio.create_task(self._heartbeats(), name="actor-broadcast-audio-heartbeat")
             async for raw in ws:
                 if not isinstance(raw, str) or len(raw.encode("utf-8")) > 16384:
                     raise AudioError("audio_ack_shape")
                 await self._message(json.loads(raw))
         except asyncio.CancelledError: raise
-        except BaseException:
+        except BaseException as error:
+            if attached and self._renderer_failure_reason is None:
+                reason=('route_lost' if isinstance(error,AudioError) and error.code=='audio_obs_route_lost' else
+                    'transport_lost' if _transport_error(error) else 'protocol_invalid')
+                self._renderer_failure_reason=reason;self.metrics[reason]+=1
             try: await ws.close(code=1008, reason="audio_protocol_rejected")
             except BaseException: pass
         finally:
             if attached and self._ws is ws:
+                if not self._closed and self._renderer_failure_reason is None:
+                    self._renderer_failure_reason='transport_lost';self.metrics['transport_lost']+=1
                 self._ready.clear(); self._ws = None
                 if self._heartbeat is not None:
                     self._heartbeat.cancel(); await asyncio.gather(self._heartbeat, return_exceptions=True)
@@ -146,7 +204,7 @@ class BrowserAudioSink:
         if not isinstance(message, dict): raise AudioError("audio_ack_shape")
         kind = message.get("type")
         if kind == "ready":
-            if set(message) != {"type", "rate", "worklet", "context_state"} or message["rate"] != 48000 or message["worklet"] is not True or message["context_state"] != "running":
+            if self._renderer_failure_reason is not None or set(message) != {"type", "rate", "worklet", "context_state"} or message["rate"] != 48000 or message["worklet"] is not True or message["context_state"] != "running":
                 raise AudioError("audio_renderer_not_ready")
             self._ready.set(); return
         if kind == "not_ready":
@@ -173,6 +231,12 @@ class BrowserAudioSink:
         self.metrics["consumed_frames"] += consumed - self._consumed
         self._consumed = consumed
         self.metrics["underrun_frames"] += underrun
+        try:self._check_current(self._active)
+        except _SegmentRevokedRequested:
+            # Actual consumption may advance while an already-sent ring is
+            # flushing, but revoked completion can never become text coverage.
+            self._start_flush(self._active,Cancel(*self._utterance(self._active)),0)
+            self.metrics['stale_packets']+=1;return
         if consumed and not self._started:
             self._started = True; self._ack("started", consumed, self._sent)
         if kind == "progress": self._ack("progress", consumed, self._sent)
@@ -194,11 +258,12 @@ class BrowserAudioSink:
 
     async def play(self, segment: SpeechSegment, chunks, *, validate):
         async with self._single:
+            self._require_flush_settled()
             await self.wait_ready()
-            if not validate(segment) or time.monotonic_ns() >= segment.expires_at_monotonic_ns:
-                raise AudioError("audio_segment_stale")
+            self._require_flush_settled()
             self._active = segment; self._validate = validate; self._sent = self._consumed = 0
             self._done = None; self._started = self._ended = False
+            self._flush_task=None;self._flush_request=None
             self._terminal = asyncio.get_running_loop().create_future()
             expected_seq = 0
             try:
@@ -206,8 +271,7 @@ class BrowserAudioSink:
                     "text": segment.text})
                 if self.latency is not None: self.latency.synthesis_started(segment)
                 async for item in chunks:
-                    if not validate(segment) or time.monotonic_ns() >= segment.expires_at_monotonic_ns or not self.route_guard():
-                        raise AudioError("audio_segment_stale")
+                    self._check_current(segment)
                     if (item.scope, item.key) != (segment.scope, segment.key): raise AudioError("audio_chunk_identity")
                     if isinstance(item, PcmChunk):
                         if item.chunk_seq != expected_seq or item.source_frame_offset != self._sent:
@@ -219,8 +283,8 @@ class BrowserAudioSink:
                         async with self._condition:
                             await asyncio.wait_for(self._condition.wait_for(lambda: self._ended or self._ws is None or self._sent - self._consumed + frames <= 72000), self.ack_timeout)
                         if self._ws is None: raise AudioError("audio_renderer_disconnected")
+                        self._check_current(segment)
                         if self._ended: raise AudioError("audio_playback_interrupted")
-                        self._sent += frames; self.metrics["sent_frames"] += frames
                         await self._send("pcm", {"scope": asdict(item.scope), "key": asdict(item.key),
                             "chunk_seq": item.chunk_seq, "source_frame_offset": item.source_frame_offset}, item.pcm)
                     elif isinstance(item, SynthesisDone):
@@ -235,6 +299,14 @@ class BrowserAudioSink:
                 if self._done is None: raise AudioError("audio_synthesis_end_missing")
                 remaining = max(0., (self._sent - self._consumed) / 24000) + self.ack_timeout
                 return await asyncio.wait_for(asyncio.shield(self._terminal), remaining)
+            except _SegmentRevokedRequested:
+                await self.cancel(Cancel(*self._utterance(segment)),fade_seconds=0)
+                # cancel only resolves after the actual matching flush. No
+                # arbitrary AudioError/timeout is treated as expected stale.
+                return self._terminal.result()
+            except AudioError as error:
+                if error.code=='audio_obs_route_lost':await self._close_renderer('route_lost')
+                raise
             finally:
                 if not self._ended:
                     try: await _cleanup(self.cancel(Cancel(segment.scope, segment.key.utterance_id,
@@ -251,25 +323,60 @@ class BrowserAudioSink:
     async def cancel(self, request: Cancel, *, fade_seconds=0.03):
         if type(fade_seconds) not in (int, float) or not math.isfinite(fade_seconds) or not 0 <= fade_seconds <= .1:
             raise AudioError("audio_fade_bound")
+        if self._flush_task is not None and self._flush_request==request:
+            # play's finally may have cleared _active after a bounded wait.
+            # The old request still owns its actual pending/failed ACK result.
+            return await asyncio.shield(self._flush_task)
         segment = self._active
         if segment is None or segment.scope != request.scope or (segment.key.utterance_id, segment.key.utterance_epoch) != (request.utterance_id, request.utterance_epoch):
             return FlushAck(request.scope, request.utterance_id, request.utterance_epoch, True)
+        self._fence(segment)
+        if self._ended and self._flush_task is None:
+            # A real renderer terminal already proved this ring empty. Do not
+            # start a late flush racing play's completed-finally cleanup.
+            return FlushAck(request.scope,request.utterance_id,request.utterance_epoch,True)
+        task=self._start_flush(segment,request,fade_seconds)
+        return await asyncio.shield(task)
+
+    def _require_flush_settled(self):
+        task=self._flush_task
+        if task is not None and (not task.done() or task.cancelled() or task.exception() is not None):
+            raise AudioError('audio_flush_unconfirmed')
+
+    def _start_flush(self,segment,request,fade_seconds):
+        self._fence(segment)
+        if self._flush_task is None:
+            self._flush_request=request
+            self._flush_task=asyncio.create_task(self._flush_active(segment,request,fade_seconds),name='actor-audio-scope-flush')
+            self._flush_task.add_done_callback(lambda task:None if task.cancelled() else task.exception())
+        return self._flush_task
+
+    async def _flush_active(self,segment,request,fade_seconds):
         key = (request.scope, request.utterance_id, request.utterance_epoch)
-        fut = self._flushed.get(key)
-        if fut is None:
-            fut = asyncio.get_running_loop().create_future(); self._flushed[key] = fut
-            await self._send("flush", {"scope": asdict(request.scope), "utterance_id": request.utterance_id,
-                "utterance_epoch": request.utterance_epoch, "fade_frames": int(fade_seconds * 48000)})
+        fut=asyncio.get_running_loop().create_future();self._flushed[key]=fut
         try:
-            ack = await asyncio.wait_for(asyncio.shield(fut), self.ack_timeout)
+            # One total deadline includes send-lock/transport wait and ACK.
+            async with asyncio.timeout(self.ack_timeout):
+                await self._send("flush", {"scope": asdict(request.scope), "utterance_id": request.utterance_id,
+                    "utterance_epoch": request.utterance_epoch, "fade_frames": int(fade_seconds * 48000)})
+                ack = await asyncio.shield(fut)
+            if (ack.scope,ack.utterance_id,ack.utterance_epoch,ack.flushed)!=(*key,True):
+                raise AudioError('audio_flush_unconfirmed')
+            if self._active is not segment:raise AudioError('audio_flush_active_changed')
             if not self._ended:
                 self._ended = True; self.metrics["interrupted_segments"] += 1
                 result = self._ack("interrupted", self._consumed, self._sent)
                 if self._terminal is not None and not self._terminal.done(): self._terminal.set_result(result)
             async with self._condition: self._condition.notify_all()
+            self.metrics['scope_flush_confirmed']+=1
             return ack
+        except BaseException:
+            self.metrics['scope_flush_failed']+=1
+            await self._close_renderer('transport_lost')
+            raise
         finally:
-            if fut.done(): self._flushed.pop(key, None)
+            self._flushed.pop(key,None)
+            if fut.done() and not fut.cancelled():fut.exception()
 
     async def aclose(self):
         self._closed = True
@@ -280,6 +387,8 @@ class BrowserAudioSink:
         if self._ws is not None: await self._ws.close(code=1000, reason="owned_stop")
         if self._server is not None:
             self._server.close(); await asyncio.wait_for(self._server.wait_closed(), 3)
+        if self._flush_task is not None:
+            await _drain_task(self._flush_task,self.ack_timeout+1)
         self._ready.clear()
 
 

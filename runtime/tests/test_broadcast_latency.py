@@ -183,19 +183,23 @@ def test_negative_and_nonfinite_times_are_absent_not_zero_samples():
 @pytest.mark.parametrize('truncated',[False,True])
 async def test_actual_scheduler_audio_callbacks_complete_eight_second_pcm_or_keep_truncated_interrupted(truncated):
     class WS:
+        def __init__(self,sink):self.sink=sink
         async def close(self,**_): pass
-    class Sink(BrowserAudioSink):
-        def __init__(self):
-            super().__init__(route_guard=lambda:True);self._ws=WS()
-        async def wait_ready(self,timeout=10): pass
-        async def _send(self,kind,value,pcm=b''):
+        async def send(self,wire):
+            from actor_broadcast.speech import parse_header,decode_header
+            size,_=parse_header(wire[:8]);kind,value=decode_header(wire[8:8+size])
+            sink=self.sink
             if kind in ('pcm','end'):
                 status='progress' if kind=='pcm' else 'complete' if value['complete'] else 'interrupted'
-                await self._message({'type':status,'scope':value['scope'],'key':value['key'],
-                    'consumed_frames':self._sent,'underrun_frames':0})
+                await sink._message({'type':status,'scope':value['scope'],'key':value['key'],
+                    'consumed_frames':sink._sent,'underrun_frames':0})
             elif kind=='flush':
-                await self._message({'type':'flushed','scope':value['scope'],
+                await sink._message({'type':'flushed','scope':value['scope'],
                     'utterance_id':value['utterance_id'],'utterance_epoch':value['utterance_epoch']})
+    class Sink(BrowserAudioSink):
+        def __init__(self):
+            super().__init__(route_guard=lambda:True);self._ws=WS(self)
+        async def wait_ready(self,timeout=10): pass
     class Voice:
         async def synthesize(self,s):
             frames=0

@@ -42,7 +42,7 @@ async def test_stale_scope_frame_bounds_and_route_revocation_cannot_cover_text()
     assert sink.metrics["stale_packets"] == 1 and sink._consumed == 0
     for invalid in (True, 101, -1):
         with pytest.raises(AudioError, match="frame_bound"): await sink._message(packet("progress", s, invalid))
-    with pytest.raises(AudioError, match="unproven"): await sink._message(packet("complete", s, 100))
+    with pytest.raises(AudioError, match="route_lost"): await sink._message(packet("complete", s, 100))
 
 
 async def synthetic_renderer(sink, *, truncate=False):
