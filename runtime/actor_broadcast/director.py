@@ -81,7 +81,10 @@ class CameraDirector:
         wall = self.wall_clock()
         if type(wall) not in (int, float) or not math.isfinite(wall): return False
         return (0 <= now - view.presentation.received_at_monotonic <= _FRESH_SECONDS
-            and view.observed_at_unix_ms <= wall * 1000 < view.expires_at_unix_ms)
+            # This is the same bounded source-clock skew admitted by the
+            # scheduler. Receipt freshness and absolute expiry stay separate.
+            and view.observed_at_unix_ms <= wall * 1000 + 1000
+            and wall * 1000 < view.expires_at_unix_ms)
 
     @staticmethod
     def _state(view):

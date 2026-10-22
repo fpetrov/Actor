@@ -97,6 +97,22 @@ def test_camera_target_contract_cannot_carry_hidden_candidate_data(targets):
     assert director.report()["intents"]==0
 
 
+@pytest.mark.parametrize("failure",["source_over_skew","receipt_stale","receipt_future","expired"])
+def test_source_skew_tolerance_does_not_relax_receipt_or_expiry_fences(failure):
+    director,clock,_=system();source=view(clock)
+    if failure=="source_over_skew":
+        source=replace(source,observed_at_unix_ms=int(clock.wall()*1000)+1001,
+            expires_at_unix_ms=int(clock.wall()*1000)+1501)
+    if failure=="receipt_stale":
+        source=replace(source,presentation=replace(source.presentation,received_at_monotonic=clock.monotonic()-.500001))
+    if failure=="receipt_future":
+        source=replace(source,presentation=replace(source.presentation,received_at_monotonic=clock.monotonic()+.001))
+    if failure=="expired":
+        source=replace(source,observed_at_unix_ms=int(clock.wall()*1000)-500,expires_at_unix_ms=int(clock.wall()*1000))
+    assert not director.observe(source)
+    assert director.view is None and not director.change_due and director.next_intent() is None
+
+
 def test_one_dwell_sample_per_camera_not_per_frame_poll_and_never_before_server_dwell():
     director, clock, rng = system(); assert refresh(director, clock)
     for elapsed in (0, 7.99, .01, 9.99):
@@ -190,7 +206,8 @@ def test_stale_monotonic_or_wall_frame_does_not_select_or_replace_current():
     clock.advance(18)
     assert director.next_intent() is None
     stale = view(clock, sequence=2)
-    future = replace(stale, observed_at_unix_ms=stale.observed_at_unix_ms+1)
+    future = replace(stale, observed_at_unix_ms=stale.observed_at_unix_ms+1001,
+        expires_at_unix_ms=stale.expires_at_unix_ms+1001)
     assert not director.observe(future)
     old = replace(stale, observed_at_unix_ms=stale.observed_at_unix_ms-1000,
         expires_at_unix_ms=stale.observed_at_unix_ms-500)

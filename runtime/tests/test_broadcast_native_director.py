@@ -64,13 +64,15 @@ class Harness:
         self.run.observer_id=OBSERVER;self.run.scheduler=Scheduler();self.run.session=Session()
         self.run.projector=ArenaBroadcastProjector(observer_id=OBSERVER,broadcast_session_id=SESSION,
             match_id=MATCH,clock=clock.monotonic)
-    def frame(self,*,epoch=1,generation=1,anchor="main-hall",focus="",actors=("first","second"),terminal=False,targets=(),facts=()):
+    def frame(self,*,epoch=1,generation=1,anchor="main-hall",focus="",actors=("first","second"),terminal=False,targets=(),facts=(),
+              server_clock_ahead_ms=0,transport_one_way_ms=0):
         self.source_sequence+=1;self.frame_sequence+=1
         value=pb.BroadcastPresentedViewObservation()
         value.view.scope.CopyFrom(pb.BroadcastScope(broadcast_session_id=SESSION,match_id=MATCH,
             observer_id=OBSERVER,connection_generation=generation,view_epoch=epoch))
         value.view.sequence=self.frame_sequence;value.view.semantic_revision=self.frame_sequence
-        value.view.observed_at_unix_ms=int(self.clock.time()*1000);value.view.expires_at_unix_ms=value.view.observed_at_unix_ms+500
+        value.view.observed_at_unix_ms=int(self.clock.time()*1000)+server_clock_ahead_ms-transport_one_way_ms
+        value.view.expires_at_unix_ms=value.view.observed_at_unix_ms+500
         value.view.camera.anchor_id=anchor;value.view.camera.focus_actor_id=focus
         value.view.phase=social.SOCIAL_PHASE_GAME_OVER if terminal else social.SOCIAL_PHASE_EXPLORATION
         value.view.terminal=terminal

@@ -22,6 +22,25 @@ from test_broadcast_native_director import harness
 ROSTER=("first","second","third","fourth")
 
 
+@pytest.mark.parametrize("server_ahead,one_way",[(300,100),(600,97),(1000,0)])
+async def test_native_real_scheduler_initializes_director_with_admitted_source_clock_skew(harness,server_ahead,one_way):
+    h=harness;provider=Provider();speech=Speech()
+    scheduler=CommentaryScheduler(provider,speech,clock=h.clock.monotonic,wall_clock=h.clock.time)
+    h.run.scheduler=scheduler;h.run._activated=True;h.run.director=h.run.deps.director()
+    options=dict(targets=ROSTER,actors=("first",),server_clock_ahead_ms=server_ahead,transport_one_way_ms=one_way)
+    try:
+        h.frame(**options)
+        assert scheduler.ready() and h.run.director.view is scheduler.view
+        assert scheduler.view.observed_at_unix_ms>int(h.clock.time()*1000)
+        h.advance_frames(18,**options)
+        h.run._direct_camera()
+        assert len(h.run.session.commands)==1
+        assert scheduler.report()["counts"]["camera_boundary_requests"]==1
+        assert h.run.director.report()["intents"]==1
+        assert h.run.director.report()["confirmed_presented_switches"]==0
+    finally:await scheduler.stop()
+
+
 def event(h,identity,priority=2):
     now=int(h.clock.time()*1000)
     return pb.BroadcastEditorialFact(evidence_id=identity,version=1,
