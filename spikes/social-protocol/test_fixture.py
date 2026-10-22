@@ -6,12 +6,14 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToDict, ParseDict
 from extensions.agents_arena.v1 import social_pb2 as pb
 from actor_runtime.objectives import Objective
-from actor_runtime.snapshots import DecisionContext, GameMetadata, PayloadSnapshot
+from actor_runtime.snapshots import DecisionContext, GameMetadata, PayloadSnapshot, build_decision_context
 from actor_runtime.extensions import type_url
 from actor_runtime.brains import FinishObjective
+from actor_runtime.errors import ActorError
+from actor_runtime.world import CachedPayload, WorldState
 from pydantic import ValidationError
 
 import actor_social_protocol as fixture
@@ -30,6 +32,23 @@ def context(*, alignment=pb.SOCIAL_ALIGNMENT_CREW, phase=pb.SOCIAL_PHASE_EXPLORA
         observations=[PayloadSnapshot(capability_id=cap, entity_id="self", type_url=type_url(type(value)), sequence=5, revision=3,
             age_seconds=0.0, value=MessageToDict(value), data_policy="session_only") for cap, value in values],
         recent_events=[], previous_skill_result=previous, available_skills=[])
+
+
+def selected_context(*, policy=None, **options):
+    """Build the real snapshot using the installed policy's capability filter."""
+    source = context(**options)
+    world = WorldState("self")
+    classes = {fixture.SOCIAL_MATCH: pb.SocialMatchStateObservation,
+               fixture.SOCIAL_OWN_STATE: pb.SocialOwnStateObservation,
+               fixture.SOCIAL_MEETING: pb.SocialMeetingObservation}
+    world.apply_observations([CachedPayload(row.entity_id, row.capability_id, row.sequence, row.revision,
+        ParseDict(row.value, classes[row.capability_id]()), received_at=100, data_policy="session_only")
+        for row in source.observations], sequence=5, revision=3)
+    session = SimpleNamespace(world=world, manifest=SimpleNamespace(game_id="agents-arena", game_version="0.9.0",
+        protocol_version=SimpleNamespace(major=1, minor=0)))
+    selection = (policy or fixture.ProtocolMatchPolicy()).context_selection(session)
+    return build_decision_context(session, source.objective, [], now=100, selection=selection,
+                                  previous_skill_result=source.previous_skill_result)
 
 
 class BrainTests(unittest.IsolatedAsyncioTestCase):
@@ -67,6 +86,53 @@ class BrainTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(isinstance(await brain.decide(context(life=pb.SOCIAL_LIFE_DEAD)), FinishObjective))
         self.assertIsInstance(await brain.decide(context(phase=pb.SOCIAL_PHASE_GAME_OVER)), FinishObjective)
         self.assertEqual(set(brain.report()), {"provider", "decisions", "closed"})
+
+    async def test_real_selection_retains_meeting_only_in_optional_fixture(self):
+        ordinary = selected_context(policy=fixture.SocialMatchPolicy(), meeting_id="public-meeting")
+        self.assertIsNone(fixture.observation(ordinary, fixture.SOCIAL_MEETING, pb.SocialMeetingObservation))
+        actual = selected_context(meeting_id="public-meeting")
+        retained = fixture.observation(actual, fixture.SOCIAL_MEETING, pb.SocialMeetingObservation)
+        self.assertIsNotNone(retained)
+        self.assertEqual(retained.meeting_id, "public-meeting")
+        ordinary_caps = {row.capability_id for row in ordinary.observations}
+        self.assertEqual({row.capability_id for row in actual.observations}, ordinary_caps | {fixture.SOCIAL_MEETING})
+        self.assertTrue(all(row.entity_id == "self" and row.data_policy == "session_only" for row in actual.observations))
+
+    async def test_recreated_phase_brain_does_not_repeat_task_or_second_meeting(self):
+        for phase in (pb.SOCIAL_PHASE_DISCUSSION, pb.SOCIAL_PHASE_VOTING, pb.SOCIAL_PHASE_EXPLORATION):
+            brain = await self.create()
+            actual = selected_context(phase=phase, meeting_id="public-meeting")
+            for _ in range(3):
+                self.assertEqual((await brain.decide(actual)).skill_id, "actor.wait")
+
+    async def test_actual_initial_selection_keeps_task_park_and_console_sequence(self):
+        with patch.object(fixture, "NOW", return_value=100):
+            brain = await self.create()
+            task = await brain.decide(selected_context())
+            self.assertEqual(task.arguments, {"target": "main-task"})
+            parked = await brain.decide(selected_context(previous={"skill_id": fixture.APPROACH, "status": "succeeded"}))
+            self.assertEqual(parked.arguments, {"duration_seconds": 12.0})
+        with patch.object(fixture, "NOW", return_value=113):
+            console = await brain.decide(selected_context(previous={"skill_id": "actor.wait", "status": "succeeded"}))
+            self.assertEqual(console.arguments, {"target": "meeting"})
+            call = await brain.decide(selected_context(previous={"skill_id": fixture.APPROACH, "status": "succeeded"}))
+            self.assertEqual(call.skill_id, "agents-arena.call-meeting")
+
+    async def test_actual_approach_failure_remains_failure(self):
+        for status in ("failed", "cancelled", "timed_out"):
+            brain = await self.create()
+            await brain.decide(selected_context())
+            with self.assertRaises(ActorError) as raised:
+                await brain.decide(selected_context(previous={"skill_id": fixture.APPROACH, "status": status}))
+            self.assertEqual(raised.exception.code, "protocol_fixture_action_failed")
+
+    async def test_other_phase_capability_selection_is_unchanged(self):
+        for phase in (pb.SOCIAL_PHASE_WAITING_FOR_PLAYERS, pb.SOCIAL_PHASE_DISCUSSION,
+                      pb.SOCIAL_PHASE_VOTING, pb.SOCIAL_PHASE_GAME_OVER):
+            ordinary = selected_context(policy=fixture.SocialMatchPolicy(), phase=phase, meeting_id="public-meeting")
+            actual = selected_context(phase=phase, meeting_id="public-meeting")
+            self.assertEqual([row.capability_id for row in actual.observations],
+                             [row.capability_id for row in ordinary.observations])
 
 
 class BoundaryTests(unittest.TestCase):

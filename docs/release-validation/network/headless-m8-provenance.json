@@ -1,0 +1,48 @@
+{
+  "difference_scope": "Static-surface shader, editor build/render validation and launcher-name PlayerPrefs isolation only; no gameplay, wire, Runtime or authority change.",
+  "input_digests": {
+    "new_client_sha256": "268400f42f171eb59a5e31826106a236a0528c0d0c0a380e70da4805145579bf",
+    "new_server_control_plane_sha256": "4832b3aa45bac16362097da4d64544684ddf22a1b1dfee5ad67e8c9d75bb54c9",
+    "original_products_sha256": "b8f5c5993e9bad2536eb3333b7af62b43d5fc952a7fb96c7b118ba07bc0c054f"
+  },
+  "not_claimed": [
+    "Native graphics or shader acceptance",
+    "Model intelligence or model turns",
+    "Production deployment"
+  ],
+  "optional_protocol_fixture_change": {
+    "game_or_runtime_product_changed": false,
+    "offline_tests": 14,
+    "own_permitted_historical_meeting_retained_in_exploration": true,
+    "source_sha256": "df9cebdde7d31beb762634de9391e4aa221e749b92c7bf78c657c663c5767c19"
+  },
+  "products": [
+    {
+      "cases": [
+        "privacy-01",
+        "protocol-01",
+        "runtime-loss-preflight-01",
+        "runtime-loss-02",
+        "client-loss-01"
+      ],
+      "clean_builds": true,
+      "client_server_control_plane_same_source": true,
+      "native_shader_failure_retained": true,
+      "non_development_client": true,
+      "source_commit": "35e99afa5f17d7115435902590b22242bae54fb0"
+    },
+    {
+      "cases": [
+        "protocol-02",
+        "late-reconnect-01",
+        "server-loss-01"
+      ],
+      "clean_builds": true,
+      "client_server_control_plane_same_source": true,
+      "non_development_client": true,
+      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3"
+    }
+  ],
+  "schema": "actor.m8-headless-source-boundaries.v1",
+  "wire_runtime_authority_sources_identical_between_products": true
+}

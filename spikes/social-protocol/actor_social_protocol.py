@@ -86,6 +86,18 @@ def skill_package():
 
 
 class ProtocolMatchPolicy(SocialMatchPolicy):
+    def context_selection(self, session):
+        selection = super().context_selection(session)
+        match = session.world.latest(pb.SocialMatchStateObservation, capability_id=SOCIAL_MATCH)
+        # The fixture is recreated at every phase boundary. Retain its own
+        # already-permitted historical meeting so Exploration does not repeat
+        # the task/console procedure after the ballot has resolved.
+        caps = selection.observation_capability_ids
+        if (match is not None and match.phase == pb.SOCIAL_PHASE_EXPLORATION
+                and caps is not None and SOCIAL_MEETING not in caps):
+            return selection.model_copy(update={"observation_capability_ids": (*caps, SOCIAL_MEETING)})
+        return selection
+
     def skill_available(self, session, definition):
         if definition.skill_id != APPROACH:
             return super().skill_available(session, definition)

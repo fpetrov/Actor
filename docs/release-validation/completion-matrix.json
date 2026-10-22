@@ -1,15 +1,25 @@
 {
   "categories": [
     {
-      "accepted_gameovers": 2,
-      "attempts": 8,
+      "accepted_gameovers": 6,
+      "attempts": 12,
       "category": "codex_series",
-      "evidence": "models/attempts-01-08.json",
+      "evidence": [
+        "models/attempts-01-12.json",
+        "models/full-binding-08-12.json",
+        "models/attempts-09-12-stream.json"
+      ],
       "failed_attempts": 6,
-      "full_social_cycles": 1,
+      "full_binding_independent_starts": 5,
+      "full_social_cycles": 2,
+      "incomplete_attempts": 0,
+      "not_proven": [
+        "repeatable win-rate or balance benchmark",
+        "separate controlled social scenario acceptance"
+      ],
       "required_independent_starts": 5,
-      "status": "partial",
-      "strict_independent_starts": 2
+      "status": "passed_bounded_series_scope",
+      "strict_independent_starts": 6
     },
     {
       "actual_assigned_gameovers": 1,
@@ -120,13 +130,38 @@
       "tests": 545
     },
     {
+      "accepted": 6,
       "category": "current_m8_privacy_protocol_faults",
-      "evidence": "../../spikes/release-validation/README.md",
-      "status": "pending_actual_runs"
+      "completed_case_attempts": 8,
+      "evidence": [
+        "network/headless-m8-suite.json",
+        "network/headless-m8-provenance.json"
+      ],
+      "executed_attempts": 7,
+      "failed": 2,
+      "not_proven": [
+        "native audiovisual privacy",
+        "presentation replay after resume",
+        "delayed message race",
+        "action after GameOver",
+        "death during active Skill",
+        "meeting during an actual Codex turn",
+        "moving-input stop latency under server loss",
+        "fresh rematch isolation by this headless suite"
+      ],
+      "preflight_failures": 1,
+      "required_selected_case_groups": 6,
+      "selected_case_groups_covered": 6,
+      "source_boundary_preserved": true,
+      "status": "passed_selected_actual_cases_with_retained_failures"
     },
     {
       "category": "native_lobby_layout",
-      "evidence": "ui-integration/layout-validation.json",
+      "evidence": [
+        "ui-integration/layout-validation.json",
+        "release-integrity.json",
+        "https-draft-download.json"
+      ],
       "status": "passed_bounded_scope"
     },
     {
@@ -140,15 +175,78 @@
       "status": "passed_read_only_scope"
     },
     {
+      "all_downloaded_bytes_match": true,
       "category": "final_release_integrity",
-      "not_proven": [
-        "clean M8 commit",
-        "final source-bound archives",
-        "final CI",
-        "production activation",
-        "HTTPS distribution"
+      "checksum_entries": 6,
+      "clean_source_build_stamps": true,
+      "distribution_files": 7,
+      "draft_at_download": true,
+      "evidence": [
+        "release-integrity.json",
+        "https-draft-download.json"
       ],
-      "status": "pending"
+      "not_proven": [
+        "full final native gameplay acceptance",
+        "production activation",
+        "anonymous public HTTPS release distribution",
+        "Apple notarization",
+        "Windows or IL2CPP support"
+      ],
+      "product_artifacts": 5,
+      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+      "status": "passed_source_bound_authenticated_draft_scope"
+    },
+    {
+      "category": "controlled_live_social_scenario",
+      "scope": "Ordinary accepted full cycles08/12 and deterministic Human fixtures are retained in their own categories; no forced model decisions or hidden observations are used.",
+      "status": "pending_separate_actual_case"
+    },
+    {
+      "category": "official_sdk_stream_live_coverage",
+      "evidence": "models/attempts-09-12-stream.json",
+      "interrupted_turns": 28,
+      "interrupted_turns_with_actual_counter": 28,
+      "not_proven": [
+        "historical mixed02 interrupted tool counts",
+        "missing failed-attempt counters"
+      ],
+      "observed_model_tool_calls": 0,
+      "sdk_unique_turns": 195,
+      "status": "passed_bounded_scope"
+    },
+    {
+      "category": "final_functional_ci",
+      "evidence": "release-integrity.json",
+      "not_proven": [
+        "native gameplay",
+        "actual model execution",
+        "production activation",
+        "public release publication"
+      ],
+      "runs": [
+        {
+          "run_id": 39701158511,
+          "url": "https://github.com/fpetrov/Actor/actions/runs/39701158511",
+          "workflow": "ControlPlane"
+        },
+        {
+          "run_id": 39701158421,
+          "url": "https://github.com/fpetrov/Actor/actions/runs/39701158421",
+          "workflow": "SDK+Runtime"
+        }
+      ],
+      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+      "status": "passed"
+    },
+    {
+      "category": "final_native_shader",
+      "evidence": "world/shader-remediation.json",
+      "fixed_static_metal_render_error_magenta_pixels": 0,
+      "not_proven": [
+        "final656 native fog and landmark gameplay visibility"
+      ],
+      "retained_failed_source": "35e99afa5f17d7115435902590b22242bae54fb0",
+      "status": "pending_final_native_acceptance"
     }
   ],
   "local_deterministic_check_snapshot": {
@@ -161,6 +259,7 @@
     "web_tests": 9
   },
   "native_asset_formats": {
+    "additional_final_lobby_png_images": 2,
     "extensions_match_magic": true,
     "f12_png_frames": 5,
     "jpeg_images": 4,
@@ -175,28 +274,52 @@
     "native-human/victim-presentation-02-frame-02.png": "bc63c944fa9c8911d41da03793d20a9dab3c18b38cb0c66d715c6b4a295808ce",
     "native-human/victim-presentation-02-frame-03.png": "cbc8343e8e395e356862f09506bec0979ba78c9d234ef1f98fe3124185c3a81e",
     "native-human/victim-presentation-02-frame-04.png": "8863c96b8368d24f971483773d92efc4611d7edab6361f3d029e63890f85048e",
-    "native-human/victim-presentation-02-frame-05.png": "9f30a3e23364f8b8f5ab47f97c5a3f829b9d5d48e10aaabe8230be372c87370c"
+    "native-human/victim-presentation-02-frame-05.png": "9f30a3e23364f8b8f5ab47f97c5a3f829b9d5d48e10aaabe8230be372c87370c",
+    "ui-integration/final-656-github-lobby-800x600.png": "a21511c29efae9b693c7e91a04643a0b42bf99315608ca6765b3ef386cde2eb8",
+    "ui-integration/final-656-lobby-800x600.png": "b510ef741f7d435f12b80101017aeeea6f0b54ddbe3edf5966a1ba1ca2faeaae",
+    "world/shader-failure-native-35e.jpg": "c1cec405fd904d2c1c001eb5fa7aff265ab6f29ec75571e37073e43d65781160"
   },
   "public_evidence_sha256": {
     "codex-attempt-08.json": "9af75a47e170a4622301ca9e7cbecdd3b9a4746d21203a331127305c59299710",
+    "codex-attempt-09.json": "d237553d79332398906f677c9f1cda12530d79e4433fed9db363d9b9558dd1df",
+    "codex-attempt-10.json": "2383d5f3d6007498428f1a7918f865605cfa4ac003abd71d171e9e935f25ffd2",
+    "codex-attempt-11.json": "34b97a5ba2e53735592a45936e2ac73bee93c0239e8b7f867869f13db32d4a96",
+    "codex-attempt-12.json": "da524cdec8cc078a15c0f39b80dd786d95c33388e02f004fd5353f88fdff67cb",
+    "https-draft-download.json": "6a1b400d01becc959361a3e9ae96ab99034bbee2fd09f603a36404a53da2faea",
     "human-mixed/attempt-01.json": "e1d6067b88975529a8e2068b3d1a15ba6e95a84f476209e55f2437991f00c072",
     "human-mixed/attempt-02.json": "66c33265a437b1c9c6753661369c4cf1896bf715e99b0656cd7dbaf889febb9e",
     "human-mixed/native-02.json": "f534b1364d2792f0870bc8dacc9072e4544c9a2acb820ac4985b1ec1da7637f8",
     "models/attempts-01-08.json": "bcd1d7edfc434118b2fbdd11e95314c68a55fb0e0f77aa76eada840882172f71",
+    "models/attempts-01-12-registry.json": "0d5a0be27566ded6badedd42cb5a2ae9ed313adde669cc39b35fd478e8894bc6",
+    "models/attempts-01-12.json": "583188155ef6cdd80408ecb6498ff6ebc8f36e6eeee205f73b376d672e86fc42",
+    "models/attempts-09-12-cleanup.json": "84353ff9afd93d00cb5df9269d01ce993156c587f986314a87d177e5db0f675b",
+    "models/attempts-09-12-conditions.json": "0c288805664487f95a6becd281add1b5d7c57295b456dea8bfea46b1791c3209",
+    "models/attempts-09-12-stream.json": "218f72f5555bdbbdb9c107e11f8c6656dad6008cc2ab9963df1316c06571c1f3",
+    "models/full-binding-08-12.json": "b54ebd8c639c5d9c7395e3ce678662858b9e6664fb18cf5c9bf3a30b080d4534",
     "native-human/dead-keyboard.json": "9835a80e943362687a3637cb7de67066266340a0f74d42c84aac7db13c363638",
     "native-human/victim-01.json": "7f8dfaac07c525694d985c5235fe1d3db93f77d4a5f663f85194e92e231810e1",
     "native-human/victim-presentation.json": "cfbc97b7132e3c08f9c8cdac8f4bacadad50f135315b3ca0373f7c61083c08a3",
     "native-human/witness-02.json": "1605fe5377458c45b126eecfeebd9b938c6137bdc74a4305470e7f15c92851a9",
+    "network/headless-m8-provenance.json": "6b2a6be92bca8cf5686a014b6befbf8dedb2b42cb01758c0d6008f682f64f08a",
+    "network/headless-m8-suite.json": "3650dcacd0db65412a918f10735fc4baa25153616549c44a4694351eb487f0ed",
     "network/reconnect.json": "396de87276e4f3c31d4662033d259fe12761946aac37bb6eb6f3bd411da11dc7",
+    "package-656/SHA256SUMS": "391a69ef851e01b6ef09d9ed1e2f3a2fe81d989270ee375582d77e3ee36b259d",
+    "package-656/release-manifest.json": "5eb388220a32793a495c5c28a5b0b530c5b20c1799bed75b9bcffffdce6b10cf",
     "performance/human-mixed-02-postgame.json": "e82a19f837c3b4703f0b56122b218e8e9b1f9b26feaf2f72ba311e6fc1d19891",
     "performance/mixed-server-03.json": "78fc6a69f752435bbf470a3ae9395e1c6603086e9d8f432f51af5523bb1d6d18",
+    "release-integrity.json": "49e333967bcec30db998f3d0b33986f4debbea764223486430bb7d4168d9d50a",
     "runtime-package.json": "3bfbcd11194847152f8794d28e6d9ffe77e7da445950d5f803a8510d931690f0",
     "sandbox/summary.json": "02d5dc453509479bb7c9fe0729984ceb93b7a439e5bfde4094724ab83edab198",
     "tests/auxiliary-verification.json": "a0f89d8e575591797cfb36071c0d6484bb2a7b857505a086fa287756c25caa88",
     "tests/auxiliary.json": "406f734e3987fd368dcad26e78d8c586fd97e491e1eca147b37fce47d91cc82f",
+    "tests/final-dotnet.json": "52dc2da5cc34c9753a6546fbe7f1d7216d6a1bff927d5b249eada72ff6fc6473",
+    "tests/final-offline.json": "8afce554fad8fa4153bfa58cfeac0c6772bb1f37fd89589db0e32ba4a1ade98c",
+    "ui-integration/final-656-github-lobby-800x600.json": "dda5022eaf21a00e566f98349f4080bd0af6ae9fde51cc2879a44fd6633df2b2",
+    "ui-integration/final-656-lobby-800x600.json": "418e1af6da46cb25ac8a0cc954398b4f379685940d084f507c6c82ea49d76111",
     "ui-integration/layout-validation.json": "d8a8771c3c0194000a0ceac81e9f21ff452781317e764ead3e488b8e373be746",
     "web/browser.json": "dcb8edcefc0448a171a5a4f976cab435d9b68e14d5089fb72417e556633d6248",
-    "world/scene-semantic-audit.json": "45a1c8a731009cfd6dc960171f16fa2052f08414168a2a6f0d4b13a78b295f95"
+    "world/scene-semantic-audit.json": "45a1c8a731009cfd6dc960171f16fa2052f08414168a2a6f0d4b13a78b295f95",
+    "world/shader-remediation.json": "dd44be60ffdaff47de95bc7690861bbef50b51cd6a63b19d3f7c84d158498004"
   },
   "release_ready": false,
   "schema": "actor.m8-completion-matrix.v1",

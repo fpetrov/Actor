@@ -62,7 +62,12 @@ namespace Actor.World
             meetingMessages = ArenaUI.Button("Messages", () => meetingChat = !meetingChat, "quiet", heading);
             ArenaUI.Text("Separate what you saw from what someone told you. Alignment stays private.", "muted", meeting);
             var columns = ArenaUI.Element("meeting-columns", meeting);
-            meetingRoster = ArenaUI.Element("meeting-roster", columns);
+            // Six rows fit at the default 800x600 scale. Keep a real scroll
+            // viewport for larger accessibility scales and smaller windows.
+            var rosterScroll = new ScrollView(ScrollViewMode.Vertical);
+            rosterScroll.AddToClassList("meeting-roster");
+            columns.Add(rosterScroll);
+            meetingRoster = rosterScroll.contentContainer;
             meetingMain = ArenaUI.Element("meeting-main", columns);
             ballot = ArenaUI.Element("grow", meetingMain);
             var candidates = new ScrollView(); candidates.style.flexGrow = 1; ballot.Add(candidates);

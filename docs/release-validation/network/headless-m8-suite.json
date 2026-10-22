@@ -1,0 +1,474 @@
+{
+  "all_attempts_passed": false,
+  "attempts": [
+    {
+      "actual_server_kills": 1,
+      "attempt": 1,
+      "case": "privacy",
+      "cleanup": {
+        "forced_cleanup_kills": 0,
+        "owned_children_started": 8,
+        "remaining": 0
+      },
+      "completion_scope": "Initial helper exit1 awaited authoritative server postgame evidence; final strict offline projection exit0 after that evidence, without a second gameplay launch.",
+      "far_coverage_both_surfaces": 1,
+      "far_coverage_during_actual_server_kill": 1,
+      "final_projection_exit_code": 0,
+      "helper_exit_code": 1,
+      "independent_offline_recompute_matches": true,
+      "input_digests": {
+        "acceptance_sha256": "71c28bb22d8c9fe3599a4048e1972602aad3d3310956f6560f0bc0cf259e4973",
+        "cleanup_sha256": "38af019c9d2269dc4582509f274fe1378875a9ae4248cbc92276bfe4750d6653",
+        "server_postgame_sha256": "f71900629c1f70ee934bd05fed8c0aedee89653d603ab0213d38702db9ef3aaf",
+        "supervisor_result_sha256": "052de2ace17670b463002abf03bd95518b6ee3c73664834a3de029e4d2c3ba31"
+      },
+      "out_of_sight_rejection_probe": {
+        "accepted": 0,
+        "attempts": 1,
+        "authoritative_rejections": 1,
+        "enabled": true,
+        "no_server_kill_during_probe": true,
+        "passed": true,
+        "stable_far_coverage_at_request": true
+      },
+      "passed": true,
+      "raw_grpc_auditors_passed": 4,
+      "runtime_participations_complete": 4,
+      "same_postgame_scope_verified": true,
+      "source_commit": "35e99afa5f17d7115435902590b22242bae54fb0",
+      "status": "accepted",
+      "unity_auditors_passed": 4,
+      "unity_forbidden_counters": {
+        "earlyPostgamePayloads": 0,
+        "farForbiddenAdapterEntries": 0,
+        "farForbiddenAttackEvents": 0,
+        "farForbiddenIncomingEntries": 0,
+        "foreignEndpointIncoming": 0,
+        "foreignPrivateComponentSamples": 0,
+        "legacyAdapterPayloads": 0,
+        "legacyCalibrationSamples": 0,
+        "legacyInvestigationSamples": 0,
+        "persistentOutOfSightActors": 0,
+        "persistentOutOfSightBodies": 0,
+        "probeFailures": 0,
+        "wrongRecipientAdapter": 0,
+        "wrongRecipientIncoming": 0
+      },
+      "wire_forbidden_counters": {
+        "early_postgame_payloads": 0,
+        "far_forbidden_attack_events": 0,
+        "far_forbidden_world_entries": 0,
+        "foreign_entities": 0,
+        "foreign_recipients": 0,
+        "legacy_capabilities": 0,
+        "legacy_payloads": 0,
+        "probe_failures": 0,
+        "type_mismatches": 0
+      }
+    },
+    {
+      "attempt": 1,
+      "case": "protocol",
+      "cleanup": {
+        "forced_cleanup_kills": 0,
+        "owned_children_started": 8,
+        "remaining": 0
+      },
+      "exact_failed_skill_known": false,
+      "expected_runtime_participations": 4,
+      "failure_code": "brain_failure",
+      "failure_limit": "The retained failure does not expose the precise failed action. The reproduced fixture-only context defect is not asserted as a proven exact action trace.",
+      "final_projection_exit_code": 1,
+      "helper_exit_code": 1,
+      "independent_offline_recompute_matches": true,
+      "independent_runtime_isolation_verified": true,
+      "input_digests": {
+        "acceptance_sha256": "2b02c20514eb53296d6b4d68152f2fbea58e5abfb43b9a5cf9389c4bb3ad2085",
+        "cleanup_sha256": "38af019c9d2269dc4582509f274fe1378875a9ae4248cbc92276bfe4750d6653",
+        "supervisor_result_sha256": "798a013cae848024bec20adb4e36ad16ba5c3719735002a45a23d6786307cdf8"
+      },
+      "optional_fixture_context_defect_independently_reproduced": true,
+      "passed": false,
+      "rpc_checks": [
+        {
+          "name": "wrong_match_rejected",
+          "passed": true
+        },
+        {
+          "name": "expired_request_rejected",
+          "passed": true
+        },
+        {
+          "name": "stale_phase_kill_rejected",
+          "passed": true
+        },
+        {
+          "name": "self_target_kill_rejected",
+          "passed": true
+        },
+        {
+          "name": "identical_request_replayed",
+          "passed": true
+        },
+        {
+          "name": "cross_type_correlation_conflict_rejected",
+          "passed": true
+        },
+        {
+          "name": "final_ballot_not_overwritten",
+          "passed": true
+        },
+        {
+          "name": "cancel_before_start_ack_stops_work",
+          "passed": true
+        }
+      ],
+      "rpc_metrics": {
+        "duration_seconds": 91.29371625000002,
+        "matching_action_results": 11,
+        "probe_failures": 0,
+        "requests_submitted": 10
+      },
+      "runtime_participations_complete": 3,
+      "same_postgame_scope_verified": true,
+      "source_commit": "35e99afa5f17d7115435902590b22242bae54fb0",
+      "status": "failed"
+    },
+    {
+      "attempt": 1,
+      "case": "runtime-loss",
+      "empty_allocated_room_reused_only_for_retry": true,
+      "failure_code": "local_bridge_address_in_use",
+      "fault_executed": false,
+      "input_digests": {
+        "diagnosis_sha256": "bd4d5fa79f650d313afa2e5e710e3e8b2bbe1cd2acf493bcd277fe63c4dc0df9",
+        "supervisor_failure_sha256": "8f8739cea4ac3dafc6029b51e1570fbaec593fd7c79997124e5ba13bb65c0137"
+      },
+      "ordinary_clients_spawned": 0,
+      "passed": false,
+      "prior_room_admissions": 0,
+      "runtime_processes_spawned": 0,
+      "source_commit": "35e99afa5f17d7115435902590b22242bae54fb0",
+      "status": "failed_preflight"
+    },
+    {
+      "attempt": 2,
+      "case": "runtime-loss",
+      "checks": {
+        "disconnect_did_not_fabricate_kill_or_permitted_body": true,
+        "forfeit_irreversible": true,
+        "fresh_join_unassigned_stationary_passive": null,
+        "independent_runtime_isolation": true,
+        "only_owned_child_faulted": true,
+        "owned_cleanup_complete": true,
+        "requested_phase_verified": true,
+        "runtime_loss_client_remains_stopped_without_keyboard": true,
+        "survivor_terminal_agreement": true,
+        "terminal_outcome_validated": true
+      },
+      "cleanup": {
+        "forced_cleanup_kills": 0,
+        "owned_children_started": 8,
+        "remaining": 0
+      },
+      "disconnect_records": 1,
+      "fault_executed": true,
+      "fault_to_gameover_seconds": 0.419622834015172,
+      "final_projection_exit_code": 0,
+      "helper_exit_code": 0,
+      "independent_offline_recompute_matches": true,
+      "input_digests": {
+        "acceptance_sha256": "e59b5c8d7f8364121f617e437902c6b30fbe094703fb610fc671cc962307b939",
+        "cleanup_sha256": "722ea437758cd0f80953e847c9a6d8eed06b8c99cc6a951c5f9dedbdf7563aa3",
+        "supervisor_result_sha256": "bae451306ff8e59a0631186b90e9c119c64d9a1a686681ff72e305aba1bc7087"
+      },
+      "legitimate_kills": 0,
+      "ordinary_room_origin": {
+        "created_by_retained_preflight_attempt": true,
+        "new_independent_allocation_claimed": false,
+        "prior_admissions": 0
+      },
+      "passed": true,
+      "phase": "Exploration",
+      "recovery": {
+        "client_alive": true,
+        "completed": true,
+        "error_state_observed": true,
+        "keyboard_disabled": true,
+        "max_speed": 0.0,
+        "own_disconnected_observed": true,
+        "samples": 5,
+        "seconds": 2.086457875033375,
+        "stopped": true
+      },
+      "source_commit": "35e99afa5f17d7115435902590b22242bae54fb0",
+      "status": "accepted"
+    },
+    {
+      "attempt": 1,
+      "case": "client-loss",
+      "checks": {
+        "disconnect_did_not_fabricate_kill_or_permitted_body": true,
+        "forfeit_irreversible": true,
+        "fresh_join_unassigned_stationary_passive": null,
+        "independent_runtime_isolation": true,
+        "only_owned_child_faulted": true,
+        "owned_cleanup_complete": true,
+        "requested_phase_verified": true,
+        "runtime_loss_client_remains_stopped_without_keyboard": null,
+        "survivor_terminal_agreement": true,
+        "terminal_outcome_validated": true
+      },
+      "cleanup": {
+        "forced_cleanup_kills": 0,
+        "owned_children_started": 8,
+        "remaining": 0
+      },
+      "disconnect_records": 1,
+      "fault_executed": true,
+      "fault_to_gameover_seconds": 60.49055024998961,
+      "final_projection_exit_code": 0,
+      "helper_exit_code": 0,
+      "independent_offline_recompute_matches": true,
+      "input_digests": {
+        "acceptance_sha256": "d1fbc86e48694dbfe90cc7020d3b62bb86b34a05c2be1e55885aa7adc6f0588f",
+        "cleanup_sha256": "722ea437758cd0f80953e847c9a6d8eed06b8c99cc6a951c5f9dedbdf7563aa3",
+        "supervisor_result_sha256": "cdd85b9e8ed4b15037d83b9faa0066b2965bb9e2f41ab5f41c80bdce9120e696"
+      },
+      "legitimate_kills": 0,
+      "passed": true,
+      "phase": "Exploration",
+      "source_commit": "35e99afa5f17d7115435902590b22242bae54fb0",
+      "status": "accepted"
+    },
+    {
+      "attempt": 2,
+      "case": "protocol",
+      "cleanup": {
+        "forced_cleanup_kills": 0,
+        "owned_children_started": 8,
+        "remaining": 0
+      },
+      "expected_runtime_participations": 4,
+      "final_projection_exit_code": 0,
+      "helper_exit_code": 0,
+      "independent_offline_recompute_matches": true,
+      "independent_runtime_isolation_verified": true,
+      "input_digests": {
+        "acceptance_sha256": "fb29b59ba53c81cd99930fc254aff02d70853e2a1dfeb64d664f7ae127bbdc76",
+        "cleanup_sha256": "38af019c9d2269dc4582509f274fe1378875a9ae4248cbc92276bfe4750d6653",
+        "supervisor_result_sha256": "ccc34a18a4856a550e46e7ebbb24e55fc935c996eec704dc062694669909d7b8"
+      },
+      "optional_fixture_context_fix": true,
+      "optional_fixture_offline_tests": 14,
+      "passed": true,
+      "product_runtime_or_game_change_for_fixture_fix": false,
+      "rpc_checks": [
+        {
+          "name": "wrong_match_rejected",
+          "passed": true
+        },
+        {
+          "name": "expired_request_rejected",
+          "passed": true
+        },
+        {
+          "name": "stale_phase_kill_rejected",
+          "passed": true
+        },
+        {
+          "name": "self_target_kill_rejected",
+          "passed": true
+        },
+        {
+          "name": "identical_request_replayed",
+          "passed": true
+        },
+        {
+          "name": "cross_type_correlation_conflict_rejected",
+          "passed": true
+        },
+        {
+          "name": "final_ballot_not_overwritten",
+          "passed": true
+        },
+        {
+          "name": "cancel_before_start_ack_stops_work",
+          "passed": true
+        }
+      ],
+      "rpc_metrics": {
+        "duration_seconds": 85.59504662500001,
+        "matching_action_results": 11,
+        "probe_failures": 0,
+        "requests_submitted": 10
+      },
+      "runtime_participations_complete": 4,
+      "same_postgame_scope_verified": true,
+      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+      "status": "accepted"
+    },
+    {
+      "attempt": 1,
+      "case": "late-reconnect",
+      "checks": {
+        "disconnect_did_not_fabricate_kill_or_permitted_body": true,
+        "forfeit_irreversible": true,
+        "fresh_join_observed_during_discussion": true,
+        "fresh_join_unassigned_stationary_passive": true,
+        "independent_runtime_isolation": true,
+        "only_owned_child_faulted": true,
+        "owned_cleanup_complete": true,
+        "requested_phase_verified": true,
+        "runtime_loss_client_remains_stopped_without_keyboard": null,
+        "survivor_terminal_agreement": true,
+        "terminal_outcome_validated": true
+      },
+      "cleanup": {
+        "forced_cleanup_kills": 0,
+        "owned_children_started": 10,
+        "remaining": 0
+      },
+      "disconnect_records": 1,
+      "fault_executed": true,
+      "fault_to_gameover_seconds": 60.41390470799524,
+      "final_projection_exit_code": 0,
+      "fresh_join": {
+        "assigned": false,
+        "commands_sent": 0,
+        "discussion_samples": 32,
+        "discussion_seconds": 2.325317582988646,
+        "during_discussion_verified": true,
+        "fresh_identity_verified": true,
+        "movement_permission": false,
+        "passed": true,
+        "spectator_max_displacement": 0.0,
+        "spectator_max_speed": 0.0,
+        "spectator_samples": 32,
+        "spectator_seconds": 2.325317416980397
+      },
+      "fresh_join_scope": "A new ordinary ticket identity is passive during Discussion; this is not credential resume or resurrection.",
+      "helper_exit_code": 0,
+      "independent_offline_recompute_matches": true,
+      "input_digests": {
+        "acceptance_sha256": "e505ac56f84bd4bd615e1271a4564b3c46718aec345922246d35c75e34163873",
+        "cleanup_sha256": "0663130b8e3610ddc8977c3f5af7a5558e72945f62e3640cb018b4273acc41d1",
+        "supervisor_result_sha256": "cd849241f3cf1d323588e08586d780bae337d41f83c330446527bde879b2a771"
+      },
+      "legitimate_kills": 1,
+      "passed": true,
+      "phase": "Discussion",
+      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+      "status": "accepted"
+    },
+    {
+      "attempt": 1,
+      "case": "server-loss",
+      "commands_at_cleanup": 0,
+      "commands_later": 0,
+      "guarded_signal": "SIGKILL",
+      "independent_offline_recompute_matches": true,
+      "input_digests": {
+        "acceptance_sha256": "5164e07fd90eb883cc837a120a0f2fe16303c1f8ffd161b2ec8666a579903fad",
+        "inspection_guard_sha256": "ce6dde11e6ceecc9107e29ee36d12c304ff9cd6eed8efb6712d0d1ae198bc5da",
+        "signal_guard_sha256": "383a3bc46209a822c8f9d529a5f7caa7385a4379e378b994ec92797bc438dfa0",
+        "supervisor_result_sha256": "8426305fe5311dba9bc6087fba3bb6c4792af734d81d2ce6ebdb2bfc5be84595"
+      },
+      "inspection_phase_note": "same_inspected_instance and fresh_observer_ready apply at terminate, not initial inspect.",
+      "lifecycle_checks": {
+        "bounded_cleanup_complete": true,
+        "bounded_transport_loss": true,
+        "client_survived_stopped": true,
+        "controlled_session_failure": true,
+        "foreground_released": true,
+        "no_commands_after_cleanup": true,
+        "observed_authoritative_motion_expiry": true,
+        "observed_bridge_disconnect": true,
+        "ordinary_live_owned_client": true,
+        "owned_client_cleanup": true
+      },
+      "model_requested": false,
+      "original_server_exited": true,
+      "owned_client_cleanup": true,
+      "passed": true,
+      "result_reason": "session_disconnected",
+      "result_status": "failed",
+      "scenario": "Sandbox waiting actor; dedicated exact-identity server process terminated",
+      "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+      "stale_to_terminal_seconds": 29.52062720898539,
+      "status": "accepted",
+      "terminate_guard_checks": {
+        "actor_owned_exact_server": true,
+        "actual_ready_identity": true,
+        "current_control_plane_parent": true,
+        "exact_allocation_record": true,
+        "exact_staging_control_plane": true,
+        "exclusive_udp_owner": true,
+        "fresh_exact_lobby": true,
+        "fresh_observer_ready": true,
+        "same_inspected_instance": true,
+        "same_network_namespace": true
+      }
+    }
+  ],
+  "denominator": {
+    "accepted": 6,
+    "completed_case_attempts": 8,
+    "executed_case_attempts": 7,
+    "failed": 2,
+    "failed_preflight": 1
+  },
+  "final_owned_cleanup": {
+    "authority_lease_released": true,
+    "input_sha256": "74538f6e36b7d4874efcde32401db6c38127a6dd1c7d3cadd3523834d6898732",
+    "owned_groups_remaining": 0,
+    "owned_helper_groups_checked": 7,
+    "owned_process_identities_checked": 65,
+    "owned_processes_remaining": 0,
+    "preexisting_native_fixture_preserved": true,
+    "protocol_fixture_uninstalled": true,
+    "scope": "Completed headless lease handoff snapshot; subsequent root-owned rooms are outside this check.",
+    "staging_rooms_remaining_at_handoff": 0
+  },
+  "limits": [
+    "Deterministic ordinary-client fixtures are not model-selected or native Human acceptance.",
+    "Source35e and source656 are preserved separately; old shader failure is not erased by headless success.",
+    "Privacy coverage concerns permitted receive/spawn/adapter/raw-wire surfaces and actual kill interval, not every audiovisual presentation.",
+    "Fresh same-name ticket joins and credential resume are different cases; no resurrection is claimed.",
+    "Client loss took the recorded transport/disconnect interval; no instant detection claim.",
+    "Server-loss uses a waiting Sandbox actor with zero commands; no moving-input stop-latency or Social match outcome is inferred.",
+    "Completed subset only; all failed setup/procedure attempts in this subset remain counted."
+  ],
+  "no_models_requested": true,
+  "no_native_visual_acceptance": true,
+  "no_production_activation_claimed": true,
+  "not_executed_live_by_this_suite": [
+    "Delayed message expiry or delivery race",
+    "Action after GameOver",
+    "Death during active Skill",
+    "Meeting during an actual Codex turn",
+    "Body despawn and presentation replay after resume",
+    "Fresh rematch isolation"
+  ],
+  "pending_cases": [],
+  "privacy": "Whitelisted checks, counters, durations and source hashes only; no actor/session/match identities, PIDs, names, roles, coordinates, paths, messages, credentials or model context.",
+  "required_case_coverage": {
+    "client-loss": true,
+    "late-reconnect": true,
+    "privacy": true,
+    "protocol": true,
+    "runtime-loss": true,
+    "server-loss": true
+  },
+  "required_case_coverage_passed": true,
+  "schema": "actor.m8-headless-completed-suite.v1",
+  "snapshot_scope": "Frozen completed headless cases; no current live case is inspected.",
+  "status": "required_cases_passed_with_retained_failures",
+  "versions": {
+    "admission": 4,
+    "arena_extension": "0.6.0",
+    "core": "1.0",
+    "game": "0.9.0",
+    "runtime": "0.7.0"
+  }
+}

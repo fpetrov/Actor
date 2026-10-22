@@ -4,11 +4,11 @@
 
 ## 1. Overall completion status
 
-M8 подтверждён реальными standalone и dedicated-server прогонами: два strictly accepted матча четырёх Codex, один полный model-selected social cycle, фактический Human+3 Codex GameOver, три Sandbox regression PASS и transport recovery. Native witness02 подтвердил три Human task mechanics, body report, bounded chat и fresh rematch; victim01 — смерть, неподвижность после неё и actual fold frames. Это **ещё не полная release acceptance**: strict mixed provider gate, пять подтверждённых Codex starts, свежие M8 privacy/protocol/fault suites, полная native matrix и final release/deploy/CI открыты. [Матрица](completion-matrix.json) сохраняет границы.
+M8 имеет **6 strictly accepted AI-vs-AI GameOver из 12 зарегистрированных попыток**, включая [пять матчей08–12 с полным M8 binding](models/full-binding-08-12.json), и два полных model-selected social cycle08/12. [Actual stream audit09–12](models/attempts-09-12-stream.json) подтверждает 195 SDK turns, в том числе 28 прерванных, с фактическими tool counters. Отдельный [headless suite](network/headless-m8-suite.json) закрыл шесть выбранных privacy/protocol/loss/late-join case groups с двумя сохранёнными отказами; это не полная fault/native matrix. Human+3 Codex mixed02 дошёл до GameOver, но strict provider proof остаётся неполным. **Полная release acceptance ещё не закрыта**: separate controlled model scenario§61, strict mixed, final native matrix, оставшиеся fault cases и production/security gates открыты. [Матрица](completion-matrix.json) сохраняет границы категорий.
 
 ## 2. Baseline и commits
 
-[Baseline](baseline.json): `4a4cbbd46d8dcc8624699e405755a7d457138648`, Unity 6000.6.4f1, URP 17.6.0, NGO 2.13.3. До M8: 560 Python tests (491 Runtime + 69 scripts), 96 subtests; SDK 232, ControlPlane 23; 54 generated artifacts. Текущий Git HEAD остаётся baseline; функциональные M8 изменения и evidence находятся в working tree. Финальный опубликованный M8 commit и clean release build пока не зафиксированы.
+[Baseline](baseline.json): `4a4cbbd46d8dcc8624699e405755a7d457138648`, Unity6000.6.4f1, URP17.6.0, NGO2.13.3. До M8:560 Python tests (491 Runtime +69 scripts),96 subtests; SDK232, ControlPlane23;54 generated artifacts. Текущий source-bound functional snapshot — [`656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3`](https://github.com/fpetrov/Actor/commit/656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3). Отдельные evidence и optional acceptance-helper изменения не изменяют собранные Runtime/game products. Clean packaging, GitHub draft integrity, native QA и production activation являются разными gates.
 
 ## 3. Design Battle — три концепции
 
@@ -36,7 +36,7 @@ M8 подтверждён реальными standalone и dedicated-server пр
 
 ## 9. Kill animation
 
-Реализована 640 ms staged fold presentation с 140 ms cosmetic attacker impulse. В [native victim01](native-human/victim-presentation.json) реально сняты пять authorized victim end-of-frame poses на 0,042 / 0,183 / 0,341 / 0,624 / 0,804 s: виден переход к folded silhouette, затем удаление локальной presentation. Victim не получает attacker identity. Ledger/LOS/radius guards реализованы и unit-tested; отдельная actual M8 privacy проверка свидетелей и отсутствие replay после resume остаются открыты. Пять sparse frames не являются полной покадровой длительностью или smoothness benchmark.
+Реализована 640 ms staged fold presentation с 140 ms cosmetic attacker impulse. В [native victim01](native-human/victim-presentation.json) сняты пять authorized victim end-of-frame poses на 0,042 / 0,183 / 0,341 / 0,624 / 0,804 s: переход к folded silhouette, затем удаление локальной presentation. Victim не получает attacker identity. Ledger/LOS/radius guards реализованы и unit-tested; [actual M8 headless privacy](network/headless-m8-suite.json) проверила NGO/pre-filter RPC/adapter/raw-gRPC surfaces во время реального kill. Это не native animation/audio leakage test; presentation replay после resume и полная покадровая smoothness/duration остаются отдельными gates.
 
 ## 10. Corpse/death art
 
@@ -44,7 +44,7 @@ M8 подтверждён реальными standalone и dedicated-server пр
 
 ## 11. Environment redesign
 
-Social мир использует authored floor union, layered walls и terminals без новых art colliders. Hall directory, Security instrument bank, Storage cargo и Engineering reactor дают разные landmarks. [Статический render](world/landmarks-static-world.png), [отчёт](world/landmarks-static-world.json): 125 sprites, 12 original textures, max dimension 1865 px. [Semantic audit](world/scene-semantic-audit.json) сохраняет legacy geometry. Это статическая проверка без actors/fog/UI; native видимость новых props под fog проверяется отдельно и не выводится из preview.
+Social мир использует authored floor union, layered walls и terminals без новых art colliders. Hall directory, Security instrument bank, Storage cargo и Engineering reactor дают разные landmarks. [Статический render](world/landmarks-static-world.png), [отчёт](world/landmarks-static-world.json):125 sprites,12 original textures, max dimension1865px. [Semantic audit](world/scene-semantic-audit.json) сохраняет legacy geometry. Native candidate35e выявил настоящий error-magenta StaticSurface shader; [неуспех и remediation](world/shader-remediation.json) сохранены. Исправленный Metal static render имеет0 error-magenta pixels; это не подменяет pending actual native fog/landmark acceptance финального656 client.
 
 ## 12. Lighting
 
@@ -68,11 +68,11 @@ Social мир использует authored floor union, layered walls и termin
 
 ## 17. Lobby redesign
 
-Retained Lobby содержит обычные create/join/mode/settings и typed server errors. [Native layout](ui-integration/layout-validation.json) подтверждает 800×600, 1280×720, 1920×1080 и 2560×1080, тёмные buttons/popup, Escape/focus restore и Cyrillic paste. После mixed02 исправлен rematch capacity retry: только точный `server_capacity_reached`, 8 s cadence, максимум 75 s, без повторения неизвестного POST результата. Actual successful fresh rematch после этой правки ещё не принят. [Browser proof](web/browser.json) отдельно относится к веб-лобби, не Unity.
+Retained Lobby содержит обычные create/join/mode/settings и typed server errors. [Native layout](ui-integration/layout-validation.json) подтверждает 800×600, 1280×720, 1920×1080 и 2560×1080, тёмные buttons/popup, Escape/focus restore и Cyrillic paste. После mixed02 исправлен rematch capacity retry: только точный `server_capacity_reached`, 8 s cadence, максимум 75 s, без повторения неизвестного POST результата. [Witness02](native-human/witness-02.json) действительно создал новый round в том же process после bounded retry; старый failure сохранён. [Финальный extracted656 Lobby](release-integrity.json) и [тот же Lobby из скачанного GitHub draft](https-draft-download.json) отдельно проверены в native 800×600 windowed client. Это не room/gameplay acceptance. [Browser proof](web/browser.json) относится к веб-лобби, не Unity.
 
 ## 18. HUD redesign
 
-HUD использует permitted own-state/public phase: life/alignment/duty, readiness, task state, actions/cooldowns и сообщения. Четыре пропущенных M8 SDK bindings исправлены; 9 production-binding tests проверяют полный catalog, self hydration, TaskStep generation и private presentation. Model08 реально завершил шесть Crew tasks. Mixed02 сохранил прежний clipped task-control defect; после fix [native witness02](native-human/witness-02.json) реально завершил calibration, sensor comparison и maintenance hold. Полная матрица Agent read-only HUD и всех размеров пока не закрыта.
+HUD использует permitted own-state/public phase: life/alignment/duty, readiness, task state, actions/cooldowns и сообщения. Четыре пропущенных M8 SDK bindings исправлены;9 production-binding tests проверяют полный catalog, self hydration, TaskStep generation и private presentation. [Full-binding08–12](models/full-binding-08-12.json) подтверждает все4 capabilities в каждом из20 accepted Runtime sessions; за эти5 матчей сервер зарегистрировал26 Crew tasks. Mixed02 сохранил прежний clipped task-control defect; после fix [native witness02](native-human/witness-02.json) реально завершил calibration, sensor comparison и maintenance hold. Полная матрица Agent read-only HUD и всех размеров пока не закрыта.
 
 ## 19. Chat redesign
 
@@ -80,19 +80,19 @@ Composer/inbox различают player claim и pending/accepted/rejected tran
 
 ## 20. Discussion screen
 
-Model08 прошёл настоящую Discussion: три Codex sender имеют выбранный и succeeded typed Discuss, требующий совпадающего server receipt; это corroborated сообщениями у recipients. Mixed02 также прошёл две встречи, с native chat/meeting controls и actual rendered Discussion 1280×720. Шесть участников, длинные имена и полный viewport/focus/scroll sweep после последних layout исправлений пока не приняты.
+Model08/09/12 имеют реальные Discussion с тремя Codex senders в каждом: selected+succeeded typed Discuss требует соответствующего server receipt и corroborated recipient counters. Только08/12 также имеют model body-report gate полного цикла. Mixed02 прошёл две встречи с native chat/meeting controls и actual rendered Discussion1280×720. Server acceptance не доказывает прочтение сообщения другой Brain. Шесть участников, длинные имена и полный viewport/focus/scroll sweep после последних layout исправлений пока не приняты.
 
 ## 21. Voting screen
 
-Выбор и подтверждение разделены, финальный ballot решает сервер. Model08 дал три accepted Codex ballots и authoritative ejection; mixed02 — шесть ballots в двух meetings, включая один Human ballot, подтверждённый actor-bound replay. [Voting 800×600](human-mixed/voting-800.png) и реальные frame windows опубликованы. Полная native keyboard/Skip/tie/read-only Agent матрица во всех обязательных размерах ещё не закрыта.
+Выбор и подтверждение разделены, финальный ballot решает сервер. Model08/09/12 имеют по3 accepted Codex ballots и authoritative ejection;09 остаётся без body-report gate. Mixed02 имеет6 ballots в двух meetings, включая один Human ballot, подтверждённый actor-bound replay. [Voting800×600](human-mixed/voting-800.png) и реальные frame windows опубликованы. Полная native keyboard/Skip/tie/read-only Agent матрица во всех обязательных размерах ещё не закрыта.
 
 ## 22. GameOver screen
 
-Terminal view использует authoritative server summary; чужой alignment раскрывается только после GameOver. Model01/08 имеют strict terminal agreement; mixed02 получил настоящий parity GameOver. [Native witness02](native-human/gameover-800.jpg) дошёл до обычного 900 s match_timeout во время Discussion, без winner. Затем actual New Expedition через bounded capacity retry создал [новый round](native-human/rematch-800.jpg) в том же client process: новые actor/match, WaitingForPlayers, own assignment и summary cleared. Это fresh rematch, а не resurrection старого actor.
+Terminal view использует authoritative server summary; чужой alignment раскрывается только после GameOver. Strict model01/08–12 имеют terminal agreement; mixed02 получил настоящий parity GameOver. [Native witness02](native-human/gameover-800.jpg) дошёл до обычного900s match_timeout во время Discussion, без winner. Затем actual New Expedition через bounded capacity retry создал [новый round](native-human/rematch-800.jpg) в том же client process: новые actor/match, WaitingForPlayers, own assignment и summary cleared. Это fresh rematch, а не resurrection старого actor.
 
 ## 23. UI screenshots
 
-Есть actual standalone [Lobby/Settings/Unicode](ui-integration/layout-validation.json), blur/fallback, [Voting](human-mixed/voting-800.png), [mixed GameOver](human-mixed/gameover-800.png), [witness GameOver](native-human/gameover-800.jpg), [rematch](native-human/rematch-800.jpg), [Death](native-human/death-800.jpg), [victim GameOver](native-human/victim-gameover-800.jpg) и [five native fold frames](native-human/victim-presentation.json). CUA JPEG имеют правильное .jpg; F12 frames остаются настоящими PNG. Прежний [Tasks clipping](human-mixed/tasks-800-defect.png) сохранён. Полной screen×800/1280/1920 matrix всё ещё нет; browser/static render/concepts не подменяют gameplay screenshots.
+Есть actual standalone [Lobby/Settings/Unicode](ui-integration/layout-validation.json), [final656 Lobby](ui-integration/final-656-lobby-800x600.png), [скачанный draft Lobby](ui-integration/final-656-github-lobby-800x600.png), blur/fallback, [Voting](human-mixed/voting-800.png), [mixed GameOver](human-mixed/gameover-800.png), [witness GameOver](native-human/gameover-800.jpg), [rematch](native-human/rematch-800.jpg), [Death](native-human/death-800.jpg), [victim GameOver](native-human/victim-gameover-800.jpg) и [five native fold frames](native-human/victim-presentation.json). CUA JPEG имеют правильное .jpg; F12 frames остаются настоящими PNG. Прежний [Tasks clipping](human-mixed/tasks-800-defect.png) и [shader35e failure](world/shader-failure-native-35e.jpg) сохранены. Полной screen×800/1280/1920 matrix ещё нет; browser/static render/concepts не подменяют gameplay screenshots.
 
 ## 24. Human usability results
 
@@ -104,31 +104,31 @@ Terminal view использует authoritative server summary; чужой alig
 
 ## 26. Match balance changes
 
-Реализованы три одинаковых для Human/Agent server mechanics: timed maintenance hold, трёхшаговая circuit calibration, разнесённые sensor samples. Default threshold 8 и hold 12 s bounded/configurable; authoritative own work/step revision и отдельные receipts исключают локальное «самозавершение». В model08 после полного binding было шесть actual Crew task completions, матч шёл 286,153 s и завершился ejection, а не task rush. Это один подтверждённый новый condition, не повторяемый balance benchmark; 01–07 новых mechanics не доказывают.
+Реализованы три одинаковых для Human/Agent server mechanics: timed maintenance hold, трёхшаговая circuit calibration, разнесённые sensor samples. Default threshold8 и hold12s bounded/configurable; authoritative own work/step revision и отдельные receipts исключают локальное «самозавершение». В [full-binding08–12](models/full-binding-08-12.json) принято5 матчей:26 Crew task completions,4 завершения через parity/ejection и1 через tasks. [Условия09–12](models/attempts-09-12-conditions.json) неизменны внутри continuation, но concurrent local Unity builds и различия bindings/instrumentation между историческими cohorts не позволяют выдавать это за balance или win-rate benchmark. 01–07 новые mechanics не доказывают.
 
 ## 27. Codex Crew behaviour
 
-В [model08](codex-attempt-08.json) настоящие Codex Crew завершили шесть server-authoritative tasks; один Crew сообщил о теле, выжившие участвовали в Discussion и ballots, выиграли через ejection Impostor. Один Crew погиб на 99,981 s; team win не выдается за survival. Полные selected/succeeded/failed/cancelled counts и context/model-wait агрегаты есть в [series](models/attempts-01-08.json). Одна такая игра не доказывает устойчивую компетенцию или оптимальную стратегию; неуспешные попытки 02–07 сохранены.
+Реальные Codex Crew в08/09/12 участвовали в Discussion/accepted ballots и выиграли через ejection;08/12 также сообщили о теле. Model11 завершил8 actual tasks и выиграл через threshold без kill/meeting/vote: это валидный исход, не полный social cycle. За full-binding08–12 зарегистрировано26 server-authoritative Crew tasks. Team win не выдаётся за survival: личная жизнь и actor-bound действия проверяются отдельно. [Реестр01–12](models/attempts-01-12.json) сохраняет failed attempts и selected/succeeded/failed/cancelled/context/model-wait агрегаты; это не доказательство оптимальной стратегии.
 
 ## 28. Codex Impostor behaviour
 
-В model01 Codex Impostor самостоятельно выполнил 2 accepted kill и 1 sabotage и выиграл по parity. В model08 другой реальный Impostor сделал 1 accepted kill, дважды выбрал fake task и был изгнан; один fake task succeeded, второй failed. Обе стороны действовали через одинаковые server rules и разрешённый context. Эти исходы не превращаются в сравнительный win rate: budgets, bindings и Runtime instrumentation между условиями менялись.
+В model01 Codex Impostor самостоятельно выполнил2 accepted kill и1 sabotage и выиграл по parity; в10 — ещё2 kill/1 sabotage и parity. В08/09/12 Impostor был изгнан после actual kill; model11 закончился task victory Crew. [Postgame review08](models/attempt-08-disguise-review.json) фиксирует две выбранные fake-task attempts, одну succeeded. Обе стороны действовали через одинаковые server rules и разрешённый context. Разные budgets/bindings/instrumentation и небольшой denominator не позволяют трактовать результаты как сравнительный win rate.
 
 ## 29. Реальные successful kills
 
-[Strict01](codex-attempt-01.json) подтверждает 2 kills, [strict08](codex-attempt-08.json) — ещё 1; actor-bound selected actions сопоставлены с bounded ordered postgame replay и Runtime/client terminal identity. В mixed02 было ещё 2 authoritative kills, но это отдельная категория с неизвестными provider tool counts. Headless kills доказывают gameplay, а не native kill animation/audio timing.
+Шесть [strict accepted матчей01/08–12](models/attempts-01-12.json) содержат7 actual kills:2/1/1/2/0/1 соответственно. Actor-bound selected actions сопоставлены с ordered postgame replay и Runtime/client terminal identity. В mixed02 ещё2 authoritative kills, но это отдельная категория с неизвестными provider tool counts. Headless kills доказывают gameplay, а не native kill animation/audio timing.
 
 ## 30. Body discovery/reporting
 
-Model08 закрыл actual Codex discovery/report gate: выбранный typed ReportBody и server-accepted body report создали meeting, Discussion/Voting/ejection. В mixed02 тоже был один report, не Human. Позже [native witness02](native-human/witness-02.json) подтвердил настоящий Human body report в own authoritative replay на 864,076 s, после трёх completed tasks. Показать тело, намерение сообщить и server acceptance — разные события; здесь native gate подтверждается replay, не одной картинкой.
+Model08 и12 закрывают actual Codex discovery/report gate: выбранный typed ReportBody и server-accepted body report создали meeting, Discussion/Voting/ejection. Model09 имеет meeting/vote, но0 body reports и не считается полным social cycle. В mixed02 тоже был один report, не Human. [Native witness02](native-human/witness-02.json) подтвердил Human body report в own authoritative replay на864,076s после трёх completed mechanics. Видимое тело, намерение сообщить и server acceptance — разные события; native gate подтверждён replay, не одной картинкой.
 
 ## 31. Discussion examples (без private raw content)
 
-Публичный [full-social-cycle record](models/attempts-01-08.json) model08 подтверждает три Codex Discussion senders через selected+succeeded typed Discuss и server receipts; recipients получили 14/12/1/15 сообщений за игру. Эти общие receipt counters сами по себе не доказывают конкретный канал или смысл; канал подтверждает контракт typed Discuss. Raw chat, private prompts и reasoning не публикуются. Sanitized семантические цитаты сообщений не выдумываются из счётчиков.
+[Реестр01–12](models/attempts-01-12.json) подтверждает по3 Codex Discussion senders в08/09/12 через selected+succeeded typed Discuss, server receipts и recipient message counters. Общие receipt counters сами по себе не доказывают конкретный канал или смысл; канал здесь подтверждает installed typed Discuss contract. Raw chat, prompts и reasoning не публикуются. Sanitized семантические цитаты, убедительность лжи и изменение чужих beliefs из счётчиков не выводятся.
 
 ## 32. Voting
 
-Model08 имеет 3 actual accepted Codex ballots, meeting/Voting и server ejection. Mixed02 отдельно имеет 6 ballots в двух meetings и один actor-bound Human ballot; его строгий provider gate остаётся false. Skip/tie/final-ballot immutability проверяются deterministic authority/protocol tests, но текущий M8 live eight-case negative suite ещё не выполнен и не подменяется M7 evidence.
+Model08/09/12 имеют по 3 accepted Codex ballots, реальные meeting/Voting и server ejection. Mixed02 отдельно имеет 6 ballots в двух meetings и один actor-bound Human ballot; его strict provider gate false. [Свежий protocol02](network/headless-m8-suite.json) на source656 прошёл все 8 owned-RPC negative/replay checks, включая final-ballot immutability и cancel-before-start-ACK, вместе с 4/4 authoritative Runtime completions и cleanup0. Protocol01 также имел 8/8 RPC, но только 3/4 completions и сохранён как whole FAIL. Исправление затронуло лишь optional fixture context, не Runtime/game authority.
 
 ## 33. Impostor deception evaluation
 
@@ -136,23 +136,34 @@ Model08 имеет 3 actual accepted Codex ballots, meeting/Voting и server eje
 
 ## 34. Results of complete live matches
 
-Два strict complete Codex GameOver: 01 — 141,554 s, parity, 2 kills/1 sabotage без meeting/vote/task; 08 — 286,153 s, Crew/impostors_eliminated, 1 kill/1 report/1 meeting/3 ballots/6 tasks. Только 08 доказывает full model-selected social cycle. Mixed02 — отдельный actual 659,645 s cycle с Human, provider proof неполон. Deterministic native witness02 завершился 900 s match_timeout/no winner с 2/5 terminal proofs, victim01 — 180,584 s parity с 3/3. Они проверяют Human presentation/input, не добавляют Codex starts; минимум пяти ещё не доказан.
+[Шесть strict accepted AI-vs-AI исходов](models/attempts-01-12.json):
+
+| Attempt | Время,s | Authoritative outcome | Kills | Tasks | Reports | Meetings | Ballots | Full cycle |
+|---|---:|---|---:|---:|---:|---:|---:|---|
+|01|141,554|Impostor/parity|2|0|0|0|0|нет|
+|08|286,153|Crew/impostors_eliminated|1|6|1|1|3|да|
+|09|288,414|Crew/impostors_eliminated|1|2|0|1|3|нет|
+|10|137,881|Impostor/parity|2|4|0|0|0|нет|
+|11|169,599|Crew/tasks_completed|0|8|0|0|0|нет|
+|12|274,770|Crew/impostors_eliminated|1|6|1|1|3|да|
+
+[08–12](models/full-binding-08-12.json) —5 independent starts с полным M8 catalog;01 остаётся историческим condition. Mixed02 и deterministic native fixtures не увеличивают AI-vs-AI denominator. **Отдельный controlled model-selected scenario§61 пока не принят**: обычные full cycles08/12 не подменяют специально обозначенную separate validation, а scripted Human fixtures не доказывают модельный выбор.
 
 ## 35. Number of attempts / failures / accepted runs
 
-[Реестр01–08](models/attempts-01-08.json): 8 зарегистрированных попыток, 2 accepted GameOver, 6 failed — 2 setup и 4 Runtime failures; incomplete 0. Строго подтверждённых unique Codex starts — 2, full social cycle — 1. Mixed01–02, resume3 и Sandbox4 имеют собственные denominators и не увеличивают AI-vs-AI series. [Conditions](models/attempts-01-08-conditions.json) отмечают новые bindings и budgets08: Brain limit 1,5m, warning 800k, participation limit 3m. Это не одинаковые условия для win-rate pooling.
+[Реестр01–12](models/attempts-01-12.json):12 зарегистрированных попыток,6 accepted GameOver,6 failed (2 setup,4 Runtime), incomplete0;6 strict independent starts и2 full social cycles. [Full-binding08–12](models/full-binding-08-12.json) отдельно даёт5 starts с20 accepted full-capability Runtime sessions. Mixed01–02, resume3 и Sandbox4 имеют собственные denominators. Старые01–07/01–08 JSON сохраняют прежние snapshot values. [Continuation conditions](models/attempts-09-12-conditions.json): Brain limit1,5m/warning800k, participation3m,900s match/1100s bound; actual failures не исключаются из общего реестра.
 
 ## 36. Codex usage
 
-01: 37 official turns / 951 186 total tokens. 08: 59 turns, 1 773 301 input (1 228 928 cached), 15 242 output, 1 788 543 total, direct tools 0. За весь реестр known detailed usage — 96 turns / 2 739 729 total tokens; ещё 16 reports не имеют полных turn/tool/usage сведений, 8 participants не имеют Runtime report. Participation measured_tokens=9 944 086 — другой счётчик, не восстановленная provider usage. Mixed02 отдельно: 110 reported turns / 5 140 713 total, tool counts null. Cost везде неизвестна; dollar estimate не придумывается.
+[Весь реестр01–12](models/attempts-01-12.json) содержит known detailed usage291 turns: input7 919 538 (cached5 482 368), output62 314, total7 981 852 tokens. Ещё16 reports не имеют полных turn/tool/usage сведений,8 participants не имеют Runtime report; известный tools0 не распространяется на неизвестные reports. Participation measured_tokens=15 186 209 — другой счётчик. [Actual09–12](models/attempts-09-12-conditions.json):195 turns, input5 203 251 (cached3 608 960), output38 872, total5 242 123. Mixed02 отдельно:110 reported turns /5 140 713 total, interrupted tool counts null. Cost неизвестна; dollar estimate не придумывается.
 
 ## 37. Runtime/Skill changes
 
-Runtime добавляет typed discussion, bounded pursuit, context-sensitive Skill catalog, разрешённую working knowledge и generic lifecycle guards. Core не знает Arena roles/tasks/voting. Терминальный ledger раскрывает только зарегистрированные Skill IDs, без args/outputs. После обнаруженного mixed02 telemetry gap official stream collector получил future-facing accounting guards; [SDK parity](tests/sdk-stream-parity.json) сравнивает synthetic typed completed/interrupted notifications без model calls. Это не восстанавливает утраченные tool counts старого mixed02 и не доказывает будущий live run.
+Runtime добавляет typed discussion, bounded pursuit, context-sensitive Skill catalog, разрешённую working knowledge и generic lifecycle guards; Core не знает Arena roles/tasks/voting. Terminal ledger раскрывает только зарегистрированные Skill IDs без args/outputs. Official single-stream collector сначала проверен [synthetic SDK parity](tests/sdk-stream-parity.json), затем [actual09–12](models/attempts-09-12-stream.json):195 unique SDK turns,28 interrupted с фактическим lifecycle coverage, tool counters0 для всех195. Это новое доказательство не восстанавливает утраченные counters mixed02 или старых failures. Collector/provider lifecycle и game authority проверяются раздельно.
 
 ## 38. Navigation improvements
 
-Social navigation использует публичный authored graph, fresh own pose, bounded reroutes и остановку по distinct samples. Pursuit учитывает форму capsules, выбирает current visible/датированное last-seen и не вызывает kill автоматически. В model08 реальные navigation/approach были частью task/report/kill sequence; это не отдельный stress test всех crowded routes. Sandbox [movement retry](sandbox/movement-attempt-02.json) прошёл 13 actual synthetic prediction checks, включая wall slide/reversal/reconciliation; native input latency из него не выводится.
+Social navigation использует публичный authored graph, fresh own pose, bounded reroutes и остановку по distinct samples. Pursuit учитывает форму capsules, выбирает current visible/датированное last-seen и не вызывает kill автоматически. В accepted08–12 movement/approach входят в реальные task/report/kill sequences; это не отдельный stress test всех crowded routes. Sandbox [movement retry](sandbox/movement-attempt-02.json) прошёл13 actual synthetic prediction checks, включая wall slide/reversal/reconciliation; native input latency из него не выводится.
 
 ## 39. Memory/belief/provenance changes
 
@@ -160,7 +171,7 @@ Working knowledge различает personal observations, player claims и hyp
 
 ## 40. Reconnect/rematch
 
-[Transport proof](network/reconnect.json): 3 supervisor attempts = 2 setup failures + 1 accepted recovery. Тот же process пережил 30,094 s bidirectional UDP blackhole, сохранил actor/match/private assignment/alive, поднял generation, отверг connected duplicate и old-generation intent; 121 stationary sample / 2,004 s, cleanup 0. Post-death resume/ghost-vulnerability kill/native reconnect не заявлены. После сохранённого mixed02 capacity failure [native witness02](native-human/witness-02.json) действительно создал новый round в том же process: новые actor/match, Waiting, assignment/summary cleared.
+[Credential transport resume](network/reconnect.json): 3 supervisor attempts = 2 setup failures + 1 accepted recovery. Тот же process пережил 30,094 s bidirectional UDP blackhole, сохранил actor/match/private assignment/alive, поднял generation, отверг connected duplicate и old-generation intent; 121 stationary sample / 2,004 s, cleanup0. [Отдельный fresh-ticket late join](network/headless-m8-suite.json) на source656 наблюдался во время настоящей Discussion: 32 samples / 2,325 s, unassigned/passive, commands0, displacement0; прежний actor необратимо Disconnected. Это новый spectator, не credential resume или resurrection. Post-death resume/ghost-vulnerability kill/native reconnect не заявлены. [Native witness02](native-human/witness-02.json) создал новый round в том же process с новыми actor/match и cleared assignment/summary.
 
 ## 41. Client FPS
 
@@ -176,15 +187,15 @@ Working knowledge различает personal observations, player claims и hyp
 
 ## 44. Automated tests
 
-Последние локальные source Runtime 545/545 и [fresh installed wheel](runtime-package.json) 545/545 PASS (installed 80,71 s, no optional SDK/model auth); 38 Skills / 14 Brains / 35 Rules / 1 game profile. Новая полная .NET проверка: **SDK 288/288, ControlPlane 29/29**, включая 13 StaticSurfaceRules regressions; schema freshness 54 artifacts и web 9/9 PASS. [Auxiliary311+332](tests/auxiliary-verification.json) и [поздний subset159+242](tests/auxiliary.json) пересекаются, не складываются. Presenter 7, SocialBindings 9, deployment 21, optional native-fixture 19 и world 195 — разные bounded scopes. Final source-commit binding/CI ещё нужен.
+[Source Runtime545/545 и fresh installed wheel545/545](runtime-package.json) PASS (installed80,71s, outside checkout, без optional SDK/model auth);38 Skills /14 Brains /35 Rules /1 game profile. [Final local .NET](tests/final-dotnet.json):SDK288/288, ControlPlane29/29, включая13 StaticSurfaceRules regressions. [Offline snapshot](tests/final-offline.json):scripts124+96subtests, отдельная пересекающаяся helper/art group153+282, web9, schema54. Эти scopes не складываются в invented total. Source656 также имеет два green GitHub workflows (§50); это не native/game/model acceptance и не изменение545 Runtime proof.
 
 ## 45. Native rendered tests
 
-[Layout proof](ui-integration/layout-validation.json) покрывает native Lobby/Settings на четырёх размерах. [Mixed02](human-mixed/native-02.json) даёт Human Discussion/Voting/GameOver/frame windows; [witness02](native-human/witness-02.json) — три mechanics/report/rematch; [victim01](native-human/victim-01.json) — Death/dead-keyboard/parity, [five authorized fold frames](native-human/victim-presentation.json) и sparse DSP. [Web](web/browser.json) — actual read-only 390/800/1280; Create/Copy не проверены. [World195](world/geometry.json) — capsule/room/LOS checks. All-cue audibility, Agent read-only HUD и полная screen×resolution matrix остаются открыты.
+[Layout proof](ui-integration/layout-validation.json) покрывает native Lobby/Settings на четырёх размерах. [Финальный656 extracted client](release-integrity.json) и [authenticated GitHub draft install](https-draft-download.json) действительно показали Lobby 800×600 на Metal; короткие окна около 1 s не являются gameplay/performance benchmark. [Mixed02](human-mixed/native-02.json) даёт Human Discussion/Voting/GameOver/frame windows; [witness02](native-human/witness-02.json) — три mechanics/report/rematch; [victim01](native-human/victim-01.json) — Death/dead-keyboard/parity, [five authorized fold frames](native-human/victim-presentation.json) и sparse DSP. [Shader35e failure](world/shader-remediation.json) не закрывается новым Lobby: final world/fog остаётся отдельной native проверкой. [Web](web/browser.json) — read-only 390/800/1280, Create/Copy не проверены. All-cue audibility, Agent read-only HUD и полная screen×resolution matrix открыты.
 
 ## 46. Fault tests
 
-Текущий M8 actual fault PASS — [resume](network/reconnect.json), с двумя сохранёнными setup failures. Deployment21 — local transaction/rollback tests, не VPS crash. Version-bound wrappers подготовлены для M8 privacy, out-of-sight rejection, protocol8, Runtime/client loss, meeting reconnect и guarded server SIGKILL; пока actualM8 acceptance этих suites отсутствует. Старые M7 results не переносятся. Explicit same-name late join — spectator policy, а не credential resume; signal dispatch сам по себе не доказывает process exit/cleanup.
+[Actual headless suite](network/headless-m8-suite.json): **8 завершённых case attempts, 6 accepted, 2 failed**, 7 с выполненной процедурой. Source35e: privacy01 strict final PASS, runtime-loss02 PASS, client-loss01 PASS; protocol01 whole FAIL (8 RPC PASS, 3/4 Runtime terminal), runtime-loss01 preflight FAIL (0 clients/Runtime, local bridge address in use). Retry02 явно использовал тот же ещё не заселённый room. Privacy helper первоначально exit1 ожидал server postgame evidence; после получения этого evidence strict offline projection exit0 без второго gameplay launch. Source656: protocol02 whole PASS, Discussion late join01 PASS и guarded Sandbox server SIGKILL01 PASS. [Provenance](network/headless-m8-provenance.json) разделяет exact component stamps; wire/Runtime/authority sources между35e/656 неизменны, shader/native acceptance не переносится. Runtime loss дал наблюдаемый stopped/keyboard-disabled живой client; client-loss→GameOver занял 60,491 s. Server loss дал actual original-process exit, 10 guard + 10 lifecycle checks, stale→terminal 29,521 s, commands0→0: это waiting actor, не moving-loss latency benchmark. На handoff 65 recorded owned PIDs / 7 groups проверены, remaining0, rooms0; optional protocol plugin удалён. [Credential resume](network/reconnect.json) имеет свой denominator. Deployment21 — local transaction tests. Late messages, post-GameOver actions, death during Skill, meeting during actual Codex turn и body/presentation replay после resume этим suite не заявлены.
 
 ## 47. Legacy regression
 
@@ -192,15 +203,15 @@ Working knowledge различает personal observations, player claims и hyp
 
 ## 48. Versions
 
-Проверяемый M8 набор: Game 0.9.0, admission 4, Arena extension 0.6.0, Runtime 0.7.0; Core wire protocol 1.0. Отдельные manifests actor.standard 0.1.0 и actor.standard.communication 0.1.0 unchanged; это не версия admission или Core. [Wheel resources/hashes](runtime-package.json) и actual staging preflight согласованы с этим набором. Финальные clean client/server/CP stamps, immutable archives и published manifest ещё не приняты; dirty QA builds не объявляются distributable release.
+M8 набор: Game 0.9.0, admission 4, Arena extension 0.6.0, Runtime 0.7.0; Core wire 1.0. Manifests actor.standard 0.1.0 и actor.standard.communication 0.1.0 unchanged — это не admission/Core version. [Wheel resources/hashes](runtime-package.json), [20 full-binding sessions08–12](models/full-binding-08-12.json) и [clean656 build stamps всех трёх продуктов](release-integrity.json) согласованы. Archives имеют status limited-test-rc, source_dirty=false и не-Development Unity options. Source stamps/checksums/HTTPS draft download не означают production activation, notarization или публичный защищённый transport.
 
 ## 49. GitHub commits
 
-Текущий HEAD — baseline `4a4cbbd`; финального M8 source/evidence commit пока нет. Наличие local build-info или working-tree тестов не означает GitHub publication. PENDING: functional commit, точные artifact source stamps, отдельно обновлённые docs и clean final tree; приватные raw launch/SQLite/model reports в commit не включаются.
+Source-bound functional commit — [`656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3`](https://github.com/fpetrov/Actor/commit/656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3). Он заменил35e candidate после реального native shader failure; [remediation](world/shader-remediation.json) сохраняет boundary. Последующие docs/evidence и optional fixture-only изменения оформляются отдельно и не пересобирают Runtime/game products. Приватные raw launch/SQLite/model reports в commit не включаются; final evidence HEAD и опубликованный release — отдельные состояния.
 
 ## 50. CI results
 
-CI workflow расширен auth-free Runtime/SDK/helper/art/schema checks; Pillow13.0.0 закреплён только в CI, не production Runtime. Локальные PASS не являются GitHub Actions run для неопубликованного working tree. Нужны реальные ссылки и green status ControlPlane/SDK workflows на final functional commit и final HEAD; старые M7 workflows не закрывают M8.
+Для functional656 оба GitHub Actions workflows green: [ControlPlane39701158511](https://github.com/fpetrov/Actor/actions/runs/39701158511) и [SDK+Runtime39701158421](https://github.com/fpetrov/Actor/actions/runs/39701158421). Auth-free Runtime/SDK/helper/art/schema CI не выполняет модели/native acceptance и не активирует VPS. Pillow13.0.0 закреплён только в CI, не production Runtime. Последующий docs/helper evidence commit и source-bound release integrity отслеживаются отдельно от этих functional CI runs.
 
 ## 51. VPS deployment
 
@@ -208,11 +219,11 @@ CI workflow расширен auth-free Runtime/SDK/helper/art/schema checks; Pil
 
 ## 52. Release artifacts
 
-Публичны original editable art/generator/hash manifest, safe outcome JSON, actual screenshots и [verified Runtime0.7 wheel proof](runtime-package.json):545tests, retained wheel SHA256 `2aee36a2a60079ba56d53c954d40635b4b9524bf037f7eaa603765ffe0cdee5b`,206026bytes. Воспроизводимый package pipeline проверяет product inventory/stamps/RECORD/deps/archive links/Xbits, но final source-clean Unity+CP archives/release manifest/checksums/download ещё не сформированы. macOS Mono tested; Windows/IL2CPP release support не заявляется. Private contexts/logs/SQLite/credentials не входят в public release.
+[Clean656 release integrity](release-integrity.json) подтверждает 5 source-bound products: macOS client, Linux server, Linux ControlPlane, actor-play Skill и Runtime wheel. Вместе с release-manifest и SHA256SUMS это 7 distribution files; checksum index имеет 6 entries и не хеширует сам себя. [Authenticated HTTPS download draft v0.9.0-rc.1](https-draft-download.json) повторно проверил bytes всех 7 файлов, extracted manifest/executable/stamp и strict ad-hoc signature; скачанный client достиг native Lobby. Это **draft**, не публично опубликованный release или production activation; ad-hoc signing не Apple notarization. [Runtime0.7 proof](runtime-package.json) остаётся 545/545, SHA256 `2aee36a2a60079ba56d53c954d40635b4b9524bf037f7eaa603765ffe0cdee5b`, 206026 bytes. Установка wheel для656 заново не заявляется: unchanged verified wheel использован в существующем environment. Windows/IL2CPP не заявлены; private contexts/logs/SQLite/credentials в release не входят.
 
 ## 53. Known limitations
 
-Открыты: минимум пяти strict independent Codex starts (сейчас 2), strict mixed provider proof, audibility/LOS sound revoke, полная screen×resolution/Agent HUD matrix, свежие M8 privacy/protocol/crash/lifecycle suites, UDP/RTT/GC/transition benchmark, final source/CI/production/HTTPS/distribution. Mixed02 tools null нельзя восстановить future collector fix. Witness02 fixture incomplete 2/5; victim01 complete 3/3 — deterministic Human QA, не Codex benchmark. Own Death/fold/dead-keyboard теперь actual, но sparse frames/DSP не доказывают smoothness или слышимость. Historical failures остаются; полная release-ready игра пока не заявляется.
+Закрыты минимум 5 independent full-binding starts08–12, actual collector coverage09–12, выбранные [actual M8 headless cases](network/headless-m8-suite.json), clean656 package integrity, два green source CI и authenticated draft HTTPS retrieval. Открыты separate controlled model-selected scenario§61, strict mixed provider proof, audibility/LOS sound revoke, полная screen×resolution/Agent HUD matrix, actual final656 native fog/landmarks, оставшиеся §65 live fault cases, UDP/RTT/GC/transition benchmark, production/security и anonymous public-release gates. Headless privacy не подменяет audiovisual privacy; server loss на waiting actor не доказывает moving-input stop latency. Mixed02 tools null нельзя восстановить новым collector. Shader35e native failure и все historical failed attempts сохранены. Witness02 fixture incomplete2/5, victim01 complete3/3 — deterministic Human QA, не Codex benchmark. Draft/CI/Lobby не равны полной release readiness.
 
 ## 54. Future ACTOR SDK roadmap
 

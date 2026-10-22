@@ -1,0 +1,217 @@
+{
+  "schema": "actor.m8-release-integrity.v1",
+  "recorded_at_utc": "2026-10-22T00:54:37.381468+00:00",
+  "scope": "Read-only source/package/checksum/signature/installed-client-manifest and native Lobby evidence. Not full gameplay, production activation or complete M8 acceptance.",
+  "status": "source_bound_packaged_limited_test_rc",
+  "full_release_acceptance": false,
+  "gameplay_acceptance_inferred": false,
+  "source": {
+    "commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+    "working_tree_clean_when_checked": true,
+    "all_three_build_stamps_match_clean_source": true,
+    "artifact_source_distinct_from_evidence_commit": true,
+    "evidence_commit_scope": "Archives remain bound to functional source commit 656cdbf. A later evidence-only commit records these files without retargeting or rebuilding them."
+  },
+  "versions": {
+    "game_version": "0.9.0",
+    "admission_protocol_version": "4",
+    "actor_core_version": "1.0.0",
+    "arena_extension_version": "0.6.0",
+    "runtime_version": "0.7.0"
+  },
+  "package": {
+    "manifest_schema": "actor.release.v1",
+    "publishable_source": true,
+    "packaging_mode": "release-candidate",
+    "release_status": "limited-test-rc",
+    "release_manifest_sha256": "5eb388220a32793a495c5c28a5b0b530c5b20c1799bed75b9bcffffdce6b10cf",
+    "sha256sums_sha256": "391a69ef851e01b6ef09d9ed1e2f3a2fe81d989270ee375582d77e3ee36b259d",
+    "complete_checksum_inventory_verified": true,
+    "artifact_count": 5,
+    "artifacts": [
+      {
+        "file": "AgentsArena-0.9.0-macOS.zip",
+        "platform": "macos",
+        "sha256": "34363b2431eae75afb0d287ea9d384f85fa1529cce0be1b11aa74f0ddf2a1dac",
+        "bytes": 41140038,
+        "root": "AgentsArena-macOS",
+        "verification": {
+          "member_integrity": true,
+          "extracted_integrity": true,
+          "executable_modes_and_symlinks": true
+        },
+        "client_manifest": "AgentsArena-macOS/client-manifest.json"
+      },
+      {
+        "file": "AgentsArena-0.9.0-linux-server.tar.gz",
+        "platform": "linux-x64",
+        "sha256": "d23942ce0ac8c1449bb73e96f38d44be7fe41a637050493000891f90548c92d7",
+        "bytes": 37578958,
+        "root": "linux-server",
+        "verification": {
+          "member_integrity": true,
+          "extracted_integrity": true,
+          "executable_modes_and_symlinks": true
+        }
+      },
+      {
+        "file": "AgentsArena-0.9.0-linux-control-plane.tar.gz",
+        "platform": "linux-x64",
+        "sha256": "21aa69d824b1a3d437c01594bf3683ad1fe4036a3ef64c3e061cd99dafef322f",
+        "bytes": 48717688,
+        "root": "linux-control-plane",
+        "verification": {
+          "member_integrity": true,
+          "extracted_integrity": true,
+          "executable_modes_and_symlinks": true
+        }
+      },
+      {
+        "file": "ACTOR-actor-play-0.7.0.zip",
+        "platform": "codex-skill",
+        "sha256": "2e71363b7330236b1395716f663b774aca8aca678b485eeed7dc3474ea942310",
+        "bytes": 2710,
+        "root": "actor-play",
+        "verification": {
+          "member_integrity": true,
+          "extracted_integrity": true,
+          "executable_modes_and_symlinks": true
+        }
+      },
+      {
+        "file": "actor_runtime-0.7.0-py3-none-any.whl",
+        "platform": "python",
+        "sha256": "2aee36a2a60079ba56d53c954d40635b4b9524bf037f7eaa603765ffe0cdee5b",
+        "bytes": 206026,
+        "verification": {
+          "version_and_entry_points": true,
+          "package_bytes_match_source": true
+        }
+      }
+    ],
+    "build_stamps": {
+      "macos": {
+        "schema": "actor.unity-build.v1",
+        "game_version": "0.9.0",
+        "unity": "6000.6.4f1",
+        "target": "StandaloneOSX",
+        "options": "None",
+        "development": false,
+        "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+        "source_dirty": false,
+        "built_at_utc": "2026-10-22T00:42:02.5938400Z",
+        "total_bytes": 178430619,
+        "duration_seconds": 20.898512999999998
+      },
+      "linux_server": {
+        "schema": "actor.unity-build.v1",
+        "game_version": "0.9.0",
+        "unity": "6000.6.4f1",
+        "target": "StandaloneLinux64",
+        "options": "None",
+        "development": false,
+        "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+        "source_dirty": false,
+        "built_at_utc": "2026-10-22T00:42:18.5687550Z",
+        "total_bytes": 108286322,
+        "duration_seconds": 14.435917
+      },
+      "linux_control_plane": {
+        "schema": "actor.control-plane-build.v1",
+        "game_version": "0.9.0",
+        "target": "linux-x64",
+        "configuration": "Release",
+        "source_commit": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3",
+        "source_dirty": false,
+        "source_fingerprint": "e392aff73a87269043a2a717860e19f1f40af1ab679c700deed5db99decce6a4",
+        "built_at_utc": "2026-10-22T00:42:26.173976+00:00",
+        "executable_sha256": "55478a3af2d7e76ba0cbacd8ab9aacccbc6ce17634bf90ba9febfd84dfca2b93",
+        "assembly_sha256": "8acfe086c55177f8f969b944854122b0d1a6607dabb9fc5705127b6773968bb7"
+      }
+    },
+    "extraction_verification_scope": "The package manifest records actual archive membership and extraction checks. This audit independently rechecked the complete checksum inventory and the existing extracted macOS install.",
+    "release_manifest": "package-656/release-manifest.json",
+    "checksum_index": "package-656/SHA256SUMS",
+    "distribution_file_count": 7,
+    "checksum_entry_count": 6,
+    "checksum_index_scope": "Six entries cover five product artifacts and release-manifest.json; SHA256SUMS does not hash itself. Product archives are release assets, not included in this documentation directory."
+  },
+  "ci": {
+    "verification": "Independent read-only GitHub REST workflow-run and job results; exact head SHA checked for both runs. No workflow rerun requested.",
+    "runs": [
+      {
+        "workflow": "Control Plane",
+        "run_id": 39701158511,
+        "url": "https://github.com/fpetrov/Actor/actions/runs/39701158511",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3"
+      },
+      {
+        "workflow": "ACTOR SDK and Runtime",
+        "run_id": 39701158421,
+        "url": "https://github.com/fpetrov/Actor/actions/runs/39701158421",
+        "status": "completed",
+        "conclusion": "success",
+        "head_sha": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3"
+      }
+    ]
+  },
+  "extracted_macos": {
+    "client_manifest_schema": "actor.client.v1",
+    "relative_executable": "AgentsArena.app/Contents/MacOS/Agents Arena",
+    "executable_sha256": "1fd5041bd14563cab73daf469ccca17b2ba8ad396dc9f17c40ee5a9680d68dd8",
+    "manifest_and_executable_independently_verified": true,
+    "extracted_build_stamp_matches_package": true,
+    "codesign_deep_strict_independently_verified": true,
+    "codesign_is_ad_hoc_not_notarization": true
+  },
+  "runtime_doctor": {
+    "report_sha256": "fecbc9f0cbccb61d0c0236ac0212685a181aef59154132db2fb4f35ac70fa93d",
+    "runtime_version": "0.7.0",
+    "python_supported": true,
+    "client_available": true,
+    "client_integrity": "sha256_verified",
+    "client_manifest_version": "0.9.0",
+    "operator_reported_exit_code": 0,
+    "environment_reused_from_35e_install": true,
+    "new_wheel_install_for_656_claimed": false,
+    "scope": "Doctor validated the new 656 extracted-client manifest using the previously installed environment and unchanged verified wheel; no fresh 656 wheel installation is claimed."
+  },
+  "native_lobby": {
+    "image": "ui-integration/final-656-lobby-800x600.png",
+    "image_sha256": "b510ef741f7d435f12b80101017aeeea6f0b54ddbe3edf5966a1ba1ca2faeaae",
+    "report": "ui-integration/final-656-lobby-800x600.json",
+    "report_sha256": "418e1af6da46cb25ac8a0cc954398b4f379685940d084f507c6c82ea49d76111",
+    "original_report_sha256": "6c709b0f4d5a62ecdd1f654908f4bc2a33531bb06c2fee671f9d85330afde73e",
+    "metadata_copy_change": "Only screenshot basename rewritten for the public evidence pair; captured metrics unchanged.",
+    "version": "0.9.0",
+    "phase": "Lobby",
+    "graphics": "Metal",
+    "width": 800,
+    "height": 600,
+    "headless": false,
+    "fullscreen": false,
+    "frames": 112,
+    "focused_frames": 112,
+    "sample_seconds": 0.9490313781425357,
+    "mean_rendered_loop_fps": 118.01506523336327,
+    "frame_ms_p95": 9.326041676104069,
+    "theme_visually_reviewed": true,
+    "dark_secondary_and_sage_primary_buttons_observed": true,
+    "scope": "Actual extracted standalone Lobby only, with a short current-view rendered frame window. No room join, gameplay, hardware presentation timing or physical-input latency is inferred."
+  },
+  "limitations": [
+    "HTTP control plane and UDP gameplay remain a limited-test RC, not encrypted public production transport.",
+    "macOS client is ad-hoc signed and not Apple notarized.",
+    "Windows was not built; no Windows or IL2CPP support is established.",
+    "Checksums prove byte consistency with this manifest, not authenticity of an unknown distribution channel.",
+    "CI and package integrity do not prove remaining native world/fog, six-player roster, mixed-model, fault or complete release acceptance gates.",
+    "Authenticated draft HTTPS download and bounded installed Lobby launch are recorded separately. No public unauthenticated release availability or production activation is inferred."
+  ],
+  "authenticated_github_draft_download": {
+    "evidence": "https-draft-download.json",
+    "all_seven_downloaded_bytes_match": true,
+    "public_release_acceptance": false
+  }
+}
