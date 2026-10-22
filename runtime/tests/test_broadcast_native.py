@@ -633,3 +633,102 @@ async def test_native_real_owned_stream_health_revokes_run_for_event_or_missing_
     finally:
         run.obs=original;await factory.aclose()
     assert not factory._owned and not fakes.lease.held
+
+
+async def test_initial_pf_refusal_prevents_all_cold_prepare_and_operational_resources(tmp_path):
+    fakes=Fakes(tmp_path);fakes.pf=False
+    factory=NativeBroadcastFactory(fakes.config,Store(),dependencies=fakes.dependencies())
+    with pytest.raises(NativeError,match='obs_firewall_attestation_required'):
+        await factory.prepare('ABC123',uuid4().hex,CommentaryConfig(),on_ready=lambda _:None,
+            on_unsafe=lambda _:None,on_terminal=lambda:None)
+    assert not fakes.budgets and fakes.process is None
+    assert not any(name in fakes.calls for name in ('model-prepare','voice-warm','sink-start','admit','bridge-start','obs-connect'))
+    assert not factory._owned and not fakes.lease.held
+
+
+@pytest.mark.parametrize('provider_invalid',[False,True])
+async def test_post_warmup_fresh_pf_and_provider_health_gate_all_admission_audio_obs(tmp_path,provider_invalid):
+    fakes=Fakes(tmp_path);deps=fakes.dependencies();base_voice=deps.voice
+    class Voice(base_voice):
+        async def warmup(self):
+            await super().warmup()
+            if provider_invalid:fakes.poisoned=True
+            else:fakes.pf=False
+    deps.voice=Voice
+    reads=[]
+    class WatchedStore(Store):
+        def get(self,name):reads.append(name);return super().get(name)
+    factory=NativeBroadcastFactory(fakes.config,WatchedStore(),dependencies=deps);flags=[]
+    with pytest.raises(NativeError,match='broadcast_model_unavailable' if provider_invalid else 'obs_firewall_attestation_required'):
+        await factory.prepare('ABC123',uuid4().hex,CommentaryConfig(),on_ready=flags.append,
+            on_unsafe=lambda _:None,on_terminal=lambda:None)
+    assert 'model-prepare' in fakes.calls and 'voice-warm' in fakes.calls
+    assert not reads and fakes.admitted is None and fakes.process is None
+    assert not any(name in fakes.calls for name in ('sink-start','admit','bridge-start','obs-connect'))
+    assert 'voice-close' in fakes.calls and 'model-close' in fakes.calls
+    assert not factory._owned and not fakes.lease.held
+
+
+async def test_cold_warmup_has_no_continuous_pf_poll_and_fresh_proof_precedes_operational_setup(tmp_path):
+    fakes=Fakes(tmp_path);deps=fakes.dependencies();base_voice=deps.voice;base_provider=deps.provider
+    entered=asyncio.Event();finish=asyncio.Event();refreshes=[]
+    class Attestor:
+        def __init__(self,*args):self.generation=0
+        @property
+        def verified(self):return self.generation>0 and fakes.pf
+        async def refresh(self):
+            self.generation+=1;refreshes.append(('pf',self.generation));fakes.calls.append('pf-refresh')
+            return fakes.pf
+    class Voice(base_voice):
+        async def warmup(self):
+            entered.set();await finish.wait();await super().warmup()
+    class Provider(base_provider):
+        def report(self):fakes.calls.append('model-health');return super().report()
+    deps.attestor=Attestor;deps.voice=Voice;deps.provider=Provider
+    factory=NativeBroadcastFactory(fakes.config,Store(),dependencies=deps)
+    preparing=asyncio.create_task(factory.prepare('ABC123',uuid4().hex,CommentaryConfig(),
+        on_ready=lambda _:None,on_unsafe=lambda _:None,on_terminal=lambda:None))
+    try:
+        await entered.wait();run=factory._owned[0]
+        # A cold compile may outlive the original proof, but cannot touch OBS,
+        # server admission or audio. Operational proof will be reacquired.
+        fakes.pf=False;await asyncio.sleep(.12)
+        assert refreshes==[('pf',1)] and not run._tasks and run._failure is None
+        assert run.obs_client is run.obs is run.sink is run.admission is run.process is None
+        fakes.pf=True;finish.set();run=await asyncio.wait_for(preparing,1)
+        assert len(refreshes)>=2
+        second=[index for index,name in enumerate(fakes.calls) if name=='pf-refresh'][1]
+        assert fakes.calls.index('voice-warm') < second
+        assert second < fakes.calls.index('model-health') < fakes.calls.index('admit')
+        assert second < fakes.calls.index('sink-start') and second < fakes.calls.index('admit')
+        assert run._tasks and run.readiness()['observer'] and run.readiness()['obs']
+        # There is no post-start grace. The existing runtime guard still trips
+        # and requests Safe immediately on its next failed actual refresh.
+        fakes.pf=False
+        for _ in range(80):
+            if run._failure is not None:break
+            await asyncio.sleep(.01)
+        assert run._failure=='obs_firewall_attestation_lost' and not run._route_guard()
+    finally:
+        finish.set()
+        if not preparing.done():preparing.cancel()
+        await asyncio.gather(preparing,return_exceptions=True)
+        await factory.aclose()
+    assert not factory._owned and not fakes.lease.held
+
+
+async def test_successful_post_warmup_refresh_without_current_verified_proof_cannot_admit(tmp_path):
+    fakes=Fakes(tmp_path);deps=fakes.dependencies()
+    class Attestor:
+        def __init__(self,*args):self.calls=0
+        @property
+        def verified(self):return self.calls==1
+        async def refresh(self):self.calls+=1;return True
+    deps.attestor=Attestor
+    factory=NativeBroadcastFactory(fakes.config,Store(),dependencies=deps)
+    with pytest.raises(NativeError,match='obs_firewall_attestation_required'):
+        await factory.prepare('ABC123',uuid4().hex,CommentaryConfig(),on_ready=lambda _:None,
+            on_unsafe=lambda _:None,on_terminal=lambda:None)
+    assert 'voice-warm' in fakes.calls and fakes.admitted is None and fakes.process is None
+    assert not any(name in fakes.calls for name in ('sink-start','admit','bridge-start','obs-connect'))
+    assert not factory._owned and not fakes.lease.held

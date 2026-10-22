@@ -332,10 +332,7 @@ class PreparedNativeRun:
         client, profile = await asyncio.to_thread(d.resolve, c)
         if (profile.game_id, profile.game_version) != (c.game_id, c.game_version): raise NativeError("broadcast_client_version_mismatch")
         self.attestor = d.attestor(c.firewall_socket)
-        if not await self.attestor.refresh(): raise NativeError("obs_firewall_attestation_required")
-        self._task(self._guard_loop())
-        key = await asyncio.to_thread(self.store.get, "broadcast-server-operator-key")
-        self.admission = d.admission(c.operator_forward_url, key, game_version=c.game_version, protocol_version=c.admission_protocol)
+        if not await self.attestor.refresh() or not self.attestor.verified: raise NativeError("obs_firewall_attestation_required")
         self.budget = d.budget(quota_root / "quota.sqlite", quota_scope_id="installation:" + scope_id, config=self.commentary)
         self.provider = d.provider(c)
         await self._stage(self.provider.prepare(), 30); self._ready("model")
@@ -343,6 +340,14 @@ class PreparedNativeRun:
         if floor is not None: await self.budget.raise_unknown_input_floor(floor)
         self.voice = d.voice(MlxSpeechConfig(c.tts_python, c.tts_model_path))
         await self._stage(self.voice.warmup(), 95); self._ready("tts")
+        # Cold model/MPS preparation has no OBS client, audio route, observer
+        # or admission yet. Re-attest AFTER that work, then continuously guard
+        # every operational resource without a grace period or stale proof.
+        if not await self.attestor.refresh() or not self.attestor.verified: raise NativeError("obs_firewall_attestation_required")
+        self._require_healthy_provider()
+        self._task(self._guard_loop())
+        key = await asyncio.to_thread(self.store.get, "broadcast-server-operator-key")
+        self.admission = d.admission(c.operator_forward_url, key, game_version=c.game_version, protocol_version=c.admission_protocol)
         self.sink = d.sink(route_guard=self._route_guard)
         await self.sink.start()
         # Admission is short-lived; do not allocate it behind cold GPU/model setup.
@@ -521,10 +526,7 @@ class PreparedNativeRun:
                     if not await self.attestor.refresh(): raise NativeError("obs_firewall_attestation_lost")
                 if self.process is not None and self.process.poll() is not None: raise NativeError("broadcast_observer_exited")
                 if self._flags["model"]:
-                    report = self.provider.report()
-                    if not isinstance(report, dict) or report.get("poisoned") is not False or report.get("closed") is not False:
-                        self._flags["model"] = False
-                        raise NativeError("broadcast_model_unavailable")
+                    self._require_healthy_provider()
                 if self.scheduler is not None:
                     self._capture()
                     if self._flags["observer"] and not self.scheduler._fresh(): raise NativeError("broadcast_feed_stale")
@@ -540,6 +542,12 @@ class PreparedNativeRun:
                 await asyncio.sleep(.05)
         except asyncio.CancelledError: raise
         except Exception as error: self._trip(getattr(error, "code", "broadcast_guard_failed"))
+
+    def _require_healthy_provider(self):
+        report = self.provider.report()
+        if not isinstance(report, dict) or report.get("poisoned") is not False or report.get("closed") is not False:
+            self._flags["model"] = False
+            raise NativeError("broadcast_model_unavailable")
 
     async def activate(self):
         self._check()
