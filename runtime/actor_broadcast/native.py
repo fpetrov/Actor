@@ -591,11 +591,14 @@ class PreparedNativeRun:
             if self.obs is not None:
                 try: await _cleanup(self.obs.emergency_stop(), 17)
                 except BaseException: failures.append("obs_stop")
-            if self._record_directory_original is not None and self.obs_client is not None and not getattr(self.obs, "_record_owned", False):
-                try:
-                    await _cleanup(self.obs_client.request("SetRecordDirectory", {"recordDirectory": self._record_directory_original}), 5)
-                    self._record_directory_original = None
-                except BaseException: failures.append("record_directory")
+            if self._record_directory_original is not None:
+                if self.obs_client is None or getattr(self.obs, "_record_owned", False):
+                    failures.append("record_directory")
+                else:
+                    try:
+                        await _cleanup(self.obs_client.request("SetRecordDirectory", {"recordDirectory": self._record_directory_original}), 5)
+                        self._record_directory_original = None
+                    except BaseException: failures.append("record_directory")
             for task in list(self._tasks):
                 if task is not asyncio.current_task(): task.cancel()
             pending = [task for task in self._tasks if task is not asyncio.current_task()]
@@ -653,7 +656,7 @@ class PreparedNativeRun:
                 if self.obs is not None:
                     try: await _cleanup(self.obs.cleanup_owned_inputs(), 8)
                     except BaseException: failures.append("obs_owned_inputs"); clean_inputs = False
-                if clean_inputs:
+                if clean_inputs and self._record_directory_original is None:
                     await finish("obs_client", lambda value: value.close(), 4)
                     if self.obs_client is None:
                         self.obs = None
@@ -663,6 +666,22 @@ class PreparedNativeRun:
                         # route-stop failure; an active output cannot reach here.
                         if "obs_stop" in failures:
                             failures.remove("obs_stop"); recovered.append("obs_stop")
+            if (failures==["scheduler"] and self.output is None and self.sink is None and self.voice is None
+                    and self.provider is None and self.obs is None and self.obs_client is None
+                    and self.process is None and self._decoder is None and self.log is None
+                    and self._record_directory_original is None
+                    and self.bridge is None and self.budget is None and self.chat is None and self.auth is None
+                    and self._admission_pending is None and not self._release_admission
+                    and all(task.done() for task in self._tasks)):
+                # Closing deliberately revokes the route before slow drains.
+                # A missing render flush remains a diagnostic, but cannot keep
+                # an otherwise fully closed run/lease alive forever. No audio
+                # ACK is invented and pending spoken text stays interrupted.
+                recover=getattr(self.scheduler,"recover_terminal_cleanup",None)
+                try:confirmed=callable(recover) and recover() is True
+                except Exception:confirmed=False
+                if confirmed:
+                    failures.remove("scheduler");recovered.append("scheduler_terminal_audio_flush")
             self.cleanup_failures = tuple(failures); self.recovered_cleanup_stages = tuple(recovered)
             if failures: raise NativeError("broadcast_owned_cleanup_incomplete", cleanup_stages=self.cleanup_failures)
             if self.lease is not None: self.lease.release(); self.lease = None

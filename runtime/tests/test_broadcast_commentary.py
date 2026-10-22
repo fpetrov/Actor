@@ -430,6 +430,57 @@ async def test_repeated_stop_caller_cancellation_keeps_owned_cleanup_alive():
     assert provider.closed and scheduler.budget.closed and len(speech.cancellations)==1
 
 
+async def test_terminal_recovery_rejects_a_retained_cancellation_task_until_it_actually_finishes():
+    clock=Clock();provider=Provider();provider.report=lambda:{'closed':provider.closed,'decision_active':bool(provider.active)}
+    scheduler,_,speech=system(clock,provider,CommentaryConfig(interrupt_timeout_seconds=.02))
+    release=asyncio.Event();finished=asyncio.Event()
+    async def delayed_cancel(request,**kwargs):
+        try:
+            while not release.is_set():
+                try:await release.wait()
+                except asyncio.CancelledError:pass
+            return FlushAck(request.scope,request.utterance_id,request.utterance_epoch,True)
+        finally:finished.set()
+    speech.cancel=delayed_cancel
+    scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));scheduler.ready();await pump(scheduler)
+    try:
+        with pytest.raises(RuntimeError,match='commentary_cleanup_failed'):await scheduler.stop()
+        assert scheduler._stop_failure_stages==('audio_flush','dependency_task')
+        assert provider.closed and scheduler.budget.closed and scheduler._stop_task.done()
+        assert any(not task.done() for task in scheduler._dependency_tasks)
+        assert not scheduler.recover_terminal_cleanup()
+        assert not scheduler.report()['stopped'] and scheduler._speech_pending
+    finally:
+        release.set();await asyncio.wait_for(finished.wait(),1);await asyncio.sleep(0)
+    # Caller now certifies closed external dependencies; the scheduler proves
+    # its own task ownership. Recovery is not a playback/flush acknowledgement.
+    assert scheduler.recover_terminal_cleanup()
+    assert scheduler.report()['spoken']['completed']==0
+    assert scheduler.report()['spoken']['covered_versions']==0
+    assert scheduler.report()['counts']['audio_flush_failed']==1
+
+
+async def test_stop_cannot_forget_an_earlier_cancellation_resistant_dependency():
+    clock=Clock();scheduler,provider,_=system(clock,config=CommentaryConfig(interrupt_timeout_seconds=.02))
+    release=asyncio.Event();finished=asyncio.Event()
+    async def retained_dependency():
+        try:
+            while not release.is_set():
+                try:await release.wait()
+                except asyncio.CancelledError:pass
+        finally:finished.set()
+    try:
+        with pytest.raises(TimeoutError):await scheduler._bounded_dependency(retained_dependency())
+        with pytest.raises(RuntimeError,match='commentary_cleanup_failed'):await scheduler.stop()
+        assert provider.closed and scheduler.budget.closed
+        assert scheduler._stop_failure_stages==('dependency_task',)
+        assert not scheduler.report()['stopped'] and not scheduler.recover_terminal_cleanup()
+    finally:
+        release.set();await asyncio.wait_for(finished.wait(),1);await asyncio.sleep(0)
+    await scheduler.stop()
+    assert scheduler.report()['stopped'] and not scheduler._dependency_tasks
+
+
 async def test_failed_provider_close_keeps_scheduler_retryable_and_does_not_skip_budget_close():
     class RetryProvider(Provider):
         attempts=0

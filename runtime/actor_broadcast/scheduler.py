@@ -45,6 +45,8 @@ class CommentaryScheduler:
         self._closed = False
         self._stop_task = None
         self._stop_complete = False
+        self._stop_failure_stages = ()
+        self._dependency_tasks = set()
         self._provider_failed = False
         self._needs_cancel = False
         self._cancel_reason = None
@@ -424,6 +426,11 @@ class CommentaryScheduler:
 
     async def _bounded_dependency(self, awaitable):
         task=asyncio.create_task(awaitable)
+        self._dependency_tasks.add(task)
+        def done(value):
+            self._dependency_tasks.discard(value)
+            if not value.cancelled():value.exception()
+        task.add_done_callback(done)
         try:
             done,_=await asyncio.wait((task,),timeout=self.config.interrupt_timeout_seconds)
             if task not in done:
@@ -574,27 +581,58 @@ class CommentaryScheduler:
         await asyncio.shield(self._stop_task)
 
     async def _finish_stop(self, *, emergency):
-        clean=True
+        clean=True;failures=set()
+        flush_failures=self._counts["audio_flush_failed"]
         try:
             clean=await self._cancel_active(emergency=emergency)
+            if not clean:
+                failures.add("audio_flush" if self._counts["audio_flush_failed"]>flush_failures else "cancellation")
         except BaseException:
-            clean=False;self._counts["cancel_cleanup_failed"]+=1
+            clean=False;failures.add("cancellation");self._counts["cancel_cleanup_failed"]+=1
         try:await self._bounded_dependency(self.provider.close())
         except BaseException:
-            clean=False;self._counts["provider_close_failed"]+=1
+            clean=False;failures.add("provider");self._counts["provider_close_failed"]+=1
         finally:
             if self._owns_budget:
                 try:await self.budget.close()
                 except BaseException:
-                    clean=False;self._counts["budget_close_failed"]+=1
+                    clean=False;failures.add("budget");self._counts["budget_close_failed"]+=1
         if self._active is not None:
             done,_=await asyncio.wait((self._active,),timeout=.5)
-            if self._active not in done:clean=False
+            if self._active not in done:clean=False;failures.add("provider_task")
             else:
                 if not self._active.cancelled():self._active.exception()
                 self._active=None
+        if any(not task.done() for task in self._dependency_tasks):
+            clean=False;failures.add("dependency_task")
         self._stop_complete=clean
+        self._stop_failure_stages=tuple(sorted(failures))
         if not clean:raise RuntimeError("commentary_cleanup_failed")
+
+    def recover_terminal_cleanup(self):
+        """Owner-only terminal recovery after all external dependencies closed.
+
+        Native invokes this only after audio, provider, OBS and transport owners
+        actually close. An unavailable render ACK stays unavailable: this marks
+        abandoned speech interrupted, without manufacturing playback or coverage.
+        """
+        if self._stop_complete:return True
+        if (not self._closed or self._stop_task is None or not self._stop_task.done() or
+                not self._stop_failure_stages or
+                not set(self._stop_failure_stages).issubset({"audio_flush","dependency_task"}) or
+                not self._counts["audio_flush_failed"] or self._step_lock.locked() or
+                self._preempt_lock.locked() or any(not task.done() for task in self._dependency_tasks) or
+                self._active is not None and not self._active.done() or
+                getattr(self.budget,"closed",False) is not True):return False
+        try:provider=self.provider.report()
+        except Exception:return False
+        if (not isinstance(provider,dict) or provider.get("closed") is not True or
+                provider.get("decision_active") is not False):return False
+        for segment,_ in self._speech_pending.values():
+            self.spoken.interrupted(segment.scope,segment.key.utterance_id,segment.key.utterance_epoch,self.clock())
+        self._speech_pending.clear();self._active=None;self._active_request=None;self._needs_cancel=False
+        self._stop_complete=True;self._counts["terminal_audio_flush_recovered"]+=1
+        return True
 
     def report(self):
         if self.evidence:self.spoken.prune(self.evidence)

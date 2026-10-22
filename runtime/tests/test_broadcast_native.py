@@ -732,3 +732,55 @@ async def test_successful_post_warmup_refresh_without_current_verified_proof_can
     assert 'voice-warm' in fakes.calls and fakes.admitted is None and fakes.process is None
     assert not any(name in fakes.calls for name in ('sink-start','admit','bridge-start','obs-connect'))
     assert not factory._owned and not fakes.lease.held
+
+
+@pytest.mark.parametrize('blocked_stage',['none','output','record_directory'])
+async def test_failed_render_flush_recovers_only_after_actual_terminal_dependency_cleanup(tmp_path,blocked_stage):
+    from actor_broadcast.audio import AudioError
+    from actor_broadcast.budget import BudgetLedger
+    from actor_broadcast.scheduler import CommentaryScheduler
+    from test_broadcast_commentary import Clock,Provider,Speech,fact,pump,view
+    fakes=Fakes(tmp_path);factory,run,_,_,_=await prepared(fakes)
+    # Isolate the teardown under test; this is all fake native composition.
+    for task in tuple(run._tasks):task.cancel()
+    await asyncio.gather(*tuple(run._tasks),return_exceptions=True)
+    class ClosedProvider(Provider):
+        def report(self):return {'closed':self.closed,'decision_active':self.active!=0}
+    class LostFlush(Speech):
+        async def cancel(self,*args,**kwargs):raise AudioError('audio_renderer_disconnected')
+    clock=Clock();provider=ClosedProvider();speech=LostFlush();budget=BudgetLedger()
+    scheduler=CommentaryScheduler(provider,speech,budget,clock=clock.monotonic,wall_clock=clock.wall)
+    run.provider=provider;run.scheduler=scheduler;run.budget=budget
+    scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));scheduler.ready()
+    await pump(scheduler)
+    assert scheduler._speech_pending and scheduler.spoken.report()['completed']==0
+    restores=[]
+    if blocked_stage=='record_directory':
+        run._record_directory_original='/original-private-record-directory'
+        async def restore(kind,values):
+            assert kind=='SetRecordDirectory' and values=={'recordDirectory':'/original-private-record-directory'}
+            restores.append(kind)
+            if len(restores)==1:raise RuntimeError('owned restore failed')
+        run.obs_client.request=restore
+    fakes.fail_close=blocked_stage=='output'
+    if blocked_stage!='none':
+        with pytest.raises(NativeError,match='cleanup_incomplete'):await run.close()
+        assert run in factory._owned and fakes.lease.held and 'scheduler' in run.cleanup_failures
+        if blocked_stage=='output':assert run.output is not None and 'output' in run.cleanup_failures
+        else:
+            assert 'record_directory' in run.cleanup_failures and run._record_directory_original is not None
+            assert run.obs_client is not None and 'obs-close' not in fakes.calls and restores==['SetRecordDirectory']
+        assert not scheduler.report()['stopped'] and not run.recovered_cleanup_stages
+        fakes.fail_close=False
+    await run.close()
+    assert run._closed and not fakes.lease.held and not factory._owned
+    assert run.recovered_cleanup_stages==('scheduler_terminal_audio_flush',)
+    report=scheduler.report()
+    assert report['stopped'] and report['counts']['audio_flush_failed']>=1
+    assert report['counts']['terminal_audio_flush_recovered']==1
+    assert report['spoken']['interrupted']==1 and report['spoken']['completed']==0
+    assert report['spoken']['covered_versions']==0 and report['last_spoken'] is None
+    assert not scheduler._speech_pending and budget.closed and provider.closed
+    assert run._record_directory_original is None
+    if blocked_stage=='record_directory':assert restores==['SetRecordDirectory','SetRecordDirectory']
+    assert all(item in fakes.calls for item in ('sink-close','voice-close','obs-owned-inputs-removed','obs-close'))
