@@ -67,6 +67,17 @@ async def pump(scheduler):
     for _ in range(20):await asyncio.sleep(0)
 
 
+async def await_provider_completion(scheduler):
+    """Join the exact admitted task after its final fixture playback ACK.
+
+    Event-loop yields do not synchronize its real SQLite worker reconciliation.
+    Never use this while a fixture still owes a segment ACK or provider release.
+    """
+    completed=scheduler._active
+    if completed is not None:
+        await asyncio.wait_for(asyncio.shield(completed),2)
+
+
 def system(clock,provider=None,config=None):
     provider=provider or Provider();speech=Speech()
     # These existing exact-deadline scenarios intentionally have no jitter.
@@ -386,6 +397,7 @@ async def test_terminal_outro_is_finished_only_after_actual_complete_playback_ac
     clock.advance(1)
     assert speech.acknowledge(scheduler,clock)
     assert not scheduler.report()["terminal_outro_finished"]  # The local farewell has not played yet.
+    await await_provider_completion(scheduler)
     await pump(scheduler)
     assert speech.segments[-1].text=="Спасибо, что были с нами. До встречи!"
     assert not scheduler.report()["terminal_outro_finished"]

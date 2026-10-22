@@ -150,14 +150,24 @@ raise SystemExit(control.main(['join','ABC123','--brain','social-scripted','--cl
         stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     try:
         deadline=time.monotonic()+10
+        state={}
         while time.monotonic()<deadline:
             if parent.poll() is not None:
                 out,err=parent.communicate();pytest.fail(out+err)
-            if (tmp_path/"client-ready").exists():break
+            if (tmp_path/"client-ready").exists() and (output/"launch.json").exists():
+                state=json.loads((output/"launch.json").read_text())
+                identities=state.get("processes",{})
+                child_pids=[identities.get(name,{}).get("pid") for name in ("runtime","client")]
+                if (state.get("state")=="running" and identities.get("launcher",{}).get("pid")==parent.pid
+                        and control.owned_process(identities["launcher"])
+                        and all(type(pid)is int and pid>0 for pid in child_pids)
+                        and len({parent.pid,*child_pids})==3):break
             time.sleep(.02)
         assert (tmp_path/"client-ready").exists()
-        state=json.loads((output/"launch.json").read_text())
         assert state["state"]=="running" and state["processes"]["launcher"]["pid"]==parent.pid
+        assert control.owned_process(state["processes"]["launcher"])
+        child_pids=[state["processes"][name]["pid"] for name in ("runtime","client")]
+        assert all(type(pid)is int and pid>0 for pid in child_pids) and len({parent.pid,*child_pids})==3
         assert control.main(["stop","--run",str(output)])==0
         time.sleep(.03)
         if parent.poll() is None:parent.send_signal(signal.SIGTERM)
@@ -170,5 +180,7 @@ raise SystemExit(control.main(['join','ABC123','--brain','social-scripted','--cl
         assert "ACTOR_BRIDGE_TOKEN" not in json.dumps(state)
         assert not any(key in json.dumps(state) for key in ("auth_token","resume_token","objective"))
         assert all(not control.owned_process(value) for value in state["processes"].values())
+        for identity in state["processes"].values():
+            with pytest.raises(ProcessLookupError):os.kill(identity["pid"],0)
     finally:
         if parent.poll() is None:parent.terminate();parent.wait(timeout=10)

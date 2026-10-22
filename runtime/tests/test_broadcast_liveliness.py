@@ -12,7 +12,8 @@ from actor_broadcast.scheduler import CommentaryScheduler, INTRO_COURTESY, OUTRO
 from actor_broadcast.spoken import SpokenLedger
 from actor_codex.commentary import CodexCommentaryProvider
 from test_broadcast_codex import SpeechSDK
-from test_broadcast_commentary import Clock, Provider, Speech, fact, fresh, pump, system, view
+from test_broadcast_commentary import (Clock, Provider, Speech, await_provider_completion,
+    fact, fresh, pump, system, view)
 
 
 class RandomSamples:
@@ -161,6 +162,7 @@ async def test_completed_idle_semantic_topic_blocks_after_repeat_ttl_and_version
     try:
         clock.advance(20);await fresh(scheduler,clock)
         assert speech.acknowledge(scheduler,clock)
+        await await_provider_completion(scheduler)
         clock.advance(200);await fresh(scheduler,clock)
         assert len(provider.requests)==1 and scheduler.report()['silence_reason']=='already_covered'
         refreshed=fact(clock,source.id,version='2',unresolved=True,lifetime=900)
@@ -172,6 +174,7 @@ async def test_completed_idle_semantic_topic_blocks_after_repeat_ttl_and_version
         clock.advance(20);await fresh(scheduler,clock)
         assert len(provider.requests)==2 and corrected.ref in provider.requests[-1].candidate.evidence
         assert speech.acknowledge(scheduler,clock)
+        await await_provider_completion(scheduler)
         clock.advance(130)  # Recall may use that historical material once it is no longer recently covered.
         await fresh(scheduler,clock,facts=[fact(clock,'new-connection',unresolved=True)])
         clock.advance(20);await fresh(scheduler,clock)
@@ -187,9 +190,11 @@ async def test_previously_reactive_fact_can_receive_one_historical_callback_not_
     try:
         await pump(scheduler);assert provider.requests[-1].candidate.mode=='reactive'
         assert speech.acknowledge(scheduler,clock)
+        await await_provider_completion(scheduler)
         clock.advance(121);await fresh(scheduler,clock)
         assert len(provider.requests)==2 and provider.requests[-1].candidate.mode=='memory_callback'
         assert speech.acknowledge(scheduler,clock)
+        await await_provider_completion(scheduler)
         clock.advance(140);await fresh(scheduler,clock)
         assert len(provider.requests)==2
     finally:await scheduler.stop()
@@ -202,6 +207,7 @@ async def test_interrupted_idle_audio_is_not_completed_topic_coverage():
         clock.advance(20);await fresh(scheduler,clock)
         assert speech.acknowledge(scheduler,clock,status='interrupted')
         assert not scheduler.spoken.idle_topics
+        await await_provider_completion(scheduler)
         clock.advance(21);await fresh(scheduler,clock)
         assert len(provider.requests)==2
     finally:await scheduler.stop()
@@ -244,6 +250,7 @@ async def test_partial_idle_utterance_does_not_permanently_cover_unheard_candida
         for index in range(1,segments):
             assert speech.acknowledge(scheduler,clock,index=index,status='interrupted')
             await pump(scheduler)
+        await await_provider_completion(scheduler)
         assert not scheduler.spoken.idle_topics and not scheduler.spoken._idle_declarations
         clock.advance(130);await fresh(scheduler,clock)
         assert len(provider.requests)==2 and set(provider.requests[-1].candidate.evidence)=={source.ref for source in sources}
@@ -281,6 +288,7 @@ async def test_provider_omitting_unheard_candidate_evidence_cannot_permanently_p
         assert speech.acknowledge(scheduler,clock)
         assert len(scheduler.spoken.coverage)==1 and not scheduler.spoken.idle_topics
         assert not scheduler.spoken._idle_declarations
+        await await_provider_completion(scheduler)
         clock.advance(130);await fresh(scheduler,clock)
         assert len(provider.requests)==2 and set(provider.requests[-1].candidate.evidence)=={source.ref for source in sources}
     finally:await scheduler.stop()
@@ -330,6 +338,7 @@ async def test_intro_uses_shared_budget_and_refusal_does_not_create_repeated_res
     scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));scheduler.ready();scheduler.public_started()
     try:
         await pump(scheduler);assert speech.acknowledge(scheduler,clock)
+        await await_provider_completion(scheduler)
         clock.advance(13);await fresh(scheduler,clock)
         assert speech.segments[-1].text==INTRO_COURTESY and not scheduler.spoken.idle_topics
         assert speech.acknowledge(scheduler,clock);await pump(scheduler)
@@ -450,6 +459,7 @@ async def test_terminal_generated_result_ack_then_farewell_ack_are_both_real_and
         assert result.evidence_versions and len(provider.requests)==1
         assert speech.acknowledge(scheduler,clock)
         assert not scheduler.report()['terminal_outro_finished']
+        await await_provider_completion(scheduler)
         await pump(scheduler);farewell=speech.segments[-1]
         assert farewell.text==OUTRO_COURTESY and not farewell.evidence_versions
         assert scheduler.spoken.records[(farewell.scope,farewell.key)].topic_key=='neutral-outro'
@@ -483,6 +493,7 @@ async def test_real_interrupted_result_ack_gets_one_fallback_closer_without_fabr
         result=speech.segments[-1]
         assert speech.acknowledge(scheduler,clock,status='interrupted',frames=12000)
         assert not scheduler.report()['terminal_outro_finished'] and not scheduler.spoken.coverage
+        await await_provider_completion(scheduler)
         await pump(scheduler)
         fallback=speech.segments[-1]
         assert fallback.text==OUTRO_FALLBACK and len(speech.segments)==2
