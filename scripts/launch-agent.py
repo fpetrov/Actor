@@ -16,6 +16,33 @@ import time
 from urllib.parse import urlsplit
 
 
+class _RegisteredSpawn:
+    """Defer an interrupt only until a newly created child is owned by cleanup."""
+
+    def __init__(self):
+        self._registering = False
+        self._pending = False
+
+    def interrupted(self, _signal, _frame):
+        if self._registering:
+            self._pending = True
+        else:
+            raise KeyboardInterrupt
+
+    def spawn(self, command, *, register, **kwargs):
+        if self._pending:
+            raise KeyboardInterrupt
+        self._registering = True
+        try:
+            process = subprocess.Popen(command, **kwargs)
+            register(process)
+        finally:
+            self._registering = False
+        if self._pending:
+            raise KeyboardInterrupt
+        return process
+
+
 def main():
     root = Path(__file__).resolve().parents[1]
     parser = argparse.ArgumentParser(description=__doc__)
@@ -89,13 +116,13 @@ def main():
             runtime_args += [flag, str(value)]
     if args.no_event_routing:
         runtime_args += ["--no-event-routing"]
-    def interrupted(_signal, _frame):
-        raise KeyboardInterrupt
-    signal.signal(signal.SIGTERM, interrupted)
+    spawning = _RegisteredSpawn()
+    signal.signal(signal.SIGTERM, spawning.interrupted)
+    signal.signal(signal.SIGINT, spawning.interrupted)
     try:
         with (args.output / "runtime.log").open("w") as runtime_log:
-            server = subprocess.Popen(runtime_args, cwd=root, env=environment, stdout=runtime_log, stderr=subprocess.STDOUT)
-        processes.append(server)
+            server = spawning.spawn(runtime_args, register=processes.append,
+                cwd=root, env=environment, stdout=runtime_log, stderr=subprocess.STDOUT)
         deadline = time.monotonic() + 15
         while True:
             if server.poll() is not None:
@@ -117,9 +144,8 @@ def main():
                 client_command += ["-batchmode", "-nographics"]
             if args.api_url is not None:
                 client_command += ["--api-url", args.api_url]
-            client = subprocess.Popen(client_command,
+            client = spawning.spawn(client_command, register=processes.append,
                 cwd=root, env=environment, stdout=client_stdout, stderr=subprocess.STDOUT)
-        processes.append(client)
         # Process/isolation evidence only; neither credential nor game payload
         # is recorded. Each launcher independently generates its own token.
         (args.output / "launch.json").write_text(json.dumps({

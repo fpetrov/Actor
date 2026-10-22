@@ -18,7 +18,7 @@ from uuid import uuid4
 
 from actor_broadcast.budget import BudgetLedger
 from actor_broadcast.config import CommentaryConfig
-from actor_broadcast.context import reservation_input_tokens
+from actor_broadcast.context import reservation_input_tokens, speech_presentation
 from actor_broadcast.contracts import CommentaryCandidate, CommentaryRequest, EvidenceRef, ProviderSegment, ProviderTerminal, Scope
 from actor_broadcast.native import installation_identity, private_directory
 from actor_broadcast.ownership import ChannelLease
@@ -27,7 +27,7 @@ from actor_codex.commentary import CodexCommentaryProvider
 
 # Authored examples only: no player observations, roles, memory, chat or credentials.
 CASES = (
-    ("reactive", "Exploration", "В холле началось исследование. Участники ещё не выбрали маршрут.", "phase_started"),
+    ("intro", "Exploration", "В холле началось исследование. Участники ещё не выбрали маршрут.", "phase_started"),
     ("reactive", "Exploration", "Наблюдателю видны Лена и Олег: оба вошли в инженерную из холла.", "visible_transition"),
     ("reactive", "Exploration", "Публичный счётчик выполненных задач вырос с двух до трёх из десяти.", "task_progress"),
     ("reactive", "Exploration", "Включилась публичная тревога. Причина и виновник наблюдателю неизвестны.", "alarm_started"),
@@ -48,6 +48,33 @@ CASES = (
     ("reactive", "Exploration", "Видимая совместная работа у консоли завершилась. Публичный счётчик вырос до девяти из десяти.", "cooperative_progress"),
     ("outro", "GameOver", "Сервер публично завершил матч: победила команда экипажа после выполнения всех задач. Это авторитетный итог.", "terminal_result"),
 )
+
+CRITICAL_PREDICATES = frozenset({"alarm_started", "body_report", "vote_started", "vote_tied",
+    "witnessed_attack", "emergency_meeting", "terminal_result"})
+
+
+def authored_request(index, case, *, now, config, session, match):
+    """Synthetic public input with real editorial sizing, never a native ACK."""
+    mode, phase, text, predicate = case
+    ref = EvidenceRef(f"benchmark-public-{index}", "1")
+    rows = [(ref, text, "player_claim" if predicate in {"public_claim", "earlier_dispute"} else "historical_observation")]
+    if predicate == "conflicting_claims":
+        rows = [(ref, "Олег публично заявил: «Я был рядом с Леной». Это неподтверждённое утверждение Олега.", "player_claim"),
+            (EvidenceRef(ref.id + "-response", "1"), "Лена публично ответила Олегу: «Я тебя там не видела». Это неподтверждённое утверждение Лены.", "player_claim")]
+    priority = 0 if predicate in CRITICAL_PREDICATES else 2 if mode == "reactive" else 3
+    candidate = CommentaryCandidate(Scope(session, match, 1, 1), index, uuid4().hex, mode,
+        priority, predicate, tuple(row[0] for row in rows), now + 3600000)
+    age_ms = 90000 if predicate == "earlier_dispute" else 120000 if mode == "memory_callback" else 0
+    external = {"mode": mode, "phase": phase, "current_view": {}, "actually_spoken": [],
+        "presented_view_observed_at_unix_ms": now, "speech_presentation": speech_presentation(candidate, config),
+        "historical_callback": mode == "memory_callback", "public_notes": [], "topic_key": predicate,
+        "evidence": [{"ref": asdict(identity), "kind": "viewer_claim" if mode == "chat_response" else kind,
+            "origin": "viewer_chat" if mode == "chat_response" else "game", "source_event_id": identity.id,
+            "observed_at_unix_ms": now - age_ms, "age_at_presented_view_seconds": age_ms / 1000,
+            "expires_at_unix_ms": now + 3600000, "value": {"text": statement}, "subjects": [], "predicate": predicate}
+            for identity, statement, kind in rows]}
+    return CommentaryRequest(candidate, external,
+        config.idle.max_output_tokens if mode in ("idle_recap", "memory_callback") else 512, uuid4().hex, 1)
 
 
 def save(path, value):
@@ -75,6 +102,7 @@ async def run(args):
     budget = BudgetLedger(root / "quota.sqlite", quota_scope_id="installation:" + installation_identity(root), config=config)
     provider = CodexCommentaryProvider(codex_home=args.codex_home.expanduser().absolute())
     report = {"schema": "actor.broadcast-provider-benchmark.v1", "scenarios": "authored_public_synthetic",
+        "authored_fixture_version": 2, "controller_courtesy_audio": False,
         "real_provider": True, "native_presentation": False, "tts": False, "playback": False,
         "obs_recording": False, "twitch_ingest": False, "model": "gpt-6-luna", "cases_requested": args.limit,
         "shared_production_quota": True, "attempts": [], "completed": False, "cleanup_completed": False}
@@ -84,22 +112,9 @@ async def run(args):
         report["startup"] = await asyncio.wait_for(provider.prepare(), 30)
         floor=getattr(provider,"minimum_input_reservation",None)
         if floor is not None: await budget.raise_unknown_input_floor(floor)
-        for index, (mode, phase, text, predicate) in enumerate(CASES[:args.limit], 1):
-            now = int(time.time() * 1000); ref = EvidenceRef(f"benchmark-public-{index}", "1")
-            rows = [(ref, text, "player_claim" if predicate in {"public_claim", "earlier_dispute"} else "historical_observation")]
-            if predicate == "conflicting_claims":
-                rows = [(ref, "Олег публично заявил: «Я был рядом с Леной». Это неподтверждённое утверждение Олега.", "player_claim"),
-                    (EvidenceRef(ref.id + "-response", "1"), "Лена публично ответила Олегу: «Я тебя там не видела». Это неподтверждённое утверждение Лены.", "player_claim")]
-            candidate = CommentaryCandidate(Scope(session, match, 1, 1), index, uuid4().hex, mode,
-                2 if mode == "reactive" else 3, predicate, tuple(row[0] for row in rows), now + 3600000)
-            external = {"mode": mode, "phase": phase, "current_view": {}, "actually_spoken": [],
-                "historical_callback": mode == "memory_callback", "public_notes": [], "topic_key": predicate,
-                "evidence": [{"ref": asdict(identity), "kind": "viewer_claim" if mode == "chat_response" else kind,
-                    "origin": "viewer_chat" if mode == "chat_response" else "game", "source_event_id": identity.id,
-                    "observed_at_unix_ms": now - (120000 if mode == "memory_callback" else 0),
-                    "expires_at_unix_ms": now + 3600000, "value": {"text": statement}, "subjects": [], "predicate": predicate}
-                    for identity, statement, kind in rows]}
-            request = CommentaryRequest(candidate, external, 256 if mode in ("idle_recap", "memory_callback") else 512, uuid4().hex, 1)
+        for index, case in enumerate(CASES[:args.limit], 1):
+            request = authored_request(index, case, now=int(time.time() * 1000), config=config, session=session, match=match)
+            candidate = request.candidate; mode = candidate.mode
             while True:
                 if time.monotonic() >= deadline: raise TimeoutError("benchmark_total_timeout")
                 decision = await budget.reserve(match, mode, candidate.priority, reservation_input_tokens(provider,request),

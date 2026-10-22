@@ -32,6 +32,33 @@ PROVIDERS = ("social-scripted", "codex", "codex-threat-audit", "social-fixture-v
     "social-fixture-sabotage", "social-fixture-tasks", "social-privacy-fixture")
 
 
+class _RegisteredSpawn:
+    """Defer an interrupt only until a newly created group is owned by cleanup."""
+
+    def __init__(self):
+        self._registering = False
+        self._pending = False
+
+    def interrupted(self, _signal, _frame):
+        if self._registering:
+            self._pending = True
+        else:
+            raise KeyboardInterrupt
+
+    def spawn(self, command, *, register, **kwargs):
+        if self._pending:
+            raise KeyboardInterrupt
+        self._registering = True
+        try:
+            process = subprocess.Popen(command, **kwargs)
+            register(process)
+        finally:
+            self._registering = False
+        if self._pending:
+            raise KeyboardInterrupt
+        return process
+
+
 def read_report(path):
     try:
         if path.stat().st_size > 32 * 1024 * 1024:
@@ -286,16 +313,15 @@ def main(argv=None):
     root, args = arguments(argv)
     args.output.mkdir(parents=True, exist_ok=True)
     launches = plans(root, args); processes = []; snapshots = {}; exit_code = 1; result = "not_started"; isolation = {}
-    def interrupted(_signal, _frame):
-        raise KeyboardInterrupt
-    signal.signal(signal.SIGTERM, interrupted); signal.signal(signal.SIGINT, interrupted)
+    spawning = _RegisteredSpawn()
+    signal.signal(signal.SIGTERM, spawning.interrupted); signal.signal(signal.SIGINT, spawning.interrupted)
     try:
         for name, output, command in launches:
             output.mkdir(parents=True, exist_ok=True)
             with (output / "launcher.log").open("w") as log:
-                process = subprocess.Popen(command, cwd=root, stdout=log, stderr=subprocess.STDOUT,
+                process = spawning.spawn(command, register=lambda child: processes.append((name, child)),
+                    cwd=root, stdout=log, stderr=subprocess.STDOUT,
                     start_new_session=os.name == "posix")
-            processes.append((name, process))
             print(f"Started {name}; launcher PID={process.pid}", flush=True)
         deadline = time.monotonic() + args.timeout
         ready_deadline = time.monotonic() + min(args.timeout, 150)
