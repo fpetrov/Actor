@@ -14,7 +14,7 @@ import time
 from typing import AsyncIterator
 
 from .contracts import (Cancel, CancelAck, EvidenceRef, PcmChunk, Scope,
-                        SegmentKey, SpeechSegment, SynthesisDone)
+                        SegmentKey, SpeechSegment, SynthesisDone, WorkerGenerationMetrics)
 
 MODEL_ID = "mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-bf16"
 MODEL_REVISION = "52f4770fd9726457eae3d3b6aa92047a25a10776"
@@ -104,6 +104,12 @@ def cancel_from(value):
     return Cancel(**x)
 
 
+def generation_metrics_from(value):
+    x = dict(_exact(value,WorkerGenerationMetrics.__dataclass_fields__))
+    x["scope"] = scope_from(x["scope"]); x["key"] = key_from(x["key"])
+    return WorkerGenerationMetrics(**x)
+
+
 def frame_bytes(kind: str, value: dict, pcm: bytes = b"") -> bytes:
     if not isinstance(kind, str) or len(kind) > 32 or not isinstance(pcm, bytes):
         raise SpeechError("speech_frame_shape")
@@ -158,7 +164,8 @@ class MlxSpeechSynthesizer:
     The process is offline. Tokens/text/reference audio never enter argv/logs.
     MLX's memory limit is a guideline, not an OS hard memory guarantee.
     """
-    def __init__(self, config: MlxSpeechConfig, *, process_factory=subprocess.Popen):
+    def __init__(self, config: MlxSpeechConfig, *, process_factory=subprocess.Popen,
+                 on_generation_metrics=None):
         self.config = config; self._process_factory = process_factory
         self._process = None; self._socket = None; self._reader = None
         self._ready = None; self._ready_value = None; self._closed = False
@@ -167,8 +174,12 @@ class MlxSpeechSynthesizer:
         self._queue = asyncio.Queue(maxsize=12)
         self._active = None; self._cancel_futures = {}; self._fenced = set()
         self._seen = OrderedDict()
+        self.on_generation_metrics = on_generation_metrics
+        self._pending_generation_metrics = None; self._worker_done_received = False
+        self._active_request = None
         self.metrics = {"segments": 0, "chunks": 0, "stale_chunks": 0, "cancelled": 0,
-                        "worker_restarts": 0, "pcm_frames": 0}
+                        "worker_restarts": 0, "pcm_frames": 0, "generation_metrics": 0,
+                        "discarded_generation_metrics": 0, "generation_metrics_callback_errors": 0}
 
     async def _send(self, kind, value):
         if self._socket is None: raise SpeechError("speech_worker_unavailable")
@@ -240,6 +251,16 @@ class MlxSpeechSynthesizer:
                     key = (ack.scope, ack.utterance_id, ack.utterance_epoch)
                     fut = self._cancel_futures.get(key)
                     if fut is not None and not fut.done(): fut.set_result(ack)
+                elif kind == "generation_metrics":
+                    if pcm: raise SpeechError("speech_frame_shape")
+                    item = generation_metrics_from(body)
+                    fence = (item.scope,item.key.utterance_id,item.key.utterance_epoch)
+                    if (self._active != (item.scope,item.key) or fence in self._fenced or
+                            self._worker_done_received or self._pending_generation_metrics is not None):
+                        self.metrics["discarded_generation_metrics"] += 1; continue
+                    if self._active_request is None or item.total_source_frames>self._active_request.max_audio_frames:
+                        raise SpeechError("speech_generation_metrics_bound")
+                    self._pending_generation_metrics = item
                 elif kind in ("pcm", "done"):
                     x = dict(body); scope = scope_from(x.pop("scope")); key = key_from(x.pop("key"))
                     if self._active != (scope, key):
@@ -253,6 +274,11 @@ class MlxSpeechSynthesizer:
                         if pcm: raise SpeechError("speech_frame_shape")
                         _exact(x, ("total_source_frames", "token_count", "may_be_truncated", "terminal_reason"))
                         item = SynthesisDone(scope=scope, key=key, **x)
+                        self._worker_done_received = True
+                        metrics = self._pending_generation_metrics
+                        if metrics is not None and any(getattr(metrics,name)!=getattr(item,name) for name in (
+                                "total_source_frames","token_count","may_be_truncated","terminal_reason")):
+                            raise SpeechError("speech_generation_metrics_mismatch")
                     try: self._queue.put_nowait(item)
                     except asyncio.QueueFull: raise SpeechError("speech_backpressure_overflow") from None
                 elif kind == "error":
@@ -280,7 +306,9 @@ class MlxSpeechSynthesizer:
             self._seen[identity] = None
             while len(self._seen) > 256: self._seen.popitem(last=False)
             while not self._queue.empty(): self._queue.get_nowait()
-            self._active = identity; complete = False; expected_seq = 0; frames = 0
+            self._active = identity; self._active_request = segment
+            self._pending_generation_metrics = None; self._worker_done_received = False
+            complete = False; expected_seq = 0; frames = 0
             deadline = min(segment.expires_at_monotonic_ns / 1e9,
                            time.monotonic() + self.config.max_generation_seconds)
             self.metrics["segments"] += 1
@@ -303,6 +331,12 @@ class MlxSpeechSynthesizer:
                     else:
                         if item.total_source_frames != frames and utterance not in self._fenced:
                             raise SpeechError("speech_terminal_frame_mismatch")
+                        metrics = self._pending_generation_metrics
+                        if metrics is not None and utterance not in self._fenced:
+                            self.metrics["generation_metrics"] += 1
+                            if self.on_generation_metrics is not None:
+                                try: self.on_generation_metrics(metrics)
+                                except Exception: self.metrics["generation_metrics_callback_errors"] += 1
                         complete = True; yield item; return
             finally:
                 if not complete:
@@ -310,6 +344,7 @@ class MlxSpeechSynthesizer:
                                                            segment.key.utterance_epoch)), self.config.cancel_timeout + 4)
                     except BaseException: await _cleanup(self._stop_process(), 4)
                 self._active = None
+                self._active_request = None; self._pending_generation_metrics = None
 
     async def cancel(self, request: Cancel) -> CancelAck:
         key = (request.scope, request.utterance_id, request.utterance_epoch)

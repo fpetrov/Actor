@@ -1,13 +1,15 @@
 """Bounded passive pipeline timings; correlation stays in RAM, never in reports.
 
-Controller monotonic receipt/dispatch times are not GPU presentation or Twitch
-viewer clocks. Synthesis pipeline wall time includes IPC and backpressure; the
-worker's internal compute/start clocks are deliberately reported unavailable.
+Controller receipt/dispatch clocks are not GPU presentation or Twitch clocks.
+Worker metrics use durations measured inside the persistent generation process;
+pipeline wall still includes IPC/backpressure and is reported separately.
 """
 from collections import Counter, OrderedDict, deque
 from dataclasses import dataclass, field
 import math
 import time
+
+from .contracts import WorkerGenerationMetrics
 
 MODES = frozenset(('reactive','idle_recap','memory_callback','chat_response','intro','outro','analysis','repair'))
 
@@ -35,6 +37,7 @@ class _Segment:
     done: bool = False
     closed: bool = False
     consumed: bool = False
+    worker_recorded: bool = False
 
 
 class LatencyTelemetry:
@@ -205,6 +208,36 @@ class LatencyTelemetry:
             self._sample(row.group,'synthesis_pipeline_rtf',duration/audio)
             self._sample(row.group,'synthesis_pipeline_speedup',audio/duration)
 
+    def worker_generation(self, metrics):
+        # Speech reader/consumer has already matched metrics to Done and actual
+        # ordered PCM count. Never associate neutral/setup/foreign/cancelled work.
+        if not isinstance(metrics,WorkerGenerationMetrics): return
+        s = self._segments.get((metrics.scope,metrics.key))
+        row = self._utterances.get(s.utterance) if s else None
+        if row is None or row.cancelled or s.closed or s.worker_recorded: return
+        s.worker_recorded = True
+        complete = not metrics.may_be_truncated and metrics.terminal_reason=='generator_completed'
+        prefix = 'worker_complete_' if complete else 'worker_incomplete_'
+        self._counts['worker_generation_completed' if complete else 'worker_generation_incomplete'] += 1
+        if not complete: self._counts['worker_terminal_'+metrics.terminal_reason] += 1
+        for name,seconds in (
+                ('compute_ms',metrics.generation_compute_seconds),('wall_ms',metrics.worker_wall_seconds),
+                ('pcm_send_ms',metrics.pcm_send_seconds),('iterator_close_ms',metrics.iterator_close_seconds),
+                ('reset_ms',metrics.reset_seconds)):
+            self._sample(row.group,prefix+name,seconds*1000)
+        if metrics.first_pcm_seconds is not None:
+            self._sample(row.group,prefix+'start_to_first_pcm_ms',metrics.first_pcm_seconds*1000)
+        self._sample(row.group,prefix+'generated_audio_seconds',metrics.total_source_frames/24000)
+        for name,value in (('mlx_active_bytes',metrics.active_memory_bytes),('mlx_cache_bytes',metrics.cache_memory_bytes)):
+            if value is not None: self._sample(row.group,prefix+name,value)
+        if metrics.peak_reset and metrics.peak_memory_bytes is not None:
+            self._sample(row.group,prefix+'mlx_peak_bytes',metrics.peak_memory_bytes)
+        else: self._counts['worker_generation_peak_unavailable'] += 1
+        if complete and metrics.total_source_frames and metrics.generation_compute_seconds>0:
+            audio = metrics.total_source_frames/24000
+            self._sample(row.group,'worker_compute_rtf',metrics.generation_compute_seconds/audio)
+            self._sample(row.group,'worker_compute_speedup',audio/metrics.generation_compute_seconds)
+
     def playback(self, ack):
         s = self._segments.get((ack.scope,ack.key)); row = self._utterances.get(s.utterance) if s else None
         if row is None or row.cancelled or s.closed or ack.clock_domain != 'browser_audio_render': return
@@ -245,5 +278,9 @@ class LatencyTelemetry:
             'event_wall_age_clock_dependent':True,'idle_event_age_is_reaction_slo':False,
             'provider_start_scope':'scheduler dispatch into provider.generate; not a remote model compute timestamp',
             'synthesis_rtf_scope':'controller pipeline wall including IPC/renderer backpressure, not worker compute',
-            'worker_compute_timing_available':False,'twitch_viewer_latency_measured':False,
+            'worker_compute_timing_available':bool(self._counts['worker_generation_completed'] or self._counts['worker_generation_incomplete']),
+            'worker_compute_scope':'worker monotonic iterator creation/next including EOS plus PCM materialization; excludes socket sends and cleanup; not CPU-only or GPU-kernel time',
+            'worker_wall_scope':'worker start through generator close/reset; includes PCM sends/backpressure; excludes metrics/Done sends',
+            'worker_memory_scope':'MLX allocator active/cache/peak before generator close/reset; peak since per-generation reset, includes resident weights, not process RSS',
+            'twitch_viewer_latency_measured':False,
             'synthetic_route_and_neutral_fallback_included':False}

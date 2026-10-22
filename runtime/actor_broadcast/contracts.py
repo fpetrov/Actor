@@ -284,6 +284,56 @@ class SynthesisDone:
 
 
 @dataclass(frozen=True)
+class WorkerGenerationMetrics:
+    """Local worker durations and MLX allocator counters, never model content.
+
+    Compute is iterator construction/advances (including EOS) plus materialized
+    PCM conversion. It excludes socket sends and generator/reset cleanup.
+    Worker wall ends after cleanup, before sending these metrics and Done.
+    """
+    scope: Scope
+    key: SegmentKey
+    total_source_frames: int
+    token_count: int
+    may_be_truncated: bool
+    terminal_reason: str
+    generation_compute_seconds: float
+    worker_wall_seconds: float
+    pcm_send_seconds: float
+    first_pcm_seconds: float | None
+    iterator_close_seconds: float
+    reset_seconds: float
+    peak_reset: bool
+    active_memory_bytes: int | None
+    cache_memory_bytes: int | None
+    peak_memory_bytes: int | None
+
+    def __post_init__(self):
+        if not isinstance(self.scope,Scope) or not isinstance(self.key,SegmentKey):
+            raise ValueError("Typed worker metric scope and key required")
+        integer(self.total_source_frames,0,24000*60); integer(self.token_count,0,65536)
+        if type(self.may_be_truncated)is not bool or type(self.peak_reset)is not bool:
+            raise ValueError("Explicit worker metric flags required")
+        if self.terminal_reason not in ('generator_completed','duration_bound','cancelled','expired'):
+            raise ValueError("Unknown worker terminal reason")
+        durations=(self.generation_compute_seconds,self.worker_wall_seconds,self.pcm_send_seconds,
+                   self.iterator_close_seconds,self.reset_seconds)
+        for value in durations:
+            finite(value)
+            if value>3600: raise ValueError("Worker duration bound exceeded")
+        if self.first_pcm_seconds is not None:
+            finite(self.first_pcm_seconds)
+            if not self.total_source_frames or self.first_pcm_seconds>self.worker_wall_seconds:
+                raise ValueError("Worker first PCM duration inconsistent")
+        elif self.total_source_frames:
+            raise ValueError("Emitted PCM requires its actual worker latency")
+        if sum(durations[i] for i in (0,2,3,4))>self.worker_wall_seconds+1e-6:
+            raise ValueError("Worker duration scopes overlap or exceed wall")
+        for value in (self.active_memory_bytes,self.cache_memory_bytes,self.peak_memory_bytes):
+            if value is not None: integer(value,0,64*1024**3)
+
+
+@dataclass(frozen=True)
 class Cancel:
     scope: Scope
     utterance_id: str

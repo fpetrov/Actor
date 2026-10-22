@@ -294,6 +294,7 @@ class SpeechAudioOutput:
     def bind_latency(self, telemetry):
         self.latency = telemetry
         self.sink.latency = telemetry
+        self.synthesizer.on_generation_metrics = telemetry.worker_generation
 
     async def prepare(self):
         await self.sink.start()
