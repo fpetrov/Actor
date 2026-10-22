@@ -68,13 +68,17 @@ SpokenLedger records completed playback and separately records interruptions; ge
 text and finished synthesis are not evidence of what was heard. Without word alignment,
 partial playback is a consumed sample range, never a fabricated word prefix.
 
-Selection is deterministic local code. Important events are coalesced; normal pacing,
+Selection uses bounded local code. Important events are coalesced; normal pacing,
 critical finite reserves and one provider turn prevent event/transform/chat floods from
-creating a request per update. The default idle deadline is 20 seconds after the latest
-noteworthy observation, actual commentary playback end and preview/live readiness.
-It is configurable from 5 to 120 seconds. There is one timer/due flag, not a recap queue.
+creating a request per update. The default quiet interval is sampled once between
+15 and 25 seconds after the latest noteworthy observation, actual commentary playback
+end and preview/live readiness: a configurable 20-second base with ±25% variation.
+The base is configurable from 5 to 120 seconds, and the sampled delay is clamped to
+that range. There is one timer/due flag, not a recap queue.
 Useful recent facts and relevant older claims may trigger one recap/callback turn;
 empty, stale, covered, expired and budget-blocked selections cause zero model calls.
+See [cadence, speech length and greeting/farewell](broadcast-liveliness.md) for the
+mode-specific targets, actual-ACK completion and unchanged spending/audio bounds.
 
 All modes, retries, repairs, cancellations and optional analysis share one persistent
 finite spending ledger. Idle limits are a subset. Reservations precede admission;

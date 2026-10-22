@@ -17,7 +17,8 @@
 <label class="check"><input id="idle-enabled" type="checkbox" checked> Краткие сводки во время пауз</label>
 <label class="check"><input id="memory-callbacks" type="checkbox" checked> Разрешать уместные воспоминания из доступных источников</label>
 <p class="note">Воспоминания используются при включённых сводках. Настройки применяются к следующим запросам и не увеличивают бюджет; текущая реплика может завершиться.</p>
-<label for="idle-seconds">Пауза после новости и конца речи, секунды</label><input id="idle-seconds" type="number" min="5" max="120" step="1" value="20" required>
+<label for="idle-seconds">Базовая пауза после новости и конца речи, секунды</label><input id="idle-seconds" type="number" min="5" max="120" step="1" value="20" required>
+<p class="note">Интервалы немного варьируются. Реплика появляется только при наличии полезных сведений и доступного бюджета.</p>
 <button type="submit">Применить</button></form></section>
 <section aria-labelledby="spoken-heading"><h2 id="spoken-heading">Последняя завершённая реплика</h2><p id="last-spoken">Пока ничего не прозвучало.</p></section>
 <div class="stop-actions"><button id="stop" type="button">Завершить трансляцию</button><button id="emergency" class="danger" type="button">Немедленно выключить эфир и звук</button></div>

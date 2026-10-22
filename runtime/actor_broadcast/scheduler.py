@@ -8,6 +8,8 @@ from dataclasses import replace
 import asyncio
 import hashlib
 import json
+import math
+import random
 import time
 from uuid import uuid4
 
@@ -20,13 +22,20 @@ from .evidence import EvidenceLedger
 from .spoken import SpokenLedger
 from .latency import LatencyTelemetry
 
+INTRO_COURTESY="Здравствуйте! Рады вас видеть."
+OUTRO_COURTESY="Спасибо, что были с нами. До встречи!"
+OUTRO_FALLBACK="Матч завершён. Спасибо, что были с нами. До встречи!"
+
 
 class CommentaryScheduler:
     def __init__(self, provider, speech, budget=None, *, config=None,
-                 clock=time.monotonic, wall_clock=time.time, telemetry=None):
+                 clock=time.monotonic, wall_clock=time.time, telemetry=None, rng=None):
         self.provider, self.speech = provider, speech
         self.config = config or CommentaryConfig()
         self.clock, self.wall_clock = clock, wall_clock
+        self._random = rng if rng is not None else random.random
+        self._idle_sample_key = None
+        self._sampled_idle_deadline = 0.0
         self.latency = telemetry or LatencyTelemetry(clock=clock, wall_clock=wall_clock)
         bind = getattr(speech, "bind_latency", None)
         if bind is not None: bind(self.latency)
@@ -61,6 +70,10 @@ class CommentaryScheduler:
         self.next_idle_retry_at = 0.0
         self._consecutive_idle = 0
         self._idle_material = frozenset()
+        self._public_intro_marked = False
+        self._public_intro_pending = False
+        self._intro_courtesy_started = False
+        self._outro_courtesy_started = False
         self._terminal_outro_started = False
         self._outro_utterance_id=None
         self._outro_provider_complete=False
@@ -88,6 +101,27 @@ class CommentaryScheduler:
         self.budget.config = config
         self._wake.set()  # Existing single timer recomputes, never duplicates.
 
+    def public_started(self):
+        """Trusted coordinator calls only after actual public output confirms.
+
+        The marker grants no facts. Admission still waits for a fresh view,
+        retained real game references, normal priorities and the shared budget.
+        """
+        if self._closed or self._public_intro_marked:return False
+        self._public_intro_marked=True
+        self._public_intro_pending=self.view is None or not self.view.terminal
+        self._wake.set()
+        return self._public_intro_pending
+
+    def _queue_public_intro(self):
+        if not self._public_intro_pending or any(row[0]=="intro" for row in self._offered):return
+        # Viewer chat is not a factual basis for introducing the game.
+        facts=sorted(((value["observed_at_unix_ms"],ref.id,ref.version,ref) for ref,value in self.evidence.facts()
+            if value["content"]["editorial"].get("origin","game")=="game"),reverse=True)
+        refs=tuple(row[-1] for row in facts[:4])
+        if refs and self.offer("intro",refs):
+            self._offered.insert(0,self._offered.pop())
+
     def admit_viewer_claim(self, fact):
         """Trusted controller supplies already-filtered, attributed chat data.
 
@@ -102,6 +136,7 @@ class CommentaryScheduler:
         if mode not in ("intro","chat_response","repair","analysis") or not 0<=priority<=3:
             raise ValueError("Only trusted optional commentary modes may be offered")
         refs=tuple(dict.fromkeys(evidence_refs))
+        if mode=="intro" and not self._public_intro_pending:return False
         if self._closed or not self._fresh() or self.view.terminal or not self.evidence.valid(refs):return False
         if len(refs)>8 or len(self._offered)>=2:return False
         if mode=="analysis" and not self.config.analysis_enabled:return False
@@ -119,12 +154,15 @@ class CommentaryScheduler:
         if (segment.text!=original.text or segment.evidence_versions!=original.evidence_versions or
             segment.expires_at_monotonic_ns!=original.expires_at_monotonic_ns or
             segment.max_audio_frames>original.max_audio_frames):return False
+        record=self.spoken.records.get((segment.scope,segment.key))
+        neutral=(record is not None and (
+            record.topic_key=="neutral-intro" and self._public_intro_marked and not self.view.terminal and segment.text==INTRO_COURTESY or
+            record.topic_key=="neutral-outro" and self.view.terminal and segment.text in (OUTRO_COURTESY,OUTRO_FALLBACK)))
         return (not self._closed and self._fresh() and
             segment.scope==self.view.scope and segment.key.utterance_epoch==self._epoch and
             segment.semantic_revision<=self.view.semantic_revision and
             segment.expires_at_monotonic_ns>int(self.clock()*1e9) and
-            (self.evidence.valid(segment.evidence_versions) if segment.evidence_versions else
-                self.view.terminal and segment.text=="Матч завершён. Спасибо, что были с нами.") and
+            (self.evidence.valid(segment.evidence_versions) if segment.evidence_versions else neutral) and
             (not self.view.terminal or self._terminal_outro_started))
 
     def _fresh(self):
@@ -163,12 +201,17 @@ class CommentaryScheduler:
                 (previous.scope.connection_generation,previous.scope.view_epoch)):
                 self._counts["rejected_views"] += 1; return False
             self._invalidate("view_changed")
+            self._idle_sample_key=None
             self._pending.clear()
             self._offered.clear()
             if previous.scope.match_id != view.scope.match_id or previous.scope.broadcast_session_id != view.scope.broadcast_session_id:
                 self.evidence = None; self.spoken = SpokenLedger(); self._ready = False
                 self._consecutive_idle = 0; self._terminal_outro_started = False
                 self._outro_utterance_id=None;self._outro_provider_complete=False;self._outro_needs_fallback=False
+                self._outro_courtesy_started=False
+                self._public_intro_pending=False
+                if previous.scope.broadcast_session_id!=view.scope.broadcast_session_id:
+                    self._public_intro_marked=False;self._intro_courtesy_started=False
         if previous and previous.phase!=view.phase:
             self._invalidate("phase_changed");self._pending.clear()
         if self.evidence is None:
@@ -206,6 +249,7 @@ class CommentaryScheduler:
         if view.terminal and (previous is None or not previous.terminal):
             self._invalidate("match_ended")
             self._offered.clear()
+            self._public_intro_pending=False
             # Normal pending work is invalid after a terminal boundary. Only
             # explicitly delivered terminal facts may support the final output.
             self._pending={ref:value for ref,value in self._pending.items()
@@ -216,8 +260,18 @@ class CommentaryScheduler:
 
     @property
     def idle_deadline(self):
-        return max(self.last_noteworthy_observation_at,self.last_commentary_playback_end_at,
-            self.preview_or_live_ready_at)+self.config.idle.after_seconds
+        anchor=max(self.last_noteworthy_observation_at,self.last_commentary_playback_end_at,
+            self.preview_or_live_ready_at)
+        policy=self.config.idle
+        key=(anchor,policy.after_seconds,policy.jitter_fraction)
+        if key!=self._idle_sample_key:
+            sample=self._random() if policy.jitter_fraction else .5
+            if type(sample) not in (int,float) or not math.isfinite(sample) or not 0<=sample<=1:
+                raise ValueError("Idle random sample must be within zero and one")
+            delay=policy.after_seconds*(1+policy.jitter_fraction*(2*sample-1))
+            self._sampled_idle_deadline=anchor+min(120,max(5,delay))
+            self._idle_sample_key=key
+        return self._sampled_idle_deadline
 
     def _suppress(self, reason):
         if self.last_suppression != reason: self._suppressions[reason] += 1
@@ -248,7 +302,7 @@ class CommentaryScheduler:
             if age < 0 or self.spoken.covered(ref,now,self.config.idle.same_topic_repeat_seconds): continue
             score=(metadata["priority"]*-10 + len(visible.intersection(metadata["subjects"]))*3 +
                 (2 if metadata["unresolved"] else 0) + (1 if room and value["content"]["value"].get("room_id")==room else 0))
-            row=(score,-age,ref.id,ref)
+            row=(score,-age,ref.id,ref.version,ref)
             if age <= self.config.idle.recent_window_seconds: recent.append(row)
             elif self.config.idle.allow_memory_callbacks and (metadata["unresolved"] or ref in noted or visible.intersection(metadata["subjects"]) or room and value["content"]["value"].get("room_id")==room):
                 callbacks.append(row)
@@ -269,6 +323,8 @@ class CommentaryScheduler:
             candidate=self._candidate([row[-1] for row in callbacks[:self.config.idle.max_callback_facts]],"memory_callback",3)
         if candidate and self.spoken.topic_recent(candidate.topic_key,now,self.config.idle.same_topic_repeat_seconds):
             self._suppress("already_covered"); return None
+        if candidate and self.spoken.idle_topic_completed(candidate.topic_key):
+            self._suppress("already_covered");return None
         if candidate:
             material=frozenset(candidate.evidence)
             if material==self._idle_material and self._consecutive_idle>=self.config.idle.max_consecutive_without_new_material:
@@ -353,6 +409,9 @@ class CommentaryScheduler:
                     self._counts["submitted_segments"]+=1
             if terminal is None: self._counts["provider_missing_terminal"]+=1
             elif terminal.status!="completed": self._counts["provider_"+terminal.status]+=1
+            elif indexes and request.candidate.mode in IDLE_MODES and self._valid(request):
+                self.spoken.declare_idle_complete(request.candidate.scope,request.utterance_id,
+                    request.utterance_epoch,len(indexes),request.candidate.topic_key,request.candidate.evidence)
             if terminal is None or terminal.status!="completed" or not indexes:
                 self.next_idle_retry_at=self.clock()+self.config.idle.empty_candidate_backoff_seconds
                 if self._valid(request):self._invalidate("provider_incomplete")
@@ -472,11 +531,14 @@ class CommentaryScheduler:
         self._pending=OrderedDict((ref,row) for ref,row in self._pending.items() if self.evidence.resolve(ref))
         self._p1_cooldown_bypass.intersection_update(self._pending)
         candidate=None;analysis_key=None;offered=None;preemption_bypass=False
+        if not self.view.terminal:self._queue_public_intro()
         if self.view.terminal:
             if self._terminal_outro_started:
                 if self._outro_needs_fallback:
                     self._outro_needs_fallback=False
                     await self._fallback_outro()
+                elif not self._outro_courtesy_started and self._outro_result_settled():
+                    await self._local_courtesy("outro",OUTRO_COURTESY if self._outro_result_finished() else OUTRO_FALLBACK)
                 return
             candidate=self._candidate(list(self._pending)[:8],"outro",0)
             self._terminal_outro_started=True
@@ -503,6 +565,10 @@ class CommentaryScheduler:
                 if self.last_suppression!="already_covered":self._suppress("no_useful_facts")
                 self.next_idle_retry_at=now+self.config.idle.empty_candidate_backoff_seconds;return
         if candidate is None:return
+        if candidate.mode=="intro" and not self._intro_courtesy_started:
+            self._intro_courtesy_started=True
+            await self._local_courtesy("intro",INTRO_COURTESY)
+            return
         try:
             request=build_context(candidate,self.view,self.evidence,self.spoken,self.config,utterance_id=uuid4().hex,epoch=self._epoch)
         except ValueError:
@@ -529,12 +595,14 @@ class CommentaryScheduler:
             self._counts['priority_superseded_admissions']+=1
             self._suppress('higher_priority_arrived');self._wake.set();return
         if decision.reservation is None:
+            if candidate.mode=="intro":self._public_intro_pending=False
             self._suppress("budget");self._counts["budget_"+decision.reason]+=1
             self.next_idle_retry_at=now+self.config.idle.empty_candidate_backoff_seconds
             if candidate.mode=="outro":await self._fallback_outro()
             return
         for ref in candidate.evidence:self._pending.pop(ref,None)
         self._active_request=request
+        if candidate.mode=="intro":self._public_intro_pending=False
         self.latency.admitted(request,self.view)
         if candidate.mode=="outro":
             self._outro_utterance_id=request.utterance_id;self._outro_provider_complete=False
@@ -548,17 +616,32 @@ class CommentaryScheduler:
             material=frozenset(candidate.evidence)
             self._consecutive_idle=self._consecutive_idle+1 if material==self._idle_material else 1
             self._idle_material=material
-            self.next_idle_retry_at=now+self.config.idle.after_seconds
+            # A successful admission is not a failed-candidate retry. The next
+            # quiet interval is sampled from the actual audio-end anchor.
+
+    async def _local_courtesy(self,mode,text):
+        seconds=float(self.config.max_pending_speech_seconds)
+        segment=SpeechSegment(self.view.scope,SegmentKey(uuid4().hex,self._epoch,0),0 if mode=="outro" else 3,
+            text,(),self.view.semantic_revision,int((self.clock()+30)*1e9),max_audio_frames=int(seconds*24000))
+        self._active_request=None
+        if mode=="outro":
+            self._outro_utterance_id=segment.key.utterance_id;self._outro_provider_complete=True
+            self._outro_courtesy_started=True
+        self.spoken.register(segment,topic_key="neutral-"+mode,mode=mode)
+        self._speech_pending[(segment.scope,segment.key)]=(segment,seconds)
+        await self.speech.submit(segment)
+        self._counts["neutral_"+mode+"s"]+=1
 
     async def _fallback_outro(self):
-        segment=SpeechSegment(self.view.scope,SegmentKey(uuid4().hex,self._epoch,0),0,
-            "Матч завершён. Спасибо, что были с нами.",(),self.view.semantic_revision,int((self.clock()+10)*1e9))
-        self._active_request=None
-        self._outro_utterance_id=segment.key.utterance_id;self._outro_provider_complete=True
-        self.spoken.register(segment,topic_key="neutral-outro",mode="outro")
-        self._speech_pending[(segment.scope,segment.key)]=(segment,3)
-        await self.speech.submit(segment)
-        self._counts["neutral_outros"]+=1
+        await self._local_courtesy("outro",OUTRO_FALLBACK)
+
+    def _outro_result_finished(self):
+        outro=[row for row in self.spoken.records.values() if row.mode=="outro" and row.segment.key.utterance_id==self._outro_utterance_id]
+        return bool(outro) and self._outro_provider_complete and all(row.status=="completed" for row in outro)
+
+    def _outro_result_settled(self):
+        outro=[row for row in self.spoken.records.values() if row.mode=="outro" and row.segment.key.utterance_id==self._outro_utterance_id]
+        return bool(outro) and self._outro_provider_complete and all(row.status in ("completed","interrupted") for row in outro)
 
     async def run(self):
         try:
@@ -636,8 +719,7 @@ class CommentaryScheduler:
 
     def report(self):
         if self.evidence:self.spoken.prune(self.evidence)
-        outro=[row for row in self.spoken.records.values() if row.mode=="outro" and row.segment.key.utterance_id==self._outro_utterance_id]
-        finished=bool(outro) and self._outro_provider_complete and all(row.status=="completed" for row in outro)
+        finished=self._outro_courtesy_started and self._outro_result_finished()
         last=self.spoken.recent(1)
         return {"calls_by_mode":dict(self._calls_by_mode),"counts":dict(self._counts),
             "suppressed":dict(self._suppressions),"silence_reason":self.last_suppression,

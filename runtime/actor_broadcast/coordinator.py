@@ -156,6 +156,7 @@ class BroadcastCoordinator:
                     await run.obs.emergency_stop(); return
                 self.state, self.reason = "Live", "public_output_confirmed"
                 self.metrics["public_starts"] += 1
+                run.scheduler.public_started()
         except asyncio.CancelledError: raise
         except Exception as error:
             self.unsafe(reason_code(error), generation=generation)

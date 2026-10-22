@@ -3,7 +3,7 @@ from collections import OrderedDict, deque
 from dataclasses import dataclass
 import hashlib
 
-from .contracts import PlaybackAck, SpeechSegment
+from .contracts import EvidenceRef, PlaybackAck, SpeechSegment
 
 
 @dataclass
@@ -24,6 +24,10 @@ class SpokenLedger:
         self.records = OrderedDict()
         self.coverage = OrderedDict()
         self.topics = OrderedDict()
+        # Only actual completed idle audio enters this broadcast-scoped ring.
+        # Reactive coverage must not forbid one later historical callback.
+        self.idle_topics = OrderedDict()
+        self._idle_declarations = OrderedDict()
         self.audible_seconds = 0.0
 
     def register(self, segment, *, topic_key, mode):
@@ -60,9 +64,45 @@ class SpokenLedger:
             self.topics.move_to_end(record.topic_key)
             while len(self.coverage) > 256: self.coverage.popitem(last=False)
             while len(self.topics) > 128: self.topics.popitem(last=False)
+        self._promote_idle((ack.scope,ack.key.utterance_id,ack.key.utterance_epoch))
         return True
 
+    def declare_idle_complete(self, scope, utterance_id, epoch, expected_segments, topic, evidence_refs):
+        """A completed provider declares its exact segment count, not playback.
+
+        Pending declarations never count as coverage. Every expected registered
+        clause must independently receive an actual completed playback ACK.
+        """
+        if type(expected_segments)is not int or not 1<=expected_segments<=4:
+            raise ValueError("A bounded idle segment declaration is required")
+        references=frozenset(evidence_refs)
+        if not 1<=len(references)<=8 or not all(isinstance(ref,EvidenceRef) for ref in references):
+            raise ValueError("Exact bounded idle evidence is required")
+        identity=(scope,utterance_id,epoch)
+        self._idle_declarations[identity]=(expected_segments,topic,references)
+        self._idle_declarations.move_to_end(identity)
+        while len(self._idle_declarations)>128:self._idle_declarations.popitem(last=False)
+        self._promote_idle(identity)
+
+    def _idle_rows(self,identity):
+        return [row for (scope,key),row in self.records.items()
+            if (scope,key.utterance_id,key.utterance_epoch)==identity]
+
+    def _promote_idle(self,identity):
+        declaration=self._idle_declarations.get(identity)
+        if declaration is None:return
+        count,topic,references=declaration;rows=self._idle_rows(identity)
+        if (len(rows)!=count or {row.segment.key.segment_index for row in rows}!=set(range(count))
+                or any(row.mode not in ("idle_recap","memory_callback") or row.topic_key!=topic or row.status=="interrupted" for row in rows)):
+            self._idle_declarations.pop(identity,None);return
+        if not all(row.status=="completed" for row in rows):return
+        self._idle_declarations.pop(identity,None)
+        if {ref for row in rows for ref in row.segment.evidence_versions}!=references:return
+        self.idle_topics[topic]=None;self.idle_topics.move_to_end(topic)
+        while len(self.idle_topics)>128:self.idle_topics.popitem(last=False)
+
     def interrupted(self, scope, utterance_id, epoch, now):
+        self._idle_declarations.pop((scope,utterance_id,epoch),None)
         for (record_scope, key), row in self.records.items():
             if record_scope == scope and key.utterance_id == utterance_id and key.utterance_epoch == epoch and row.status not in ("completed", "interrupted"):
                 row.status = "interrupted"; row.completed_at = now
@@ -73,12 +113,17 @@ class SpokenLedger:
     def topic_recent(self, topic, now, repeat_seconds=120):
         return topic in self.topics and now - self.topics[topic] < repeat_seconds
 
+    def idle_topic_completed(self, topic):
+        return topic in self.idle_topics
+
     def prune(self, evidence):
         for key,row in tuple(self.records.items()):
             if row.segment.evidence_versions and not evidence.valid(row.segment.evidence_versions):
                 self.records.pop(key)
         for ref in tuple(self.coverage):
             if evidence.resolve(ref) is None:self.coverage.pop(ref)
+        for identity,(count,_,_) in tuple(self._idle_declarations.items()):
+            if len(self._idle_rows(identity))!=count:self._idle_declarations.pop(identity,None)
 
     def recent(self, limit=2):
         # A partial sentence has no word alignment. It is not represented as

@@ -20,9 +20,12 @@ class SpeechObjects:
     can be used before completion; strings/escapes/nested braces are respected.
     No regex extracts quoted speech from incomplete JSON.
     """
-    def __init__(self, allowed_refs, *, max_bytes=16384):
+    def __init__(self, allowed_refs, *, max_bytes=16384, max_segments=4):
+        if type(max_segments)is not int or not 1<=max_segments<=4:
+            raise ValueError("A bounded speech segment count is required")
         self.allowed = {(ref.id, ref.version) for ref in allowed_refs}
         self.max_bytes = max_bytes
+        self.max_segments = max_segments
         self.buffer = ""
         self.count = 0
         self.emitted = []
@@ -70,7 +73,8 @@ class SpeechObjects:
             if position == len(self.buffer) or self.buffer[position] == "]": break
             if self.buffer[position] != ",": raise ValueError("Invalid speech array")
             position += 1
-        if len(parsed) > 4: raise ValueError("At most four short speech objects are allowed")
+        if len(parsed)>self.max_segments:
+            raise ValueError("At most four short speech objects are allowed" if self.max_segments==4 else "Speech exceeds mode segment limit")
         new = parsed[self.count:]
         self.count = len(parsed)
         self.emitted.extend(new)
@@ -97,7 +101,7 @@ class SpeechObjects:
         value = json.loads(self.buffer,object_pairs_hook=unique_object)
         if not isinstance(value, dict) or set(value) not in ({"segments"},{"segments","notes"}) or not isinstance(value["segments"], list):
             raise ValueError("Invalid final speech document")
-        if not 1 <= len(value["segments"]) <= 4: raise ValueError("Empty or overlong speech document")
+        if not 1 <= len(value["segments"]) <= self.max_segments: raise ValueError("Empty or overlong speech document")
         parsed = [self._validate(row, index) for index, row in enumerate(value["segments"])]
         if parsed != self.emitted: raise ValueError("Final speech differs from streamed objects")
         return tuple(parsed)

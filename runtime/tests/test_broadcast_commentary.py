@@ -69,6 +69,9 @@ async def pump(scheduler):
 
 def system(clock,provider=None,config=None):
     provider=provider or Provider();speech=Speech()
+    # These existing exact-deadline scenarios intentionally have no jitter.
+    config=config or CommentaryConfig()
+    config=config.model_copy(update={"idle":config.idle.model_copy(update={"jitter_fraction":0.0})})
     scheduler=CommentaryScheduler(provider,speech,config=config,clock=clock.monotonic,wall_clock=clock.wall)
     return scheduler,provider,speech
 
@@ -292,7 +295,8 @@ async def test_p1_arriving_during_idle_budget_reservation_blocks_old_turn_withou
                 self.entered.set();await self.release.wait()
             return await super().reserve(*args,**kwargs)
     budget=GateBudget()
-    scheduler=CommentaryScheduler(provider,speech,budget,clock=clock.monotonic,wall_clock=clock.wall)
+    scheduler=CommentaryScheduler(provider,speech,budget,config=CommentaryConfig(idle=IdleConfig(jitter_fraction=0.0)),
+        clock=clock.monotonic,wall_clock=clock.wall)
     scheduler.observe(view(clock,facts=[fact(clock)]));scheduler.ready();clock.advance(20)
     scheduler.observe(view(clock,sequence=2))
     pending=asyncio.create_task(scheduler.step())
@@ -380,6 +384,11 @@ async def test_terminal_outro_is_finished_only_after_actual_complete_playback_ac
     assert speech.acknowledge(scheduler,clock,status="progress",frames=12000)
     assert scheduler.report()["terminal_outro_finished"] is False
     clock.advance(1)
+    assert speech.acknowledge(scheduler,clock)
+    assert not scheduler.report()["terminal_outro_finished"]  # The local farewell has not played yet.
+    await pump(scheduler)
+    assert speech.segments[-1].text=="Спасибо, что были с нами. До встречи!"
+    assert not scheduler.report()["terminal_outro_finished"]
     assert speech.acknowledge(scheduler,clock)
     status=scheduler.report()
     assert status["terminal_outro_finished"] and not status["terminal_outro_pending"]

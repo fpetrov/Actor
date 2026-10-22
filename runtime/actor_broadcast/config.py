@@ -9,6 +9,7 @@ class Settings(BaseModel):
 class IdleConfig(Settings):
     enabled: bool = True
     after_seconds: float = Field(default=20, ge=5, le=120)
+    jitter_fraction: float = Field(default=.25, ge=0, le=1)
     require_audible_silence: bool = True
     recent_window_seconds: float = Field(default=60, ge=5, le=600)
     allow_memory_callbacks: bool = True
@@ -21,8 +22,9 @@ class IdleConfig(Settings):
     max_calls_per_hour: int = Field(default=40, ge=1, le=180)
     max_calls_per_match: int = Field(default=12, ge=1, le=60)
     context_target_tokens: int = Field(default=1200, ge=256, le=3500)
-    max_output_tokens: int = Field(default=256, ge=64, le=1024)
-    words_target: tuple[int, int] = (25, 50)
+    # Conservative ledger reservation; the SDK turn API is not an output cap.
+    max_output_tokens: int = Field(default=512, ge=64, le=1024)
+    words_target: tuple[int, int] = (35, 55)
     max_preemption_wait_seconds: float = Field(default=1.5, ge=0, le=1.5)
     allowed_phases: tuple[str, ...] = ("Exploration",)
 
@@ -40,7 +42,7 @@ class CommentaryConfig(Settings):
     max_parallel_llm_calls: int = Field(default=1, ge=1, le=1)
     max_pending_speech_segments: int = Field(default=2, ge=1, le=2)
     max_pending_speech_seconds: float = Field(default=12, ge=1, le=12)
-    spoken_words_target: tuple[int, int] = (20, 45)
+    spoken_words_target: tuple[int, int] = (25, 45)
     context_target_tokens: int = Field(default=2000, ge=256, le=3500)
     client_context_hard_tokens: int = Field(default=3500, ge=256, le=3500)
     max_recent_chat_messages: int = Field(default=3, ge=0, le=3)

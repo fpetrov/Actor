@@ -11,7 +11,9 @@ FLAGS = dict.fromkeys(("observer", "model", "tts", "obs", "audio", "chat"), True
 
 class Scheduler:
     finished = False
+    intros = 0
     def ready(self): return True
+    def public_started(self): self.intros += 1
     def report(self): return {"terminal_outro_finished": self.finished}
     def configure(self, _): pass
 
@@ -81,6 +83,7 @@ async def test_double_preview_rejected_and_preview_never_publishes():
         with pytest.raises(CoordinatorError, match="already_owned"):
             await controller.execute("preview", {"room_code": "OTHER1"})
         assert factory.calls == 1 and factory.run.obs.starts == 0
+        assert factory.run.scheduler.intros==0
         assert (await controller.status())["live"] is False
     finally: await controller.aclose()
     assert factory.run.closed
@@ -162,10 +165,12 @@ async def test_public_start_inflight_and_live_repeated_request_are_idempotent():
         await preview(controller)
         await controller.execute("public_start", permit(controller))
         await factory.run.obs.start_entered.wait()
+        assert factory.run.scheduler.intros==0  # RPC intent is not confirmed Live.
         await controller.execute("public_start", permit(controller))
         factory.run.obs.start_release.set(); await controller._start_task
         await controller.execute("public_start", permit(controller))
         assert factory.run.obs.starts == 1 and controller.state == "Live"
+        assert factory.run.scheduler.intros==1
     finally: await controller.aclose()
 
 
