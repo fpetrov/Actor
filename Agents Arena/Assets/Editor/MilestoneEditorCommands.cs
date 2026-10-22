@@ -56,6 +56,7 @@ namespace Actor.Editor
                     case "preview-world-passage": EngineeringRoomBuilder.ShowPassagePreview(); break;
                     case "build-client": MultiplayerBuild.BuildMacClient(); break;
                     case "build-client-qa": MultiplayerBuild.BuildMacQAClient(); break;
+                    case "build-linux-client": MultiplayerBuild.BuildLinuxQAClient(); break;
                     case "prepare-release": MultiplayerBuild.PrepareReleaseSettings(); break;
                     case "prepare-art": AtmosphericArtImporter.Prepare(); break;
                     case "prepare-ui": RuntimeUIAssets.Prepare(); break;

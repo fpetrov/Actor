@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 import hashlib
 import inspect
 import json
+import math
 import secrets
 import time
 from uuid import UUID
@@ -76,7 +77,7 @@ class ObsClient:
             d = hello["d"]; auth = d.get("authentication")
             if not isinstance(auth, dict) or set(auth) != {"salt", "challenge"}:
                 raise ObsError("obs_authentication_must_be_enabled")
-            identify = {"rpcVersion": 1, "eventSubscriptions": 1 | 2 | 4 | 8 | 32 | 64 | 128,
+            identify = {"rpcVersion": 1, "eventSubscriptions": 1 | 2 | 4 | 8 | 32 | 64 | 128 | (1 << 19),
                 "authentication": authentication(self.config.password, auth["salt"], auth["challenge"])}
             await self._ws.send(json.dumps({"op": 1, "d": identify}))
             identified = await self._read_message(timeout=5)
@@ -241,7 +242,8 @@ class ObsController:
                     "InputAudioTracksChanged", "InputAudioMonitorTypeChanged", "InputAudioSyncOffsetChanged",
                     "SourceFilterCreated", "SourceFilterRemoved", "SourceFilterEnableStateChanged",
                     "SourceFilterSettingsChanged", "SourceFilterNameChanged", "SourceFilterListReindexed",
-                    "SceneItemCreated", "SceneItemRemoved", "SceneItemEnableStateChanged", "SceneItemTransformChanged"}:
+                    "SceneItemCreated", "SceneItemRemoved", "SceneItemEnableStateChanged", "SceneItemTransformChanged",
+                    "SceneItemListReindexed"}:
             self._graph_ok = False
             self._graph_generation += 1
             if self.on_unsafe is not None: self.on_unsafe("obs_graph_changed")
@@ -283,6 +285,40 @@ class ObsController:
                     or output["outputKind"] == "replay_buffer"):
                 raise ObsError("obs_replay_disabled_unverified")
 
+    async def _require_safe_canvas(self):
+        video = await self.client.request("GetVideoSettings")
+        if (type(video.get("baseWidth")) is not int or video["baseWidth"] != 1280
+                or type(video.get("baseHeight")) is not int or video["baseHeight"] != 720):
+            raise ObsError("obs_safe_canvas_unverified")
+
+    async def _require_voice_coverage(self, scene, items):
+        voice = next(item for item in items if item["sourceName"] == self.VOICE)
+        if (voice.get("sceneItemEnabled") is not True
+                or type(voice.get("sceneItemId")) is not int or voice["sceneItemId"] < 0):
+            raise ObsError("obs_safe_overlay_geometry_unverified")
+        # OBS normal blending is required: an additive black watchdog layer
+        # would leave the underlying game visible despite full-canvas geometry.
+        if voice.get("sceneItemBlendMode") != "OBS_BLEND_NORMAL":
+            raise ObsError("obs_safe_overlay_blend_unverified")
+        transform = (await self.client.request("GetSceneItemTransform", {
+            "sceneName": scene, "sceneItemId": voice["sceneItemId"]})).get("sceneItemTransform")
+        numeric = {"sourceWidth": 1280, "sourceHeight": 720, "width": 1280, "height": 720,
+            "positionX": 0, "positionY": 0, "scaleX": 1, "scaleY": 1, "rotation": 0,
+            "alignment": 5, "boundsAlignment": 0, "boundsWidth": 0, "boundsHeight": 0,
+            "cropTop": 0, "cropBottom": 0, "cropLeft": 0, "cropRight": 0}
+        if (not isinstance(transform, dict) or transform.get("boundsType") != "OBS_BOUNDS_NONE"
+                or transform.get("cropToBounds") is not False
+                or any(type(transform.get(key)) not in (int, float) or transform[key] != expected
+                    or not math.isfinite(transform[key]) for key, expected in numeric.items())):
+            raise ObsError("obs_safe_overlay_geometry_unverified")
+        if scene == "ACTOR Match":
+            video = next(item for item in items if item["sourceName"] == self.VIDEO)
+            # GetSceneItemList reports 0 at the bottom; the JSON array may be
+            # reordered by a caller, so compare explicit indices only.
+            if (any(type(item.get("sceneItemIndex")) is not int or not 0 <= item["sceneItemIndex"] < 2
+                    for item in (video, voice)) or voice["sceneItemIndex"] <= video["sceneItemIndex"]):
+                raise ObsError("obs_safe_overlay_order_unverified")
+
     async def prepare(self, binding: WindowBinding, renderer_url: str, *, protected_backup_confirmed=False,
                       adopt_empty_collection=False):
         """Create an owned graph, only after caller backed up profile+collection.
@@ -303,6 +339,7 @@ class ObsController:
                     or not 32 <= len(capability) <= 128 or any(c not in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-" for c in capability)):
                 raise ObsError("obs_renderer_url_invalid")
             if not self.window_guard(binding): raise ObsError("obs_window_identity_unavailable")
+            await self._require_safe_canvas()
             await self.require_idle()
             collections = await self.client.request("GetSceneCollectionList")
             profiles = await self.client.request("GetProfileList")
@@ -343,7 +380,7 @@ class ObsController:
                 await self._create_input({"sceneName": "ACTOR Match", "inputName": self.VOICE,
                     "inputKind": "browser_source", "inputSettings": {"url": renderer_url, "width": 1280, "height": 720,
                         "is_local_file": False, "reroute_audio": True, "webpage_control_level": 0,
-                        "shutdown": False, "restart_when_active": False}, "sceneItemEnabled": True})
+                        "shutdown": False, "restart_when_active": False, "css": ""}, "sceneItemEnabled": True})
                 await self.client.request("SetInputMute", {"inputName": self.VOICE, "inputMuted": False})
                 await self.client.request("SetInputVolume", {"inputName": self.VOICE, "inputVolumeMul": 1.0})
                 await self.client.request("SetInputAudioTracks", {"inputName": self.VOICE, "inputAudioTracks": {str(i): i == 1 for i in range(1, 7)}})
@@ -426,6 +463,8 @@ class ObsController:
             if c.get("currentSceneCollectionName") != self.OWNED_NAME or p.get("currentProfileName") != self.OWNED_NAME:
                 raise ObsError("obs_collection_changed")
             checks += 1
+            await self._require_safe_canvas()
+            checks += 1
             if (await self.client.request("GetCurrentProgramScene")).get("currentProgramSceneName") != self._expected_scene:
                 raise ObsError("obs_program_scene_changed")
             checks += 1
@@ -445,10 +484,14 @@ class ObsController:
                     if (await self.client.request("GetInputMute", {"inputName": name})).get("inputMuted") is not True: raise ObsError("obs_game_audio_not_muted")
                     wanted_tracks = {str(i): False for i in range(1, 7)}
                 else:
-                    wanted = {"url": self._renderer_url, "is_local_file": False, "reroute_audio": True, "webpage_control_level": 0}
+                    wanted = {"url": self._renderer_url, "is_local_file": False, "reroute_audio": True,
+                        "webpage_control_level": 0, "width": 1280, "height": 720, "css": "",
+                        "shutdown": False, "restart_when_active": False}
                     if (kind != "browser_source" or any(s.get(k) != v for k, v in wanted.items())
                             or type(s.get("webpage_control_level")) is not int
-                            or s.get("reroute_audio") is not True or s.get("is_local_file") is not False):
+                            or any(type(s.get(k)) is not int for k in ("width", "height"))
+                            or s.get("reroute_audio") is not True or s.get("is_local_file") is not False
+                            or s.get("shutdown") is not False or s.get("restart_when_active") is not False):
                         raise ObsError("obs_browser_settings_changed")
                     if (await self.client.request("GetInputMute", {"inputName": name})).get("inputMuted") is not False: raise ObsError("obs_voice_muted")
                     volume = (await self.client.request("GetInputVolume", {"inputName": name})).get("inputVolumeMul")
@@ -468,7 +511,11 @@ class ObsController:
                 if (await self.client.request("GetSourceFilterList", {"sourceName": scene})).get("filters") != []:
                     raise ObsError("obs_unknown_scene_filter")
                 items = (await self.client.request("GetSceneItemList", {"sceneName": scene}))["sceneItems"]
-                if len(items) != len(expected[scene]) or {x["sourceName"] for x in items} != expected[scene] or any(x.get("isGroup") or x.get("sceneItemEnabled") is not True for x in items):
+                if len(items) != len(expected[scene]) or {x["sourceName"] for x in items} != expected[scene] or any(x.get("isGroup") for x in items):
+                    raise ObsError("obs_scene_graph_not_allowlisted")
+                if scene in ("ACTOR Match", "ACTOR Ending"):
+                    await self._require_voice_coverage(scene, items)
+                if any(x.get("sceneItemEnabled") is not True for x in items):
                     raise ObsError("obs_scene_graph_not_allowlisted")
                 if scene == "ACTOR Match":
                     item = next(value for value in items if value["sourceName"] == self.VIDEO)
@@ -486,7 +533,12 @@ class ObsController:
             if generation != self._graph_generation: raise ObsError("obs_graph_changed_during_audit")
             self._last_audit_at = time.monotonic(); self._graph_ok = True
             return GraphAudit(True, checks, "verified_owned_graph")
-        except (ObsError, KeyError, TypeError):
+        except ObsError as error:
+            self._graph_ok = False
+            reason = error.code if error.code in {"obs_safe_canvas_unverified", "obs_safe_overlay_geometry_unverified",
+                "obs_safe_overlay_order_unverified", "obs_safe_overlay_blend_unverified"} else "obs_graph_audit_failed"
+            return GraphAudit(False, checks, reason)
+        except (KeyError, TypeError):
             self._graph_ok = False
             return GraphAudit(False, checks, "obs_graph_audit_failed")
         except BaseException:
@@ -498,10 +550,14 @@ class ObsController:
         # The monitor must see the complete authorized transition, not an
         # intermediate old-program/new-expected state from our own request.
         async with self._audit_lock:
-            if scene != "ACTOR Safe" and not (await self._audit()).passed: raise ObsError("obs_graph_audit_failed")
+            if scene != "ACTOR Safe":
+                audit = await self._audit()
+                if not audit.passed: raise ObsError(audit.reason)
             self._expected_scene = scene; self._graph_ok = False; self._graph_generation += 1
             await self.client.request("SetCurrentProgramScene", {"sceneName": scene})
-            if scene != "ACTOR Safe" and not (await self._audit()).passed: raise ObsError("obs_graph_audit_failed")
+            if scene != "ACTOR Safe":
+                audit = await self._audit()
+                if not audit.passed: raise ObsError(audit.reason)
 
     async def start_stream(self, permit: PublicStartPermit):
         async with self._stream_lock:

@@ -21,23 +21,34 @@ class Graph:
     def __init__(self):
         self.calls = []; self.active = False; self.filters = {}; self.special = {}; self.foreign = False
         self.current_scene = "ACTOR Match"
+        self.video_settings = {"baseWidth": 1280, "baseHeight": 720}
         self.transform = {"positionX": 0, "positionY": 0, "rotation": 0, "alignment": 5,
             "boundsType": "OBS_BOUNDS_SCALE_INNER", "boundsAlignment": 0, "boundsWidth": 1280,
             "boundsHeight": 720, "cropTop": 0, "cropBottom": 0, "cropLeft": 0, "cropRight": 0,
             "sourceWidth": 800, "sourceHeight": 600}
+        full_canvas = {"sourceWidth": 1280.0, "sourceHeight": 720.0, "width": 1280.0, "height": 720.0,
+            "positionX": 0.0, "positionY": 0.0, "scaleX": 1.0, "scaleY": 1.0, "rotation": 0.0,
+            "alignment": 5, "boundsType": "OBS_BOUNDS_NONE", "boundsAlignment": 0,
+            "boundsWidth": 0.0, "boundsHeight": 0.0,
+            "cropTop": 0, "cropBottom": 0, "cropLeft": 0, "cropRight": 0, "cropToBounds": False}
+        self.voice_transforms = {scene: dict(full_canvas) for scene in ("ACTOR Match", "ACTOR Ending")}
         self.inputs = [dict(inputName=ObsController.VIDEO, inputKind="screen_capture"),
                        dict(inputName=ObsController.VOICE, inputKind="browser_source")]
         self.settings = {ObsController.VIDEO: {"type": 1, "window": 123}, ObsController.VOICE: {
-            "url": URL, "is_local_file": False, "reroute_audio": True, "webpage_control_level": 0}}
+            "url": URL, "is_local_file": False, "reroute_audio": True, "webpage_control_level": 0,
+            "width": 1280, "height": 720, "shutdown": False, "restart_when_active": False, "css": ""}}
         self.tracks = {ObsController.VIDEO: {str(i): False for i in range(1, 7)},
                        ObsController.VOICE: {str(i): i == 1 for i in range(1, 7)}}
         self.items = {"ACTOR Preparing": [], "ACTOR Safe": [], "ACTOR Ending": [self.item(ObsController.VOICE)],
-                      "ACTOR Match": [self.item(ObsController.VIDEO), self.item(ObsController.VOICE)]}
+                      "ACTOR Match": [self.item(ObsController.VIDEO), self.item(ObsController.VOICE, 1)]}
     @staticmethod
-    def item(name): return {"sourceName": name, "sceneItemId": 1, "sceneItemEnabled": True, "isGroup": False}
+    def item(name, index=0):
+        return {"sourceName": name, "sceneItemId": 1 if name == ObsController.VIDEO else 2,
+            "sceneItemIndex": index, "sceneItemBlendMode": "OBS_BLEND_NORMAL", "sceneItemEnabled": True, "isGroup": False}
     async def request(self, kind, data=None, **kwargs):
         data = data or {}; self.calls.append((kind, data)); name = data.get("inputName")
         if kind.endswith("Status"): return {"outputActive": self.active or self.foreign, "outputReconnecting": False}
+        if kind == "GetVideoSettings": return self.video_settings
         if kind == "GetSceneCollectionList": return {"currentSceneCollectionName": "ACTOR Broadcast", "sceneCollections": ["ACTOR Broadcast"]}
         if kind == "GetProfileList": return {"currentProfileName": "ACTOR Broadcast", "profiles": [{"profileName": "ACTOR Broadcast"}]}
         if kind == "GetSpecialInputs": return self.special
@@ -53,13 +64,16 @@ class Graph:
         if kind == "GetSceneList": return {"scenes": [{"sceneName": x} for x in self.items]}
         if kind == "GetSceneItemList": return {"sceneItems": self.items[data["sceneName"]]}
         if kind == "GetCurrentProgramScene": return {"currentProgramSceneName": self.current_scene}
-        if kind == "GetSceneItemTransform": return {"sceneItemTransform": self.transform}
+        if kind == "GetSceneItemTransform":
+            return {"sceneItemTransform": self.voice_transforms[data["sceneName"]] if data["sceneItemId"] == 2 else self.transform}
         if kind == "SetCurrentProgramScene": self.current_scene = data["sceneName"]
         if kind == "CreateInput":
             identity = str(uuid4()); self.inputs.append({"inputName": name, "inputKind": data["inputKind"], "inputUuid": identity})
-            self.settings[name] = data["inputSettings"]; self.items[data["sceneName"]].append(self.item(name))
+            self.settings[name] = data["inputSettings"]
+            self.items[data["sceneName"]].append(self.item(name, len(self.items[data["sceneName"]])))
             return {"inputUuid": identity, "sceneItemId": 1}
-        if kind == "CreateSceneItem": self.items[data["sceneName"]].append(self.item(data["sourceName"]))
+        if kind == "CreateSceneItem":
+            self.items[data["sceneName"]].append(self.item(data["sourceName"], len(self.items[data["sceneName"]])))
         if kind == "RemoveInput":
             target = next(x for x in self.inputs if x.get("inputUuid") == data["inputUuid"])
             self.inputs.remove(target)
@@ -95,6 +109,75 @@ async def test_exact_window_browser_only_graph_accepts_and_public_start_is_separ
     await c.start_stream(PublicStartPermit("fedorr_codex", time.monotonic() + 30, True))
     assert c._owned_stream and graph.active
     await c.stop_stream(); assert not graph.active
+
+
+async def test_safe_overlay_uses_explicit_layer_indices_not_array_order_and_checks_both_scenes():
+    c, graph = controller()
+    graph.items["ACTOR Match"].reverse()  # A JSON reorder does not change compositing order.
+    assert (await c.audit()).passed and c.route_verified
+    queried = [data["sceneName"] for kind,data in graph.calls
+        if kind == "GetSceneItemTransform" and data["sceneItemId"] == 2]
+    assert queried == ["ACTOR Match", "ACTOR Ending"]
+
+
+@pytest.mark.parametrize("video", [{"baseWidth": 1920, "baseHeight": 1080},
+    {"baseWidth": 1280, "baseHeight": 721}, {"baseWidth": 1280.0, "baseHeight": 720}, {}])
+async def test_canvas_mismatch_blocks_prepare_before_any_graph_or_video_mutation(video):
+    graph = Graph(); graph.video_settings = video
+    c = ObsController(graph, window_guard=lambda _: True, channel_guard=lambda _: True)
+    with pytest.raises(ObsError, match="^obs_safe_canvas_unverified$"):
+        await c.prepare(WindowBinding(123, 456), URL, protected_backup_confirmed=True, adopt_empty_collection=True)
+    assert graph.calls == [("GetVideoSettings", {})]
+    c, _ = controller(graph)
+    result = await c.audit()
+    assert not result.passed and result.reason == "obs_safe_canvas_unverified" and not c.route_verified
+
+
+@pytest.mark.parametrize("scene", ["ACTOR Match", "ACTOR Ending"])
+@pytest.mark.parametrize("mutation", [
+    lambda t: t.update(positionX=1),
+    lambda t: t.update(scaleX=.5, width=640),
+    lambda t: t.update(cropTop=1),
+    lambda t: t.update(alignment=0),
+    lambda t: t.update(boundsType="OBS_BOUNDS_SCALE_INNER"),
+    lambda t: t.update(sourceWidth=1279, width=1279),
+    lambda t: t.update(cropToBounds=True),
+    lambda t: t.update(rotation=float("nan")),
+    lambda t: t.update(height=float("inf")),
+    lambda t: t.update(scaleY=True),  # True == 1 must not satisfy numeric proof.
+    lambda t: t.pop("scaleY"),
+])
+async def test_partial_cropped_nonfinite_or_unknown_browser_coverage_is_not_safe(scene, mutation):
+    c, graph = controller(); mutation(graph.voice_transforms[scene])
+    result = await c.audit()
+    assert not result.passed and result.reason == "obs_safe_overlay_geometry_unverified" and not c.route_verified
+    assert all(kind.startswith("Get") for kind,_ in graph.calls)
+
+
+@pytest.mark.parametrize("indices", [(1, 0), (0, 0), (False, 1), (0, None)])
+async def test_browser_below_video_or_unknown_layer_order_is_not_safe(indices):
+    c, graph = controller()
+    for item,index in zip(graph.items["ACTOR Match"], indices): item["sceneItemIndex"] = index
+    result = await c.audit()
+    assert not result.passed and result.reason == "obs_safe_overlay_order_unverified" and not c.route_verified
+
+
+@pytest.mark.parametrize("scene", ["ACTOR Match", "ACTOR Ending"])
+async def test_disabled_or_additive_browser_cannot_claim_opaque_safe_coverage(scene):
+    c, graph = controller(); voice = next(x for x in graph.items[scene] if x["sourceName"] == c.VOICE)
+    voice["sceneItemBlendMode"] = "OBS_BLEND_ADDITIVE"
+    result = await c.audit()
+    assert not result.passed and result.reason == "obs_safe_overlay_blend_unverified"
+    voice["sceneItemBlendMode"] = "OBS_BLEND_NORMAL"; voice["sceneItemEnabled"] = False
+    result = await c.audit()
+    assert not result.passed and result.reason == "obs_safe_overlay_geometry_unverified"
+
+
+async def test_unverified_overlay_blocks_scene_transition_with_explicit_safe_reason():
+    c, graph = controller(); graph.voice_transforms["ACTOR Match"]["positionX"] = 1
+    with pytest.raises(ObsError, match="^obs_safe_overlay_geometry_unverified$"):
+        await c.show("ACTOR Ending")
+    assert not any(kind == "SetCurrentProgramScene" for kind,_ in graph.calls)
 
 
 async def test_normal_poll_preserves_fresh_route_but_drift_or_expiry_revokes_immediately():
@@ -134,6 +217,11 @@ async def test_monitor_waits_for_complete_owned_program_transition():
     lambda g: g.tracks[ObsController.VIDEO].update({"2": True}),
     lambda g: g.settings[ObsController.VOICE].update(webpage_control_level=True),
     lambda g: g.settings[ObsController.VOICE].update(url="https://foreign.invalid"),
+    lambda g: g.settings[ObsController.VOICE].update(css="#safe { display:none !important; }"),
+    lambda g: g.settings[ObsController.VOICE].pop("css"),
+    lambda g: g.settings[ObsController.VOICE].update(shutdown=True),
+    lambda g: g.settings[ObsController.VOICE].update(restart_when_active=True),
+    lambda g: g.settings[ObsController.VOICE].update(width=640),
     lambda g: g.filters.update({ObsController.VOICE: [{"filterName": "unreviewed"}]}),
     lambda g: g.filters.update({"ACTOR Match": [{"filterName": "nested output"}]}),
     lambda g: g.items["ACTOR Match"].append(Graph.item("Hidden Scene")),
@@ -252,7 +340,8 @@ async def test_adopting_root_created_collection_requires_explicit_empty_proof():
 
 async def test_graph_mutation_invalidates_audio_guard_immediately():
     c, graph = controller(); assert (await c.audit()).passed
-    for event in ("SourceFilterCreated", "InputAudioTracksChanged", "ConnectionLost"):
+    for event in ("SourceFilterCreated", "InputAudioTracksChanged", "ConnectionLost",
+                  "SceneItemTransformChanged", "SceneItemListReindexed"):
         c._graph_ok = True; c._event(event, {})
         assert not c.route_verified
 
@@ -395,6 +484,7 @@ async def test_v5_authenticated_handshake_and_request_correlation_no_secret_sett
     try:
         assert (await client.connect())["obsVersion"] == "32.2.2"
         assert ws.sent[0]["d"]["authentication"] == authentication("secret-secret", "salt", "challenge")
+        assert ws.sent[0]["d"]["eventSubscriptions"] & (1 << 19)  # Actual transform-event category.
         for request in ("GetStreamServiceSettings", "GetOutputSettings"):
             with pytest.raises(ObsError, match="secret"): await client.request(request)
         with pytest.raises(ObsError, match="^obs_request_rejected$") as error:

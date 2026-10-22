@@ -466,11 +466,21 @@ class PreparedNativeRun:
 
     async def _wait_presented_and_window(self):
         self._activated = False
+        candidate = None; stable_since = None
         while True:
             self._check(); self._capture()
-            try: self._binding = self.window.locate()
-            except Exception: self._binding = None
-            if self._binding is not None and self.scheduler.view is not None and self.scheduler._fresh(): return
+            try: located = self.window.locate()
+            except Exception: located = None
+            # Startup splash/resize windows are candidates, not capture owners.
+            # Start stability only after an actual fresh presented view exists;
+            # the guard remains strict once the final binding is committed.
+            if located is None or self.scheduler.view is None or not self.scheduler._fresh():
+                candidate = None; stable_since = None
+            elif located != candidate:
+                candidate = located; stable_since = time.monotonic()
+            elif time.monotonic() - stable_since >= .15:
+                self._binding = candidate
+                return
             await asyncio.sleep(.05)
 
     async def _guard_loop(self):

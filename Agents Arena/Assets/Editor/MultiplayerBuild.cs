@@ -190,6 +190,18 @@ namespace Actor.Editor
                 options = BuildOptions.None
             });
         }
+        // Ordinary Player for isolated headless QA; not a public platform release.
+        public static void BuildLinuxQAClient()
+        {
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
+            Build(new BuildPlayerOptions
+            {
+                scenes = new[] { LobbyScene, GameplayScene, SocialScene }, target = BuildTarget.StandaloneLinux64,
+                subtarget = (int)StandaloneBuildSubtarget.Player,
+                locationPathName = Output("../build/agents-arena-linux-client/AgentsArenaClient"),
+                options = BuildOptions.None
+            });
+        }
         public static void BuildMacClient()
         { BuildMacClientAt("../build/agents-arena-client/AgentsArena.app"); }
         // Isolated output avoids replacing bundles used by a live multiplayer QA run.

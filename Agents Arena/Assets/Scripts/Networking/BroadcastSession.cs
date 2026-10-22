@@ -84,7 +84,10 @@ namespace Actor.Networking
         }
         private void ReceiveReceipt(ulong sender, FastBufferReader reader)
         {
-            if (!manager.IsServer || !match.IsObserver(sender) || !reader.TryBeginRead(8) || reader.Length != 8) return;
+            // NGO's named-message reader retains the already-consumed hash
+            // prefix. Validate the unread receipt, not the entire buffer.
+            if (!manager.IsServer || !match.IsObserver(sender) || reader.Length - reader.Position != sizeof(ulong)
+                || !reader.TryBeginRead(sizeof(ulong))) return;
             reader.ReadValueSafe(out ulong sequence);
             if (waiting.TryGetValue(sender, out ulong expected) && expected == sequence) waiting.Remove(sender);
         }

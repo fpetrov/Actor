@@ -232,7 +232,7 @@ of production acceptance:
 | Release/helper script tests | 146 passed plus 96 subtests | No administrator/PF mutation in these tests |
 | Generated schemas | 56 fresh artifacts | Checked after extension 0.7.0 changes |
 | Pinned actual SDK against local Responses fixture | 4 passed | Tool-positive controls, zero-tool policy, and full provider composition; authentication/catalog/output are synthetic |
-| Clean installed Runtime wheel | 970 passed, no skips | Includes cross-version PF clock, disabled replay output and Twitch provisioning; no provider SDK/authentication/model installed |
+| Clean installed Runtime wheel | 1,011 passed, no skips | Includes independent renderer Safe and OBS coverage checks; no provider SDK/authentication/model installed |
 | Unity release client and Linux server | Both clean-source builds passed at `7adf933`; macOS codesign verification passed | Later integration fixes affect the Python runtime; these binaries retain their original source identity |
 | Real release observer against isolated remote staging | 76 received frames, zero player slots/commands; clean owned shutdown | Headless: **no presentation ACK**, no cognition/audio/OBS |
 | Real Codex, 20 authored public scenarios | 20/20 completed; first segment p50 1.819 s, p95 5.098 s; 156,848 input / 1,274 output tokens | Text-only; measured before the final tool-policy hardening |
@@ -286,3 +286,15 @@ could not be created: Twitch requires account 2FA, whose initial setup requires
 an SMS-capable phone number. The current staging preview explicitly disables
 chat; no chat OAuth token, EventSub connection or public-ingest success is
 claimed. See [Twitch login provisioning](broadcast-twitch-login.md).
+
+The first real window diagnostic acknowledged native frame 66 / wire sequence 1,
+then became stale. The server's receipt handler checked total buffer length even
+though NGO had already consumed its named-message hash. It now requires exactly
+eight **unread** bytes, retaining authenticated-observer and sequence checks.
+Repeated advancing native frames must be verified after rebuilding both sides;
+the earlier headless receipt/frame counts did not prove this path.
+
+The renderer now has an independent opaque heartbeat Safe screen. OBS audits its
+full-canvas placement, normal blending and stacking above game capture. This is
+visual containment, not an independent `StopStream`; actual OBS fault recording
+remains required. See [renderer safety](broadcast-renderer-safety.md).

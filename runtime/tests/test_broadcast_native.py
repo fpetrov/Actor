@@ -37,6 +37,7 @@ class Fakes:
         self.pf = True; self.fail_probe = False; self.fail_close = False; self.model_calls = 0
         self.poisoned = False; self.renderer_ready = True; self.budgets = []
         self.admitted = None; self.closed = asyncio.Event(); self.scheduler = None
+        self.presented_available = True
         self.config = Obj(state_directory=tmp_path / "private", protected_obs_backup=tmp_path / "backup",
             codex_home=tmp_path / "codex-home",
             game_id="agents-arena", game_version="0.10.0", admission_protocol="4", channel="fedorr_codex",
@@ -101,6 +102,7 @@ class Fakes:
             sequence = 0
             def latest_entry(self, message_type, entity, **kwargs):
                 assert entity == "observer" and kwargs["capability_id"] == "agents-arena.broadcast-presented-view"
+                if not own.presented_available: return None
                 self.sequence += 1; now = int(time.time()*1000)
                 source = message_type()
                 source.view.scope.broadcast_session_id = own.admitted.broadcast_session_id
@@ -215,6 +217,71 @@ async def test_failed_real_probe_does_not_mark_ready_and_attempts_all_owned_clea
     assert fakes.model_calls == 0 and fakes.process.poll() == 0 and not fakes.lease.held
     for required in ("obs-emergency", "sink-close", "voice-close", "model-close", "terminate", "bridge-stop", "budget-close", "release"):
         assert required in fakes.calls
+
+
+async def test_startup_splash_is_never_committed_before_fresh_presented_and_stable_final_window(tmp_path):
+    fakes = Fakes(tmp_path); fakes.presented_available = False
+    deps = fakes.dependencies(); state = Obj(binding=WindowBinding(7,12345,400,332), verifies=[])
+    class Window:
+        def __init__(self, pid, **kwargs): assert pid == 12345
+        def locate(self):
+            if state.binding is None: raise RuntimeError("owned_window_temporarily_missing")
+            return state.binding
+        def verify(self, value): state.verifies.append(value); return value == state.binding
+    deps.window = Window
+    factory = NativeBroadcastFactory(fakes.config, Store(), dependencies=deps)
+    flags=[]; unsafe=[]
+    preparing=asyncio.create_task(factory.prepare("ABC123",uuid4().hex,CommentaryConfig(),
+        on_ready=flags.append,on_unsafe=unsafe.append,on_terminal=lambda:None))
+    try:
+        for _ in range(100):
+            if factory._owned and factory._owned[0].scheduler is not None: break
+            await asyncio.sleep(.005)
+        run=factory._owned[0]
+        await asyncio.sleep(.06)
+        assert run._binding is None and not state.verifies and not run.readiness()["observer"]
+        # A splash disappearing/resizing is normal startup, not loss of a
+        # committed capture route. Native bounds include the OS title bar.
+        state.binding=None; await asyncio.sleep(.06)
+        state.binding=WindowBinding(8,12345,800,664)
+        await asyncio.sleep(.18)
+        assert run._binding is None and not state.verifies and not unsafe
+        fakes.presented_available=True
+        await asyncio.sleep(.06)
+        assert run._binding is None and not run.readiness()["observer"]
+        result=await asyncio.wait_for(preparing,1)
+        assert result is run and run._binding == state.binding
+        assert run.readiness()["observer"] and not unsafe
+        for _ in range(80):
+            if state.verifies: break
+            await asyncio.sleep(.01)
+        assert state.verifies and all(value == state.binding for value in state.verifies)
+    finally:
+        if not preparing.done(): preparing.cancel()
+        await asyncio.gather(preparing,return_exceptions=True)
+        await factory.aclose()
+    assert fakes.process.poll() == 0 and not fakes.lease.held
+
+
+@pytest.mark.parametrize("replacement", [None, WindowBinding(9,12345,800,664)])
+async def test_committed_window_loss_or_replacement_still_stops_output(tmp_path,replacement):
+    fakes=Fakes(tmp_path); deps=fakes.dependencies(); state=Obj(binding=WindowBinding(8,12345,800,664))
+    class Window:
+        def __init__(self,pid,**kwargs): assert pid == 12345
+        def locate(self): return state.binding
+        def verify(self,value): return value == state.binding
+    deps.window=Window
+    factory=NativeBroadcastFactory(fakes.config,Store(),dependencies=deps); unsafe=[]
+    run=await factory.prepare("ABC123",uuid4().hex,CommentaryConfig(),on_ready=lambda _:None,
+        on_unsafe=unsafe.append,on_terminal=lambda:None)
+    try:
+        committed=run._binding;state.binding=replacement
+        for _ in range(80):
+            if unsafe and "obs-emergency" in fakes.calls: break
+            await asyncio.sleep(.01)
+        assert unsafe == ["broadcast_window_lost"] and run._binding == committed
+        assert "obs-emergency" in fakes.calls and not run._route_guard()
+    finally: await factory.aclose()
 
 
 async def test_pf_revocation_is_fresh_dependency_and_stops_owned_output(tmp_path):
