@@ -25,7 +25,7 @@ def product(root):
     output = root / "build/control-plane"; output.mkdir(parents=True)
     executable = output / "Actor.ControlPlane"; executable.write_bytes(b"published host"); executable.chmod(0o755)
     (output / "Actor.ControlPlane.dll").write_bytes(b"published application")
-    (output / "appsettings.json").write_text(json.dumps({"Match": {"GameVersion": "0.9.0", "ProtocolVersion": "4"}}))
+    (output / "appsettings.json").write_text(json.dumps({"Match": {"GameVersion": "0.10.0", "ProtocolVersion": "4"}}))
     return output
 
 
@@ -82,9 +82,9 @@ def test_cp_stamp_binds_exact_unchanged_source_host_assembly_and_compatibility(t
 def test_old_admission_or_missing_app_cannot_produce_stamp(tmp_path):
     root = repository(tmp_path); previous = module.capture(root); output = product(root)
     config = output / "appsettings.json"
-    config.write_text(json.dumps({"Match": {"GameVersion": "0.9.0", "ProtocolVersion": "3"}}))
+    config.write_text(json.dumps({"Match": {"GameVersion": "0.10.0", "ProtocolVersion": "3"}}))
     with pytest.raises(ValueError, match="compatibility"): module.control_stamp(root, previous, output)
-    config.write_text(json.dumps({"Match": {"GameVersion": "0.9.0", "ProtocolVersion": "4"}}))
+    config.write_text(json.dumps({"Match": {"GameVersion": "0.10.0", "ProtocolVersion": "4"}}))
     (output / "Actor.ControlPlane.dll").unlink()
     with pytest.raises(ValueError, match="missing"): module.control_stamp(root, previous, output)
 

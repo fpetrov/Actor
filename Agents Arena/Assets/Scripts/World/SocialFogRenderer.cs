@@ -1,4 +1,5 @@
 using Actor.Networking;
+using Actor.Presentation;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -17,7 +18,13 @@ namespace Actor.World
         private Material material;
         private MeshRenderer view;
         private Camera viewCamera;
-        private double nextRefresh;
+        private double nextRefresh, previousRefresh;
+        private readonly float[] displayedDistances = new float[Rays + 1];
+        private bool initialized;
+        private Vector2 previousEye;
+        private ulong previousEpoch;
+        public bool MatchesPresentedSight(Vector2 eye, ulong epoch) => view != null && view.enabled
+            && BroadcastPresentationRules.FogMatches(previousEpoch, previousEye.x, previousEye.y, epoch, eye.x, eye.y, initialized);
         public void Configure(float value) => radius = float.IsFinite(value) ? Mathf.Clamp(value, 1, 20) : 3.5f;
         private void Awake()
         {
@@ -67,14 +74,28 @@ namespace Actor.World
         private void LateUpdate()
         {
             if (view == null) return;
-            var manager = NetworkManager.Singleton;
-            var owner = manager != null && manager.IsConnectedClient ? manager.SpawnManager.GetLocalPlayerObject() : null;
-            view.enabled = owner != null && SocialVisibilitySystem.IsSocial(manager);
-            if (!view.enabled || Time.realtimeSinceStartupAsDouble < nextRefresh) return;
-            nextRefresh = Time.realtimeSinceStartupAsDouble + 1.0 / 30;
-            var social = NetworkSocialMatch.LocalOwner;
-            if (social != null && social.World.VisibilityRadius > 0) Configure((float)social.World.VisibilityRadius);
-            Vector2 center = (Vector2)owner.GetComponent<NetworkCharacter>().PresentationPosition + owner.GetComponent<CapsuleCollider2D>().offset;
+            bool permitted = PresentationSight.TryGet(out Vector2 center, out float permittedRadius, out ulong epoch);
+            view.enabled = permitted || PresentationSight.Observer;
+            if (!view.enabled) { initialized = false; return; }
+            // Revoke an old hole immediately, without any additional sight query.
+            // The new camera waits for the next scheduled 30Hz mesh before ACK.
+            if (initialized && (!permitted || epoch != previousEpoch))
+            {
+                for (int i = 0; i <= Rays; ++i)
+                {
+                    float angle = i * Mathf.PI * 2 / Rays;
+                    Vector2 outer = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * 64;
+                    vertices[i * 3] = vertices[i * 3 + 1] = new Vector3(center.x, center.y, -1);
+                    vertices[i * 3 + 2] = new Vector3(outer.x, outer.y, -1);
+                }
+                initialized = false; mesh.vertices = vertices; mesh.RecalculateBounds();
+            }
+            if (Time.realtimeSinceStartupAsDouble < nextRefresh) return;
+            double time = Time.realtimeSinceStartupAsDouble;
+            nextRefresh = time + 1.0 / 30;
+            float elapsed = (float)(time - previousRefresh); previousRefresh = time;
+            bool reset = !initialized || epoch != previousEpoch || (center - previousEye).sqrMagnitude > .25f || !permitted;
+            if (permitted) Configure(permittedRadius);
             if (viewCamera == null || !viewCamera.isActiveAndEnabled) viewCamera = Camera.main;
             float feather = viewCamera != null && viewCamera.orthographic
                 ? FeatherWorldWidth(featherPixels, viewCamera.orthographicSize, viewCamera.pixelHeight) : 0;
@@ -83,13 +104,17 @@ namespace Actor.World
             {
                 float angle = i * Mathf.PI * 2 / Rays;
                 Vector2 direction = new(Mathf.Cos(angle), Mathf.Sin(angle));
-                Vector2 inner = SocialVisibilitySystem.SightEndpoint(center, center + direction * radius);
+                Vector2 allowed = permitted ? SocialVisibilitySystem.SightEndpoint(center, center + direction * radius) : center;
+                float distance = TemporalFogRules.Step(Vector2.Distance(center, allowed), displayedDistances[i], elapsed, reset);
+                displayedDistances[i] = distance;
+                Vector2 inner = center + direction * distance;
                 Vector2 inset = Inset(center, inner, feather);
                 vertices[i * 3] = new Vector3(inset.x, inset.y, -1);
                 vertices[i * 3 + 1] = new Vector3(inner.x, inner.y, -1);
                 Vector2 outer = center + direction * 64;
                 vertices[i * 3 + 2] = new Vector3(outer.x, outer.y, -1);
             }
+            initialized = permitted; previousEye = center; previousEpoch = epoch;
             mesh.vertices = vertices; mesh.RecalculateBounds();
         }
         private void OnDestroy()
@@ -98,6 +123,7 @@ namespace Actor.World
             if (material != null) Destroy(material);
         }
 #else
+        public bool MatchesPresentedSight(Vector2 eye, ulong epoch) => false;
         public void Configure(float value) { }
 #endif
     }

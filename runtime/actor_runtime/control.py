@@ -191,8 +191,13 @@ def main(argv=None):
         entry.add_argument("--run",type=Path,required=True)
     auth=commands.add_parser("codex",help="Official SDK account status/login; no game or model is started")
     auth.add_argument("action",choices=("status","login"))
+    from actor_broadcast.cli import add_parser as add_broadcast_parser
+    add_broadcast_parser(commands)
     args=parser.parse_args(argv)
     try:
+        if args.command=="broadcast":
+            from actor_broadcast.cli import command as broadcast_command
+            return broadcast_command(args)
         if args.command=="codex":
             import asyncio
             from actor_codex.auth import command

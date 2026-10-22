@@ -85,7 +85,7 @@ def control_stamp(root: Path, previous: dict, product: Path) -> dict:
     if previous != current or previous.get("schema") != SCHEMA:
         raise ValueError("source_changed_during_build")
     config = json.loads((product / "appsettings.json").read_text()).get("Match", {})
-    if config.get("GameVersion") != "0.9.0" or config.get("ProtocolVersion") != "4":
+    if config.get("GameVersion") != "0.10.0" or config.get("ProtocolVersion") != "4":
         raise ValueError("published_compatibility_mismatch")
     executable, assembly = product / "Actor.ControlPlane", product / "Actor.ControlPlane.dll"
     if not executable.is_file() or not os.access(executable, os.X_OK) or not assembly.is_file():
@@ -93,7 +93,7 @@ def control_stamp(root: Path, previous: dict, product: Path) -> dict:
     for path in (executable, assembly):
         if path.is_symlink():
             raise ValueError("published_product_link_rejected")
-    result = {"schema": "actor.control-plane-build.v1", "game_version": "0.9.0", "target": "linux-x64",
+    result = {"schema": "actor.control-plane-build.v1", "game_version": "0.10.0", "target": "linux-x64",
         "configuration": "Release", "source_commit": current["source_commit"], "source_dirty": current["source_dirty"],
         "source_fingerprint": current["source_fingerprint"], "executable_sha256": digest(executable),
         "assembly_sha256": digest(assembly), "built_at_utc": datetime.now(timezone.utc).isoformat()}

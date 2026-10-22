@@ -24,7 +24,7 @@ def executable(path,source="print('client fixture')\n"):
 
 
 def manifest(tmp_path,client,**changes):
-    value={"schema":"actor.client.v1","game_id":"agents-arena","game_version":"0.9.0",
+    value={"schema":"actor.client.v1","game_id":"agents-arena","game_version":"0.10.0",
         "client":{"executable":client.name,"sha256":hashlib.sha256(client.read_bytes()).hexdigest()},**changes}
     path=tmp_path/"client-manifest.json";path.write_text(json.dumps(value));return path
 
@@ -42,7 +42,7 @@ raise SystemExit(main(['doctor']))
     result=subprocess.run([sys.executable,"-c",source],cwd=tmp_path,capture_output=True,text=True,timeout=15)
     assert result.returncode==0,result.stderr
     report=json.loads(result.stdout)
-    assert report["runtime_version"]=="0.7.0" and report["authentication"]=="not_checked"
+    assert report["runtime_version"]=="0.8.0" and report["authentication"]=="not_checked"
     from actor_runtime import __version__
     assert report["runtime_version"]==__version__
     assert report["game_profiles"]==["agents-arena"]
@@ -52,7 +52,7 @@ def test_release_client_checksum_version_and_scope_are_validated(tmp_path):
     client=executable(tmp_path/"client")
     release=manifest(tmp_path,client)
     path,info=resolve_client(game_profile(),manifest=release)
-    assert path==client and info["integrity"]=="sha256_verified" and info["manifest_version"]=="0.9.0"
+    assert path==client and info["integrity"]=="sha256_verified" and info["manifest_version"]=="0.10.0"
     client.write_text("changed executable")
     with pytest.raises(ActorError,match="client_hash_mismatch"):resolve_client(game_profile(),manifest=release)
     release=manifest(tmp_path,client,game_version="0.8.0")

@@ -1,6 +1,6 @@
 {
   "extension_id": "agents-arena",
-  "extension_version": "0.6.0",
+  "extension_version": "0.7.0",
   "supported_protocol_major": 1,
   "generation": {
     "sources": [
@@ -8,7 +8,8 @@
       "extensions/agents_arena/v1/station_signals.proto",
       "extensions/agents_arena/v1/calibration.proto",
       "extensions/agents_arena/v1/incidents.proto",
-      "extensions/agents_arena/v1/social.proto"
+      "extensions/agents_arena/v1/social.proto",
+      "extensions/agents_arena/v1/broadcast.proto"
     ],
     "csharp_output": "Agents Arena/Assets/Scripts/Actor/Generated",
     "helper_namespace": "AgentsArena.ActorProtocol.V1",
@@ -404,6 +405,31 @@
       "kind": "event",
       "message_type": "actor.extensions.agents_arena.v1.SocialKillPresentationEvent",
       "description": "Recipient-scoped confirmed presentation; victim payload omits attacker identity, permitted witnesses only."
+    },
+    {
+      "capability_id": "agents-arena.broadcast-presented-view",
+      "kind": "observation",
+      "message_type": "actor.extensions.agents_arena.v1.BroadcastPresentedViewObservation",
+      "description": "Complete permitted observer view only after native presentation acknowledgement."
+    },
+    {
+      "capability_id": "agents-arena.broadcast-presented",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.BroadcastPresentedViewObservation",
+      "description": "Coherent permitted observer frame presented; not OBS capture or audio playback."
+    },
+    {
+      "capability_id": "agents-arena.broadcast-select-view",
+      "kind": "command",
+      "message_type": "actor.extensions.agents_arena.v1.BroadcastSelectViewCommand",
+      "description": "Request a server-approved public anchor or already-permitted focus with an eight-second dwell.",
+      "command_delivery": "ordered"
+    },
+    {
+      "capability_id": "agents-arena.broadcast-view-selection-result",
+      "kind": "event",
+      "message_type": "actor.extensions.agents_arena.v1.BroadcastViewSelectionResultEvent",
+      "description": "Observer-scoped server result; denied requests disclose no hidden target facts."
     }
   ]
 }

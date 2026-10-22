@@ -7,7 +7,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomMembershipObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.room-changed",
@@ -16,7 +16,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoomChangedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.station-signal",
@@ -25,7 +25,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StationSignalEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.calibration-state",
@@ -34,7 +34,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskStateObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.calibration-progress",
@@ -43,7 +43,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationProgressObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.calibration-assignment",
@@ -52,7 +52,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationAssignmentEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.calibration-changed",
@@ -61,7 +61,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationTaskChangedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.start-calibration",
@@ -71,7 +71,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.StartCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.inspect-diagnostic",
@@ -81,7 +81,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectDiagnosticCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.submit-calibration",
@@ -91,7 +91,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SubmitCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.cancel-calibration",
@@ -101,7 +101,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelCalibrationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.diagnostic-result",
@@ -110,7 +110,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DiagnosticResultEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.calibration-result",
@@ -119,7 +119,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CalibrationResultEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.own-role",
@@ -128,7 +128,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.OwnRoleObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.duty-roster",
@@ -137,7 +137,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DutyRosterObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.select-role",
@@ -147,7 +147,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SelectRoleCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.role-result",
@@ -156,7 +156,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RoleResultEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.cooling-state",
@@ -165,7 +165,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CoolingStateObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.incident-started",
@@ -174,7 +174,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentStartedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.incident-changed",
@@ -183,7 +183,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentChangedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.own-investigation-view",
@@ -192,7 +192,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.OwnInvestigationViewObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.inspect-cooling",
@@ -202,7 +202,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectCoolingCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.inspect-security-records",
@@ -212,7 +212,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InspectSecurityRecordsCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.diagnostic-evidence",
@@ -221,7 +221,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.DiagnosticEvidenceEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.security-evidence",
@@ -230,7 +230,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SecurityEvidenceEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.repair-cooling",
@@ -240,7 +240,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RepairCoolingCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.cancel-cooling-repair",
@@ -250,7 +250,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelCoolingRepairCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.cancel-investigation",
@@ -260,7 +260,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.CancelInvestigationCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.maintenance-override",
@@ -270,7 +270,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.MaintenanceOverrideCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.submit-investigation-report",
@@ -280,7 +280,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SubmitInvestigationReportCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.repair-result",
@@ -289,7 +289,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.RepairResultEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.investigation-result",
@@ -298,7 +298,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.InvestigationResultEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.incident-action-result",
@@ -307,7 +307,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.IncidentActionResultEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-match",
@@ -316,7 +316,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMatchStateObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-own-state",
@@ -325,7 +325,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnStateObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-visible-world",
@@ -334,7 +334,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleWorldObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-meeting",
@@ -343,7 +343,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMeetingObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-tasks",
@@ -352,7 +352,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnTasksObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-emergency",
@@ -361,7 +361,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialEmergencyStateObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-postgame",
@@ -370,7 +370,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialPostgameObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-ready",
@@ -380,7 +380,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialReadyCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-kill",
@@ -390,7 +390,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialKillCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-report-body",
@@ -400,7 +400,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialReportBodyCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-call-meeting",
@@ -410,7 +410,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialCallMeetingCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-cast-vote",
@@ -420,7 +420,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialCastVoteCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-work-task",
@@ -430,7 +430,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialWorkTaskCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-sabotage",
@@ -440,7 +440,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialSabotageCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-repair-emergency",
@@ -450,7 +450,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialRepairEmergencyCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-cancel-work",
@@ -460,7 +460,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialCancelWorkCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-action-result",
@@ -469,7 +469,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialActionResultEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-match-changed",
@@ -478,7 +478,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMatchChangedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-own-state-changed",
@@ -487,7 +487,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnStateChangedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-meeting-changed",
@@ -496,7 +496,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMeetingChangedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-emergency-changed",
@@ -505,7 +505,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialEmergencyChangedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-visible-attack",
@@ -514,7 +514,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleAttackEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-visible-activity",
@@ -523,7 +523,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleActivityEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-match-ended",
@@ -532,7 +532,7 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMatchEndedEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-waiting-players",
@@ -541,7 +541,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialWaitingPlayersObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-task-work",
@@ -550,7 +550,7 @@
       "input_type_url": "",
       "kind": "observation",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnTaskWorkObservation",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-task-step",
@@ -560,7 +560,7 @@
       "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialTaskStepCommand",
       "kind": "command",
       "output_type_url": "",
-      "version": "0.6.0"
+      "version": "0.7.0"
     },
     {
       "capability_id": "agents-arena.social-kill-presentation",
@@ -569,12 +569,49 @@
       "input_type_url": "",
       "kind": "event",
       "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialKillPresentationEvent",
-      "version": "0.6.0"
+      "version": "0.7.0"
+    },
+    {
+      "capability_id": "agents-arena.broadcast-presented-view",
+      "description": "Complete permitted observer view only after native presentation acknowledgement.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "observation",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.BroadcastPresentedViewObservation",
+      "version": "0.7.0"
+    },
+    {
+      "capability_id": "agents-arena.broadcast-presented",
+      "description": "Coherent permitted observer frame presented; not OBS capture or audio playback.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.BroadcastPresentedViewObservation",
+      "version": "0.7.0"
+    },
+    {
+      "capability_id": "agents-arena.broadcast-select-view",
+      "command_delivery": "ordered",
+      "description": "Request a server-approved public anchor or already-permitted focus with an eight-second dwell.",
+      "extension_id": "agents-arena",
+      "input_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.BroadcastSelectViewCommand",
+      "kind": "command",
+      "output_type_url": "",
+      "version": "0.7.0"
+    },
+    {
+      "capability_id": "agents-arena.broadcast-view-selection-result",
+      "description": "Observer-scoped server result; denied requests disclose no hidden target facts.",
+      "extension_id": "agents-arena",
+      "input_type_url": "",
+      "kind": "event",
+      "output_type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.BroadcastViewSelectionResultEvent",
+      "version": "0.7.0"
     }
   ],
   "descriptor_set": "agents_arena.v1.pb",
   "extension_id": "agents-arena",
-  "extension_version": "0.6.0",
-  "schema_hash": "1d56e890cac28ec840b7916f513ae2aa722a6d36168d4b9b3878c2f111b242d4",
+  "extension_version": "0.7.0",
+  "schema_hash": "4030dcbab5969a839ac27032b29c4207609a44c3c38a59ffc01cfeac78439d15",
   "supported_protocol_major": 1
 }

@@ -12,12 +12,14 @@ public sealed class MatchOptions
     public string GameServerLogDirectory { get; set; } = "runtime/matches";
     public string InternalApiBaseUrl { get; set; } = "http://127.0.0.1:5080";
     public string AdmissionDrainFile { get; set; } = "/run/actor-admission-drain";
+    // Empty disables operator-only observer admission. Never use a match, Twitch or OBS credential here.
+    public string BroadcastOperatorKey { get; set; } = "";
     public int LobbyStartupTimeout { get; set; } = 45;
     public int EmptyLobbyLifetime { get; set; } = 300;
     public int EmptyLobbyGracePeriod { get; set; } = 60;
     public int HeartbeatTimeout { get; set; } = 20;
     public int JoinTicketLifetime { get; set; } = 45;
-    public string GameVersion { get; set; } = "0.9.0";
+    public string GameVersion { get; set; } = "0.10.0";
     public string ProtocolVersion { get; set; } = "4";
     public SocialMatchOptions SocialDeduction { get; set; } = new();
 
@@ -30,6 +32,8 @@ public sealed class MatchOptions
         && !string.IsNullOrWhiteSpace(PublicGameHost) && !string.IsNullOrWhiteSpace(UnityServerExecutable)
         && Uri.TryCreate(InternalApiBaseUrl, UriKind.Absolute, out var uri) && uri.IsLoopback
         && !string.IsNullOrWhiteSpace(AdmissionDrainFile) && Path.IsPathRooted(AdmissionDrainFile)
+        && (BroadcastOperatorKey == "" || BroadcastOperatorKey.Length is >= 32 and <= 512
+            && BroadcastOperatorKey.All(c => c is >= '!' and <= '~'))
         && !string.IsNullOrWhiteSpace(GameVersion) && !string.IsNullOrWhiteSpace(ProtocolVersion)
         && SocialDeduction != null && SocialDeduction.IsValid();
 }

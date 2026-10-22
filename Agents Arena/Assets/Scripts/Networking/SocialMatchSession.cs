@@ -115,6 +115,8 @@ namespace Actor.Networking
                 }
                 SocialMatchMetrics.Ensure(gameObject);
                 authority = new SocialMatchAuthority(session.MatchId, rules, seed, LiveCanSee);
+                authority.BroadcastActivity += (actor, terminal, activity, x, y, at) =>
+                    NetworkManager.Singleton?.GetComponent<BroadcastSession>()?.VisibleActivity(x, y, actor, terminal, activity, at);
                 communication = new CooperativeAuthority(session.MatchId, null,
                     (actor, message) => authority.CanCommunicate(actor, message.RecipientActorId, message.ChannelId) ? "" : "communication_unavailable",
                     (sender, recipient, channel) => authority.CanCommunicate(sender, recipient, channel));
@@ -210,7 +212,27 @@ namespace Actor.Networking
         internal void Request(string actor, IMessage command)
         {
             Refresh(); if (authority == null) return;
+            var broadcast = NetworkManager.Singleton.GetComponent<BroadcastSession>();
+            ulong[] witnesses = Array.Empty<ulong>();
+            string previousBody = null;
+            if (command is SocialKillCommand kill && endpoints.TryGetValue(actor, out var attacker))
+            {
+                var victim = endpoints.TryGetValue(kill.TargetActorId, out var liveVictim) ? liveVictim.GetComponent<NetworkCharacter>()
+                    : NetworkManager.Singleton.GetComponent<MatchSession>().RetainedSocialPlayers.FirstOrDefault(c => c.AuthoritativeActorId == kill.TargetActorId);
+                previousBody = authority.BodyStates().FirstOrDefault(b => b.VictimActorId == kill.TargetActorId)?.BodyId;
+                if (victim != null)
+                {
+                var a = attacker.GetComponent<CapsuleCollider2D>().bounds.center; var v = victim.GetComponent<CapsuleCollider2D>().bounds.center;
+                witnesses = broadcast?.AttackWitnesses(a.x, a.y, v.x, v.y, actor, kill.TargetActorId, Now) ?? Array.Empty<ulong>();
+                }
+            }
             var deliveries = authority.Execute(actor, command, Now);
+            if (command is SocialKillCommand acceptedKill && deliveries.Any(d => d.Payload is SocialActionResultEvent result
+                && result.Action == SocialAction.Kill && result.Accepted && result.Completed))
+            {
+                var body = authority.BodyStates().FirstOrDefault(b => b.VictimActorId == acceptedKill.TargetActorId);
+                if (body != null && body.BodyId != previousBody) broadcast?.AttackCompleted(witnesses, actor, acceptedKill.TargetActorId, body.BodyId, Now);
+            }
             SynchronizeBodies(); visibility.RefreshNow(); Dispatch(deliveries); PublishViews(); WriteSummary();
         }
         internal void ControlUnavailable(string actor)
@@ -243,6 +265,8 @@ namespace Actor.Networking
                     || !endpoints.TryGetValue(delivery.Recipient, out var endpoint) || endpoint == null || !endpoint.IsSpawned) continue;
                 if (delivery.Payload is MessageReceivedEvent message
                     && !authority.CanCommunicate(message.SenderActorId, delivery.Recipient, message.ChannelId)) continue;
+                if (delivery.Payload is MessageReceivedEvent publicMessage && publicMessage.ChannelId == "discussion" && !publicMessage.Sensitive)
+                    NetworkManager.Singleton.GetComponent<BroadcastSession>()?.PublicDiscussion(publicMessage.MessageId, publicMessage.SenderActorId, endpoints.TryGetValue(publicMessage.SenderActorId, out var sender) ? sender.GetComponent<NetworkCharacter>().PlayerName : "Player", publicMessage.Text, publicMessage.ServerUnixMs);
                 endpoint.GetComponent<NetworkCooperation>().Deliver(delivery.Payload);
             }
         }
@@ -272,6 +296,20 @@ namespace Actor.Networking
                         peers.Peers.Add(new CommunicationPeer { ActorId = other.Key, DisplayName = other.Value.GetComponent<NetworkCharacter>().PlayerName });
                 endpoint.GetComponent<NetworkCooperation>().Deliver(peers);
             }
+            var session = NetworkManager.Singleton.GetComponent<MatchSession>();
+            var broadcastActors = endpoints.Values.Select(p => p.GetComponent<NetworkCharacter>()).Concat(session.RetainedSocialPlayers)
+                .GroupBy(c => c.AuthoritativeActorId).Select(g => g.First()).Select(character =>
+            {
+                var center = character.GetComponent<CapsuleCollider2D>().bounds.center;
+                var velocity = character.AuthoritativeVelocity;
+                return new BroadcastViewProjector.Actor { Id = character.AuthoritativeActorId, Name = character.PlayerName, Room = character.GetComponent<NetworkRoomMembership>().CurrentRoomId,
+                    X = center.x, Y = center.y, VelocityX = velocity.x, VelocityY = velocity.y, Facing = (uint)character.AuthoritativeFacing,
+                    Cosmetic = (uint)character.CosmeticIndex, Alive = authority.OwnState(character.AuthoritativeActorId).Life == SocialLife.Alive };
+            }).ToArray();
+            var broadcastBodies = authority.BodyStates().Select(b => new BroadcastViewProjector.Body { Id = b.BodyId, Victim = b.VictimActorId,
+                Name = b.VictimDisplayName, X = b.X, Y = b.Y, Cosmetic = (uint)session.CosmeticIndexForActor(b.VictimActorId) }).ToArray();
+            NetworkManager.Singleton.GetComponent<BroadcastSession>()?.Publish(authority.State(), authority.Emergency(), authority.Meeting(""),
+                broadcastActors, broadcastBodies, authority.IsTerminal ? authority.Summary() : null, Now);
         }
         private void SynchronizeBodies()
         {

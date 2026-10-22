@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{CSRF}}"><title>ACTOR Broadcast</title><link rel="stylesheet" href="/operator.css">
+<script src="/operator.js" defer></script></head><body><main>
+<header><p class="eyebrow">ACTOR / BROADCAST</p><h1>Комментатор матча</h1><p>Сначала проверьте локальный preview. Публикация запускается отдельно.</p></header>
+<section aria-labelledby="match-heading"><h2 id="match-heading">Матч</h2><form id="preview-form">
+<label for="rooms">Доступные матчи</label><select id="rooms"><option value="">Выберите матч</option></select>
+<label for="room">Или код комнаты</label><input id="room" name="room" maxlength="6" pattern="[A-Za-z0-9]{6}" autocomplete="off" spellcheck="false" required>
+<button id="preview" type="submit">Открыть локальный preview</button></form></section>
+<section aria-labelledby="status-heading"><h2 id="status-heading">Подготовка</h2><p id="state" role="status" aria-live="polite">Соединяемся с локальным контроллером…</p>
+<dl id="dependencies"></dl><p id="silence"></p><p id="usage"></p></section>
+<section aria-labelledby="public-heading"><h2 id="public-heading">Публичная трансляция</h2><p id="publication">Канал пока не подтверждён.</p>
+<p>Видео: только окно наблюдателя. Звук: синтезированный голос. Микрофон, камера и рабочий стол исключены. VOD определяется настройками канала; его статус здесь не подтверждён.</p>
+<label class="check"><input id="confirm-public" type="checkbox"> Я понимаю, что эфир будет публичным на указанном канале.</label>
+<button id="public-start" type="button" disabled>Начать публичный эфир</button></section>
+<section aria-labelledby="idle-heading"><h2 id="idle-heading">Сводки во время пауз</h2><form id="idle-form">
+<label class="check"><input id="idle-enabled" type="checkbox" checked> Краткие сводки и уместные воспоминания</label>
+<label for="idle-seconds">Пауза после новости и конца речи, секунды</label><input id="idle-seconds" type="number" min="5" max="120" step="1" value="20" required>
+<button type="submit">Применить</button></form></section>
+<section aria-labelledby="spoken-heading"><h2 id="spoken-heading">Последняя завершённая реплика</h2><p id="last-spoken">Пока ничего не прозвучало.</p></section>
+<div class="stop-actions"><button id="stop" type="button">Завершить трансляцию</button><button id="emergency" class="danger" type="button">Немедленно выключить эфир и звук</button></div>
+<p id="error" role="alert" aria-live="assertive"></p><p class="note">Эта страница управляет только собственной локальной broadcast-сессией. Preview не является публичным эфиром.</p>
+</main></body></html>

@@ -71,10 +71,10 @@ def fake_release(tmp_path, monkeypatch):
             ("skills/actor-play/SKILL.md", "Project onboarding"), ("skills/actor-play/agents/openai.yaml", "interface: {}")):
         path = root / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_text(value)
     runtime = root / "runtime"; runtime.mkdir()
-    (runtime / "actor_runtime").mkdir(); (runtime / "actor_runtime/__init__.py").write_text('__version__ = "0.7.0"\n')
+    (runtime / "actor_runtime").mkdir(); (runtime / "actor_runtime/__init__.py").write_text('__version__ = "0.8.0"\n')
     (runtime / "pyproject.toml").write_text('''[project]
 name = "actor-runtime"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = ["protobuf==7.36.2"]
 [project.optional-dependencies]
 codex = ["openai-codex==0.162.1"]
@@ -96,8 +96,8 @@ def make_wheel(root, *, changed=None, extra=None):
     import zipfile
     payload, _ = module.package_payload(root)
     files = {name: source.read_bytes() for name, source in payload.items()}
-    prefix = "actor_runtime-0.7.0.dist-info/"
-    files.update({prefix + "METADATA": b'Name: actor-runtime\nVersion: 0.7.0\nRequires-Dist: protobuf==7.36.2\nRequires-Dist: openai-codex==0.162.1; extra == "codex"\n',
+    prefix = "actor_runtime-0.8.0.dist-info/"
+    files.update({prefix + "METADATA": b'Name: actor-runtime\nVersion: 0.8.0\nRequires-Dist: protobuf==7.36.2\nRequires-Dist: openai-codex==0.162.1; extra == "codex"\n',
         prefix + "WHEEL": b"Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n",
         prefix + "entry_points.txt": b"[console_scripts]\nactorctl = actor_runtime.control:main\n",
         prefix + "top_level.txt": b"actor_runtime\n"})
@@ -109,7 +109,7 @@ def make_wheel(root, *, changed=None, extra=None):
         writer.writerow((name, checksum, str(len(data))))
     writer.writerow((prefix + "RECORD", "", "")); files[prefix + "RECORD"] = record.getvalue().encode()
     directory = root / "build/runtime-dist"; directory.mkdir(exist_ok=True)
-    path = directory / "actor_runtime-0.7.0-py3-none-any.whl"
+    path = directory / "actor_runtime-0.8.0-py3-none-any.whl"
     with zipfile.ZipFile(path, "w") as archive:
         for name, data in files.items(): archive.writestr(name, data)
     return path
@@ -170,15 +170,15 @@ def test_runtime_wheel_required_exact_version_and_committed_source_bytes(tmp_pat
     with pytest.raises(ValueError, match="differs from current source"): module.runtime_wheel(root)
     make_wheel(root, extra={"openai_codex/auth.json":b"do not bundle SDK credentials"})
     with pytest.raises(ValueError): module.runtime_wheel(root)
-    make_wheel(root, extra={"actor_runtime-0.7.0.dist-info/auth.json":b"secret"})
+    make_wheel(root, extra={"actor_runtime-0.8.0.dist-info/auth.json":b"secret"})
     with pytest.raises(ValueError, match="Unexpected Runtime wheel metadata"): module.runtime_wheel(root)
 
 
 def test_runtime_metadata_cannot_change_cli_or_pinned_optional_dependency(tmp_path, monkeypatch):
-    root = fake_release(tmp_path, monkeypatch); prefix = "actor_runtime-0.7.0.dist-info/"
+    root = fake_release(tmp_path, monkeypatch); prefix = "actor_runtime-0.8.0.dist-info/"
     make_wheel(root, changed={prefix+"entry_points.txt":b"[console_scripts]\nactorctl = foreign:main\n"})
     with pytest.raises(ValueError, match="entry points"): module.runtime_wheel(root)
-    make_wheel(root, changed={prefix+"METADATA":b"Name: actor-runtime\nVersion: 0.7.0\n"})
+    make_wheel(root, changed={prefix+"METADATA":b"Name: actor-runtime\nVersion: 0.8.0\n"})
     with pytest.raises(ValueError, match="dependency"): module.runtime_wheel(root)
 
 

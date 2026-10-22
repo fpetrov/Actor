@@ -103,7 +103,8 @@ modules = [
     "actor_agents_arena.investigation", "actor_agents_arena.investigation_brain", "actor_agents_arena.investigation_events",
     "actor_runtime.control", "actor_runtime.launching", "actor_runtime.knowledge_skills", "actor_runtime.telemetry",
     "actor_agents_arena.social_agent", "actor_agents_arena.social_discussion", "actor_agents_arena.social_pursuit",
-    "actor_agents_arena.launcher", "actor_codex.catalog", "actor_codex.stream",
+    "actor_agents_arena.launcher", "actor_codex.catalog", "actor_codex.stream", "actor_codex.policy", "actor_codex.launch",
+    "actor_broadcast.cli", "actor_broadcast.native", "actor_broadcast.scheduler", "actor_codex.commentary", "actor_codex.commentary_auth",
     "actor.core.v1.bridge_pb2_grpc", "actor.standard.communication.v1.communication_pb2",
     "extensions.agents_arena.v1.calibration_pb2", "extensions.agents_arena.v1.incidents_pb2",
     "actor_codex.brain", "actor_jev.classifier",
@@ -113,6 +114,7 @@ for name in modules:
     assert Path(module.__file__).resolve().is_relative_to(prefix), "Import escaped the installed wheel"
 assert importlib.util.find_spec("openai_codex") is None
 assert importlib.util.find_spec("typesafe_sdk") is None
+assert importlib.util.find_spec("mlx_audio") is None
 import actor_runtime
 assert actor_runtime.__version__ == metadata.version("actor-runtime")
 from actor_runtime.extensions import ExtensionRegistry
@@ -155,6 +157,12 @@ for package, basename in [("actor.metadata", "standard.v1"),
     data = resources.files(package)
     assert data.joinpath(basename + ".pb").read_bytes()
     assert data.joinpath(basename + ".json").read_bytes()
+for name in ("operator.html", "operator.js", "operator.css", "overlay.html", "renderer.js", "audio-worklet.js"):
+    assert resources.files("actor_broadcast.resources").joinpath(name).read_bytes()
+from actor_codex.policy import restricted_catalog
+assert restricted_catalog()["models"][0]["slug"] == "gpt-6-luna"
+for name in ("CODEX-LICENSE.txt", "CODEX-NOTICE.txt"):
+    assert resources.files("actor_codex").joinpath(name).read_bytes()
 print(json.dumps({
     "runtime_version": metadata.version("actor-runtime"),
     "imports_from_installed_wheel": True,
@@ -208,6 +216,13 @@ def verify(args, report):
                 "actor_runtime/control.py", "actor_runtime/launching.py", "actor_runtime/knowledge_skills.py",
                 "actor_agents_arena/social_discussion.py", "actor_agents_arena/social_pursuit.py",
                 "actor_agents_arena/launcher.py", "actor_agents_arena/social_layout.json", "actor_codex/catalog.py",
+                "actor_broadcast/native.py", "actor_broadcast/cli.py", "actor_codex/commentary.py",
+                "actor_codex/policy.py", "actor_codex/launch.py", "actor_codex/gpt6_luna_policy_model.json",
+                "actor_codex/commentary_auth.py",
+                "actor_codex/CODEX-LICENSE.txt", "actor_codex/CODEX-NOTICE.txt",
+                "extensions/agents_arena/v1/broadcast_pb2.py",
+                "actor_broadcast/resources/operator.html", "actor_broadcast/resources/overlay.html",
+                "actor_broadcast/resources/audio-worklet.js",
             }
             if not required <= names or any(".egg-info/" in name for name in names):
                 raise VerificationError("inspect wheel", "missing_or_invalid_package_files")
@@ -218,8 +233,9 @@ def verify(args, report):
         python = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         environment["PATH"] = str(python.parent) + os.pathsep + environment.get("PATH", "")
         dev = specification["project"]["optional-dependencies"]["dev"]
-        command("install wheel and base/dev dependencies", [str(python), "-I", "-m", "pip", "install", "--no-input",
-            "--disable-pip-version-check", "--only-binary=:all:", str(wheel), *dev], cwd=outside, env=environment)
+        broadcast = specification["project"]["optional-dependencies"]["broadcast"]
+        command("install wheel and base/dev/broadcast dependencies", [str(python), "-I", "-m", "pip", "install", "--no-input",
+            "--disable-pip-version-check", "--only-binary=:all:", str(wheel), *dev, *broadcast], cwd=outside, env=environment)
         output = command("isolated import/resources/plugin probe", [str(python), "-I", "-c", PROBE], cwd=outside, env=environment)
         report["isolated_probe"] = json.loads(output.strip())
         if report["isolated_probe"]["runtime_version"] != specification["project"]["version"]:

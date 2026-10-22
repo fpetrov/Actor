@@ -27,8 +27,8 @@ import tomllib
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-GAME_VERSION = "0.9.0"
-RUNTIME_VERSION = "0.7.0"
+GAME_VERSION = "0.10.0"
+RUNTIME_VERSION = "0.8.0"
 SHA = re.compile(r"[a-f0-9]{64}\Z")
 COMMIT = re.compile(r"[a-f0-9]{40}\Z")
 PRIVATE_NAMES = {".env", "auth.json", "credentials.json", "codex_home", ".ssh", "auth", "sessions", "logs"}
@@ -401,7 +401,7 @@ def main(argv=None) -> int:
     if {path.relative_to(skill).as_posix() for path in entries(skill) if path.is_file()} != SKILL_FILES or any(path.is_symlink() for path in entries(skill)):
         raise ValueError("Skill package must contain only its two authored onboarding files")
     manifest = {"schema": "actor.release.v1", "game_id": "agents-arena", "game_version": GAME_VERSION,
-        "admission_protocol_version": "4", "actor_core_version": "1.0.0", "arena_extension_version": "0.6.0",
+        "admission_protocol_version": "4", "actor_core_version": "1.0.0", "arena_extension_version": "0.7.0",
         "runtime_version": RUNTIME_VERSION, "source_commit": commit, "source_dirty": dirty,
         "build_source_consistent": consistent, "publishable_source": not args.allow_dirty and not dirty and consistent,
         "packaging_mode": "local-staging" if args.allow_dirty else "release-candidate", "release_status": "limited-test-rc",

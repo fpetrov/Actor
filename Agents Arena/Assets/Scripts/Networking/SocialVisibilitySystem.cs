@@ -71,6 +71,7 @@ namespace Actor.Networking
         public bool CanObserve(ulong viewerClientId, NetworkObject target)
         {
             if (target == null || manager == null || target.NetworkManager != manager) return false;
+            if (manager.GetComponent<MatchSession>()?.IsObserver(viewerClientId) == true) return false;
             // The owner's controller must survive death/meetings and visibility
             // changes. Its private terminal view travels on this same endpoint.
             if (viewerClientId == target.OwnerClientId || viewerClientId == NetworkManager.ServerClientId) return true;

@@ -46,6 +46,23 @@ public static class Endpoints
             => options.Value.IsValid() && await repository.CheckHealthAsync(token)
                 ? Results.Ok(new { status = "healthy" }) : Results.Json(new { status = "unhealthy" }, statusCode: 503));
         var servers = app.MapGroup("/internal/game-servers").ExcludeFromDescription();
+        app.MapPost("/internal/broadcast-observers/{roomCode}", async (string roomCode,
+            ObserveLobbyRequest admission, HttpContext context, LobbyManager manager, CancellationToken token) =>
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            BroadcastOperatorBoundary.RequireDirectLoopback(context);
+            return Results.Ok(await manager.ObserveAsync(roomCode, admission,
+                context.Request.Headers["X-Actor-Broadcast-Operator"], token));
+        }).RequireRateLimiting("join").ExcludeFromDescription();
+        app.MapDelete("/internal/broadcast-observers/{roomCode}/{broadcastSessionId}", async (string roomCode,
+            string broadcastSessionId, HttpContext context, LobbyManager manager, CancellationToken token) =>
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            BroadcastOperatorBoundary.RequireDirectLoopback(context);
+            await manager.ReleaseObserverAsync(roomCode, broadcastSessionId,
+                context.Request.Headers["X-Actor-Broadcast-Operator"], token);
+            return Results.NoContent();
+        }).RequireRateLimiting("join").ExcludeFromDescription();
         servers.MapPost("/{lobbyId:guid}/ready", async (Guid lobbyId, HttpRequest request, LobbyManager manager, CancellationToken token) =>
         {
             await manager.ReadyAsync(lobbyId, request.Headers["X-Actor-Match-Secret"], token);
@@ -53,8 +70,7 @@ public static class Endpoints
         });
         servers.MapPost("/{lobbyId:guid}/heartbeat", async (Guid lobbyId, GameServerHeartbeat heartbeat, HttpRequest request, LobbyManager manager, CancellationToken token) =>
         {
-            await manager.HeartbeatAsync(lobbyId, request.Headers["X-Actor-Match-Secret"], heartbeat, token);
-            return Results.NoContent();
+            return Results.Ok(await manager.HeartbeatAsync(lobbyId, request.Headers["X-Actor-Match-Secret"], heartbeat, token));
         });
         servers.MapPost("/{lobbyId:guid}/finished", async (Guid lobbyId, HttpRequest request, LobbyManager manager, CancellationToken token) =>
         {

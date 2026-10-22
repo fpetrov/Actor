@@ -32,6 +32,11 @@ namespace Actor.Networking
         private readonly Dictionary<ulong, JoinTicketClaims> approvals = new();
         private readonly Dictionary<ulong, int> spawnSlots = new();
         private readonly Dictionary<string, long> consumedTickets = new();
+        private readonly BroadcastObserverRules broadcastObservers = new();
+        public bool IsBroadcastObserver { get; private set; }
+        internal LobbyClientSettings ClientSettings => settings;
+        internal bool IsObserver(ulong client) => broadcastObservers.Contains(client);
+        internal IEnumerable<BroadcastObserverRules.Binding> ObserverBindings => broadcastObservers.Active;
         private ResumeAdmissionRegistry resumeRegistry;
         private readonly Dictionary<string, NetworkObject> retainedActors = new();
         private readonly Dictionary<string, Vector3> lastRoots = new();
@@ -74,6 +79,7 @@ namespace Actor.Networking
             }
             manager = GetComponent<NetworkManager>();
             transport = GetComponent<UnityTransport>();
+            BroadcastSession.Ensure(manager);
             manager.OnClientConnectedCallback += OnConnected;
             manager.OnClientDisconnectCallback += OnDisconnected;
             manager.OnTransportFailure += OnTransportFailure;
@@ -93,6 +99,8 @@ namespace Actor.Networking
 
         public void Connect(JoinInfo admission)
         {
+            if (IsBroadcastObserver && !admission.joinTicket.StartsWith(ObserverTicketCodec.WirePrefix, StringComparison.Ordinal))
+                throw new InvalidOperationException("An observer cannot use player admission.");
             if (manager.IsListening || returningToLobby) throw new InvalidOperationException("A network session is already active or closing.");
             if (!admission.resume) ForgetResume();
             Diagnostic("admission-received", $"host={DiagnosticHost(admission.host)} port={admission.port}");
@@ -116,6 +124,17 @@ namespace Actor.Networking
                 StartCoroutine(WatchClientConnection(++connectionAttempt));
             }
             else Disconnected?.Invoke("Could not start the network connection.");
+        }
+
+        internal void ConnectObserver(JoinInfo admission, ObserverTicketClaims identity)
+        {
+            if (admission.gameMode != "SocialDeduction" || identity == null || identity.lobbyId != admission.lobbyId)
+                throw new ArgumentException("Observer admission does not match this Social match.");
+            IsBroadcastObserver = true;
+            BroadcastSession.Ensure(manager).Expect(new AgentsArena.ActorProtocol.V1.BroadcastScope
+            { BroadcastSessionId = identity.broadcastSessionId, MatchId = identity.lobbyId, ObserverId = identity.observerId,
+                ConnectionGeneration = identity.connectionGeneration, ViewEpoch = 1 });
+            Connect(admission);
         }
 
         private IEnumerator WatchClientConnection(int attempt)
@@ -288,13 +307,16 @@ namespace Actor.Networking
                 string[] connectedNonces = manager.ConnectedClientsIds.Where(id => approvals.ContainsKey(id)).Select(id => approvals[id].nonce).ToArray();
                 var heartbeat = new Heartbeat
                 {
-                    currentPlayers = resumeRegistry != null ? resumeRegistry.Bindings.Count(b => b.Connected || b.GraceUntil > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : manager.ConnectedClientsIds.Count,
-                    serverState = manager.ConnectedClientsIds.Count > 0 ? "Running" : "Ready",
+                    currentPlayers = resumeRegistry != null ? resumeRegistry.Bindings.Count(b => b.Connected || b.GraceUntil > DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()) : approvals.Count,
+                    serverState = approvals.Count > 0 ? "Running" : "Ready",
                     connectedNonces = connectedNonces,
-                    connectedActorIds = approvals.Values.Select(c => c.actorId).Where(id => Guid.TryParseExact(id, "N", out _)).ToArray()
+                    connectedActorIds = approvals.Values.Select(c => c.actorId).Where(id => Guid.TryParseExact(id, "N", out _)).ToArray(),
+                    connectedObserverSessions = broadcastObservers.Active.Select(b => new HeartbeatObserver
+                    { broadcastSessionId = b.Scope.BroadcastSessionId, observerId = b.Scope.ObserverId, connectionGeneration = b.Scope.ConnectionGeneration }).ToArray()
                 };
                 bool accepted = false;
-                yield return Callback("heartbeat", JsonUtility.ToJson(heartbeat), success => accepted = success);
+                yield return Callback("heartbeat", JsonUtility.ToJson(heartbeat), success => accepted = success,
+                    payload => accepted = accepted && ApplyObserverRevocations(payload));
                 failures = accepted ? 0 : failures + 1;
                 if (failures >= 3) { manager.Shutdown(); Application.Quit(7); yield break; }
             }
@@ -320,6 +342,20 @@ namespace Actor.Networking
             response.Reason = "Invalid or expired join ticket.";
             string ticket = Encoding.UTF8.GetString(request.Payload);
             if (!gameplayLoaded) { ApprovalRejected(request.ClientNetworkId, "gameplay-not-ready"); return; }
+            if (ticket.StartsWith(ObserverTicketCodec.WirePrefix, StringComparison.Ordinal))
+            {
+                if (GameMode != "SocialDeduction" || !ObserverTicketCodec.TryVerify(ticket, secret, out string observerPayload)) return;
+                ObserverTicketClaims observer;
+                try { observer = JsonUtility.FromJson<ObserverTicketClaims>(observerPayload); }
+                catch (ArgumentException) { return; }
+                long observerNow = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if (!ObserverTicketCodec.ClaimsMatch(observer, matchId, gameVersion, protocolVersion, observerNow)) return;
+                var scope = new AgentsArena.ActorProtocol.V1.BroadcastScope { BroadcastSessionId = observer.broadcastSessionId,
+                    MatchId = observer.lobbyId, ObserverId = observer.observerId, ConnectionGeneration = observer.connectionGeneration, ViewEpoch = 1 };
+                if (!broadcastObservers.Admit(request.ClientNetworkId, scope, observer.nonce, observer.expiresAt, observerNow)) return;
+                response.Approved = true; response.CreatePlayerObject = false; response.Reason = "";
+                return; // Never touch player approvals, capacity, slots, resume or RNG.
+            }
             if (!JoinTicketCodec.TryVerify(ticket, secret, out string payload))
             { ApprovalRejected(request.ClientNetworkId, "ticket-invalid"); return; }
             JoinTicketClaims claims;
@@ -367,8 +403,12 @@ namespace Actor.Networking
 
         private void OnConnected(ulong clientId)
         {
-            Diagnostic("ngo-connected", $"client={clientId} players={manager.ConnectedClientsIds.Count}");
-            if (manager.IsServer) Debug.Log($"ACTOR_PLAYER_CONNECTED client={clientId} players={manager.ConnectedClientsIds.Count}");
+            if (manager.IsServer && IsObserver(clientId)) Debug.Log("ACTOR_OBSERVER_CONNECTED");
+            else
+            {
+                Diagnostic("ngo-connected", $"client={clientId} players={approvals.Count}");
+                if (manager.IsServer) Debug.Log($"ACTOR_PLAYER_CONNECTED client={clientId} players={approvals.Count}");
+            }
             if (!manager.IsClient || clientId != manager.LocalClientId) return;
             IsResuming = false;
             if (lobbyCamera != null) lobbyCamera.gameObject.SetActive(false);
@@ -377,16 +417,18 @@ namespace Actor.Networking
 
         private void OnDisconnected(ulong clientId)
         {
-            Diagnostic("ngo-disconnected", $"client={clientId} event={transport.DisconnectEvent} players={manager.ConnectedClientsIds.Count}");
             if (manager.IsServer)
             {
+                if (IsObserver(clientId)) { broadcastObservers.Remove(clientId); Debug.Log("ACTOR_OBSERVER_DISCONNECTED"); return; }
                 if (approvals.TryGetValue(clientId, out var lost) && retainedActors.TryGetValue(lost.actorId ?? "", out var player)
                     && player != null && player.IsSpawned) player.GetComponent<NetworkCharacter>().HaltForTransportLoss();
                 resumeRegistry?.Disconnected(clientId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
                 approvals.Remove(clientId); spawnSlots.Remove(clientId);
-                Debug.Log($"ACTOR_PLAYER_DISCONNECTED client={clientId} players={manager.ConnectedClientsIds.Count}");
+                Diagnostic("ngo-disconnected", $"client={clientId} event={transport.DisconnectEvent} players={approvals.Count}");
+                Debug.Log($"ACTOR_PLAYER_DISCONNECTED client={clientId} players={approvals.Count}");
                 return;
             }
+            Diagnostic("ngo-disconnected", $"client={clientId} event={transport.DisconnectEvent}");
             if (clientId != manager.LocalClientId || returningToLobby) return;
             string reason = manager.DisconnectReason;
             StartCoroutine(ReturnToLobby(string.IsNullOrEmpty(reason) ? "Connection was lost. You can reconnect from the lobby." : reason));
@@ -460,7 +502,7 @@ namespace Actor.Networking
             return result.ToString();
         }
 
-        private IEnumerator Callback(string operation, string body, Action<bool> result)
+        private IEnumerator Callback(string operation, string body, Action<bool> result, Action<string> response = null)
         {
             using (var request = new UnityWebRequest(internalApi.TrimEnd('/') + "/internal/game-servers/" + matchId + "/" + operation, "POST"))
             {
@@ -471,7 +513,23 @@ namespace Actor.Networking
                 request.SetRequestHeader("X-Actor-Match-Secret", Convert.ToBase64String(secret));
                 yield return request.SendWebRequest();
                 result(request.result == UnityWebRequest.Result.Success);
+                if (request.result == UnityWebRequest.Result.Success) response?.Invoke(request.downloadHandler.text);
             }
+        }
+
+        private bool ApplyObserverRevocations(string payload)
+        {
+            if (string.IsNullOrEmpty(payload)) return true; // compatibility with a pre-observer control plane.
+            if (payload.Length > 16384) return false;
+            HeartbeatReply reply;
+            try { reply = JsonUtility.FromJson<HeartbeatReply>(payload); }
+            catch (ArgumentException) { return false; }
+            if (reply == null || reply.revokedObserverSessions == null || reply.revokedObserverSessions.Length > 128
+                || reply.revokedObserverSessions.Any(s => !BroadcastObserverRules.Id(s))) return false;
+            foreach (string session in reply.revokedObserverSessions)
+                foreach (ulong client in broadcastObservers.Revoke(session))
+                    if (manager.ConnectedClients.ContainsKey(client)) manager.DisconnectClient(client, "Observer session ended.");
+            return true;
         }
 
         public void FinishMatch()
@@ -491,7 +549,9 @@ namespace Actor.Networking
             int index = Array.IndexOf(args, name);
             return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
         }
-        [Serializable] private sealed class Heartbeat { public int currentPlayers; public string serverState; public string[] connectedNonces, connectedActorIds; }
+        [Serializable] private sealed class Heartbeat { public int currentPlayers; public string serverState; public string[] connectedNonces, connectedActorIds; public HeartbeatObserver[] connectedObserverSessions; }
+        [Serializable] private sealed class HeartbeatObserver { public string broadcastSessionId, observerId; public ulong connectionGeneration; }
+        [Serializable] private sealed class HeartbeatReply { public string[] revokedObserverSessions; }
         [Serializable] private sealed class ResumeConfiguration { public long ReconnectGraceMs = 30000; }
 
         private void OnDestroy()

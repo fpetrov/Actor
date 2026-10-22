@@ -12,9 +12,17 @@ public sealed record CreateLobbyRequest(string DisplayName, int? MaxPlayers, str
 public sealed record JoinLobbyRequest(string PlayerName, string GameVersion, string ProtocolVersion);
 public sealed record ResumeLobbyRequest(string ResumeCredential, string GameVersion, string ProtocolVersion)
 { public override string ToString() => "ResumeLobbyRequest [private]"; }
+public sealed record ObserveLobbyRequest(string BroadcastSessionId, string GameVersion, string ProtocolVersion);
+public sealed record ObserverAdmissionResult(string LobbyId, string RoomCode, string Host, int Port,
+    string JoinTicket, DateTimeOffset ExpiresAt, string GameMode, string BroadcastSessionId,
+    string ObserverId, ulong ConnectionGeneration)
+{ public override string ToString() => "ObserverAdmissionResult [private]"; }
 public sealed record JoinLobbyResult(string LobbyId, string RoomCode, string Host, int Port, string JoinTicket, DateTimeOffset ExpiresAt, string GameMode = "Sandbox", bool Resume = false)
 { public override string ToString() => "JoinLobbyResult [private]"; }
-public sealed record GameServerHeartbeat(int CurrentPlayers, string ServerState, string[]? ConnectedNonces, string[]? ConnectedActorIds = null);
+public sealed record ObserverConnectionBinding(string BroadcastSessionId, string ObserverId, ulong ConnectionGeneration);
+public sealed record GameServerHeartbeat(int CurrentPlayers, string ServerState, string[]? ConnectedNonces,
+    string[]? ConnectedActorIds = null, ObserverConnectionBinding[]? ConnectedObserverSessions = null);
+public sealed record GameServerHeartbeatResult(string[] RevokedObserverSessions);
 public sealed record LobbySummary(string LobbyId, string RoomCode, string DisplayName, string Status, DateTimeOffset CreatedAt,
     string GameVersion, string ProtocolVersion, string PublicHost, int GamePort, int CurrentPlayers, int MaxPlayers, string GameMode = "Sandbox")
 {
@@ -32,6 +40,14 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
         public byte[] Secret { get; } = secret;
         public Dictionary<string, DateTimeOffset> PendingTickets { get; } = new();
         public HashSet<string> ConnectedActors { get; } = new(StringComparer.Ordinal);
+        public Dictionary<string, ObserverIdentity> Observers { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> RetiredObservers { get; } = new(StringComparer.Ordinal);
+    }
+    private sealed class ObserverIdentity
+    {
+        public string Id { get; } = Guid.NewGuid().ToString("N");
+        public ulong Generation { get; set; }
+        public bool Revoking { get; set; }
     }
     private readonly SemaphoreSlim gate = new(1, 1);
     private readonly Dictionary<Guid, Match> matches = new();
@@ -191,6 +207,82 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
         finally { gate.Release(); }
     }
 
+    public async Task<ObserverAdmissionResult> ObserveAsync(string roomCode, ObserveLobbyRequest request,
+        string? operatorKey, CancellationToken cancellationToken)
+    {
+        AuthenticateBroadcastOperator(operatorKey);
+        ValidateVersions(request.GameVersion, request.ProtocolVersion);
+        if (!Guid.TryParseExact(request.BroadcastSessionId, "N", out _))
+            throw new LobbyException(400, "invalid_broadcast_session", "A canonical broadcast session is required.");
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            ThrowIfDraining();
+            Match match = Find(roomCode); Lobby lobby = match.Lobby;
+            if (lobby.GameMode != "SocialDeduction" || lobby.Status is not (LobbyStatus.Ready or LobbyStatus.Running))
+                throw new LobbyException(409, "observer_unavailable", "This match cannot be observed.");
+            if (match.RetiredObservers.Contains(request.BroadcastSessionId)
+                || match.Observers.TryGetValue(request.BroadcastSessionId, out var prior) && prior.Revoking)
+                throw new LobbyException(409, "observer_session_retired", "This broadcast session has been stopped.");
+            if (!match.Observers.TryGetValue(request.BroadcastSessionId, out var identity))
+            {
+                // Observer identities and player reservations have distinct bounded registries.
+                // Reconnects reuse the broadcast session and advance its generation.
+                if (match.Observers.Count >= 2)
+                    throw new LobbyException(409, "observer_capacity_reached", "Observer identities are occupied for this match.");
+                if (match.RetiredObservers.Count + match.Observers.Count >= 128)
+                    throw new LobbyException(409, "observer_session_limit", "The observer session limit for this match was reached.");
+                identity = new ObserverIdentity();
+                match.Observers.Add(request.BroadcastSessionId, identity);
+            }
+            if (identity.Generation >= ObserverTicketCodec.MaximumConnectionGeneration)
+                throw new LobbyException(409, "observer_generation_exhausted", "Observer reconnect limit reached.");
+            identity.Generation++;
+            DateTimeOffset expires = clock.GetUtcNow().AddSeconds(Math.Min(settings.JoinTicketLifetime,
+                ObserverTicketCodec.MaximumLifetimeSeconds));
+            var claims = new ObserverTicketClaims
+            {
+                audience = ObserverTicketCodec.Audience, lobbyId = lobby.LobbyId.ToString("N"),
+                broadcastSessionId = request.BroadcastSessionId, observerId = identity.Id,
+                connectionGeneration = identity.Generation, gameVersion = lobby.GameVersion,
+                protocolVersion = lobby.ProtocolVersion, expiresAt = expires.ToUnixTimeSeconds(),
+                nonce = Guid.NewGuid().ToString("N")
+            };
+            string ticket = ObserverTicketCodec.Sign(System.Text.Json.JsonSerializer.Serialize(claims,
+                new System.Text.Json.JsonSerializerOptions { IncludeFields = true }), match.Secret);
+            return new ObserverAdmissionResult(claims.lobbyId, lobby.RoomCode, lobby.PublicHost, lobby.GamePort,
+                ticket, expires, lobby.GameMode, claims.broadcastSessionId, claims.observerId, claims.connectionGeneration);
+        }
+        finally { gate.Release(); }
+    }
+
+    public async Task ReleaseObserverAsync(string roomCode, string broadcastSessionId, string? operatorKey,
+        CancellationToken cancellationToken)
+    {
+        AuthenticateBroadcastOperator(operatorKey);
+        if (!Guid.TryParseExact(broadcastSessionId, "N", out _))
+            throw new LobbyException(400, "invalid_broadcast_session", "A canonical broadcast session is required.");
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            Match match = Find(roomCode);
+            // A subsequent authenticated server heartbeat acknowledges actual
+            // disconnect before the reservation becomes reusable.
+            if (match.Observers.TryGetValue(broadcastSessionId, out var identity)) identity.Revoking = true;
+        }
+        finally { gate.Release(); }
+    }
+
+    private void AuthenticateBroadcastOperator(string? incoming)
+    {
+        if (settings.BroadcastOperatorKey.Length < 32 || incoming == null || incoming.Length is < 32 or > 512)
+            throw new LobbyException(403, "invalid_broadcast_operator", "Broadcast observer admission is unavailable.");
+        byte[] expected = SHA256.HashData(Encoding.UTF8.GetBytes(settings.BroadcastOperatorKey));
+        byte[] supplied = SHA256.HashData(Encoding.UTF8.GetBytes(incoming));
+        if (!CryptographicOperations.FixedTimeEquals(expected, supplied))
+            throw new LobbyException(403, "invalid_broadcast_operator", "Broadcast observer admission is unavailable.");
+    }
+
     private void ThrowIfDraining()
     {
         // Checked INSIDE the same mutation gate as allocation/admission. A final
@@ -217,7 +309,7 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
         finally { gate.Release(); }
     }
 
-    public async Task HeartbeatAsync(Guid lobbyId, string? secret, GameServerHeartbeat heartbeat, CancellationToken cancellationToken)
+    public async Task<GameServerHeartbeatResult> HeartbeatAsync(Guid lobbyId, string? secret, GameServerHeartbeat heartbeat, CancellationToken cancellationToken)
     {
         await gate.WaitAsync(cancellationToken);
         try
@@ -230,7 +322,13 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
                 || heartbeat.ConnectedActorIds.Any(id => !Guid.TryParseExact(id, "N", out _))
                 || heartbeat.ConnectedActorIds.Distinct().Count() != heartbeat.ConnectedActorIds.Length))
                 throw new LobbyException(400, "invalid_actor_bindings", "Invalid connected actor bindings.");
-            if (lobby.Status is not (LobbyStatus.Ready or LobbyStatus.Running)) return;
+            if (heartbeat.ConnectedObserverSessions is { } observed && (observed.Length > 2
+                || observed.Any(x => x == null || !Guid.TryParseExact(x.BroadcastSessionId, "N", out _)
+                    || !Guid.TryParseExact(x.ObserverId, "N", out _) || x.ConnectionGeneration is < 1
+                    or > ObserverTicketCodec.MaximumConnectionGeneration)
+                || observed.Select(x => x.BroadcastSessionId).Distinct().Count() != observed.Length))
+                throw new LobbyException(400, "invalid_observer_bindings", "Invalid connected observer bindings.");
+            if (lobby.Status is not (LobbyStatus.Ready or LobbyStatus.Running)) return new([]);
             if (lobby.CurrentPlayers != heartbeat.CurrentPlayers)
                 logger.LogInformation("PlayerCountChanged {LobbyId} {CurrentPlayers}", lobbyId, heartbeat.CurrentPlayers);
             if (lobby.CurrentPlayers > 0 && heartbeat.CurrentPlayers == 0) lobby.LastEmptyAt = clock.GetUtcNow();
@@ -241,7 +339,21 @@ public sealed class LobbyManager(ILobbyRepository repository, IGameServerAllocat
             foreach (string nonce in heartbeat.ConnectedNonces ?? []) match.PendingTickets.Remove(nonce);
             match.ConnectedActors.Clear();
             foreach (string actor in heartbeat.ConnectedActorIds ?? []) match.ConnectedActors.Add(actor);
+            if (heartbeat.ConnectedObserverSessions != null)
+            {
+                var connected = heartbeat.ConnectedObserverSessions.Select(x => x.BroadcastSessionId).ToHashSet(StringComparer.Ordinal);
+                foreach (string session in match.Observers.Where(x => x.Value.Revoking && !connected.Contains(x.Key)).Select(x => x.Key).ToArray())
+                {
+                    match.Observers.Remove(session);
+                    match.RetiredObservers.Add(session);
+                }
+            }
             await repository.SaveAsync(lobby, cancellationToken);
+            // Retained tombstones also cover tickets that were issued before
+            // DELETE but had not connected at the empty heartbeat. Otherwise
+            // the server could never learn that their future admission is revoked.
+            return new(match.RetiredObservers.Concat(match.Observers.Where(x => x.Value.Revoking)
+                .Select(x => x.Key)).Order(StringComparer.Ordinal).ToArray());
         }
         finally { gate.Release(); }
     }

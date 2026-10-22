@@ -1,0 +1,32 @@
+{
+  "channel": "fedorr_codex",
+  "game_id": "agents-arena",
+  "game_version": "0.10.0",
+  "admission_protocol": "4",
+  "operator_forward_url": "http://127.0.0.1:56251",
+  "ssh": {
+    "host": "5.181.134.236",
+    "user": "root",
+    "port": 22,
+    "identity_file": "~/.ssh/agents-arena",
+    "local_port": 56251,
+    "remote_port": 5080
+  },
+  "client_manifest": "~/Downloads/actor-release/client-manifest.json",
+  "tts_python": "~/.local/share/actor-broadcast/tts-venv/bin/python",
+  "tts_model_path": "~/.cache/huggingface/hub/models--mlx-community--Qwen3-TTS-12Hz-1.7B-CustomVoice-bf16/snapshots/52f4770fd9726457eae3d3b6aa92047a25a10776",
+  "codex_home": "~/.actor/broadcast/codex-home",
+  "twitch_client_id": "",
+  "chat_enabled": true,
+  "obs_endpoint": "ws://127.0.0.1:4455",
+  "firewall_socket": "/private/var/db/actor-broadcast-firewall-run/control.sock",
+  "protected_obs_backup": "~/.local/state/actorctl/broadcast/obs-backup",
+  "state_directory": "~/.local/state/actorctl/broadcast",
+  "ffmpeg_executable": "/opt/homebrew/bin/ffmpeg",
+  "commentary": {
+    "idle": {
+      "enabled": true,
+      "after_seconds": 20.0
+    }
+  }
+}

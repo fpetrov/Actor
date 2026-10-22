@@ -9,5 +9,6 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
     <Compile Include="../../shared/com.actor.contracts/Runtime/JoinTicketCodec.cs" Link="Contracts/JoinTicketCodec.cs" />
     <Compile Include="../../shared/com.actor.contracts/Runtime/ResumeCredentialCodec.cs" Link="Contracts/ResumeCredentialCodec.cs" />
+    <Compile Include="../../shared/com.actor.contracts/Runtime/ObserverTicketCodec.cs" Link="Contracts/ObserverTicketCodec.cs" />
   </ItemGroup>
 </Project>

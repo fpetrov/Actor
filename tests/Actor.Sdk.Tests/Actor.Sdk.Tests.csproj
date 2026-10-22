@@ -25,6 +25,12 @@
     <Compile Include="../../Agents Arena/Assets/Scripts/Networking/ResumeAdmissionRegistry.cs" Link="ArenaGame/ResumeAdmissionRegistry.cs" />
     <Compile Include="../../shared/com.actor.contracts/Runtime/JoinTicketCodec.cs" Link="Admission/JoinTicketCodec.cs" />
     <Compile Include="../../shared/com.actor.contracts/Runtime/ResumeCredentialCodec.cs" Link="Admission/ResumeCredentialCodec.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Networking/BroadcastObserverRules.cs" Link="ArenaGame/BroadcastObserverRules.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Networking/BroadcastViewProjector.cs" Link="ArenaGame/BroadcastViewProjector.cs" />
+    <Compile Include="../../shared/com.actor.contracts/Runtime/ObserverTicketCodec.cs" Link="Admission/ObserverTicketCodec.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Networking/BroadcastPresentationRules.cs" Link="ArenaGame/BroadcastPresentationRules.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Presentation/TemporalFogRules.cs" Link="ArenaPresentation/TemporalFogRules.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Actor/BroadcastGameAdapter.cs" Link="ArenaGame/BroadcastGameAdapter.cs" />
     <Using Include="Xunit" />
   </ItemGroup>
 </Project>

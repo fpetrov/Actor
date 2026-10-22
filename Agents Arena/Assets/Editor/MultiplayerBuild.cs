@@ -104,7 +104,7 @@ namespace Actor.Editor
             if (string.IsNullOrWhiteSpace(apiUrl) && File.Exists("Verification/client-api-url.txt"))
                 apiUrl = File.ReadAllText("Verification/client-api-url.txt").Trim();
             if (!string.IsNullOrWhiteSpace(apiUrl)) settings.apiBaseUrl = apiUrl;
-            settings.gameVersion = "0.9.0";
+            settings.gameVersion = "0.10.0";
             settings.protocolVersion = "4";
             EditorUtility.SetDirty(settings);
             string listPath = "Assets/Settings/NetworkPrefabs.asset";
@@ -170,7 +170,7 @@ namespace Actor.Editor
             RuntimeUIAssets.Prepare();
             var settings = AssetDatabase.LoadAssetAtPath<LobbyClientSettings>("Assets/Settings/LobbyClient.asset");
             if (settings == null) throw new InvalidOperationException("Prepare multiplayer assets first.");
-            settings.gameVersion = "0.9.0"; settings.protocolVersion = "4";
+            settings.gameVersion = "0.10.0"; settings.protocolVersion = "4";
             EditorUtility.SetDirty(settings);
             PlayerSettings.bundleVersion = settings.gameVersion;
             PlayerSettings.defaultScreenWidth = 800; PlayerSettings.defaultScreenHeight = 600;

@@ -1,0 +1,137 @@
+syntax = "proto3";
+package actor.extensions.agents_arena.v1;
+option csharp_namespace = "AgentsArena.ActorProtocol.V1";
+import "extensions/agents_arena/v1/social.proto";
+
+// Separate observer audience. No player identity, owner state or credentials.
+message BroadcastScope {
+  string broadcast_session_id = 1;
+  string match_id = 2;
+  string observer_id = 3;
+  uint64 connection_generation = 4;
+  uint64 view_epoch = 5;
+}
+message BroadcastCamera {
+  string anchor_id = 1;
+  string focus_actor_id = 2;
+  float x = 3;
+  float y = 4;
+  float visibility_radius = 5;
+  float orthographic_size = 6;
+  float aspect = 7;
+}
+message BroadcastActor {
+  string actor_id = 1;
+  string display_name = 2;
+  float x = 3;
+  float y = 4;
+  float velocity_x = 5;
+  float velocity_y = 6;
+  uint32 facing = 7;
+  uint32 cosmetic_index = 8;
+}
+message BroadcastBody {
+  string body_id = 1;
+  string victim_actor_id = 2;
+  string victim_display_name = 3;
+  float x = 4;
+  float y = 5;
+  uint32 cosmetic_index = 6;
+}
+// A dated permitted fact or attributed public claim, never private reasoning.
+enum BroadcastFactKind {
+  BROADCAST_FACT_KIND_UNSPECIFIED = 0;
+  BROADCAST_FACT_KIND_OBSERVATION = 1;
+  BROADCAST_FACT_KIND_PLAYER_CLAIM = 2;
+}
+message BroadcastEditorialFact {
+  string evidence_id = 1;
+  uint64 version = 2;
+  BroadcastFactKind kind = 3;
+  string source_event_id = 4;
+  repeated string subject_ids = 5; // <=2, permitted identities only.
+  string predicate = 6;
+  int64 observed_at_unix_ms = 7;
+  int64 retention_expires_at_unix_ms = 8;
+  uint32 priority = 9;
+  string topic_key = 10;
+  bool unresolved = 11;
+  string text = 12; // <=512 UTF8 bytes; only attributed discussion text.
+  string room_id = 13;
+  string actor_id = 14;
+  string target_actor_id = 15;
+  sint64 value = 16;
+  string label = 17;
+}
+// Public meeting disclosure excludes every own/private ballot field.
+message BroadcastMeeting {
+  string meeting_id = 1;
+  repeated SocialMeetingParticipant participants = 2; // <=6, only public roll-call.
+  repeated SocialVoteTally result = 3; // Only after authoritative resolution.
+  string ejected_actor_id = 4;
+  string resolution = 5;
+}
+message BroadcastFinalPlayer {
+  string actor_id = 1;
+  string display_name = 2;
+  SocialAlignment alignment = 3; // Only in presented authoritative GameOver.
+  SocialLife life = 4;
+}
+// Server-projected complete replacement. There is deliberately NO replay,
+// global hidden-action sequence/count, private task or initiating actor field.
+message BroadcastView {
+  BroadcastScope scope = 1;
+  uint64 sequence = 2;
+  uint64 semantic_revision = 3;
+  int64 observed_at_unix_ms = 4;
+  int64 expires_at_unix_ms = 5;
+  BroadcastCamera camera = 6;
+  SocialPhase phase = 7;
+  uint64 phase_revision = 8;
+  int64 phase_ends_at_unix_ms = 9;
+  uint32 crew_tasks_completed = 10;
+  uint32 task_threshold = 11;
+  repeated BroadcastActor actors = 12; // <=6, current radius+LOS+viewport only.
+  repeated BroadcastBody bodies = 13; // <=6, no killer identity.
+  BroadcastMeeting meeting = 14;
+  bool emergency_active = 15;
+  int64 emergency_ends_at_unix_ms = 16;
+  string emergency_room_id = 17;
+  repeated BroadcastEditorialFact facts = 18; // <=96, only this view's history.
+  repeated string revoked_evidence_ids = 19; // <=96.
+  bool terminal = 20;
+  SocialAlignment winning_side = 21;
+  string win_reason = 22;
+  repeated BroadcastFinalPlayer final_players = 23; // <=6, terminal-only.
+}
+message BroadcastEvidenceRef {
+  string evidence_id = 1;
+  uint64 version = 2;
+}
+// Native client end-of-frame acknowledgement, NOT OBS capture or audibility.
+message BroadcastPresentationAck {
+  BroadcastScope scope = 1;
+  uint64 rendered_sequence = 2;
+  uint64 frame_counter = 3;
+  double presented_at_monotonic_ms = 4;
+  uint32 width = 5;
+  uint32 height = 6;
+  repeated BroadcastEvidenceRef presented_evidence = 7; // <=96 unique IDs, exact frame subset.
+}
+message BroadcastPresentedViewObservation {
+  BroadcastView view = 1;
+  BroadcastPresentationAck presentation = 2;
+}
+message BroadcastSelectViewCommand {
+  BroadcastScope scope = 1;
+  string correlation_id = 2;
+  string anchor_id = 3; // main-hall|engineering|security|storage, OR focus ID.
+  string focus_actor_id = 4; // Must already be in the current permitted view.
+  int64 expires_at_unix_ms = 5;
+}
+message BroadcastViewSelectionResultEvent {
+  BroadcastScope scope = 1;
+  string correlation_id = 2;
+  bool accepted = 3;
+  string reason_code = 4; // Uniform denial; never hidden target information.
+}

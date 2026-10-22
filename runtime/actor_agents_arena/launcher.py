@@ -21,6 +21,6 @@ def arguments(*,room,player_name,endpoint,report,log,headless,api_url):
 
 
 def game_profile():
-    return GameLaunchProfile(game_id="agents-arena",game_version="0.9.0",match_policy="agents-arena",
+    return GameLaunchProfile(game_id="agents-arena",game_version="0.10.0",match_policy="agents-arena",
         default_brain="codex",client_candidates=("build/agents-arena-client/AgentsArena.app/Contents/MacOS/Agents Arena",
         "/Applications/AgentsArena.app/Contents/MacOS/Agents Arena"),client_arguments=arguments)

@@ -65,6 +65,7 @@ namespace Actor.GameAdapter
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "--broadcast-observer") >= 0) return;
             if (FindAnyObjectByType<ActorControlController>() != null) return;
             var root = new GameObject("ACTOR Client Control");
             DontDestroyOnLoad(root);

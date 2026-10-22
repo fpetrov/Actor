@@ -32,14 +32,9 @@ namespace Actor.Presentation
         private void LateUpdate()
         {
             if(view==null)return;
-            var own=NetworkSocialMatch.LocalOwner;
-            bool allowed=own!=null&&own.IsSpawned&&own.IsOwner&&own.IsClient&&own.HasOwnState
-                &&SocialVisibilitySystem.IsSocial(own.NetworkManager);
+            bool allowed=PresentationSight.TryGet(out eye,out float radius,out _,true);
             if(!allowed){view.enabled=false;return;}
-            var character=own.GetComponent<NetworkCharacter>();var capsule=own.GetComponent<CapsuleCollider2D>();
-            if(character==null||capsule==null){view.enabled=false;return;}
-            eye=(Vector2)character.PresentationPosition+capsule.offset;
-            float radius=(float)own.State.VisibilityRadius;var bounds=view.bounds;
+            var bounds=view.bounds;
             if(!float.IsFinite(eye.x)||!float.IsFinite(eye.y)||!float.IsFinite(radius)||radius<=0)
             {view.enabled=false;return;}
             if(volume)

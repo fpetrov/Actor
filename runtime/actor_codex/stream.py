@@ -38,7 +38,7 @@ class ToolObservation:
         return self.valid and self.primary_terminal
 
 
-async def collect_turn(sdk, handle, observation, *, primary):
+async def collect_turn(sdk, handle, observation, *, primary, observer=None):
     """Preserve public run() result semantics while also observing item starts.
 
     The initiating handle's SDK subscription buffers from its turn request.
@@ -54,6 +54,10 @@ async def collect_turn(sdk, handle, observation, *, primary):
             if messages > 100000:
                 observation.valid = False
                 raise ActorError("codex_stream_limit", "SDK notification bound exceeded")
+            # Optional local fanout, never a second SDK subscription. The
+            # player path passes no observer and retains its original result.
+            # Only the initiating stream can expose speech without duplicating
+            # deltas from a joined handle. The observer must be bounded/sync.
             payload = event.payload
             if event.method in ("item/started", "item/completed"):
                 if getattr(payload, "turn_id", None) != handle.id:
@@ -73,6 +77,8 @@ async def collect_turn(sdk, handle, observation, *, primary):
                     observation.valid = False
                     continue
                 terminal = payload.turn
+            if primary and observer is not None:
+                observer(event)
         if terminal is None:
             raise RuntimeError("SDK turn completed event not received")
         status = getattr(terminal.status, "value", terminal.status)

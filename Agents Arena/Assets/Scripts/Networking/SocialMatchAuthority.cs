@@ -127,6 +127,8 @@ namespace Actor.Networking
             meeting = new SocialMeetingObservation { MatchId = match };
         }
         internal string MatchId => match;
+        // Server-only neutral animation notice. No real/fake task distinction.
+        internal event Action<string, string, string, float, float, long> BroadcastActivity;
         internal bool Started => state.StartedAtUnixMs > 0;
         internal bool IsTerminal => state.Phase == SocialPhase.GameOver;
         internal SocialPhase Phase => state.Phase;
@@ -599,6 +601,8 @@ namespace Actor.Networking
         }
         private void Activity(Work work, string activity, List<Delivery> output)
         {
+            if (players.TryGetValue(work.Actor, out var performer))
+                BroadcastActivity?.Invoke(work.Actor, work.Terminal, activity, (float)performer.Pose.X, (float)performer.Pose.Y, now);
             foreach (string id in players.Keys.Where(id => id != work.Actor && IsVisible(id, work.Actor)).ToArray())
                 output.Add(new Delivery(id, new SocialVisibleActivityEvent { MatchId = match, ObserverActorId = id, ActorId = work.Actor,
                     TerminalEntityId = work.Terminal, Activity = activity, ObservedAtUnixMs = now, ObservedRevision = NextVisibleRevision(id) }));

@@ -1,0 +1,18 @@
+OpenAI Codex
+Copyright 2025 OpenAI
+
+This project includes code derived from [Ratatui](https://github.com/ratatui/ratatui), licensed under the MIT license.
+Copyright (c) 2016-2022 Florian Dehau
+Copyright (c) 2023-2025 The Ratatui Developers
+
+ACTOR redistributed data provenance:
+gpt6_luna_policy_model.json is the unchanged gpt-6-luna model object from
+OpenAI Codex rust-v0.162.1, codex-rs/models-manager/models.json, reformatted as
+a standalone JSON object. Source:
+https://github.com/openai/codex/blob/rust-v0.162.1/codex-rs/models-manager/models.json
+The adjacent CODEX-LICENSE.txt reproduces that release's Apache-2.0 license.
+The standalone resource SHA-256 is:
+4bb2118cdfa559484e9d78bf23e19150a083a0f4a52ebd770e111fc51ce73c03
+policy.py generates a private capability-restricted copy at runtime; it changes
+only apply_patch_tool_type, shell_type, tool_mode, experimental_supported_tools,
+and multi_agent_version. The official Codex executable is not modified.

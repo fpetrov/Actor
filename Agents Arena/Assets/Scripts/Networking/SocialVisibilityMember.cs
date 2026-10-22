@@ -24,7 +24,9 @@ namespace Actor.Networking
             // is true. In client/server mode false also omits the owner, whose
             // explicit grant is handled by scene sync or the next safe refresh.
             target.SpawnWithObservers = false;
-            target.CheckObjectVisibility = client => visibility != null && visibility.CanObserve(client, target);
+            var session = networkManager.GetComponent<MatchSession>();
+            target.CheckObjectVisibility = client => session?.IsObserver(client) != true
+                && visibility != null && visibility.CanObserve(client, target);
         }
 
         public override void OnNetworkSpawn()
