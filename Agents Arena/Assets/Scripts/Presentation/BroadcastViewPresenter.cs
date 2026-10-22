@@ -155,11 +155,11 @@ namespace Actor.Presentation
             if (layer == null) return;
             if (hud == null)
             {
-                hud = ArenaUI.Element("card", layer); hud.pickingMode = PickingMode.Ignore;
-                hud.style.position = Position.Absolute; hud.style.left = 16; hud.style.top = 82; hud.style.width = 260;
+                hud = ArenaUI.Element("panel", layer); hud.pickingMode = PickingMode.Ignore;
+                hud.style.position = Position.Absolute; hud.style.left = 16; hud.style.top = 16; hud.style.width = 260;
                 publicState = ReadableLabel(hud);
-                notesHud = ArenaUI.Element("card", layer); notesHud.pickingMode = PickingMode.Ignore;
-                notesHud.style.position = Position.Absolute; notesHud.style.right = 16; notesHud.style.top = 82;
+                notesHud = ArenaUI.Element("panel", layer); notesHud.pickingMode = PickingMode.Ignore;
+                notesHud.style.position = Position.Absolute; notesHud.style.right = 16; notesHud.style.top = 16;
                 for (int i = 0; i < factLabels.Length; i++) factLabels[i] = ReadableLabel(notesHud);
             }
             ArenaUI.Show(notesHud, true);

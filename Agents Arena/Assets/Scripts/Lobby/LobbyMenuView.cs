@@ -88,7 +88,8 @@ namespace Actor.Lobby
         private void Update()
         {
             if (root == null) Build(); if (root == null) return;
-            ArenaUI.Show(root, Visible); ArenaUI.Show(connection, !Visible);
+            bool observer = GetComponent<global::Actor.Networking.MatchSession>()?.IsBroadcastObserver == true;
+            ArenaUI.Show(root, Visible); ArenaUI.Show(connection, !Visible && !observer);
             status.text = Status; connected.text = "ROOM " + ConnectedRoom + "  ·  " + PlayerName;
             name.SetValueWithoutNotify(PlayerName); roomName.SetValueWithoutNotify(NewRoomName); roomCode.SetValueWithoutNotify(DirectRoomCode);
             mode.SetValueWithoutNotify(GameMode == "SocialDeduction" ? "Social Deduction · 4–6" : "Sandbox / Investigation");
@@ -113,7 +114,7 @@ namespace Actor.Lobby
                     button.SetEnabled(!Busy && !ResumeBusy && (room.status == "Ready" || room.status == "Running"));
                 }
             }
-            if (!Visible && !tutorialOffered && PlayerPrefs.GetInt("Arena.TutorialSeen", 0) == 0)
+            if (!Visible && !observer && !tutorialOffered && PlayerPrefs.GetInt("Arena.TutorialSeen", 0) == 0)
             { tutorialOffered = true; ArenaUI.Tutorial(); }
         }
         private void OnDisable() { root?.RemoveFromHierarchy(); connection?.RemoveFromHierarchy(); root = connection = null; }

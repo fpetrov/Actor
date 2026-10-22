@@ -232,7 +232,7 @@ of production acceptance:
 | Release/helper script tests | 146 passed plus 96 subtests | No administrator/PF mutation in these tests |
 | Generated schemas | 56 fresh artifacts | Checked after extension 0.7.0 changes |
 | Pinned actual SDK against local Responses fixture | 4 passed | Tool-positive controls, zero-tool policy, and full provider composition; authentication/catalog/output are synthetic |
-| Clean installed Runtime wheel | 1,011 passed, no skips | Includes independent renderer Safe and OBS coverage checks; no provider SDK/authentication/model installed |
+| Clean installed Runtime wheel | 1,014 passed, no skips | Includes independent renderer Safe, OBS coverage checks and startup-window stabilization; no provider SDK/authentication/model installed |
 | Unity release client and Linux server | Both clean-source builds passed at `7adf933`; macOS codesign verification passed | Later integration fixes affect the Python runtime; these binaries retain their original source identity |
 | Real release observer against isolated remote staging | 76 received frames, zero player slots/commands; clean owned shutdown | Headless: **no presentation ACK**, no cognition/audio/OBS |
 | Real Codex, 20 authored public scenarios | 20/20 completed; first segment p50 1.819 s, p95 5.098 s; 156,848 input / 1,274 output tokens | Text-only; measured before the final tool-policy hardening |
@@ -298,3 +298,11 @@ The renderer now has an independent opaque heartbeat Safe screen. OBS audits its
 full-canvas placement, normal blending and stacking above game capture. This is
 visual containment, not an independent `StopStream`; actual OBS fault recording
 remains required. See [renderer safety](broadcast-renderer-safety.md).
+
+The rebuilt native composition reached observer readiness in 14.378 s (BF16 ready
+in 9.244 s). Actual OBS 32.2.2 then exposed another integration mismatch:
+`GetProfileList.profiles` is an array of strings. The adapter and fixtures now
+match that documented wire shape and reject malformed lists. This checkpoint
+still did not reach audio-route acceptance. Native observer HUDs now use the
+existing dark UI panels; Human controls and automatic tutorial are suppressed
+only in the read-only observer, without changing Human preferences.

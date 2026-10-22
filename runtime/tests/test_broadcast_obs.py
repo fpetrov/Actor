@@ -21,6 +21,7 @@ class Graph:
     def __init__(self):
         self.calls = []; self.active = False; self.filters = {}; self.special = {}; self.foreign = False
         self.current_scene = "ACTOR Match"
+        self.profiles = {"currentProfileName": "ACTOR Broadcast", "profiles": ["ACTOR Broadcast"]}
         self.video_settings = {"baseWidth": 1280, "baseHeight": 720}
         self.transform = {"positionX": 0, "positionY": 0, "rotation": 0, "alignment": 5,
             "boundsType": "OBS_BOUNDS_SCALE_INNER", "boundsAlignment": 0, "boundsWidth": 1280,
@@ -50,7 +51,7 @@ class Graph:
         if kind.endswith("Status"): return {"outputActive": self.active or self.foreign, "outputReconnecting": False}
         if kind == "GetVideoSettings": return self.video_settings
         if kind == "GetSceneCollectionList": return {"currentSceneCollectionName": "ACTOR Broadcast", "sceneCollections": ["ACTOR Broadcast"]}
-        if kind == "GetProfileList": return {"currentProfileName": "ACTOR Broadcast", "profiles": [{"profileName": "ACTOR Broadcast"}]}
+        if kind == "GetProfileList": return copy.deepcopy(self.profiles)
         if kind == "GetSpecialInputs": return self.special
         if kind == "GetInputList": return {"inputs": self.inputs}
         if kind == "GetInputSettings":
@@ -327,6 +328,40 @@ async def test_available_but_active_replay_is_not_treated_as_disabled():
     with pytest.raises(ObsError, match="^obs_foreign_output_active$"):
         await c.require_idle()
     assert not any(kind in ("GetProfileParameter", "GetOutputList") for kind,_ in graph.calls)
+
+
+async def test_actual_profile_string_array_supports_owned_empty_adoption_without_profile_creation():
+    graph = Graph(); graph.inputs = []; graph.settings = {}; graph.current_scene = "ACTOR Preparing"
+    graph.items = {key: [] for key in ObsController.SCENES}
+    c = ObsController(graph, window_guard=lambda _: True, channel_guard=lambda _: True)
+    assert (await c.prepare(WindowBinding(123, 456), URL, protected_backup_confirmed=True, adopt_empty_collection=True)).passed
+    assert not any(kind == "CreateProfile" for kind, _ in graph.calls)
+
+
+@pytest.mark.parametrize("profiles", [None, {},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": None},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": {"ACTOR Broadcast": {}}},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": [{"profileName": "ACTOR Broadcast"}]},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": []},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": [True]},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": [""]},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": ["ACTOR Broadcast", "ACTOR Broadcast"]},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": ["Foreign"]},
+    {"currentProfileName": None, "profiles": ["ACTOR Broadcast"]},
+    {"currentProfileName": "x" * 257, "profiles": ["x" * 257]},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": ["ACTOR Broadcast", "bad\x00name"]},
+    {"currentProfileName": "ACTOR Broadcast", "profiles": ["ACTOR Broadcast"] + [str(i) for i in range(128)]},
+])
+async def test_malformed_or_fictional_profile_shape_fails_before_setup_cleanup_or_audit(profiles):
+    graph = Graph(); graph.profiles = profiles
+    c = ObsController(graph, window_guard=lambda _: True, channel_guard=lambda _: True)
+    with pytest.raises(ObsError, match="^obs_profile_list_invalid$"):
+        await c.prepare(WindowBinding(123, 456), URL, protected_backup_confirmed=True, adopt_empty_collection=True)
+    with pytest.raises(ObsError, match="^obs_profile_list_invalid$"): await c.cleanup_owned_inputs()
+    prepared, _ = controller(graph)
+    audit = await prepared.audit()
+    assert not audit.passed and audit.reason == "obs_profile_list_invalid" and not prepared.route_verified
+    assert all(kind.startswith("Get") for kind, _ in graph.calls)
 
 
 async def test_adopting_root_created_collection_requires_explicit_empty_proof():

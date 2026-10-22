@@ -37,6 +37,20 @@ def authentication(password, salt, challenge):
     return base64.b64encode(hashlib.sha256((secret + challenge).encode()).digest()).decode()
 
 
+def _profile_list(value):
+    # obs-websocket 5.7.4 GetProfileList: profiles is Array<String>, not
+    # profile objects. Bounds are local fail-closed limits, not OBS guarantees.
+    def name(item):
+        return isinstance(item, str) and 1 <= len(item) <= 256 and all(32 <= ord(ch) != 127 for ch in item)
+    if not isinstance(value, dict) or set(value) != {"currentProfileName", "profiles"}:
+        raise ObsError("obs_profile_list_invalid")
+    current, names = value["currentProfileName"], value["profiles"]
+    if (not name(current) or not isinstance(names, list) or not 1 <= len(names) <= 128
+            or not all(name(item) for item in names) or len(set(names)) != len(names) or current not in names):
+        raise ObsError("obs_profile_list_invalid")
+    return current, tuple(names)
+
+
 @dataclass(frozen=True)
 class ObsConnection:
     endpoint: str = "ws://127.0.0.1:4455"
@@ -343,12 +357,13 @@ class ObsController:
             await self.require_idle()
             collections = await self.client.request("GetSceneCollectionList")
             profiles = await self.client.request("GetProfileList")
+            current_profile, profile_names = _profile_list(profiles)
             collection_exists = self.OWNED_NAME in collections.get("sceneCollections", [])
-            profile_exists = any(p.get("profileName") == self.OWNED_NAME for p in profiles.get("profiles", []))
+            profile_exists = self.OWNED_NAME in profile_names
             if collection_exists or profile_exists:
                 if (adopt_empty_collection is not True or not collection_exists or not profile_exists
                         or collections.get("currentSceneCollectionName") != self.OWNED_NAME
-                        or profiles.get("currentProfileName") != self.OWNED_NAME):
+                        or current_profile != self.OWNED_NAME):
                     raise ObsError("obs_existing_collection_requires_explicit_recovery")
                 if (await self.client.request("GetInputList")).get("inputs") != []:
                     raise ObsError("obs_adopt_collection_not_empty")
@@ -357,7 +372,7 @@ class ObsController:
                 for scene in (await self.client.request("GetSceneList"))["scenes"]:
                     if (await self.client.request("GetSceneItemList", {"sceneName": scene["sceneName"]})).get("sceneItems") != []:
                         raise ObsError("obs_adopt_collection_not_empty")
-            self._original = (collections["currentSceneCollectionName"], profiles["currentProfileName"])
+            self._original = (collections["currentSceneCollectionName"], current_profile)
             try:
                 if not profile_exists: await self.client.request("CreateProfile", {"profileName": self.OWNED_NAME})
                 if not collection_exists: await self.client.request("CreateSceneCollection", {"sceneCollectionName": self.OWNED_NAME})
@@ -419,8 +434,9 @@ class ObsController:
         await self.require_idle()
         collections = await self.client.request("GetSceneCollectionList")
         profiles = await self.client.request("GetProfileList")
+        current_profile, _ = _profile_list(profiles)
         if (collections.get("currentSceneCollectionName") != self.OWNED_NAME
-                or profiles.get("currentProfileName") != self.OWNED_NAME):
+                or current_profile != self.OWNED_NAME):
             raise ObsError("obs_owned_cleanup_collection_changed")
         inputs = (await self.client.request("GetInputList"))["inputs"]
         for name in list(self._creating_inputs):
@@ -460,7 +476,8 @@ class ObsController:
         checks = 0; generation = self._graph_generation
         try:
             c = await self.client.request("GetSceneCollectionList"); p = await self.client.request("GetProfileList")
-            if c.get("currentSceneCollectionName") != self.OWNED_NAME or p.get("currentProfileName") != self.OWNED_NAME:
+            current_profile, _ = _profile_list(p)
+            if c.get("currentSceneCollectionName") != self.OWNED_NAME or current_profile != self.OWNED_NAME:
                 raise ObsError("obs_collection_changed")
             checks += 1
             await self._require_safe_canvas()
@@ -536,7 +553,8 @@ class ObsController:
         except ObsError as error:
             self._graph_ok = False
             reason = error.code if error.code in {"obs_safe_canvas_unverified", "obs_safe_overlay_geometry_unverified",
-                "obs_safe_overlay_order_unverified", "obs_safe_overlay_blend_unverified"} else "obs_graph_audit_failed"
+                "obs_safe_overlay_order_unverified", "obs_safe_overlay_blend_unverified",
+                "obs_profile_list_invalid"} else "obs_graph_audit_failed"
             return GraphAudit(False, checks, reason)
         except (KeyError, TypeError):
             self._graph_ok = False
