@@ -18,7 +18,7 @@ namespace Actor.Editor
         {
             public string schema="actor.station-fog-seal.v1";
             public string scope="Actual URP 2D shader render with synthetic red/green geometry behind an opaque alpha1 fog quad. Not native gameplay, LOS geometry, camera ACK or performance acceptance.";
-            public bool passed, shader_supported, input_changed, opaque_pixels_unchanged, reduced_motion_stable, scene_restored;
+            public bool passed, shader_supported, input_changed, opaque_pixels_unchanged, reduced_motion_stable, preview_scene_isolated, scene_restored;
             public int width=160,height=120, opaque_samples, opaque_changed, visible_changed, animated_changed;
             public string graphics_api, failure_code="";
         }
@@ -28,6 +28,7 @@ namespace Actor.Editor
         {
             string directory=Path.GetFullPath("../build/atmosphere-validation");Directory.CreateDirectory(directory);
             var report=new Report();var original=SceneManager.GetActiveScene();Scene temporary=default;
+            var userScenes=CaptureUserScenes();int previewCount=EditorSceneManager.previewSceneCount;
             GameObject root=null;Mesh backgroundMesh=null,fogMesh=null;Material background=null,fog=null;
             RenderTexture target=null;Texture2D pixels=null;var previous=RenderTexture.active;
             float clock=Shader.GetGlobalFloat("_ActorStationTime");
@@ -39,26 +40,36 @@ namespace Actor.Editor
                     throw new InvalidOperationException("A real graphics device in Edit Mode is required.");
                 if(GraphicsSettings.currentRenderPipeline is not UniversalRenderPipelineAsset)
                     throw new InvalidOperationException("The actual project URP pipeline is required.");
-                foreach(var renderer in UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None))
-                    if(renderer.gameObject.layer==31)throw new InvalidOperationException("Temporary QA rendering layer must be unused.");
                 SocialPresentationVerification.ValidateProductionShaders(true);
                 var source=Resources.Load<Material>("Art/StationFog");
                 if(source==null||source.GetTexture("_Backdrop")==null||!source.shader.isSupported)
                     throw new InvalidOperationException("The production fog material and original backdrop are required.");
                 report.shader_supported=true;report.graphics_api=SystemInfo.graphicsDeviceType.ToString();
-                temporary=EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Additive);
-                SceneManager.SetActiveScene(temporary);
+                // An independent preview scene also works beside a dirty or
+                // untitled user scene. Never open/save/close a user scene or
+                // replace the active scene just to run a material check.
+                temporary=EditorSceneManager.NewPreviewScene();
+                if(!temporary.IsValid()||!EditorSceneManager.IsPreviewScene(temporary))
+                    throw new InvalidOperationException("An owned preview scene is required.");
                 root=new GameObject("Owned Station Fog Shader QA"){hideFlags=HideFlags.HideAndDontSave};
+                SceneManager.MoveGameObjectToScene(root,temporary);
                 background=new Material(Shader.Find("Sprites/Default")){hideFlags=HideFlags.HideAndDontSave};
                 fog=new Material(source){hideFlags=HideFlags.HideAndDontSave};
                 backgroundMesh=Quad(-2,2);fogMesh=Quad(0,2);
                 Add(root.transform,"Synthetic Background",backgroundMesh,background,0,0);
                 Add(root.transform,"Opaque Fog Half",fogMesh,fog,2000,-1);
                 var cameraObject=new GameObject("Owned Station Fog QA Camera"){hideFlags=HideFlags.HideAndDontSave};
+                SceneManager.MoveGameObjectToScene(cameraObject,temporary);
                 cameraObject.transform.SetParent(root.transform,false);cameraObject.transform.position=new Vector3(0,0,-10);
                 var camera=cameraObject.AddComponent<Camera>();camera.enabled=false;camera.orthographic=true;
+                camera.cameraType=CameraType.Preview;camera.scene=temporary;
+                camera.overrideSceneCullingMask=EditorSceneManager.GetSceneCullingMask(temporary);
+                camera.useOcclusionCulling=false;
                 camera.orthographicSize=1.5f;camera.aspect=(float)report.width/report.height;camera.cullingMask=1<<31;
                 camera.clearFlags=CameraClearFlags.SolidColor;camera.backgroundColor=Color.black;
+                report.preview_scene_isolated=camera.overrideSceneCullingMask!=0&&camera.scene==temporary
+                    &&root.scene==temporary&&cameraObject.scene==temporary;
+                if(!report.preview_scene_isolated)throw new InvalidOperationException("Preview camera scene isolation is required.");
                 var extra=cameraObject.AddComponent<UniversalAdditionalCameraData>();
                 if(extra.scriptableRenderer.GetType().Name!="Renderer2D")throw new InvalidOperationException("Actual Renderer2D is required.");
                 target=new RenderTexture(report.width,report.height,24,RenderTextureFormat.ARGB32){hideFlags=HideFlags.HideAndDontSave,antiAliasing=1};
@@ -82,7 +93,7 @@ namespace Actor.Editor
                 report.input_changed=report.visible_changed>100;
                 report.opaque_pixels_unchanged=report.opaque_samples>100&&report.opaque_changed==0;
                 report.reduced_motion_stable=stableFrame;
-                report.passed=report.shader_supported&&report.input_changed&&report.opaque_pixels_unchanged&&report.reduced_motion_stable&&report.animated_changed>0;
+                report.passed=report.shader_supported&&report.preview_scene_isolated&&report.input_changed&&report.opaque_pixels_unchanged&&report.reduced_motion_stable&&report.animated_changed>0;
                 if(!report.passed)throw new InvalidOperationException("The actual opaque seal / visible input / drift controls did not pass.");
             }
             catch(Exception error){report.passed=false;report.failure_code=error.GetType().Name;failure=error;}
@@ -97,9 +108,9 @@ namespace Actor.Editor
                 if(fogMesh!=null)UnityEngine.Object.DestroyImmediate(fogMesh);
                 if(background!=null)UnityEngine.Object.DestroyImmediate(background);
                 if(fog!=null)UnityEngine.Object.DestroyImmediate(fog);
-                if(temporary.IsValid())EditorSceneManager.CloseScene(temporary,true);
-                if(original.IsValid()&&original.isLoaded)SceneManager.SetActiveScene(original);
-                report.scene_restored=SceneManager.GetActiveScene()==original&&!temporary.isLoaded;
+                bool previewClosed=!temporary.IsValid()||EditorSceneManager.ClosePreviewScene(temporary);
+                report.scene_restored=previewClosed&&!temporary.isLoaded&&SceneManager.GetActiveScene()==original
+                    &&EditorSceneManager.previewSceneCount==previewCount&&UserScenesUnchanged(userScenes);
                 report.passed&=report.scene_restored;
                 File.WriteAllText(Path.Combine(directory,"fog-seal.json"),JsonUtility.ToJson(report,true)+"\n");
             }
@@ -109,6 +120,34 @@ namespace Actor.Editor
         }
 
         private static bool Same(Color32 a,Color32 b)=>a.r==b.r&&a.g==b.g&&a.b==b.b;
+        private readonly struct UserScene
+        {
+            internal readonly Scene Scene;
+            internal readonly string Path;
+            internal readonly bool Loaded, Dirty;
+            internal readonly GameObject[] Roots;
+            internal UserScene(Scene scene)
+            { Scene=scene;Path=scene.path;Loaded=scene.isLoaded;Dirty=scene.isDirty;Roots=Loaded?scene.GetRootGameObjects():Array.Empty<GameObject>(); }
+        }
+        private static UserScene[] CaptureUserScenes()
+        {
+            var result=new UserScene[SceneManager.sceneCount];
+            for(int i=0;i<result.Length;i++)result[i]=new UserScene(SceneManager.GetSceneAt(i));
+            return result;
+        }
+        private static bool UserScenesUnchanged(UserScene[] before)
+        {
+            if(SceneManager.sceneCount!=before.Length)return false;
+            for(int i=0;i<before.Length;i++)
+            {
+                var scene=SceneManager.GetSceneAt(i);var saved=before[i];
+                if(scene!=saved.Scene||scene.path!=saved.Path||scene.isLoaded!=saved.Loaded||scene.isDirty!=saved.Dirty)return false;
+                var roots=scene.isLoaded?scene.GetRootGameObjects():Array.Empty<GameObject>();
+                if(roots.Length!=saved.Roots.Length)return false;
+                for(int r=0;r<roots.Length;r++)if(roots[r]!=saved.Roots[r])return false;
+            }
+            return true;
+        }
         private static Color32[] Render(Camera camera,RenderTexture target,Texture2D image)
         {
             var request=new UniversalRenderPipeline.SingleCameraRequest{destination=target};
@@ -125,7 +164,8 @@ namespace Actor.Editor
         }
         private static void Add(Transform parent,string name,Mesh mesh,Material material,int order,float z)
         {
-            var root=new GameObject(name){hideFlags=HideFlags.HideAndDontSave,layer=31};root.transform.SetParent(parent,false);
+            var root=new GameObject(name){hideFlags=HideFlags.HideAndDontSave,layer=31};
+            SceneManager.MoveGameObjectToScene(root,parent.gameObject.scene);root.transform.SetParent(parent,false);
             root.transform.localPosition=new Vector3(0,0,z);root.AddComponent<MeshFilter>().sharedMesh=mesh;
             var renderer=root.AddComponent<MeshRenderer>();renderer.sharedMaterial=material;renderer.sortingOrder=order;
         }
