@@ -54,6 +54,70 @@ public sealed class StationAtmosphereTests
     }
 
     [Fact]
+    public void WallContactFeatherPreservesThreeQuartersOfTheCurrentShortRay()
+    {
+        float baseWidth=StationAtmosphereRules.FeatherWorldWidth(12,3.4f,600);
+        const float allowedDistance=.14f;
+        float fraction=StationAtmosphereRules.InwardFeatherInsetFraction(baseWidth,allowedDistance);
+        Assert.InRange(baseWidth,.13599f,.13601f);
+        Assert.Equal(.75f,fraction);
+        Assert.InRange(allowedDistance*fraction,.10499f,.10501f);
+        Assert.InRange(allowedDistance*(1-fraction),.03499f,.03501f);
+    }
+
+    [Fact]
+    public void OrdinaryRaysKeepTheirScreenSpaceFeatherWithoutAJumpAtTheShortRayThreshold()
+    {
+        float baseWidth=StationAtmosphereRules.FeatherWorldWidth(12,3.4f,600);
+        const float allowedDistance=3.5f;
+        float inset=allowedDistance*StationAtmosphereRules.InwardFeatherInsetFraction(baseWidth,allowedDistance);
+        Assert.InRange(allowedDistance-inset,baseWidth-.000001f,baseWidth+.000001f);
+        float threshold=4*baseWidth;
+        Assert.Equal(.75f,StationAtmosphereRules.InwardFeatherInsetFraction(baseWidth,threshold));
+        float before=(threshold-.00001f)*StationAtmosphereRules.InwardFeatherInsetFraction(baseWidth,threshold-.00001f);
+        float after=(threshold+.00001f)*StationAtmosphereRules.InwardFeatherInsetFraction(baseWidth,threshold+.00001f);
+        Assert.InRange(after-before,0,.000025f);
+    }
+
+    [Fact]
+    public void EveryFinitePositiveInsetStaysOnTheCurrentAllowedRayIncludingExtremeScales()
+    {
+        foreach(float width in new[]{float.Epsilon,.00001f,.136f,1f,1e20f,float.MaxValue})
+        foreach(float distance in new[]{float.Epsilon,.00001f,.001f,.14f,.544f,3.5f,1e20f,float.MaxValue})
+        {
+            float fraction=StationAtmosphereRules.InwardFeatherInsetFraction(width,distance);
+            Assert.True(float.IsFinite(fraction));
+            Assert.InRange(fraction,.75f,1);
+            // A convex fraction cannot pass the opaque B endpoint. The mesh
+            // continues to use the original endpoint for its outer contour.
+            double inset=(double)distance*fraction;
+            Assert.InRange(inset,0,(double)distance);
+        }
+    }
+
+    [Fact]
+    public void ZeroInvalidAndAbsentFeatherInputsCannotExtendThePermittedRay()
+    {
+        foreach(float distance in new[]{0f,-1f,float.NaN,float.PositiveInfinity,float.NegativeInfinity})
+            Assert.Equal(0,StationAtmosphereRules.InwardFeatherInsetFraction(.136f,distance));
+        foreach(float width in new[]{0f,-1f,float.NaN,float.PositiveInfinity,float.NegativeInfinity})
+            Assert.Equal(1,StationAtmosphereRules.InwardFeatherInsetFraction(width,.14f));
+    }
+
+    [Fact]
+    public void CornerClosureAndEpochResetStillUseTheNewLimitBeforeApplyingTheFeather()
+    {
+        const float width=.136f;
+        float closed=TemporalFogRules.Step(.01f,3.5f,1f/60,false);
+        Assert.Equal(.01f,closed);
+        Assert.InRange(closed*StationAtmosphereRules.InwardFeatherInsetFraction(width,closed),0,.01f);
+        float nextEpoch=TemporalFogRules.Step(.05f,3.5f,1f/60,true);
+        Assert.Equal(.05f,nextEpoch);
+        Assert.InRange(nextEpoch*StationAtmosphereRules.InwardFeatherInsetFraction(width,nextEpoch),0,.05f);
+        Assert.Equal(0,TemporalFogRules.Step(0,.14f,1f/60,false));
+    }
+
+    [Fact]
     public void LostPermissionImmediatelyClearsEmergencyInsteadOfRetainingAnOldPublicFrame()
     {
         Assert.Equal(0,StationAtmosphereRules.EmergencyEnvelope(1,false,true,1f/60));

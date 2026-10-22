@@ -18,6 +18,18 @@ namespace Actor.Presentation
             return float.IsFinite(width) ? width : 0;
         }
 
+        // Fraction from the current eye to its already permitted ray endpoint.
+        // Only the added inner feather is tapered; this cannot move the opaque
+        // boundary. At wall contact a 12px band must not cover almost the whole
+        // short ray back to the eye.
+        internal static float InwardFeatherInsetFraction(float width, float distance)
+        {
+            if (!float.IsFinite(distance) || distance <= 0) return 0;
+            if (!float.IsFinite(width) || width <= 0) return 1;
+            float feather = Math.Min(width, distance * .25f);
+            return Math.Clamp(1 - feather / distance, .75f, 1);
+        }
+
         internal static float EmergencyEnvelope(float previous, bool permitted, bool active, float seconds, bool reset=false)
         {
             // A lost presentation must not keep a stale emergency signal alive.

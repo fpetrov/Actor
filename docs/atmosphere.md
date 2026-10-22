@@ -10,6 +10,8 @@ The wider default feather is 12 screen pixels, bounded to 16. It is added **insi
 
 The fog's floor tint uses linear RGB multipliers (.04, .0475, .0575), four times lower than the first atmosphere candidate, and a fog-only RGB exposure of .75. This avoids the bright grey silhouette seen after conversion to sRGB. The visible orbital background, ordinary floor/daylight palette, alpha seal and visibility geometry retain their own unchanged settings.
 
+At wall contact, the added inward feather is limited to one quarter of each already-permitted ray. This keeps a short ray's inner band from reaching almost back to the eye; ordinary longer rays retain the screen-space width. Only the inner vertices move along their existing rays. The opaque endpoints, outer triangles, visibility queries and immediate closing remain unchanged. This reduces extra shading over the local character near a wall; it does not promise that sprite art extending beyond its collision capsule will remain visible through that wall.
+
 ## Lighting and public emergency
 
 `StationAtmosphere2D` creates one backdrop quad and ten fixed, authored light-pool quads. They use shared resources and one shared mesh, with no shadow textures, post-processing, particles, per-frame object scans or new sight queries. The fog uses two texture samples (the new backdrop plus the already-loaded static floor), the background uses one and the bounded local pools use no texture samples. The pools draw below actors and below the fog. The palette shaders receive a shared ambient tint, while small warm emitters give rooms a common visual vocabulary.

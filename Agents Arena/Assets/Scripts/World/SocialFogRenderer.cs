@@ -97,7 +97,7 @@ namespace Actor.World
             float distance = delta.magnitude;
             if (distance <= .000001f) return center;
             if (!float.IsFinite(distance)) return endpoint;
-            return center + delta * Mathf.Clamp01(1 - width / distance);
+            return center + delta * StationAtmosphereRules.InwardFeatherInsetFraction(width, distance);
         }
         private void LateUpdate()
         {
