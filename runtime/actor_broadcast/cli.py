@@ -24,7 +24,7 @@ DEFAULT_CONFIG = Path.home() / ".config/actor/broadcast.json"
 def add_parser(commands):
     parser = commands.add_parser("broadcast", help="Local observer preview, commentary and explicit public OBS output")
     actions = parser.add_subparsers(dest="broadcast_action", required=True)
-    for name in ("ui", "preview", "doctor", "codex-status", "codex-login"):
+    for name in ("ui", "preview", "doctor", "codex-status", "codex-login", "twitch-login"):
         entry = actions.add_parser(name)
         entry.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
         if name in ("ui", "preview"):
@@ -199,6 +199,10 @@ def command(args):
             operation=codex_login if args.broadcast_action=="codex-login" else codex_status
             report=asyncio.run(operation(config.codex_home))
             print(json.dumps(report,indent=2));return 0 if report["authenticated"] else 1
+        if args.broadcast_action == "twitch-login":
+            from .twitch_login import twitch_login
+            report=asyncio.run(twitch_login(config.twitch_client_id,expected_login=config.channel))
+            print(json.dumps(report,indent=2));return 0
         if not 0 <= args.port <= 65535 or 0 < args.port < 1024: raise CoordinatorError("operator_port_invalid")
         return asyncio.run(_serve(args, config))
     except KeyboardInterrupt: return 130

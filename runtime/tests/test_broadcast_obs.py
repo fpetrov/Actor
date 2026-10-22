@@ -153,6 +153,94 @@ async def test_existing_output_never_stopped_or_adopted_by_display_name():
     assert not any(x[0] in ("StartStream", "StopStream") for x in graph.calls)
 
 
+class DisabledReplayGraph(Graph):
+    """Real disabled-frontend shape from OBS 32.2.2 / obs-websocket 5.7.4."""
+    def __init__(self):
+        super().__init__()
+        self.mode = "Simple"; self.replay_enabled = "false"
+        self.replay_error = ObsError("obs_request_rejected", request_status_code=604)
+        self.outputs = [
+            {"outputName": "simple_file_output", "outputKind": "mov_output", "outputActive": False},
+            {"outputName": "virtualcam_output", "outputKind": "virtualcam_output", "outputActive": False},
+        ]
+
+    async def request(self, kind, data=None, **kwargs):
+        if kind in ("GetReplayBufferStatus", "GetProfileParameter", "GetOutputList"):
+            self.calls.append((kind, data))
+            if kind == "GetReplayBufferStatus": raise self.replay_error
+            if kind == "GetOutputList": return {"outputs": copy.deepcopy(self.outputs)}
+            assert data["parameterName"] in ("Mode", "RecRB")
+            return {"parameterValue": self.mode if data["parameterName"] == "Mode" else self.replay_enabled,
+                    "defaultParameterValue": None}
+        return await super().request(kind, data, **kwargs)
+
+
+@pytest.mark.parametrize("mode,category", [("Simple", "SimpleOutput"), ("Advanced", "AdvOut")])
+async def test_disabled_replay_requires_selected_profile_and_all_enumerated_outputs_idle(mode, category):
+    graph = DisabledReplayGraph(); graph.mode = mode
+    c, _ = controller(graph)
+    await c.require_idle()
+    assert graph.calls == [("GetStreamStatus", {}), ("GetRecordStatus", {}), ("GetVirtualCamStatus", {}),
+        ("GetReplayBufferStatus", None),
+        ("GetProfileParameter", {"parameterCategory": "Output", "parameterName": "Mode"}),
+        ("GetProfileParameter", {"parameterCategory": category, "parameterName": "RecRB"}),
+        ("GetOutputList", None)]
+    # The entire compatibility path is read-only, including failed checks.
+    assert not any(name.startswith(("Start", "Stop", "Set")) for name,_ in graph.calls)
+
+
+@pytest.mark.parametrize("mutation", [
+    lambda g: setattr(g, "mode", None),
+    lambda g: setattr(g, "mode", "unknown"),
+    lambda g: setattr(g, "replay_enabled", "true"),
+    lambda g: setattr(g, "replay_enabled", None),
+    lambda g: setattr(g, "replay_enabled", False),  # protocol returns strings, not bool coercion
+    lambda g: setattr(g, "outputs", []),
+    lambda g: setattr(g, "outputs", None),
+    lambda g: g.outputs.append({"outputName": "foreign_recording", "outputKind": "ffmpeg_muxer", "outputActive": True}),
+    lambda g: g.outputs[0].update(outputActive=0),
+    lambda g: g.outputs[0].pop("outputActive"),
+    lambda g: g.outputs[0].pop("outputKind"),
+    lambda g: g.outputs.append({"outputName": "Replay Buffer", "outputKind": "replay_buffer", "outputActive": False}),
+])
+async def test_604_does_not_establish_disabled_replay_with_unknown_or_contradictory_proof(mutation):
+    graph = DisabledReplayGraph(); mutation(graph)
+    c, _ = controller(graph)
+    with pytest.raises(ObsError, match="^obs_replay_disabled_unverified$"):
+        await c.require_idle()
+    assert not any(name.startswith(("Start", "Stop", "Set")) for name,_ in graph.calls)
+
+
+@pytest.mark.parametrize("error", [ObsError("obs_request_failed"),
+    ObsError("obs_request_rejected"), ObsError("obs_request_rejected", request_status_code=500),
+    ObsError("obs_request_failed", request_status_code=604),
+    ObsError("obs_request_rejected", request_status_code="604")])
+async def test_replay_unknown_failures_never_fall_back_to_profile_or_output_enumeration(error):
+    graph = DisabledReplayGraph(); graph.replay_error = error
+    c, _ = controller(graph)
+    with pytest.raises(ObsError): await c.require_idle()
+    assert not any(kind in ("GetProfileParameter", "GetOutputList") for kind,_ in graph.calls)
+
+
+async def test_active_known_output_is_rejected_before_disabled_replay_fallback():
+    graph = DisabledReplayGraph(); graph.foreign = True
+    c, _ = controller(graph)
+    with pytest.raises(ObsError, match="^obs_foreign_output_active$"):
+        await c.require_idle()
+    assert graph.calls == [("GetStreamStatus", {})]
+
+
+async def test_available_but_active_replay_is_not_treated_as_disabled():
+    class ActiveReplay(Graph):
+        async def request(self, kind, data=None, **kwargs):
+            result = await super().request(kind, data, **kwargs)
+            return {"outputActive": True} if kind == "GetReplayBufferStatus" else result
+    c, graph = controller(ActiveReplay())
+    with pytest.raises(ObsError, match="^obs_foreign_output_active$"):
+        await c.require_idle()
+    assert not any(kind in ("GetProfileParameter", "GetOutputList") for kind,_ in graph.calls)
+
+
 async def test_adopting_root_created_collection_requires_explicit_empty_proof():
     graph = Graph(); c = ObsController(graph, window_guard=lambda _: True, channel_guard=lambda _: True)
     with pytest.raises(ObsError, match="explicit_recovery"):
@@ -293,8 +381,13 @@ async def test_v5_authenticated_handshake_and_request_correlation_no_secret_sett
             x = json.loads(raw); self.sent.append(x)
             if x["op"] == 1: self.q.put_nowait(json.dumps({"op": 2, "d": {"negotiatedRpcVersion": 1}}))
             elif x["op"] == 6:
-                d = x["d"]; self.q.put_nowait(json.dumps({"op": 7, "d": d | {"requestStatus": {"result": True},
-                    "responseData": {"obsVersion": "32.2.2", "rpcVersion": 1, "availableRequests": ["GetVersion"]}}}))
+                d = x["d"]
+                if d["requestType"] == "GetReplayBufferStatus":
+                    result = {"requestStatus": {"result": False, "code": 604, "comment": "PRIVATE_SERVER_COMMENT"}}
+                else:
+                    result = {"requestStatus": {"result": True}, "responseData": {"obsVersion": "32.2.2", "rpcVersion": 1,
+                        "availableRequests": ["GetVersion", "GetReplayBufferStatus"]}}
+                self.q.put_nowait(json.dumps({"op": 7, "d": d | result}))
         async def close(self): self.closed = True
     ws = Ws()
     async def connect(*args, **kwargs): assert kwargs["proxy"] is None; return ws
@@ -304,5 +397,9 @@ async def test_v5_authenticated_handshake_and_request_correlation_no_secret_sett
         assert ws.sent[0]["d"]["authentication"] == authentication("secret-secret", "salt", "challenge")
         for request in ("GetStreamServiceSettings", "GetOutputSettings"):
             with pytest.raises(ObsError, match="secret"): await client.request(request)
+        with pytest.raises(ObsError, match="^obs_request_rejected$") as error:
+            await client.request("GetReplayBufferStatus")
+        assert error.value.request_status_code == 604
+        assert "PRIVATE_SERVER_COMMENT" not in str(error.value) + repr(error.value) + repr(vars(error.value))
     finally: await client.close()
     assert ws.closed

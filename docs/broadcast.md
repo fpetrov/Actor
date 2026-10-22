@@ -232,10 +232,14 @@ of production acceptance:
 | Release/helper script tests | 146 passed plus 96 subtests | No administrator/PF mutation in these tests |
 | Generated schemas | 56 fresh artifacts | Checked after extension 0.7.0 changes |
 | Pinned actual SDK against local Responses fixture | 4 passed | Tool-positive controls, zero-tool policy, and full provider composition; authentication/catalog/output are synthetic |
-| Clean installed Runtime wheel | 923 passed, no skips | Includes isolated-profile setup, policy, budgets and cleanup tests; no provider SDK/authentication/model installed |
-| Unity release client and Linux server | Both builds passed; macOS codesign verification passed | Build provenance still marks the source dirty |
+| Clean installed Runtime wheel | 970 passed, no skips | Includes cross-version PF clock, disabled replay output and Twitch provisioning; no provider SDK/authentication/model installed |
+| Unity release client and Linux server | Both clean-source builds passed at `7adf933`; macOS codesign verification passed | Later integration fixes affect the Python runtime; these binaries retain their original source identity |
 | Real release observer against isolated remote staging | 76 received frames, zero player slots/commands; clean owned shutdown | Headless: **no presentation ACK**, no cognition/audio/OBS |
 | Real Codex, 20 authored public scenarios | 20/20 completed; first segment p50 1.819 s, p95 5.098 s; 156,848 input / 1,274 output tokens | Text-only; measured before the final tool-policy hardening |
+| Dedicated-profile final-policy real Codex smoke | 1/1 completed; first segment 3.357 s; 620 input / 70 output tokens; zero observed tools, cleanup passed | One synthetic public scene, no native presentation, speech or Twitch |
+| Exact local BF16 worker | Load 4.477 s, warmup 1.957 s; first PCM 0.901 s; 1.04 s of complete Russian Ryan speech in 1.037 s | One short utterance; RTF compute/audio 0.997, speedup 1.003; no playback or joint-load SLO proof |
+| BF16 cancellation and ownership | Genuine cancelled terminal, ACK 0.780 s, zero PCM after ACK; one worker reaped | Offline probe; no audible-latency claim |
+| Actual macOS PF and OBS control | Fresh root-peer v2 proof; OBS 32.2.2 / websocket 5.7.4, 720p30 Apple H.264 | Idle graph only; video/audio capture not yet accepted |
 
 The 20-case run used 20 unique turns and two thread rotations, reported zero
 observed tool items with complete SDK lifecycle coverage, and completed cleanup.
@@ -247,7 +251,16 @@ The actual staging smoke stopped only its own Control Plane process and left
 ports 5081/7782 free. Production health remained good; production processes,
 firewall rules and deployment were unchanged.
 
-Native window/capture acceptance, BF16 synthesis latency and peak memory, final
+The BF16 load/warmup MLX allocator peak was 5,491,713,873 bytes (5.11 GiB),
+active 4,583,019,744 bytes and cache zero after warmup. The sampled worker RSS
+peak was 935,165,952 bytes; RSS excludes the full Metal/unified-memory footprint
+and is not interchangeable with the allocator peak. Available-memory samples
+fell from 51% to a minimum of 26%; the guard did not abort. The isolated probe
+completed in 9.601 s and left no owned process group. It does not establish
+generation peak memory, sustained throughput, or capacity alongside the rendered
+observer and an active OBS encoder.
+
+Native window/capture acceptance, joint-load BF16 performance, final
 OBS audio/video recording, a complete autonomous match, the sustained fault run,
 Twitch ingest and visual fog-motion cost are still unmeasured. No public stream
 or successful audio route is claimed from unit tests, synthetic ACKs or text-only
@@ -256,11 +269,20 @@ benchmarks. Preserve that distinction in release notes and operator readiness.
 A later real zero-turn policy startup check correctly stopped with
 `commentary_policy_global_instructions_present` against the existing main Codex
 home and completed cleanup. No model request was started. The dedicated-profile
-login and a new benchmark under the final policy are pending; the earlier
-20-case timings do not establish acceptance of that final configuration.
+official ChatGPT login subsequently completed; account/catalog startup passed
+with zero model calls, followed by the one-turn final-policy smoke above. The
+earlier 20-case timings do not establish acceptance of that final configuration.
 
 An actual official-SDK anonymous status probe in a disposable private profile
 returned `authenticated=false`, `signin_required=true`, `model_calls=0` and
 `cleanup_completed=true` in 0.522 seconds. Its temporary home was removed; the
 real profile and credentials were untouched. This verifies the status/setup
 plumbing, not a completed commentator sign-in.
+
+The real OBS login was verified as `fedorr_codex`; its protected authenticated
+backup and opaque service binding are local-only. Global audio inputs are
+disabled and all current outputs are idle. The separate Twitch chat application
+could not be created: Twitch requires account 2FA, whose initial setup requires
+an SMS-capable phone number. The current staging preview explicitly disables
+chat; no chat OAuth token, EventSub connection or public-ingest success is
+claimed. See [Twitch login provisioning](broadcast-twitch-login.md).

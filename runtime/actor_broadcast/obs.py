@@ -20,7 +20,13 @@ from .speech import _cleanup
 
 
 class ObsError(RuntimeError):
-    def __init__(self, code): self.code = code; super().__init__(code)
+    def __init__(self, code, *, request_status_code=None):
+        self.code = code
+        # The server's comment can contain private details; retain only its
+        # bounded numeric protocol status for narrow compatibility checks.
+        self.request_status_code = (request_status_code if type(request_status_code) is int
+                                    and 0 <= request_status_code <= 9999 else None)
+        super().__init__(code)
 
 
 def authentication(password, salt, challenge):
@@ -147,8 +153,12 @@ class ObsClient:
                 await asyncio.wait_for(self._ws.send(json.dumps({"op": 6, "d": {
                     "requestType": request_type, "requestId": identity, "requestData": data or {}}}, allow_nan=False)), timeout)
             response = await asyncio.wait_for(asyncio.shield(fut), timeout)
-            if response.get("requestType") != request_type or response.get("requestStatus", {}).get("result") is not True:
+            if response.get("requestType") != request_type:
                 raise ObsError("obs_request_rejected")
+            status = response.get("requestStatus", {})
+            if not isinstance(status, dict) or status.get("result") is not True:
+                raise ObsError("obs_request_rejected", request_status_code=(status.get("code")
+                    if isinstance(status, dict) and status.get("result") is False else None))
             value = response.get("responseData", {})
             if not isinstance(value, dict): raise ObsError("obs_response_shape")
             return value
@@ -238,9 +248,40 @@ class ObsController:
         if self._old_callback is not None: self._old_callback(name, data)
 
     async def require_idle(self):
-        for request in ("GetStreamStatus", "GetRecordStatus", "GetVirtualCamStatus", "GetReplayBufferStatus"):
+        for request in ("GetStreamStatus", "GetRecordStatus", "GetVirtualCamStatus"):
             status = await self.client.request(request)
             if status.get("outputActive") is not False: raise ObsError("obs_foreign_output_active")
+        try:
+            status = await self.client.request("GetReplayBufferStatus")
+        except ObsError as error:
+            if error.code != "obs_request_rejected" or error.request_status_code != 604:
+                raise
+            await self._require_disabled_replay()
+        else:
+            if status.get("outputActive") is not False: raise ObsError("obs_foreign_output_active")
+
+    async def _require_disabled_replay(self):
+        # obs-websocket 5.7.4 returns InvalidResourceState (604) when the
+        # frontend replay output is absent. That code alone is insufficient:
+        # verify the selected OBS output mode explicitly disables RecRB, then
+        # independently enumerate all actual outputs, without reading settings.
+        mode = (await self.client.request("GetProfileParameter", {
+            "parameterCategory": "Output", "parameterName": "Mode"})).get("parameterValue")
+        category = {"Simple": "SimpleOutput", "Advanced": "AdvOut"}.get(mode) if isinstance(mode, str) else None
+        if category is None: raise ObsError("obs_replay_disabled_unverified")
+        enabled = (await self.client.request("GetProfileParameter", {
+            "parameterCategory": category, "parameterName": "RecRB"})).get("parameterValue")
+        if not isinstance(enabled, str) or enabled.lower() not in ("false", "0"):
+            raise ObsError("obs_replay_disabled_unverified")
+        outputs = (await self.client.request("GetOutputList")).get("outputs")
+        if not isinstance(outputs, list) or not 1 <= len(outputs) <= 64:
+            raise ObsError("obs_replay_disabled_unverified")
+        for output in outputs:
+            if (not isinstance(output, dict) or output.get("outputActive") is not False
+                    or not isinstance(output.get("outputName"), str) or not 1 <= len(output["outputName"]) <= 256
+                    or not isinstance(output.get("outputKind"), str) or not 1 <= len(output["outputKind"]) <= 128
+                    or output["outputKind"] == "replay_buffer"):
+                raise ObsError("obs_replay_disabled_unverified")
 
     async def prepare(self, binding: WindowBinding, renderer_url: str, *, protected_backup_confirmed=False,
                       adopt_empty_collection=False):

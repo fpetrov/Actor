@@ -126,6 +126,32 @@ raise SystemExit(main(['broadcast','codex-status','--config',sys.argv[1]]))
     assert not home.exists()
 
 
+def test_explicit_twitch_login_passes_public_config_only_without_native_start(tmp_path,monkeypatch,capsys):
+    from actor_broadcast import twitch_login
+    from actor_runtime.control import main
+    config=tmp_path/"broadcast.json"
+    config.write_text(json.dumps(settings(tmp_path,twitch_client_id="publicClient123")))
+    called=[]
+    async def login(client_id,*,expected_login):
+        called.append((client_id,expected_login))
+        return {"authenticated":True,"token_saved":True,"eventsub_connected":False,"model_calls":0}
+    monkeypatch.setattr(twitch_login,"twitch_login",login)
+    monkeypatch.setattr(cli,"_serve",lambda *_:pytest.fail("Twitch login started native broadcast"))
+    assert main(["broadcast","twitch-login","--config",str(config)])==0
+    assert called==[("publicClient123","fedorr_codex")]
+    assert json.loads(capsys.readouterr().out)=={
+        "authenticated":True,"token_saved":True,"eventsub_connected":False,"model_calls":0}
+
+
+def test_twitch_login_empty_client_id_is_actionable_before_native_keychain(tmp_path,monkeypatch,capsys):
+    from actor_runtime.control import main
+    from actor_broadcast import secrets
+    config=tmp_path/"broadcast.json";config.write_text(json.dumps(settings(tmp_path)))
+    monkeypatch.setattr(secrets,"MacOSKeychainSecretStore",lambda:pytest.fail("empty ID opened Keychain"))
+    assert main(["broadcast","twitch-login","--config",str(config)])==1
+    assert json.loads(capsys.readouterr().out)=={"code":"twitch_client_id_required"}
+
+
 def test_control_rejects_foreign_owner_before_accessing_secret_store(tmp_path,monkeypatch):
     write_state(tmp_path,{"schema":"actor.launch.v1","owner_uid":os.getuid(),"brain":"broadcast",
         "operator_port":50000,"processes":{"launcher":{"pid":12345}}})

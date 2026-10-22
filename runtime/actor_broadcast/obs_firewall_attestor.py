@@ -43,6 +43,18 @@ class AttestationError(RuntimeError):
 
 
 DEFAULT_SOCKET_PATH = Path("/private/var/db/actor-broadcast-firewall-run/control.sock")
+CLOCK_DOMAIN = "clock_gettime:CLOCK_MONOTONIC"
+
+
+def attestation_clock_ns():
+    # On macOS Python <3.10, monotonic_ns() subtracts a process-local
+    # origin; newer Python uses a different, shared Mach uptime clock.
+    # Explicit POSIX CLOCK_MONOTONIC has the same kernel origin across
+    # both interpreters/processes (and on Linux). Never mix or fall back.
+    try:
+        return time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+    except (AttributeError, OSError) as error:
+        raise AttestationError("pf_attestor_clock_unavailable") from error
 
 
 def peer_uid(connection):
@@ -125,15 +137,16 @@ class PfAttestor:
             raw = await asyncio.wait_for(reader.readuntil(b"\n"), 1)
             if len(raw) > 512: raise AttestationError("pf_attestor_bound")
             request = json.loads(raw, object_pairs_hook=_unique)
-            if (not isinstance(request, dict) or set(request) != {"schema", "challenge", "port"}
-                    or request["schema"] != "actor.obs-pf-query.v1" or type(request["port"]) is not int
+            if (not isinstance(request, dict) or set(request) != {"schema", "challenge", "port", "clock_domain"}
+                    or request["schema"] != "actor.obs-pf-query.v2" or request["clock_domain"] != CLOCK_DOMAIN
+                    or type(request["port"]) is not int
                     or request["port"] != self.port or not isinstance(request["challenge"], str)
                     or not re.fullmatch(r"[a-f0-9]{64}", request["challenge"])):
                 raise AttestationError("pf_attestor_query_rejected")
             if self._check_task is not None and not self._check_task.done(): raise AttestationError("pf_attestor_busy")
             async def inspect_once():
                 result = await asyncio.to_thread(self._inspect)
-                return result, time.monotonic_ns()
+                return result, attestation_clock_ns()
             self._check_task = asyncio.create_task(inspect_once())
             self._check_task.add_done_callback(lambda value: None if value.cancelled() else value.exception())
             result, checked = await asyncio.wait_for(asyncio.shield(self._check_task), 1.2)
@@ -141,7 +154,8 @@ class PfAttestor:
                     or result.get("loopback_allowed") is not True
                     or result.get("non_loopback_ipv4_ipv6_denied") is not True):
                 raise AttestationError("pf_attestor_rules_unverified")
-            response = {"schema": "actor.obs-pf-attestation.v1", "challenge": request["challenge"],
+            response = {"schema": "actor.obs-pf-attestation.v2", "challenge": request["challenge"],
+                "clock_domain": CLOCK_DOMAIN,
                 "port": self.port, "verified": True, "checked_at_monotonic_ns": checked,
                 "loopback_allowed": True, "non_loopback_ipv4_ipv6_denied": True}
         except asyncio.CancelledError:
@@ -180,7 +194,10 @@ class FirewallAttestationClient:
 
     @property
     def verified(self):
-        return self._verified_at is not None and 0 <= time.monotonic_ns() - self._verified_at <= self.max_age_ns
+        try:
+            return self._verified_at is not None and 0 <= attestation_clock_ns() - self._verified_at <= self.max_age_ns
+        except AttestationError:
+            return False
 
     async def refresh(self):
         async with self._lock: return await self._refresh()
@@ -191,20 +208,22 @@ class FirewallAttestationClient:
         writer = None
         try:
             self.verify_filesystem(self.socket_path)
-            challenge = secrets.token_hex(32); started = time.monotonic_ns()
+            challenge = secrets.token_hex(32); started = attestation_clock_ns()
             async def exchange():
                 nonlocal writer
                 reader, writer = await asyncio.open_unix_connection(self.socket_path, limit=2048)
                 if self.get_peer_uid(writer.get_extra_info("socket")) != self.administrator_uid:
                     raise AttestationError("pf_attestor_peer_unverified")
-                writer.write(json.dumps({"schema": "actor.obs-pf-query.v1", "challenge": challenge, "port": self.port}).encode() + b"\n")
+                writer.write(json.dumps({"schema": "actor.obs-pf-query.v2", "challenge": challenge,
+                    "port": self.port, "clock_domain": CLOCK_DOMAIN}).encode() + b"\n")
                 await writer.drain(); raw = await reader.readuntil(b"\n")
                 if len(raw) > 1024: raise AttestationError("pf_attestor_bound")
                 return json.loads(raw, object_pairs_hook=_unique)
             value = await asyncio.wait_for(exchange(), self.timeout)
-            now = time.monotonic_ns()
-            if (set(value) != {"schema", "challenge", "port", "verified", "checked_at_monotonic_ns", "loopback_allowed", "non_loopback_ipv4_ipv6_denied"}
-                    or value["schema"] != "actor.obs-pf-attestation.v1" or value["challenge"] != challenge
+            now = attestation_clock_ns()
+            if (set(value) != {"schema", "challenge", "port", "clock_domain", "verified", "checked_at_monotonic_ns", "loopback_allowed", "non_loopback_ipv4_ipv6_denied"}
+                    or value["schema"] != "actor.obs-pf-attestation.v2" or value["clock_domain"] != CLOCK_DOMAIN
+                    or value["challenge"] != challenge
                     or type(value["port"]) is not int or value["port"] != self.port or value["verified"] is not True
                     or value["loopback_allowed"] is not True or value["non_loopback_ipv4_ipv6_denied"] is not True
                     or type(value["checked_at_monotonic_ns"]) is not int

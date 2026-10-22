@@ -3,13 +3,15 @@ import asyncio
 import json
 import os
 from pathlib import Path
+import sys
 import time
 import tempfile
 
 import pytest
 
-from actor_broadcast.obs_firewall_attestor import (AttestationError, FirewallAttestationClient,
-    PfAttestor, peer_uid, verify_path)
+import actor_broadcast.obs_firewall_attestor as attestor_module
+from actor_broadcast.obs_firewall_attestor import (AttestationError, CLOCK_DOMAIN,
+    FirewallAttestationClient, PfAttestor, attestation_clock_ns, peer_uid, verify_path)
 
 
 @pytest.fixture
@@ -64,15 +66,22 @@ async def test_unprivileged_impostor_rejected_before_sending_nonce(tmp_path):
     lambda x: x.update(challenge="0" * 64),
     lambda x: x.update(port=4456),
     lambda x: x.update(verified=1),
-    lambda x: x.update(checked_at_monotonic_ns=time.monotonic_ns() - 10_000_000_000),
+    lambda x: x.update(checked_at_monotonic_ns=attestation_clock_ns() - 10_000_000_000),
+    lambda x: x.update(checked_at_monotonic_ns=attestation_clock_ns() + 10_000_000_000),
+    lambda x: x.update(checked_at_monotonic_ns=1),  # old process-relative origin
+    lambda x: x.update(checked_at_monotonic_ns=True),
+    lambda x: x.update(clock_domain="clock_gettime:CLOCK_MONOTONIC_RAW"),
+    lambda x: x.pop("clock_domain"),
+    lambda x: x.update(schema="actor.obs-pf-attestation.v1"),
     lambda x: x.update(non_loopback_ipv4_ipv6_denied=False),
 ])
 async def test_replay_wrong_port_stale_or_weakened_proof_not_attestation(tmp_path, mutation):
     path = tmp_path / "service.sock"
     async def handler(reader, writer):
         query = json.loads(await reader.readline())
-        result = {"schema": "actor.obs-pf-attestation.v1", "challenge": query["challenge"], "port": 4455,
-                  "verified": True, "checked_at_monotonic_ns": time.monotonic_ns(), "loopback_allowed": True,
+        result = {"schema": "actor.obs-pf-attestation.v2", "challenge": query["challenge"], "port": 4455,
+                  "clock_domain": CLOCK_DOMAIN,
+                  "verified": True, "checked_at_monotonic_ns": attestation_clock_ns(), "loopback_allowed": True,
                   "non_loopback_ipv4_ipv6_denied": True}
         mutation(result); writer.write(json.dumps(result).encode() + b"\n"); await writer.drain(); writer.close()
     server = await asyncio.start_unix_server(handler, path=path)
@@ -87,7 +96,10 @@ async def test_attestor_accepts_no_path_command_or_privileged_mutation_over_sock
         verify_filesystem=lambda *a, **k: None, administrator_uid=os.geteuid())
     await service.start()
     try:
-        for request in ({"command": "disable"}, {"schema": "actor.obs-pf-query.v1", "challenge": "a" * 64, "port": 4455, "state": "/etc/pf.conf"}):
+        for request in ({"command": "disable"},
+                {"schema": "actor.obs-pf-query.v1", "challenge": "a" * 64, "port": 4455},
+                {"schema": "actor.obs-pf-query.v2", "clock_domain": "process-relative", "challenge": "a" * 64, "port": 4455},
+                {"schema": "actor.obs-pf-query.v2", "clock_domain": CLOCK_DOMAIN, "challenge": "a" * 64, "port": 4455, "state": "/etc/pf.conf"}):
             reader, writer = await asyncio.open_unix_connection(path)
             writer.write(json.dumps(request).encode() + b"\n"); await writer.drain()
             result = json.loads(await reader.readline()); writer.close(); await writer.wait_closed()
@@ -136,3 +148,51 @@ async def test_fresh_previous_attestation_survives_poll_and_explicit_failure_rev
         release.set(); assert await task and client.verified
         assert not await client.refresh() and not client.verified
     finally: release.set(); await service.close()
+
+
+async def test_system_python_service_and_runtime_client_share_explicit_clock(tmp_path, monkeypatch):
+    """Actual 3.9->3.12 on macOS, without privileged state or PF commands.
+
+    Deliberately incompatible monotonic_ns origins on both sides reproduce
+    the daemon failure even where the two installed Python versions agree.
+    """
+    executable = "/usr/bin/python3" if Path("/usr/bin/python3").is_file() else sys.executable
+    path = tmp_path / "cross.sock"
+    code = """
+import asyncio, os, runpy, sys
+module = runpy.run_path(sys.argv[1], run_name='_actor_attestor_clock_test')
+module['time'].monotonic_ns = lambda: 7
+async def main():
+    service = module['PfAttestor']('unused', sys.argv[2], inspector=lambda: {
+        'verified': True, 'port': 4455, 'loopback_allowed': True,
+        'non_loopback_ipv4_ipv6_denied': True},
+        verify_filesystem=lambda *a, **kw: None, administrator_uid=os.geteuid())
+    await service.start()
+    print('ready', flush=True)
+    try:
+        await asyncio.wait_for(asyncio.to_thread(sys.stdin.buffer.read, 1), 10)
+    finally:
+        await service.close()
+asyncio.run(main())
+"""
+    process = await asyncio.create_subprocess_exec(executable, "-I", "-S", "-B", "-c", code,
+        str(Path(attestor_module.__file__).resolve()), str(path),
+        stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE, env={"PATH": os.defpath, "LC_ALL": "C"})
+    try:
+        assert await asyncio.wait_for(process.stdout.readline(), 3) == b"ready\n"
+        monkeypatch.setattr(time, "monotonic_ns", lambda: 10**30)
+        client = FirewallAttestationClient(path, max_age_seconds=.1,
+            verify_filesystem=lambda _: None, administrator_uid=os.geteuid())
+        assert await client.refresh() and client.verified
+        await asyncio.sleep(.11)
+        assert not client.verified  # expiry still uses the same kernel clock
+        process.stdin.write(b"x"); await process.stdin.drain(); process.stdin.close()
+        assert await asyncio.wait_for(process.wait(), 3) == 0
+        assert await process.stderr.read() == b""
+    finally:
+        if process.returncode is None:
+            process.terminate()
+            try: await asyncio.wait_for(process.wait(), 3)
+            except asyncio.TimeoutError:
+                process.kill(); await process.wait()
