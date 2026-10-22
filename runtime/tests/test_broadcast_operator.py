@@ -5,7 +5,7 @@ import re
 
 import pytest
 
-from actor_broadcast.operator import OperatorServer,public_status
+from actor_broadcast.operator import OperatorServer,OperatorError,public_status,action_payload
 from actor_broadcast.secrets import MacOSKeychainSecretStore,NativeKeychainBackend,SecretStoreError,SERVICE
 
 
@@ -44,6 +44,39 @@ def test_explicit_chat_optout_is_preserved_without_fabricating_chat_readiness():
     result=public_status({"state":"PreviewReady","chat_enabled":False,"ready":{"chat":False}})
     assert result["chat_enabled"] is False and result["ready"]["chat"] is False
     assert public_status({"state":"Idle"})["chat_enabled"] is True
+
+
+@pytest.mark.parametrize('payload',[
+    {'allow_memory_callbacks':False},{'idle_enabled':False},{'idle_after_seconds':5},
+    {'idle_enabled':True,'idle_after_seconds':120},
+    {'idle_enabled':False,'idle_after_seconds':20,'allow_memory_callbacks':True},
+])
+def test_partial_config_action_accepts_only_explicit_supported_fields(payload):
+    assert action_payload({'action':'configure','payload':payload})==('configure',payload)
+
+
+@pytest.mark.parametrize('payload',[
+    {},{'allow_memory_callbacks':0},{'allow_memory_callbacks':'false'},{'allow_memory_callbacks':None},
+    {'idle_enabled':1},{'idle_after_seconds':False},{'idle_after_seconds':'20'},
+    {'idle_after_seconds':float('nan')},{'idle_after_seconds':float('inf')},
+    {'idle_after_seconds':4},{'idle_after_seconds':121},
+    {'allow_memory_callbacks':False,'quota':1000},{'allow_memory_callbacks':True,'room_code':'OTHER1'},
+])
+def test_partial_config_action_rejects_invalid_types_and_authority_scope(payload):
+    with pytest.raises(OperatorError):action_payload({'action':'configure','payload':payload})
+
+
+def test_commentary_status_sanitizer_drops_non_numeric_counters_and_arbitrary_report_fields():
+    result=public_status({'state':'Live','live':True,'commentary':{'idle_enabled':True,'allow_memory_callbacks':False,
+        'idle_after_seconds':20,'pending_speech_segments':2,'calls_by_mode':{'reactive':3,'idle_recap':0,'memory_callback':2,
+        'private_subject':'secret'},'evidence':'secret','provider_raw_text':'secret'}})
+    commentary=result['commentary']
+    assert commentary=={'idle_enabled':True,'allow_memory_callbacks':False,'idle_after_seconds':20,
+        'pending_speech_segments':2,'calls_by_mode':{'reactive':3,'idle_recap':0,'memory_callback':2}}
+    bad=public_status({'state':'Idle','commentary':{'idle_enabled':1,'allow_memory_callbacks':'false',
+        'pending_speech_segments':True,'calls_by_mode':{'reactive':-1,'idle_recap':float('nan'),'memory_callback':'secret'},
+        'idle_after_seconds':float('inf'),'idle_deadline_seconds':False,'idle_reason':'arbitrary private prose'}})['commentary']
+    assert bad=={'calls_by_mode':{}}
 
 
 @pytest.fixture
@@ -115,6 +148,21 @@ async def test_cookie_without_csrf_or_origin_does_not_mutate(operator):
         status,_,_=await action(server,"preview",{"room_code":"ABC123"},bad)
         assert status in (401,403)
     assert not controller.commands
+
+
+async def test_partial_memory_toggle_http_uses_same_csrf_boundary_and_preserves_legacy_configuration(operator):
+    server,controller,_=operator;auth=await session(server)
+    payload={'allow_memory_callbacks':False}
+    for headers in ({},{**auth,'Origin':'https://foreign.invalid'}):
+        status,_,_=await action(server,'configure',payload,headers)
+        assert status in (401,403) and not controller.commands
+    status,_,_=await action(server,'configure',payload,auth)
+    assert status==200 and controller.commands==[('configure',payload)]
+    legacy={'idle_enabled':True,'idle_after_seconds':20}
+    status,_,_=await action(server,'configure',legacy,auth)
+    assert status==200 and controller.commands[-1]==('configure',legacy)
+    status,_,_=await action(server,'configure',{'allow_memory_callbacks':0},auth)
+    assert status==400 and len(controller.commands)==2
 
 
 async def test_cli_keychain_bearer_not_renderer_token_and_no_secret_in_status(operator):

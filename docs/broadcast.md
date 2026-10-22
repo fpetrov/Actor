@@ -214,6 +214,26 @@ the permitted result and a short outro, awaits playback and bounded mux drain, t
 stops the owned stream. Emergency stop mutes/stops immediately. Disconnect is not a win.
 A watchdog prevents an abandoned managed stream from exposing an unrelated window.
 
+Ending is a lifecycle state, not an automatic switch to the voice-only
+`ACTOR Ending` scene. The controller keeps the already audited `ACTOR Match`
+route so the public, permitted GameOver view remains visible during the outro.
+Its same-scene request performs the existing audit and returns without changing
+the program scene. All four owned scenes remain defined. Only actual completed
+playback plus the bounded drain leads to Safe/Stop; foreign scene/source changes
+still fail closed, with no event exception or route/TTL grace period.
+
+The local operator panel exposes independent idle and memory-callback controls,
+the 5–120 second idle delay, current readiness/Live/room state, the pending speech
+segment count, and admitted request counts for reactive/recap/callback modes.
+These mode counts are scheduler admissions, not certified SDK turns or completed
+speech. The status boundary exports only those fixed bounded counters; missing
+measurements display as unknown. Nonempty partial `configure` payloads may contain
+`idle_enabled`, `idle_after_seconds`, or `allow_memory_callbacks`; the earlier
+two-field form remains valid. Changes preserve all spending limits and apply to
+an active scheduler or one that finishes preparing later. Unsaved edits survive
+status polling and older in-flight Apply responses. Synthetic DOM and API tests
+exercise this contract without claiming an actual browser/native presentation.
+
 Temporal fog must keep the existing inward feather. Allowed visibility contracts
 immediately; newly allowed radial space may open smoothly with display <= current
 allowed distance. Cached 193-ray state avoids new render targets or extra raycasts.

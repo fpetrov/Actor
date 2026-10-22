@@ -53,8 +53,20 @@ def public_status(value):
             if (item:=scalar(spoken.get(name),maximum)) is not None}
     commentary=value.get("commentary",{})
     if isinstance(commentary,dict):
-        result["commentary"]={name:item for name in ("idle_enabled","idle_after_seconds","idle_reason","idle_deadline_seconds")
-            if (item:=scalar(commentary.get(name),64)) is not None}
+        result['commentary']={name:commentary[name] for name in ('idle_enabled','allow_memory_callbacks')
+            if type(commentary.get(name))is bool}
+        for name,minimum,maximum in (('idle_after_seconds',5,120),('idle_deadline_seconds',0,86400)):
+            item=commentary.get(name)
+            if type(item)in(int,float) and math.isfinite(item) and minimum<=item<=maximum:
+                result['commentary'][name]=item
+        reason=commentary.get('idle_reason')
+        if isinstance(reason,str) and re.fullmatch(r'[a-z0-9_]{1,64}',reason):result['commentary']['idle_reason']=reason
+        pending=commentary.get('pending_speech_segments')
+        if type(pending)is int and 0<=pending<=2:result['commentary']['pending_speech_segments']=pending
+        calls=commentary.get('calls_by_mode')
+        if isinstance(calls,dict):
+            result['commentary']['calls_by_mode']={name:calls[name] for name in ('reactive','idle_recap','memory_callback')
+                if type(calls.get(name))is int and 0<=calls[name]<=1000000}
     usage=value.get("usage",{})
     if isinstance(usage,dict):result["usage"]={key:scalar(usage[key],0) for key in USAGE if key in usage}
     metrics=value.get("metrics",{})
@@ -80,8 +92,11 @@ def action_payload(value):
         raise OperatorError("operator_action_invalid")
     action,payload=value["action"],value["payload"]
     fields={"preview":{"room_code"},"public_start":{"channel","broadcast_session_id","confirmation"},
-        "stop":set(),"emergency_stop":set(),"configure":{"idle_enabled","idle_after_seconds"}}
-    if action not in fields or set(payload)!=fields[action]:raise OperatorError("operator_action_invalid")
+        "stop":set(),"emergency_stop":set(),"configure":{"idle_enabled","idle_after_seconds","allow_memory_callbacks"}}
+    if not isinstance(action,str) or action not in fields:raise OperatorError('operator_action_invalid')
+    if action=='configure':
+        if not payload or not set(payload)<=fields[action]:raise OperatorError('operator_action_invalid')
+    elif set(payload)!=fields[action]:raise OperatorError('operator_action_invalid')
     if action=="preview" and (not isinstance(payload["room_code"],str) or not re.fullmatch(r"[A-Z0-9]{6}",payload["room_code"])):
         raise OperatorError("operator_room_invalid")
     if action=="public_start":
@@ -90,8 +105,12 @@ def action_payload(value):
             try:bounded_text(payload[key],64 if key=="channel" else 128)
             except (ValueError,TypeError):raise OperatorError("operator_action_invalid") from None
     if action=="configure":
-        if type(payload["idle_enabled"])is not bool or type(payload["idle_after_seconds"])not in(int,float) or not math.isfinite(payload["idle_after_seconds"]) or not 5<=payload["idle_after_seconds"]<=120:
+        if any(name in payload and type(payload[name])is not bool for name in ('idle_enabled','allow_memory_callbacks')):
             raise OperatorError("operator_idle_config_invalid")
+        if 'idle_after_seconds' in payload:
+            value=payload['idle_after_seconds']
+            if type(value)not in(int,float) or not math.isfinite(value) or not 5<=value<=120:
+                raise OperatorError('operator_idle_config_invalid')
     return action,payload
 
 

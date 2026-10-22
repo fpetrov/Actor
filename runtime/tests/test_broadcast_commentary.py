@@ -235,6 +235,9 @@ async def test_ordinary_p1_after_completed_work_keeps_normal_cooldown():
     clock=Clock();scheduler,provider,speech=system(clock)
     scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));scheduler.ready()
     await pump(scheduler);assert speech.acknowledge(scheduler,clock)
+    # Completed playback does not itself finish the owned SQLite reconciliation.
+    completed=scheduler._active
+    if completed is not None:await asyncio.wait_for(asyncio.shield(completed),2)
     await pump(scheduler)
     clock.advance(.2);await fresh(scheduler,clock,facts=[fact(clock,'ordinary-p1',priority=1)])
     clock.advance(1.5);await fresh(scheduler,clock)
@@ -252,6 +255,9 @@ async def test_p1_does_not_preempt_active_critical_work_or_gain_its_cooldown_exe
     assert len(provider.requests)==1 and speech.cancellations==[]
     assert scheduler._p1_deadline is None and not scheduler._p1_cooldown_bypass
     assert speech.acknowledge(scheduler,clock)
+    # Wait for this exact provider/reconciliation task, not event-loop yields.
+    completed=scheduler._active
+    if completed is not None:await asyncio.wait_for(asyncio.shield(completed),2)
     await pump(scheduler)
     assert len(provider.requests)==1 and scheduler.report()['silence_reason']=='cooldown'
     await scheduler.stop()

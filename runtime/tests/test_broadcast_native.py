@@ -784,3 +784,56 @@ async def test_failed_render_flush_recovers_only_after_actual_terminal_dependenc
     assert run._record_directory_original is None
     if blocked_stage=='record_directory':assert restores==['SetRecordDirectory','SetRecordDirectory']
     assert all(item in fakes.calls for item in ('sink-close','voice-close','obs-owned-inputs-removed','obs-close'))
+
+
+@pytest.mark.parametrize('foreign_graph_event',[False,True])
+async def test_terminal_fsm_preserves_verified_match_route_and_still_rejects_external_graph_change(tmp_path,foreign_graph_event):
+    from actor_broadcast.coordinator import BroadcastCoordinator
+    from test_broadcast_obs import controller as actual_obs,ObsController
+    fakes=Fakes(tmp_path);factory,run,_,_,_=await prepared(fakes)
+    for task in tuple(run._tasks):task.cancel()
+    await asyncio.gather(*tuple(run._tasks),return_exceptions=True)
+    obs,graph=actual_obs()
+    obs._binding=run._binding;obs.window_guard=run.window.verify
+    graph.settings[ObsController.VIDEO]['window']=run._binding.window_id
+    obs._renderer_url=run.sink.renderer_url
+    graph.settings[ObsController.VOICE]['url']=obs._renderer_url
+    for item in graph.inputs:
+        identity=str(uuid4());item['inputUuid']=identity
+        obs._owned_inputs[item['inputName']]=identity
+        graph.settings[item['inputName']]['actor_broadcast_owner']=obs._owner_nonce
+    for items in graph.items.values():
+        for item in items:item['sourceUuid']=obs._owned_inputs[item['sourceName']]
+    run.obs=obs;run.obs_client=graph;obs.on_unsafe=run._obs_event
+    obs._owned_stream=obs._stream_confirmed=True;graph.active=True
+    assert (await obs.audit()).passed and run._route_guard()
+    coordinator=BroadcastCoordinator(factory,chat_enabled=False,mux_drain_seconds=0)
+    coordinator._run=run;coordinator.state='Live';run._terminal=True
+    run.on_unsafe=lambda code:coordinator.unsafe(code,generation=coordinator._generation)
+    ending_routes=[];ending_mutations=[];original=graph.request;fired=False
+    async def inspect(kind,data=None,**kwargs):
+        nonlocal fired
+        if coordinator.state=='Ending':
+            ending_routes.append(run._route_guard())
+            if kind=='SetCurrentProgramScene':ending_mutations.append(data)
+            if foreign_graph_event and kind=='GetCurrentProgramScene' and not fired:
+                fired=True;obs._event('SceneItemTransformChanged',{'sceneName':'ACTOR Match','sceneItemId':2})
+        return await original(kind,data,**kwargs)
+    graph.request=inspect
+    run.scheduler.report=lambda:{'terminal_outro_finished':True}
+    try:
+        coordinator.terminal()
+        async with asyncio.timeout(3):
+            while coordinator.state not in ('Stopped','Failed'):await asyncio.sleep(.001)
+        assert ending_routes and not ending_mutations
+        assert not any(kind=='SetCurrentProgramScene' and data['sceneName']=='ACTOR Ending' for kind,data in graph.calls)
+        if foreign_graph_event:
+            assert fired and run._failure=='obs_graph_changed'
+            assert coordinator.state=='Failed' and coordinator.metrics['unsafe_stops']==1
+            assert coordinator.metrics['terminal_drains']==0
+        else:
+            assert all(ending_routes) and run._failure is None
+            assert coordinator.state=='Stopped' and coordinator.metrics['terminal_drains']==1
+            assert coordinator.metrics['unsafe_stops']==coordinator.metrics['outro_timeouts']==0
+        assert not graph.active and not graph.inputs and run._closed and not factory._owned and not fakes.lease.held
+    finally:await coordinator.aclose();await factory.aclose()

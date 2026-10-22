@@ -50,6 +50,7 @@ class LatencyTelemetry:
         self._scope = None
         self._facts, self._utterances, self._segments = OrderedDict(), OrderedDict(), OrderedDict()
         self._samples, self._sample_counts, self._counts = {}, Counter(), Counter()
+        self._priority_samples, self._priority_sample_counts = {}, Counter()
         self._admissions = 0
 
     @staticmethod
@@ -66,9 +67,14 @@ class LatencyTelemetry:
 
     def _sample(self, group, name, value):
         if not self._valid(value): self._counts['invalid_timing_samples'] += 1; return
-        identity = (*group,name)
-        self._sample_counts[identity] += 1
-        self._samples.setdefault(identity,deque(maxlen=self.sample_capacity)).append(float(value))
+        mode,order,priority = group
+        # One correlated sample, two numeric projections. Global event counters
+        # are unchanged; only the same bounded per-metric distributions split.
+        for samples,counts,identity in (
+                (self._samples,self._sample_counts,(mode,order,name)),
+                (self._priority_samples,self._priority_sample_counts,(f'{mode}_p{priority}',order,name))):
+            counts[identity] += 1
+            samples.setdefault(identity,deque(maxlen=self.sample_capacity)).append(float(value))
 
     def _delta(self, group, name, start, end):
         if start is None or end is None: return
@@ -101,8 +107,10 @@ class LatencyTelemetry:
     def admitted(self, request, view):
         now = self._now(); candidate = request.candidate
         identity = (candidate.scope,request.utterance_id,request.utterance_epoch)
-        if now is None or candidate.mode not in MODES or candidate.scope != self._scope or identity in self._utterances: return
-        group = (candidate.mode,'first_in_run' if self._admissions == 0 else 'subsequent_in_run')
+        if (now is None or candidate.mode not in MODES or candidate.scope != self._scope or identity in self._utterances
+                or type(candidate.priority) is not int or not 0 <= candidate.priority <= 3): return
+        # Capture admitted candidate priority, never a later segment/fact/role.
+        group = (candidate.mode,'first_in_run' if self._admissions == 0 else 'subsequent_in_run',candidate.priority)
         self._admissions += 1
         presented = view.presentation.received_at_monotonic
         presented = presented if self._valid(presented) and presented <= now else None
@@ -261,15 +269,21 @@ class LatencyTelemetry:
         if row is not None and not row.cancelled:
             row.cancelled = True; self._counts['cancelled_utterances'] += 1
 
-    def report(self):
+    @staticmethod
+    def _summarize(samples,counts):
         groups = {}
-        for (mode,order,metric),values in self._samples.items():
+        for (mode,order,metric),values in samples.items():
             ordered = sorted(values); count = len(ordered)
             def percentile(q): return ordered[max(0,math.ceil(count*q)-1)] if count else None
             groups.setdefault(mode,{}).setdefault(order,{})[metric] = {
-                'count':self._sample_counts[(mode,order,metric)],'retained_count':count,
+                'count':counts[(mode,order,metric)],'retained_count':count,
                 'p50':percentile(.5),'p95':percentile(.95)}
-        return {'schema':'actor.broadcast-latency.v1','groups':groups,'counts':dict(self._counts),
+        return groups
+
+    def report(self):
+        return {'schema':'actor.broadcast-latency.v1','groups':self._summarize(self._samples,self._sample_counts),
+            'priority_groups':self._summarize(self._priority_samples,self._priority_sample_counts),'counts':dict(self._counts),
+            'priority_group_scope':'admitted candidate priority0..3, captured at admission; not hidden role; same direct correlated samples, not sums of percentiles',
             'retained':{'utterances':len(self._utterances),'segments':len(self._segments),'fact_timings':len(self._facts)},
             'sample_capacity_per_metric':self.sample_capacity,
             'percentile_scope':'most recent bounded samples; count is whole-run valid samples',

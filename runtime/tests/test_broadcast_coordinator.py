@@ -86,6 +86,76 @@ async def test_double_preview_rejected_and_preview_never_publishes():
     assert factory.run.closed
 
 
+async def test_partial_commentary_configuration_preserves_other_policy_and_active_scheduler():
+    factory=Factory();controller=BroadcastCoordinator(factory)
+    before=controller.config.model_dump();seen=[]
+    factory.run.scheduler.configure=seen.append
+    try:
+        await controller.execute('configure',{'allow_memory_callbacks':False})
+        assert controller.config.idle.allow_memory_callbacks is False
+        assert controller.config.idle.enabled==before['idle']['enabled']
+        assert controller.config.idle.after_seconds==before['idle']['after_seconds']
+        assert controller.config.hard_calls_per_hour==before['hard_calls_per_hour'] and factory.calls==0
+        await preview(controller)
+        await controller.execute('configure',{'idle_enabled':False,'idle_after_seconds':35})  # Original two-field API.
+        assert seen[-1] is controller.config
+        assert controller.config.idle.allow_memory_callbacks is False and controller.config.idle.after_seconds==35
+        await controller.execute('configure',{'allow_memory_callbacks':True})
+        assert not controller.config.idle.enabled and controller.config.idle.allow_memory_callbacks
+        status=await controller.status()
+        assert status['commentary']['allow_memory_callbacks'] is True
+        assert not status['live'] and factory.run.obs.starts==0
+    finally:await controller.aclose()
+
+
+async def test_configuration_changed_during_prepare_is_applied_before_scheduler_activation():
+    factory=Factory();factory.hold=True;controller=BroadcastCoordinator(factory);seen=[]
+    factory.run.scheduler.configure=seen.append
+    try:
+        await controller.execute('preview',{'room_code':'ABC123'})
+        await factory.entered.wait()
+        await controller.execute('configure',{'allow_memory_callbacks':False,'idle_after_seconds':30})
+        factory.release.set();await controller._prepare_task
+        assert controller.state=='PreviewReady' and len(seen)==1
+        assert seen[0].idle.allow_memory_callbacks is False and seen[0].idle.after_seconds==30
+        assert (await controller.status())['commentary']['allow_memory_callbacks'] is False
+        assert factory.run.activations==1 and factory.run.obs.starts==0
+    finally:factory.release.set();await controller.aclose()
+
+
+@pytest.mark.parametrize('payload',[
+    {},{'allow_memory_callbacks':1},{'allow_memory_callbacks':'false'},{'allow_memory_callbacks':None},
+    {'idle_enabled':0},{'idle_after_seconds':True},{'idle_after_seconds':'20'},
+    {'idle_after_seconds':float('nan')},{'idle_after_seconds':float('inf')},
+    {'idle_after_seconds':4.9},{'idle_after_seconds':121},
+    {'allow_memory_callbacks':False,'hard_calls_per_hour':999},
+    {'allow_memory_callbacks':False,'broadcast_session_id':'foreign'},
+])
+async def test_strict_partial_configuration_rejects_types_unknown_fields_and_scope_without_mutation(payload):
+    controller=BroadcastCoordinator(Factory());before=controller.config
+    try:
+        with pytest.raises(CoordinatorError,match='config_invalid'):await controller.execute('configure',payload)
+        assert controller.config is before and controller.state=='Idle'
+    finally:await controller.aclose()
+
+
+async def test_status_exports_only_bounded_own_queue_and_fixed_mode_admission_counters():
+    factory=Factory();controller=BroadcastCoordinator(factory)
+    try:
+        await preview(controller)
+        factory.run.scheduler.report=lambda:{'pending_segments':2,'calls_by_mode':{
+            'reactive':7,'idle_recap':2,'memory_callback':1,'private_context':'secret'},'raw_provider':'secret'}
+        status=await controller.status();editorial=status['commentary']
+        assert editorial['pending_speech_segments']==2
+        assert editorial['calls_by_mode']=={'reactive':7,'idle_recap':2,'memory_callback':1}
+        assert 'raw_provider' not in status and 'private_context' not in str(status)
+        factory.run.scheduler.report=lambda:{'pending_segments':True,'calls_by_mode':{
+            'reactive':-1,'idle_recap':1000001,'memory_callback':True}}
+        invalid=(await controller.status())['commentary']
+        assert invalid['pending_speech_segments'] is None and all(value is None for value in invalid['calls_by_mode'].values())
+    finally:await controller.aclose()
+
+
 async def test_public_start_inflight_and_live_repeated_request_are_idempotent():
     factory = Factory(); controller = BroadcastCoordinator(factory); factory.run.obs.block_start = True
     try:
@@ -135,7 +205,7 @@ async def test_terminal_waits_actual_outro_finished_then_mux_drain():
     await stopped(controller)
     assert controller.state == "Stopped" and factory.run.closed
     assert controller.metrics["terminal_drains"] == 1
-    assert factory.run.obs.shown == ["ACTOR Ending"]
+    assert factory.run.obs.shown == ["ACTOR Match"]  # Preserve permitted GameOver video during the outro.
     await controller.aclose()
 
 

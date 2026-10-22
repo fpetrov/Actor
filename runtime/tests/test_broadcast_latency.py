@@ -15,15 +15,15 @@ from actor_broadcast.scheduler import CommentaryScheduler
 from test_broadcast_commentary import Clock,view,fact,Provider,pump
 
 
-def pipeline(clock, *, mode='reactive', identity='private-utterance', telemetry=None):
+def pipeline(clock, *, mode='reactive', identity='private-utterance', telemetry=None, priority=0):
     telemetry=telemetry or LatencyTelemetry(clock=clock.monotonic,wall_clock=clock.wall)
-    frame=view(clock,facts=(fact(clock,'private-evidence',priority=0),))
+    frame=view(clock,facts=(fact(clock,'private-evidence',priority=priority),))
     telemetry.presented(frame)
-    request=CommentaryRequest(CommentaryCandidate(frame.scope,frame.sequence,'private-candidate',mode,0,
+    request=CommentaryRequest(CommentaryCandidate(frame.scope,frame.sequence,'private-candidate',mode,priority,
         'private-topic',tuple(f.ref for f in frame.facts),9999999),{},256,identity,1)
     telemetry.admitted(request,frame)
     key=SegmentKey(request.utterance_id,1,0)
-    segment=SpeechSegment(frame.scope,key,0,'PRIVATE TEXT',request.candidate.evidence,1,999999999999)
+    segment=SpeechSegment(frame.scope,key,priority,'PRIVATE TEXT',request.candidate.evidence,1,999999999999)
     return telemetry,frame,request,segment
 
 
@@ -227,8 +227,81 @@ async def test_actual_scheduler_audio_callbacks_complete_eight_second_pcm_or_kee
         assert metric(latency,'provider_dispatch_to_first_validated_text_ms')['count']==1
         assert metric(latency,'synthesis_iteration_to_first_pcm_ms')['count']==1
         assert metric(latency,'admission_to_first_positive_consumption_ms')['count']==1
+        assert latency['priority_groups']['reactive_p0']['first_in_run']==latency['groups']['reactive']['first_in_run']
         assert (metric(latency,'synthesis_pipeline_rtf') is None)==truncated
         assert sink.metrics['consumed_frames']==192000
         assert sink.latency is scheduler.latency is output.latency
     finally:
         await scheduler.stop();await output.close()
+
+
+def test_urgent_and_routine_reactive_direct_samples_split_without_changing_aggregate_or_counters():
+    clock=Clock();clock.now=100
+    telemetry,_,_,_=pipeline(clock,mode='intro',identity='prime',priority=3)
+    name='evidence_first_presentation_to_first_positive_consumption_ms'
+    for index,(priority,elapsed) in enumerate(((0,.8),(2,13.9))):
+        item=fact(clock,str(index),priority=priority)
+        frame=view(clock,facts=[item]);telemetry.presented(frame)
+        request=CommentaryRequest(CommentaryCandidate(frame.scope,frame.sequence,str(index),'reactive',priority,
+            'topic',(item.ref,),9999999),{},256,str(index),1)
+        telemetry.admitted(request,frame)
+        key=SegmentKey(str(index),1,0)
+        telemetry.validated_text(frame.scope,key)
+        # Segment priority is not the admission label; later callbacks identify
+        # the original utterance, not a newly inferred priority.
+        segment=SpeechSegment(frame.scope,key,3-priority,'PRIVATE TEXT',(item.ref,),1,999999999999)
+        telemetry.submitted(segment)
+        clock.advance(elapsed)
+        ack=PlaybackAck(frame.scope,key,'progress',1,1,clock.monotonic())
+        telemetry.playback(ack);telemetry.playback(ack)
+    report=telemetry.report();order='subsequent_in_run'
+    aggregate=report['groups']['reactive'][order][name]
+    urgent=report['priority_groups']['reactive_p0'][order][name]
+    routine=report['priority_groups']['reactive_p2'][order][name]
+    assert aggregate['count']==2 and aggregate['p50']==pytest.approx(800) and aggregate['p95']==pytest.approx(13900)
+    assert urgent['count']==1 and urgent['p95']==pytest.approx(800)
+    assert routine['count']==1 and routine['p95']==pytest.approx(13900)
+    assert 'reactive_p1' not in report['priority_groups'] and 'reactive_p3' not in report['priority_groups']
+    assert report['counts']['admitted_utterances']==3
+    assert 'admitted candidate priority' in report['priority_group_scope']
+    for private in ('PRIVATE TEXT','private-evidence','private-utterance','topic'):
+        assert private not in json.dumps(report)
+
+
+def test_priority_distributions_bound_samples_keep_counts_and_populate_only_admitted_labels():
+    from actor_broadcast.latency import MODES
+    clock=Clock();telemetry=LatencyTelemetry(clock=clock.monotonic,wall_clock=clock.wall,
+        capacity=2,fact_capacity=2,sample_capacity=2)
+    total=0
+    for mode in sorted(MODES):
+        for priority in range(4):
+            for iteration in range(3):
+                total+=1
+                _,_,request,segment=pipeline(clock,mode=mode,priority=priority,identity=str(total),telemetry=telemetry)
+                telemetry.provider_started(request);clock.advance(.1)
+                telemetry.validated_text(segment.scope,segment.key)
+    report=telemetry.report()
+    assert report['counts']['admitted_utterances']==total
+    assert len(report['priority_groups'])==len(MODES)*4
+    assert all(count<=2 for count in report['retained'].values())
+    for mode in MODES:
+        for priority in range(4):
+            sample=report['priority_groups'][f'{mode}_p{priority}']['subsequent_in_run']['provider_dispatch_to_first_validated_text_ms']
+            expected=2 if mode==sorted(MODES)[0] and priority==0 else 3
+            assert sample['count']==expected and sample['retained_count']==2
+            assert sample['p95']==pytest.approx(100)
+    assert all(len(values)<=2 for values in telemetry._priority_samples.values())
+
+
+def test_cancelled_or_old_scope_callbacks_cannot_add_priority_latency_samples():
+    clock=Clock();telemetry,frame,request,segment=pipeline(clock,priority=1)
+    telemetry.validated_text(segment.scope,segment.key)
+    telemetry.cancelled(Cancel(segment.scope,segment.key.utterance_id,segment.key.utterance_epoch))
+    clock.advance(1)
+    ack=PlaybackAck(segment.scope,segment.key,'progress',1,1,clock.monotonic())
+    telemetry.playback(ack)
+    name='admission_to_first_positive_consumption_ms'
+    assert name not in telemetry.report()['priority_groups']['reactive_p1']['first_in_run']
+    newer=view(clock,scope=replace(frame.scope,connection_generation=2),facts=())
+    telemetry.presented(newer);telemetry.playback(ack)
+    assert name not in telemetry.report()['priority_groups']['reactive_p1']['first_in_run']

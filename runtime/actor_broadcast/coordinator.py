@@ -7,6 +7,7 @@ it is returned. This controller never receives native game-agent state.
 from __future__ import annotations
 
 import asyncio
+import math
 import re
 import time
 from uuid import uuid4
@@ -87,7 +88,7 @@ class BroadcastCoordinator:
                 if payload: raise CoordinatorError("operator_payload_invalid")
                 self._request_stop(emergency=action == "emergency_stop")
             elif action == "configure":
-                if not set(payload) <= {"idle_enabled", "idle_after_seconds"} or not payload:
+                if not set(payload) <= {"idle_enabled", "idle_after_seconds", "allow_memory_callbacks"} or not payload:
                     raise CoordinatorError("broadcast_config_invalid")
                 updates = {}
                 if "idle_enabled" in payload:
@@ -95,8 +96,11 @@ class BroadcastCoordinator:
                     updates["enabled"] = payload["idle_enabled"]
                 if "idle_after_seconds" in payload:
                     value = payload["idle_after_seconds"]
-                    if type(value) not in (int, float) or not 5 <= value <= 120: raise CoordinatorError("broadcast_config_invalid")
+                    if type(value) not in (int, float) or not math.isfinite(value) or not 5 <= value <= 120: raise CoordinatorError("broadcast_config_invalid")
                     updates["after_seconds"] = float(value)
+                if "allow_memory_callbacks" in payload:
+                    if type(payload["allow_memory_callbacks"]) is not bool: raise CoordinatorError("broadcast_config_invalid")
+                    updates["allow_memory_callbacks"] = payload["allow_memory_callbacks"]
                 # Validate instead of unchecked Pydantic model_copy mutation.
                 data = self.config.model_dump(); data["idle"].update(updates)
                 self.config = CommentaryConfig.model_validate(data)
@@ -119,6 +123,10 @@ class BroadcastCoordinator:
                         or not all(flags[key] for key in self._required)):
                     raise CoordinatorError("broadcast_dependency_not_ready")
                 self._ready = flags
+                # configure may have changed the idle policy while preparation
+                # awaited its dependencies. Apply the current validated policy
+                # before the returned scheduler is allowed to run.
+                self._run.scheduler.configure(self.config)
                 if not self._run.scheduler.ready(): raise CoordinatorError("broadcast_presented_view_missing")
                 await self._run.activate()
                 self.state, self.reason = "PreviewReady", "local_preview_ready"
@@ -168,7 +176,7 @@ class BroadcastCoordinator:
     async def _ending(self, generation):
         deadline = time.monotonic() + self.outro_timeout
         try:
-            if self._run is not None: await self._run.obs.show("ACTOR Ending")
+            if self._run is not None: await self._run.obs.show("ACTOR Match")
             while generation == self._generation and self.state == "Ending" and self._run is not None:
                 report = self._run.scheduler.report()
                 if report.get("terminal_outro_finished") is True:
@@ -215,12 +223,20 @@ class BroadcastCoordinator:
     async def status(self):
         report = self._run.scheduler.report() if self._run is not None else {}
         details = await self._run.status() if self._run is not None else {}
+        pending=report.get('pending_segments')
+        pending=pending if type(pending)is int and 0<=pending<=2 else None
+        calls=report.get('calls_by_mode');modes={}
+        for name in ('reactive','idle_recap','memory_callback'):
+            count=calls.get(name,0) if isinstance(calls,dict) else None
+            modes[name]=count if type(count)is int and 0<=count<=1000000 else None
         return {"state": self.state, "reason": self.reason, "channel": self.channel,
             "room_code": self.room_code, "broadcast_session_id": self.broadcast_session_id,
             "rooms": await self.factory.rooms(), "ready": dict(self._ready), "live": self.state == "Live",
             "chat_enabled": self.chat_enabled,
             "last_spoken": details.get("last_spoken"), "usage": details.get("usage", {}),
             "commentary": {"idle_enabled": self.config.idle.enabled, "idle_after_seconds": self.config.idle.after_seconds,
+                "allow_memory_callbacks":self.config.idle.allow_memory_callbacks,
+                "pending_speech_segments":pending,"calls_by_mode":modes,
                 "idle_reason": report.get("silence_reason"), "idle_deadline_seconds": details.get("idle_deadline_seconds")},
             "metrics": dict(self.metrics)}
 
