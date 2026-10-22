@@ -1,0 +1,20 @@
+{
+  "focused_frames": 2974,
+  "frame_ms_p50": 8.32862127572298,
+  "frame_ms_p95": 9.015086106956005,
+  "frame_ms_p99": 9.33149829506874,
+  "frames": 2974,
+  "fullscreen": false,
+  "graphics": "Metal",
+  "headless": false,
+  "height": 600,
+  "mean_fps": 118.95989378559388,
+  "phase": "Exploration",
+  "sample_seconds": 25.000022321473807,
+  "schema": "actor.rendered-ui.v2",
+  "scope": "Actual rendered standalone frame intervals after two-second warmup, restricted to the current phase and resolution; not hardware presentation timings or Human acceptance by itself.",
+  "screenshot": "candidate-c1-main-hall-001-800x600.png",
+  "unity": "6000.6.4f1",
+  "version": "0.9.0",
+  "width": 800
+}

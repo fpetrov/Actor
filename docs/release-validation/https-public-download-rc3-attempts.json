@@ -1,0 +1,40 @@
+{
+  "schema": "actor.m8-public-download-attempts.v1",
+  "tag": "v0.9.0-rc.3",
+  "source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+  "release_url": "https://github.com/fpetrov/Actor/releases/tag/v0.9.0-rc.3",
+  "supervisor_download_attempts": 1,
+  "accepted_download_attempts": 1,
+  "failed_download_attempts": 0,
+  "attempts": [
+    {
+      "attempt": 1,
+      "passed": true,
+      "stage": "normal_system_curl_https",
+      "verified_assets": 7,
+      "verified_metadata_requests": 2,
+      "checksum_entries": 6,
+      "http200_receipts": 9,
+      "ssl_verify_zero_receipts": 9,
+      "github_asset_digests_verified": 7,
+      "downloaded_asset_bytes": 127653941,
+      "tls_bypass_used": false,
+      "new_fresh_output_used": true
+    }
+  ],
+  "offline_preparation": {
+    "schema": "actor.m8-public-download-preparation.v1",
+    "network_requests": 0,
+    "download_output_created": false,
+    "failed_offline_plan_checks": 1,
+    "final_offline_plan_passed": true,
+    "initial_failure_category": "local_source_stamp_mismatch",
+    "correction": "Helper protocol expectation corrected from numeric 4 to the existing manifest string 4.",
+    "local_package_modified": false,
+    "ca_or_trust_change_performed": false,
+    "scope": "Offline helper preparation, before the single actual RC3 download attempt."
+  },
+  "captured_at_unix_ms": 1792640368402,
+  "scope": "RC3 anonymous public distribution integrity only; one actual download attempt. Offline preparation checks are separate from downloads, gameplay/model attempts, and Runtime failures.",
+  "complete_m8_acceptance_claimed": false
+}

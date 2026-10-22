@@ -263,25 +263,25 @@
       "current_release_draft": false,
       "current_release_prerelease": true,
       "distribution_files": 7,
-      "draft_at_original_download": true,
       "evidence": [
-        "release-integrity-72b.json",
-        "https-draft-download-72b.json",
-        "component-delta-656-72b.json",
-        "https-public-download.json",
-        "https-public-download-attempts.json",
-        "deployment/activation-72b.json"
+        "release-integrity-rc3.json",
+        "component-delta-72b-c1.json",
+        "https-public-download-rc3.json",
+        "https-public-download-rc3-attempts.json",
+        "deployment/activation-c1.json"
       ],
+      "historical_rc2_evidence": "release-integrity-72b.json",
       "not_proven": [
-        "full72b native screen/input acceptance",
-        "gameplay/control-plane TLS or confidentiality",
-        "Apple notarization",
-        "Windows or IL2CPP support",
-        "full M8 release acceptance"
+        "complete M8 acceptance",
+        "full C1 native/UI/gameplay acceptance",
+        "GPU benchmark/zero-overhead",
+        "gameplay/control-plane TLS/confidentiality",
+        "Apple notarization/Windows/IL2CPP",
+        "actual rollback/continuous availability"
       ],
       "product_artifacts": 5,
-      "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
-      "status": "passed_published_prerelease_integrity_and_separate_activation_scope",
+      "source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+      "status": "passed_published_C1_limited_prerelease_integrity_and_activation_scope",
       "superseded_unpublished_source": "656cdbfa8ab5c11b56ac265cfad02acfcc8ab6c3"
     },
     {
@@ -306,7 +306,7 @@
     },
     {
       "category": "final_functional_ci",
-      "evidence": "release-integrity-72b.json",
+      "evidence": "release-integrity-rc3.json",
       "not_proven": [
         "native gameplay",
         "actual model execution",
@@ -315,17 +315,17 @@
       ],
       "runs": [
         {
-          "run_id": 39706613236,
-          "url": "https://github.com/fpetrov/Actor/actions/runs/39706613236",
+          "run_id": 39715858801,
+          "url": "https://github.com/fpetrov/Actor/actions/runs/39715858801",
           "workflow": "ControlPlane"
         },
         {
-          "run_id": 39706613217,
-          "url": "https://github.com/fpetrov/Actor/actions/runs/39706613217",
+          "run_id": 39715858807,
+          "url": "https://github.com/fpetrov/Actor/actions/runs/39715858807",
           "workflow": "SDK+Runtime"
         }
       ],
-      "source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+      "source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
       "status": "passed"
     },
     {
@@ -433,6 +433,65 @@
       "ordinary_create_observed": true,
       "own_browser_room_retired": true,
       "status": "passed_bounded_operator_observation"
+    },
+    {
+      "baseline_mean_fps": 115.76658322063298,
+      "baseline_source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+      "candidate_first_mean_fps": 118.95989378559388,
+      "candidate_human_normal_exit": false,
+      "candidate_source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+      "category": "native_fog_comparison",
+      "door_coverage": false,
+      "evidence": "fog/native-comparison-72b-c1.json",
+      "exact_serialized_pose_pairing": false,
+      "formal_gpu_benchmark": false,
+      "frames": 3,
+      "full_visual_fixture_workflow_passed": false,
+      "later_independent_room404_receipts": true,
+      "recorded_owned_processes_and_groups_remaining": 0,
+      "status": "bounded_visual_samples_recorded_not_full_workflow_pass"
+    },
+    {
+      "actual_rollback": false,
+      "category": "production_activation_c1",
+      "evidence": "deployment/activation-c1.json",
+      "gameplay_tls": false,
+      "ordinary_ngo_binding": true,
+      "owned_smoke_groups_remaining": 0,
+      "owned_smoke_processes_remaining": 0,
+      "provenance_checks": 17,
+      "runtime_hello_or_brain": false,
+      "smoke_checks": 13,
+      "source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+      "status": "actual_activation_and_bounded_smoke_pass"
+    },
+    {
+      "accepted_downloads": 1,
+      "actual_download_attempts": 1,
+      "asset_files": 7,
+      "bytes": 127653941,
+      "category": "public_anonymous_https_distribution_rc3",
+      "checksum_entries": 6,
+      "credentials_or_tls_bypass": false,
+      "evidence": [
+        "https-public-download-rc3.json",
+        "https-public-download-rc3-attempts.json"
+      ],
+      "failed_downloads": 0,
+      "game_or_model_denominator": false,
+      "offline_preparation_corrections": 1,
+      "source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+      "status": "actual_public_anonymous_integrity_pass",
+      "tls_receipts": 9
+    },
+    {
+      "binary_equivalence_claimed": false,
+      "category": "source_component_delta_72b_c1",
+      "evidence": "component-delta-72b-c1.json",
+      "fresh_model_execution_claimed": false,
+      "production_files_changed": 1,
+      "status": "exact_committed_source_comparison",
+      "unchanged_critical_components": 21
     }
   ],
   "local_deterministic_check_snapshot": {
@@ -440,13 +499,14 @@
     "nameplate_layout_rules_included": 14,
     "passed": true,
     "schema_generated_artifacts": 54,
-    "scope": "Current release coordinator full dotnet runs plus exact72b source CI; Runtime545 remains its retained unchanged wheel proof. Native/model acceptance separate.",
+    "scope": "Exact C1 CI/coordinator SDK302+CP29; same unchanged545 wheel retained. Historical runs remain separately stamped.",
     "sdk_tests": 302,
     "static_surface_rules_included": 13,
     "web_tests": 9
   },
   "native_asset_formats": {
     "additional_final_lobby_png_images": 2,
+    "additional_fog_png_images": 3,
     "additional_human_mixed03_png_images": 3,
     "additional_human_mixed04_png_images": 2,
     "additional_native07_png_images": 8,
@@ -459,6 +519,9 @@
   },
   "public_asset_sha256": {
     "deployment/web-browser-create-copy-72b.jpg": "0ace6f6ec828376ac0d881f5d12eb4df5afa7d710847e0bc865ad155157bb70b",
+    "fog/baseline-72b-main-hall-001-800x600.png": "49124c408194adf799f46a8b226da5603f510cedf1e9fb022332bf98bd764eb7",
+    "fog/candidate-c1-main-hall-001-800x600.png": "5cc32eb5ad8ec5033f2c9f9199d3938fdd42b2c18f427778f4fc171164d3edc7",
+    "fog/candidate-c1-main-hall-002-800x600.png": "25c1f1a9bcf5892559700acf272e456eaae44f6eb4dd27c7baf8f6813de35bb5",
     "human-mixed/native-03-alive-800x600.png": "6582491c36128a7066a4c9ec5ae040a99a34a9dbd3165ec149fdb8d990e4678a",
     "human-mixed/native-03-death-800x600.png": "bd3a2be8a4c997d07aca86b0824fd03133bd2fffe0d0c3c1afd3a329e200c53e",
     "human-mixed/native-03-gameover-800x600.png": "0faab23d42d1a4b352176a29820868a731802024275d01e8b182fff962499a08",
@@ -498,17 +561,29 @@
     "codex-attempt-11.json": "34b97a5ba2e53735592a45936e2ac73bee93c0239e8b7f867869f13db32d4a96",
     "codex-attempt-12.json": "da524cdec8cc078a15c0f39b80dd786d95c33388e02f004fd5353f88fdff67cb",
     "component-delta-656-72b.json": "ab14a3865424df5813b4f06e87f337e24251b998e948c2aa7453466f361c5b79",
+    "component-delta-72b-c1.json": "f7d751ba79248634d44b13912ebf1c7f230de37e8d07dda55c5657858ab989ce",
     "deployment/activation-72b.json": "8c97f1ae300eb24734815c10dcf60d9a1a23c9be01dfea21b825164a7cb786d6",
+    "deployment/activation-c1.json": "5b1538a1b9bdd441f77a612958b609ddee958b8134837ca1eaa4559043014a2c",
+    "deployment/fog-native-room-retirement-c1.json": "287fc77a68f4a9f9ba26282da1e027858f9fb7590c0f594d9859dfdef1ff1989",
     "deployment/provenance-attempt-01-72b.json": "0560c553800c1c85b8157b4eef3093c5eba5f8fd1483cb53ca17450d72e8d829",
+    "deployment/provenance-c1.json": "b64fbbd12b9f0257744ef877d8879cd92854d0fb1488fb8505bbd673900db330",
     "deployment/provenance-final-72b.json": "988681011de77685ae8db49db10e4cbb1954ce5816674e4a95f9e1e79db86e95",
     "deployment/sandbox-smoke-72b.json": "0955857df5dbd1304c8154b07eaefb30b2f90bbc50e272e101d0fa456f259ab5",
+    "deployment/sandbox-smoke-c1.json": "2d689932605421667e02ba279b4a60a0896f8c0f79bd6f621510703e98e672d3",
     "deployment/staging-retirement-72b.json": "649a5dd0bc8ba3f3388b20ecd4e6d465171fae6eb63867d6ee7f3e20f05d3147",
     "deployment/web-browser-create-copy-72b.json": "9f2d9df967e69e21a62689d5fa7ad38b7e318dd8e4dc639e7ce865958e7a6455",
     "deployment/web-metadata-quarantine-72b.json": "b71707bbd348c7a7553c6744e60b9bb3b73c65e21c48caeb9cc84425dd170309",
     "deployment/web-room-retirement-72b.json": "2e4766eda6a1601ce77f409c7a1e8a4bb4731ee2b40d2dd02d3b4fb9fcef729a",
+    "fog/baseline-72b-main-hall-001-800x600.json": "52798ceb79c96fe18d71b3727e62756cc8c36e0fb4513592073a2ef6bb00d2df",
+    "fog/baseline-room-retirement-later.json": "f9faa6917720d3b4ccd3932dbd3c233a270dd0d3deb3f93ebbc040aca260a33c",
+    "fog/candidate-c1-main-hall-001-800x600.json": "16d78b5a581b252bb6c60eceaa8d6a2a7c6e810cf3bc9cbfa373970bac0734c5",
+    "fog/candidate-c1-main-hall-002-800x600.json": "b27ceb4b1f05bd560cd1c7e2096ca572796c62cf5d39e05bb715c49bf813d1a6",
+    "fog/native-comparison-72b-c1.json": "2da788085007bf61909833bb091deef562589a7a0fc2c0162bb41372a7634c4a",
     "https-draft-download-72b.json": "9d995a1913777f3f0fcec6ffb48eccdca6c7e230c82164960970eef5d890d3a4",
     "https-draft-download.json": "6a1b400d01becc959361a3e9ae96ab99034bbee2fd09f603a36404a53da2faea",
     "https-public-download-attempts.json": "2d0f14451b151ef03ef8d5b275b8f6c8ae0e61eebefda910743e0c6e9336314f",
+    "https-public-download-rc3-attempts.json": "bed3fb848899f4b019d3e5168d3d948ee6eb18f39792509fdab656bcbe5130ec",
+    "https-public-download-rc3.json": "6323e29f17265de90e90e9c73fdfed389855a48dcbc2187462dfa0505d8b534c",
     "https-public-download.json": "7729dbc6c84e0da2a343d123d662a56d68e91bce79b791a9605f43fe5d58e152",
     "human-mixed/attempt-01.json": "e1d6067b88975529a8e2068b3d1a15ba6e95a84f476209e55f2437991f00c072",
     "human-mixed/attempt-02.json": "66c33265a437b1c9c6753661369c4cf1896bf715e99b0656cd7dbaf889febb9e",
@@ -560,9 +635,12 @@
     "package-656/release-manifest.json": "5eb388220a32793a495c5c28a5b0b530c5b20c1799bed75b9bcffffdce6b10cf",
     "package-72b/SHA256SUMS": "3196769df8d6f327bca8a5bad1b7456ff4a940792bd8ab210b5b15e8df4a97bc",
     "package-72b/release-manifest.json": "2cca093f16abad3fa335c09b5b856b9920ba8989c6c37f1c08ac579225063ada",
+    "package-rc3/SHA256SUMS": "aab9e0bb05abbbd76ae33ddfe02c4dd2af10fea06fde534ed3a421b0324df881",
+    "package-rc3/release-manifest.json": "c442196b5ec61fb1ad08970e70a4ba465b1d0e15d4ac8bb5535af21886c34878",
     "performance/human-mixed-02-postgame.json": "e82a19f837c3b4703f0b56122b218e8e9b1f9b26feaf2f72ba311e6fc1d19891",
     "performance/mixed-server-03.json": "78fc6a69f752435bbf470a3ae9395e1c6603086e9d8f432f51af5523bb1d6d18",
     "release-integrity-72b.json": "de8ccab12fc80cadf3a842ad5fc0ea8e87bb7bb786bbe74c2cd92313f9e03f43",
+    "release-integrity-rc3.json": "9f69702fe831e6f187241eca772d9996c305b5d315febf2fc2ab37a9b71a410d",
     "release-integrity.json": "49e333967bcec30db998f3d0b33986f4debbea764223486430bb7d4168d9d50a",
     "runtime-package.json": "3bfbcd11194847152f8794d28e6d9ffe77e7da445950d5f803a8510d931690f0",
     "sandbox/summary.json": "02d5dc453509479bb7c9fe0729984ceb93b7a439e5bfde4094724ab83edab198",

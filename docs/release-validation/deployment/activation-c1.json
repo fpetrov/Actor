@@ -1,0 +1,79 @@
+{
+  "schema": "actor.m8-production-deployment-proof.v1",
+  "recorded_at_utc": "2026-10-22T03:37:42.596223+00:00",
+  "source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+  "release_id": "20261022T033223Z-ebb05bc",
+  "status": "actual_activation_17_check_provenance_and_bounded_smoke_pass",
+  "full_release_acceptance": false,
+  "activation": {
+    "coordinator_reported_exit_code": 0,
+    "deployment_log_sha256": "a81aee49133ef34b28a33c314d5aa17e0ae4b8dd80a0119155043c05bf24807f",
+    "raw_log_published": false
+  },
+  "postdeployment": {
+    "actual_attempts": 1,
+    "evidence": "provenance-c1.json",
+    "passed": true,
+    "checks_passed": 17,
+    "checks_expected": 17,
+    "initial_failure_in_this_case": false,
+    "expected_inventory_sha256": "423975180bf53967b29e4b9d1a9cfc274e49b60f1098d17df2855c17b274ff8f"
+  },
+  "deployed_inventory": {
+    "control_plane_files_or_links": 343,
+    "control_plane_packaged_payload_files_or_links": 343,
+    "raw_server_files_or_links": 217,
+    "server_packaged_payload_files_or_links": 216,
+    "additional_raw_server_file_count": 1,
+    "additional_raw_server_file_scope": "Generated Unity/Burst DontShip text marker retained by the raw-tree deployment caller; excluded from published server archive.",
+    "website_files": 8,
+    "unexpected_ds_store_count": 0
+  },
+  "ordinary_client_smoke": {
+    "evidence": "sandbox-smoke-c1.json",
+    "coordinator_reported_exit_code": 0,
+    "passed": true,
+    "checks_passed": 13,
+    "checks_expected": 13,
+    "ordinary_ngo_owner_binding_verified": true,
+    "server_heartbeat_observed_occupied": true,
+    "own_room_naturally_retired": true,
+    "owned_clients_remaining": 0,
+    "owned_process_groups_remaining": 0,
+    "active_elapsed_seconds": 23.0956755829975,
+    "total_elapsed_seconds": 84.93240208295174,
+    "scope": "One fresh public Sandbox room with exact clean extracted C1 headless Human client and existing synthetic P input. No ACTOR Runtime/Hello/Brain, physical keyboard/rendered-display latency or Social gameplay acceptance is claimed."
+  },
+  "ended_native_test_room_retirement": {
+    "evidence": "fog-native-room-retirement-c1.json",
+    "own_room_get404": true,
+    "public_health_healthy": true,
+    "remote_process_signalled": false,
+    "scope": "Exact own ended candidate-room observation only; public API health/roomGET does not identify the deployed server source or establish all-room emptiness."
+  },
+  "source_bound_package_evidence": "../release-integrity-rc3.json",
+  "evidence_files": [
+    {
+      "file": "provenance-c1.json",
+      "sha256": "b64fbbd12b9f0257744ef877d8879cd92854d0fb1488fb8505bbd673900db330",
+      "copied_without_content_changes": true
+    },
+    {
+      "file": "fog-native-room-retirement-c1.json",
+      "sha256": "287fc77a68f4a9f9ba26282da1e027858f9fb7590c0f594d9859dfdef1ff1989",
+      "copied_without_content_changes": true
+    },
+    {
+      "file": "sandbox-smoke-c1.json",
+      "sha256": "2d689932605421667e02ba279b4a60a0896f8c0f79bd6f621510703e98e672d3",
+      "copied_without_content_changes": true
+    }
+  ],
+  "limitations": [
+    "Actual activation,17-check final-state filesystem/service/publicHTTP provenance and bounded ordinary client smoke are recorded. Native fog quality/performance and full acceptance retain separate scopes.",
+    "No actual rollback execution, TLS/transport confidentiality, secure public-production or continuous availability is claimed.",
+    "Both aliases were stable and resolved to the same release; this is not one atomic filesystem rename across two symlinks.",
+    "Environment mode0600 was checked without reading its contents. No credentials, journal, process argv or raw deploy logs are published.",
+    "Every historical72b evidence file remains unchanged."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "actor.fog-candidate-room-retirement.v1",
+  "captured_at_unix_ms": 1792640018524,
+  "executed": true,
+  "http_get_only": true,
+  "own_room_http_status": 404,
+  "own_room_retired": true,
+  "health_healthy": true,
+  "passed": true,
+  "remote_process_signalled": false,
+  "server_mutation": false,
+  "scope": "Read-only public health and exact own ended native candidate room GET.404 establishes observed retirement only, not all-production-room emptiness or exact deployed source."
+}

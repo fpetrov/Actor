@@ -1,0 +1,115 @@
+{
+  "schema": "actor.m8-public-release-download.v1",
+  "passed": true,
+  "tag": "v0.9.0-rc.3",
+  "source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+  "release_url": "https://github.com/fpetrov/Actor/releases/tag/v0.9.0-rc.3",
+  "published_at": "2026-10-22T03:37:22Z",
+  "prerelease": true,
+  "draft": false,
+  "anonymous_https": true,
+  "credentials_cookies_or_authorization_headers_used": false,
+  "tag_commit_verified": true,
+  "release_target_commit_verified": true,
+  "all7files_match_local": true,
+  "checksum_entries": 6,
+  "files": [
+    {
+      "file": "ACTOR-actor-play-0.7.0.zip",
+      "bytes": 2710,
+      "sha256": "2e71363b7330236b1395716f663b774aca8aca678b485eeed7dc3474ea942310",
+      "matches_local": true,
+      "public_asset_url": "https://github.com/fpetrov/Actor/releases/download/v0.9.0-rc.3/ACTOR-actor-play-0.7.0.zip",
+      "https_http_status": 200,
+      "ssl_verify_result": 0,
+      "https_redirects": 1,
+      "github_asset_digest_verified": true
+    },
+    {
+      "file": "AgentsArena-0.9.0-linux-control-plane.tar.gz",
+      "bytes": 48717705,
+      "sha256": "b2ba8bd436261cd95819d353fa593ad2e530eb1b17eaa840ee0aa0b56de28d89",
+      "matches_local": true,
+      "public_asset_url": "https://github.com/fpetrov/Actor/releases/download/v0.9.0-rc.3/AgentsArena-0.9.0-linux-control-plane.tar.gz",
+      "https_http_status": 200,
+      "ssl_verify_result": 0,
+      "https_redirects": 1,
+      "github_asset_digest_verified": true
+    },
+    {
+      "file": "AgentsArena-0.9.0-linux-server.tar.gz",
+      "bytes": 37580518,
+      "sha256": "73a60601287e5e866d84c8ba1ef524c6d024c0660d20bb412af5f50f3f927e08",
+      "matches_local": true,
+      "public_asset_url": "https://github.com/fpetrov/Actor/releases/download/v0.9.0-rc.3/AgentsArena-0.9.0-linux-server.tar.gz",
+      "https_http_status": 200,
+      "ssl_verify_result": 0,
+      "https_redirects": 1,
+      "github_asset_digest_verified": true
+    },
+    {
+      "file": "AgentsArena-0.9.0-macOS.zip",
+      "bytes": 41142286,
+      "sha256": "0dcb4bc9665365025affcc1fe3dbd315f63dc64d4b6b9183390b03072068eaf1",
+      "matches_local": true,
+      "public_asset_url": "https://github.com/fpetrov/Actor/releases/download/v0.9.0-rc.3/AgentsArena-0.9.0-macOS.zip",
+      "https_http_status": 200,
+      "ssl_verify_result": 0,
+      "https_redirects": 1,
+      "github_asset_digest_verified": true
+    },
+    {
+      "file": "SHA256SUMS",
+      "bytes": 593,
+      "sha256": "aab9e0bb05abbbd76ae33ddfe02c4dd2af10fea06fde534ed3a421b0324df881",
+      "matches_local": true,
+      "public_asset_url": "https://github.com/fpetrov/Actor/releases/download/v0.9.0-rc.3/SHA256SUMS",
+      "https_http_status": 200,
+      "ssl_verify_result": 0,
+      "https_redirects": 1,
+      "github_asset_digest_verified": true
+    },
+    {
+      "file": "actor_runtime-0.7.0-py3-none-any.whl",
+      "bytes": 206026,
+      "sha256": "2aee36a2a60079ba56d53c954d40635b4b9524bf037f7eaa603765ffe0cdee5b",
+      "matches_local": true,
+      "public_asset_url": "https://github.com/fpetrov/Actor/releases/download/v0.9.0-rc.3/actor_runtime-0.7.0-py3-none-any.whl",
+      "https_http_status": 200,
+      "ssl_verify_result": 0,
+      "https_redirects": 1,
+      "github_asset_digest_verified": true
+    },
+    {
+      "file": "release-manifest.json",
+      "bytes": 4103,
+      "sha256": "c442196b5ec61fb1ad08970e70a4ba465b1d0e15d4ac8bb5535af21886c34878",
+      "matches_local": true,
+      "public_asset_url": "https://github.com/fpetrov/Actor/releases/download/v0.9.0-rc.3/release-manifest.json",
+      "https_http_status": 200,
+      "ssl_verify_result": 0,
+      "https_redirects": 1,
+      "github_asset_digest_verified": true
+    }
+  ],
+  "captured_at_unix_ms": 1792640285161,
+  "transport": {
+    "executable": "macOS system curl",
+    "configuration_ignored_with_first_argument_q": true,
+    "literal_clean_environment": true,
+    "proxy_disabled": true,
+    "netrc_disabled": true,
+    "authorization_cookie_headers_empty": true,
+    "initial_and_redirect_protocols_https_only": true,
+    "normal_certificate_and_hostname_verification": true,
+    "custom_ca_installed_or_passed": false,
+    "insecure_or_tls_bypass_used": false,
+    "metadata_requests_verified": 2
+  },
+  "limitations": [
+    "Exact anonymous RC3 distribution integrity only; limited-test RC, not full M8 acceptance.",
+    "Gameplay transport remains HTTP/UDP, not TLS; no throughput or native-input inference.",
+    "Ad-hoc macOS signing is not Apple notarization; no Windows build.",
+    "No new model, full social-cycle, lifecycle-fault or complete UI acceptance is inferred."
+  ]
+}

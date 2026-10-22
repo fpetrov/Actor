@@ -1,0 +1,215 @@
+{
+  "schema": "actor.m8-component-delta.v1",
+  "compared_at_utc": "2026-10-22T03:23:07.838439+00:00",
+  "baseline_source_commit": "72bc5e56f8709b0a5fe04b9b4188c9c6cdeb9980",
+  "candidate_source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+  "comparison_scope": "Exact committed Git objects only; no executing app, Unity, native session, models, server or network was inspected.",
+  "allowed_product_delta_only": true,
+  "product_changes": [
+    {
+      "change": "M",
+      "path": "Agents Arena/Assets/Scripts/World/SocialFogRenderer.cs",
+      "baseline_git_object": "74dd586db1e928a1ca6fd7434a80f93bce82c10b",
+      "candidate_git_object": "5b487a94a80ae9bfdcdbdbf7d641a97b7b17edc4"
+    }
+  ],
+  "unchanged_components": [
+    {
+      "component": "core_and_extensions_wire",
+      "repository_path": "proto",
+      "baseline_git_object": "88c509c6440fb4fad6788beab2742cdbb45a8ff1",
+      "candidate_git_object": "88c509c6440fb4fad6788beab2742cdbb45a8ff1",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "generated_bindings_descriptors_manifests",
+      "repository_path": "generated",
+      "baseline_git_object": "06ace955f171ddc613f3cd10ed851b67d1c447c1",
+      "candidate_git_object": "06ace955f171ddc613f3cd10ed851b67d1c447c1",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "sdk_and_transport_packages",
+      "repository_path": "packages",
+      "baseline_git_object": "7078b3c584ca74753c020d9a4dfb0cf538218ebb",
+      "candidate_git_object": "7078b3c584ca74753c020d9a4dfb0cf538218ebb",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "python_runtime_and_plugins",
+      "repository_path": "runtime",
+      "baseline_git_object": "147564aa640e5d15381166d196702f0c53625171",
+      "candidate_git_object": "147564aa640e5d15381166d196702f0c53625171",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "control_plane_and_backend",
+      "repository_path": "src",
+      "baseline_git_object": "acd91db5e0a02066e199c5918a156b951911db3a",
+      "candidate_git_object": "acd91db5e0a02066e199c5918a156b951911db3a",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "admission_contracts",
+      "repository_path": "shared",
+      "baseline_git_object": "fd1b4de5cd376c9c5ff57da06e50b666a1aef155",
+      "candidate_git_object": "fd1b4de5cd376c9c5ff57da06e50b666a1aef155",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "game_adapter_and_agent_input",
+      "repository_path": "Agents Arena/Assets/Scripts/Actor",
+      "baseline_git_object": "6901bb6d84e9dd09b1742966b4ba58a836a3f9ef",
+      "candidate_git_object": "6901bb6d84e9dd09b1742966b4ba58a836a3f9ef",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "human_motor_and_input",
+      "repository_path": "Agents Arena/Assets/Scripts/Characters",
+      "baseline_git_object": "1e2a66a8fd18778d530e13b48c60cfd2d1b45bc6",
+      "candidate_git_object": "1e2a66a8fd18778d530e13b48c60cfd2d1b45bc6",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "scene_topology",
+      "repository_path": "Agents Arena/Assets/Scenes",
+      "baseline_git_object": "ff18d65b8a82dd1185f7182781f61ab0c3d21581",
+      "candidate_git_object": "ff18d65b8a82dd1185f7182781f61ab0c3d21581",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "canonical_social_topology",
+      "repository_path": "Agents Arena/Assets/World/SocialLayout.json",
+      "baseline_git_object": "74a36c6ad316747f1222b247274a27402c2a0b38",
+      "candidate_git_object": "74a36c6ad316747f1222b247274a27402c2a0b38",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "social_authority",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/SocialMatchAuthority.cs",
+      "baseline_git_object": "3207f0a9f258dafa18f5ef9b78f7cda05c3683e6",
+      "candidate_git_object": "3207f0a9f258dafa18f5ef9b78f7cda05c3683e6",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "legacy_cooperative_authority",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/CooperativeAuthority.cs",
+      "baseline_git_object": "6c9fce243537bc89a94ab12445ee414c236b8722",
+      "candidate_git_object": "6c9fce243537bc89a94ab12445ee414c236b8722",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "legacy_incident_authority",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/IncidentAuthority.cs",
+      "baseline_git_object": "e7aaef417ce621622866d8530e765546277c70c9",
+      "candidate_git_object": "e7aaef417ce621622866d8530e765546277c70c9",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "owner_rpc_projection",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/NetworkSocialMatch.cs",
+      "baseline_git_object": "c410ad6c8ba89462b16aa07023386fe1feaf8cab",
+      "candidate_git_object": "c410ad6c8ba89462b16aa07023386fe1feaf8cab",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "social_session_and_hydration",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/SocialMatchSession.cs",
+      "baseline_git_object": "a3492700e12c0caef8bf8718c9cc5ab5cdd9bd6e",
+      "candidate_git_object": "a3492700e12c0caef8bf8718c9cc5ab5cdd9bd6e",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "admission_and_resume_lifecycle",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/MatchSession.cs",
+      "baseline_git_object": "72fadc3a8263a727c06ee15734102dfe6c049b02",
+      "candidate_git_object": "72fadc3a8263a727c06ee15734102dfe6c049b02",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "resume_fences",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/ResumeAdmissionRegistry.cs",
+      "baseline_git_object": "03d0150566ab0a5382150d5fea39626b22385674",
+      "candidate_git_object": "03d0150566ab0a5382150d5fea39626b22385674",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "network_character_and_prediction",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/NetworkCharacter.cs",
+      "baseline_git_object": "db2badbb8057cb1f819fe03795ad73a7a6624d27",
+      "candidate_git_object": "db2badbb8057cb1f819fe03795ad73a7a6624d27",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "server_visibility_policy",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/SocialVisibilitySystem.cs",
+      "baseline_git_object": "bfe78edf51b92f417c9764066007beea01d09da3",
+      "candidate_git_object": "bfe78edf51b92f417c9764066007beea01d09da3",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "visibility_spawn_member",
+      "repository_path": "Agents Arena/Assets/Scripts/Networking/SocialVisibilityMember.cs",
+      "baseline_git_object": "adcaf0835649d92887f0d4cde461e36080342a87",
+      "candidate_git_object": "adcaf0835649d92887f0d4cde461e36080342a87",
+      "byte_identical_committed_source": true
+    },
+    {
+      "component": "authored_world_builder",
+      "repository_path": "Agents Arena/Assets/Editor/SocialWorldBuilder.cs",
+      "baseline_git_object": "4e9c234dcaac8bb82a7f9e107749a7924b666ff6",
+      "candidate_git_object": "4e9c234dcaac8bb82a7f9e107749a7924b666ff6",
+      "byte_identical_committed_source": true
+    }
+  ],
+  "other_committed_changes": {
+    "documentation_and_evidence_count": 69,
+    "optional_protocol_fixture_metadata": [
+      {
+        "change": "M",
+        "path": "spikes/social-protocol/README.md"
+      },
+      {
+        "change": "M",
+        "path": "spikes/social-protocol/pyproject.toml"
+      }
+    ],
+    "scope": "Documentation/evidence and optional external protocol-fixture packaging metadata are outside production Core/game authority/Runtime."
+  },
+  "bounded_prior_evidence": {
+    "unchanged_component_count": 21,
+    "source_equality_supports_only": "Regression basis for unchanged committed Core/proto/SDK/Runtime/CP/admission/authority/motor/interest/scene/layout sources. Earlier executions keep their original source stamps.",
+    "not_inferred": [
+      "Binary equivalence",
+      "Fresh game execution of candidate",
+      "Native fog appearance or frame cost",
+      "No performance impact",
+      "Full release acceptance"
+    ]
+  },
+  "ci": {
+    "source": "Coordinator-supplied completed-success workflow metadata; not queried independently in this offline review.",
+    "runs": [
+      {
+        "workflow": "Control Plane",
+        "run_id": 39715858801,
+        "url": "https://github.com/fpetrov/Actor/actions/runs/39715858801",
+        "head_sha": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+        "conclusion": "success"
+      },
+      {
+        "workflow": "ACTOR SDK and Runtime",
+        "run_id": 39715858807,
+        "url": "https://github.com/fpetrov/Actor/actions/runs/39715858807",
+        "head_sha": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "independent_recheck": {
+    "committed_objects_rechecked": true,
+    "unchanged_component_count": 21,
+    "allowed_product_change_count": 1,
+    "build_or_native_execution_performed": false
+  }
+}

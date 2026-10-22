@@ -1,0 +1,47 @@
+{
+  "schema": "actor.m8-production-smoke.v1",
+  "executed": true,
+  "passed": true,
+  "reason": "public_admission_and_movement_pass",
+  "health_healthy": true,
+  "game_version_0_9_0_admission4": true,
+  "client_source_commit": "ebb05bc4c315fbfb829addc313c328d69fa22e05",
+  "server_source_binding": "Public API verifies game/protocol only; exact server source requires separate deployment hashes.",
+  "mode": "Sandbox",
+  "fresh_public_room_created": true,
+  "server_heartbeat_observed_occupied": true,
+  "own_room_naturally_retired": true,
+  "ambiguous_create_response_unresolved": false,
+  "owned_clients_remaining": 0,
+  "owned_process_groups_remaining": 0,
+  "proof": {
+    "movement": {
+      "passed": true,
+      "checks_passed": 13,
+      "checks_expected": 13,
+      "errors": 0,
+      "warnings": 0,
+      "metrics": {
+        "visualResponseMs": 51.53584289550781,
+        "authoritativeResponseMs": 341.633544921875,
+        "releaseResponseMs": 115.52262115478516,
+        "idleError": 0.0042188167572021484,
+        "maxSpeed": 2.5999999046325684
+      },
+      "input": "existing synthetic owned-input prediction probe; no physical keyboard or rendered-display claim"
+    },
+    "ordinary_ngo_owner_binding_verified": true,
+    "passed": true
+  },
+  "active_elapsed_seconds": 23.0956755829975,
+  "total_elapsed_seconds": 84.93240208295174,
+  "active_timeout_seconds": 60.0,
+  "natural_retirement_timeout_seconds": 120.0,
+  "limitations": [
+    "Headless synthetic owned-input probe; no physical keyboard, rendered-display latency or model claim.",
+    "Human NGO owner binding is verified; no ACTOR Runtime/Hello/Brain session is started.",
+    "A sixty-second occupied-room grace means natural retirement can extend beyond the active60s window. If occupied was never observed, untouched lifetime may be300s.",
+    "No DELETE/internal-finished/remote signal or server configuration change is used. Only our exact locally owned client process group is stopped.",
+    "Raw local reports/logs and room identity remain ignored/private. This aggregate contains no tickets, actorIDs, roomCodes or message content."
+  ]
+}
