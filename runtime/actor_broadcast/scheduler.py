@@ -18,14 +18,18 @@ from .contracts import (Cancel, CommentaryCandidate, EvidenceRef, PlaybackAck, P
 from .context import build_context, reservation_input_tokens, topic_key
 from .evidence import EvidenceLedger
 from .spoken import SpokenLedger
+from .latency import LatencyTelemetry
 
 
 class CommentaryScheduler:
     def __init__(self, provider, speech, budget=None, *, config=None,
-                 clock=time.monotonic, wall_clock=time.time):
+                 clock=time.monotonic, wall_clock=time.time, telemetry=None):
         self.provider, self.speech = provider, speech
         self.config = config or CommentaryConfig()
         self.clock, self.wall_clock = clock, wall_clock
+        self.latency = telemetry or LatencyTelemetry(clock=clock, wall_clock=wall_clock)
+        bind = getattr(speech, "bind_latency", None)
+        if bind is not None: bind(self.latency)
         self.budget = budget or BudgetLedger(config=self.config, clock=wall_clock)
         self._owns_budget = budget is None
         self.view = self.evidence = None
@@ -197,6 +201,7 @@ class CommentaryScheduler:
             # explicitly delivered terminal facts may support the final output.
             self._pending={ref:value for ref,value in self._pending.items()
                 if (self.evidence.resolve(ref).sequence if self.evidence.resolve(ref) else -1)==view.sequence}
+        self.latency.presented(view)
         self._wake.set()
         return True
 
@@ -269,6 +274,7 @@ class CommentaryScheduler:
                 ack.scope!=self.view.scope or ack.received_at_monotonic>self.clock()+.1):
             self._counts["stale_playback_acks"]+=1;return False
         if not self.spoken.acknowledge(ack): return False
+        self.latency.playback(ack)
         if ack.status in ("completed","interrupted"):
             self._speech_pending.pop(key,None)
             self.last_commentary_playback_end_at=self.clock()
@@ -290,6 +296,7 @@ class CommentaryScheduler:
     async def _perform(self, request, reservation):
         terminal=None; indexes=set();notes=0
         try:
+            self.latency.provider_started(request)
             async with asyncio.timeout(self.config.provider_timeout_seconds):
                 async for event in self.provider.generate(request):
                     if terminal is not None:raise ValueError("Provider emitted after terminal")
@@ -307,10 +314,12 @@ class CommentaryScheduler:
                     indexes.add(event.index)
                     if any(ref not in request.candidate.evidence for ref in event.evidence_versions):
                         raise ValueError("Provider cited unavailable evidence")
-                    # Queue accounting reserves an actual synthesis frame cap,
-                    # not an unverified prediction of spoken word duration.
-                    seconds=max(6.0,len(event.text.split())/3)
-                    if seconds>self.config.max_pending_speech_seconds: raise ValueError("Speech segment too long")
+                    # Reserve the full actual frame ceiling. Word-count timing
+                    # guesses cut a real Russian sentence at exactly six seconds.
+                    # The next segment waits for real playback ACK capacity.
+                    seconds=float(self.config.max_pending_speech_seconds)
+                    key=SegmentKey(request.utterance_id,request.utterance_epoch,event.index)
+                    if self._valid(request): self.latency.validated_text(request.candidate.scope,key)
                     if not await self._capacity_for(request,seconds): break
                     if not self._valid(request): break
                     # Current-frame TTL is refreshed by the continuing feed;
@@ -319,11 +328,12 @@ class CommentaryScheduler:
                     # while the loop separately revokes it on feed staleness.
                     ttl=min(30,(request.candidate.expires_at_unix_ms-int(self.wall_clock()*1000))/1000)
                     if ttl<=0: break
-                    segment=SpeechSegment(request.candidate.scope,SegmentKey(request.utterance_id,request.utterance_epoch,event.index),
+                    segment=SpeechSegment(request.candidate.scope,key,
                         request.candidate.priority,event.text,event.evidence_versions,self.view.semantic_revision,
                         int((self.clock()+ttl)*1e9),max_audio_frames=int(seconds*24000))
                     self.spoken.register(segment,topic_key=request.candidate.topic_key,mode=request.candidate.mode)
                     self._speech_pending[(segment.scope,segment.key)]=(segment,seconds)
+                    self.latency.submitted(segment)
                     await self.speech.submit(segment)
                     self._counts["submitted_segments"]+=1
             if terminal is None: self._counts["provider_missing_terminal"]+=1
@@ -356,6 +366,7 @@ class CommentaryScheduler:
             if request:cancellations.add((request.candidate.scope,request.utterance_id,request.utterance_epoch))
             for scope,utterance_id,epoch in cancellations:
                 cancel=Cancel(scope,utterance_id,epoch)
+                self.latency.cancelled(cancel)
                 try:
                     ack=await self._bounded_dependency(self.speech.cancel(cancel,fade_seconds=0 if emergency else .08))
                     if (ack.scope!=cancel.scope or ack.utterance_id!=cancel.utterance_id or
@@ -481,6 +492,7 @@ class CommentaryScheduler:
             return
         for ref in candidate.evidence:self._pending.pop(ref,None)
         self._active_request=request
+        self.latency.admitted(request,self.view)
         if candidate.mode=="outro":
             self._outro_utterance_id=request.utterance_id;self._outro_provider_complete=False
         self._active=asyncio.create_task(self._perform(request,decision.reservation))
@@ -558,6 +570,7 @@ class CommentaryScheduler:
             "pending_segments":len(self._speech_pending),"pending_facts":len(self._pending),
             "context_bytes_max":max(self._contexts,default=0),"spoken":self.spoken.report(),
             "evidence":self.evidence.report() if self.evidence else None,"stopped":self._stop_complete,
+            "latency":self.latency.report(),
             "terminal_outro_started":self._terminal_outro_started,
             "terminal_outro_finished":finished,"terminal_outro_pending":self._terminal_outro_started and not finished and not self._closed,
             "last_spoken":{"text":last[0]["text"],"completed_at":last[0]["completed_at_monotonic"],"mode":last[0]["mode"]} if last else None}

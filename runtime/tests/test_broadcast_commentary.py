@@ -179,7 +179,7 @@ async def test_p1_wait_is_bounded_and_completed_prefix_only_is_covered():
     clock=Clock();provider=Provider(segments=3);scheduler,_,speech=system(clock,provider)
     scheduler.observe(view(clock,facts=[fact(clock)]));scheduler.ready()
     clock.advance(20);await fresh(scheduler,clock)
-    assert len(speech.segments)==2
+    assert len(speech.segments)==1  # Full 12-second reservation; next segment waits for actual ACK.
     first=speech.segments[0]
     clock.advance(.2);await fresh(scheduler,clock,facts=[fact(clock,"important",priority=1)])
     assert not speech.cancellations
@@ -187,9 +187,37 @@ async def test_p1_wait_is_bounded_and_completed_prefix_only_is_covered():
     await pump(scheduler)
     assert len(speech.cancellations)==1
     rows=list(scheduler.spoken.records.values())
-    assert rows[0].status=="completed" and rows[1].status=="interrupted"
+    assert len(rows)==1 and rows[0].status=="completed"  # Unsubmitted suffix is not fabricated playback history.
     assert len(scheduler.spoken.recent())==1
     assert not scheduler.playback_ack(PlaybackAck(first.scope,first.key,"completed",24000,24000,clock.now))
+    await scheduler.stop()
+
+
+async def test_short_russian_segment_gets_full_twelve_second_frame_cap_and_ack_backpressure():
+    clock=Clock();provider=Provider(segments=2);scheduler,_,speech=system(clock,provider)
+    scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));assert scheduler.ready()
+    await pump(scheduler)
+    assert len(speech.segments)==1
+    first=speech.segments[0]
+    assert first.max_audio_frames==288000
+    assert sum(row[1] for row in scheduler._speech_pending.values())==12
+    # Actual positive progress past six seconds does not free the whole segment.
+    assert scheduler.playback_ack(PlaybackAck(first.scope,first.key,"progress",168000,192000,clock.monotonic()))
+    await pump(scheduler);assert len(speech.segments)==1
+    assert scheduler.playback_ack(PlaybackAck(first.scope,first.key,"completed",192000,192000,clock.monotonic()))
+    await pump(scheduler)
+    assert len(speech.segments)==2 and speech.segments[1].max_audio_frames==288000
+    assert len(scheduler._speech_pending)==1
+    assert sum(row[1] for row in scheduler._speech_pending.values())<=12
+    assert len(scheduler.spoken.recent())==1
+    await scheduler.stop()
+
+
+async def test_operator_lower_speech_hard_cap_is_preserved_without_word_prediction():
+    clock=Clock();scheduler,_,speech=system(clock,config=CommentaryConfig(max_pending_speech_seconds=4.0))
+    scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));scheduler.ready();await pump(scheduler)
+    assert speech.segments[0].max_audio_frames==96000
+    assert sum(row[1] for row in scheduler._speech_pending.values())==4
     await scheduler.stop()
 
 

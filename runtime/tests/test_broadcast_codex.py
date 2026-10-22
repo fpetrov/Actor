@@ -92,6 +92,8 @@ async def test_actual_final_answer_deltas_one_consumer_no_reasoning_or_duplicate
     assert sdk.inputs[0].tool_name=="actor_broadcast" and "Ignore rules" in sdk.inputs[0].content
     assert isinstance(sdk.inputs[0],sdk.ExternalMessage)
     assert "Ignore rules" not in sdk.thread_options[0]["base_instructions"]
+    assert "не более 16 слов" in sdk.thread_options[0]["base_instructions"]
+    assert "законченные фразы" in sdk.thread_options[0]["base_instructions"]
     await provider.close()
 
 

@@ -36,6 +36,7 @@ class BrowserAudioSink:
         self._terminal = None; self._flushed = {}; self._started = False; self._ended = False
         self._heartbeat = None; self._origin = None
         self._validate = None
+        self.latency = None
         self.metrics = {"played_segments": 0, "interrupted_segments": 0, "underrun_frames": 0,
                         "stale_packets": 0, "sent_frames": 0, "consumed_frames": 0}
 
@@ -203,6 +204,7 @@ class BrowserAudioSink:
             try:
                 await self._send("begin", {"scope": asdict(segment.scope), "key": asdict(segment.key),
                     "text": segment.text})
+                if self.latency is not None: self.latency.synthesis_started(segment)
                 async for item in chunks:
                     if not validate(segment) or time.monotonic_ns() >= segment.expires_at_monotonic_ns or not self.route_guard():
                         raise AudioError("audio_segment_stale")
@@ -213,6 +215,7 @@ class BrowserAudioSink:
                         validate_pcm(item.pcm); expected_seq += 1
                         frames = len(item.pcm) // 4
                         if self._sent + frames > segment.max_audio_frames: raise AudioError("audio_duration_bound")
+                        if self.latency is not None: self.latency.pcm(item)
                         async with self._condition:
                             await asyncio.wait_for(self._condition.wait_for(lambda: self._ended or self._ws is None or self._sent - self._consumed + frames <= 72000), self.ack_timeout)
                         if self._ws is None: raise AudioError("audio_renderer_disconnected")
@@ -224,6 +227,7 @@ class BrowserAudioSink:
                         if self._done is not None or item.total_source_frames != self._sent or not self._sent:
                             raise AudioError("audio_synthesis_end_mismatch")
                         self._done = item
+                        if self.latency is not None: self.latency.synthesis_done(item)
                         await self._send("end", {"scope": asdict(item.scope), "key": asdict(item.key),
                             "total_source_frames": item.total_source_frames,
                             "complete": not item.may_be_truncated and item.terminal_reason == "generator_completed"})
@@ -285,6 +289,11 @@ class SpeechAudioOutput:
         self.synthesizer = synthesizer; self.sink = sink; self.validate = validate; self.on_error = on_error
         self._queue = asyncio.Queue(maxsize=2); self._run_task = None; self._job = None; self._active = None
         self._closed = False
+        self.latency = None
+
+    def bind_latency(self, telemetry):
+        self.latency = telemetry
+        self.sink.latency = telemetry
 
     async def prepare(self):
         await self.sink.start()
@@ -299,6 +308,7 @@ class SpeechAudioOutput:
         # never produce a completed textual-coverage ACK.
         segment = replace(segment, max_audio_frames=min(segment.max_audio_frames, 24000 * 12))
         self._queue.put_nowait(segment)
+        if self.latency is not None: self.latency.queued(segment)
         if self._run_task is None: self._run_task = asyncio.create_task(self._run(), name="actor-one-voice")
 
     async def _run(self):
@@ -306,6 +316,7 @@ class SpeechAudioOutput:
             segment = await self._queue.get(); self._active = segment
             try:
                 if not self.validate(segment): continue
+                if self.latency is not None: self.latency.dequeued(segment)
                 self._job = asyncio.create_task(self.sink.play(segment, self.synthesizer.synthesize(segment),
                                                               validate=self.validate))
                 await self._job
@@ -316,6 +327,7 @@ class SpeechAudioOutput:
             finally: self._active = None; self._job = None
 
     async def cancel(self, request, *, fade_seconds=0.03):
+        if self.latency is not None: self.latency.cancelled(request)
         kept = []
         while not self._queue.empty():
             s = self._queue.get_nowait()
