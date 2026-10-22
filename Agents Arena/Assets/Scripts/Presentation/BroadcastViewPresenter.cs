@@ -54,6 +54,8 @@ namespace Actor.Presentation
         private int renderedFrame = -1;
         private bool capturePending;
         private string motionReportPath;
+        private bool motionReportCreated;
+        private double nextMotionReport;
         private int motionForcedFrameRate;
         private double motionStarted = -1;
         private long nativeFrames, appliedFrames, ackAttempts, ackCompleted, rejectedRender, rejectedFog, rejectedSession;
@@ -114,6 +116,7 @@ namespace Actor.Presentation
             if (SafeProofPath(motion, ".json"))
             {
                 motionReportPath = motion;
+                nextMotionReport = Time.realtimeSinceStartupAsDouble + 5;
                 // Private acceptance can exercise real 30/60 FPS rendering.
                 // Ordinary observer runs retain the selected display pacing.
                 if (motionFps == "30" || motionFps == "60")
@@ -149,6 +152,11 @@ namespace Actor.Presentation
             }
             AnimatePermitted();
             ArrangeLabels();
+            if (motionReportPath != null && Time.realtimeSinceStartupAsDouble >= nextMotionReport)
+            {
+                nextMotionReport = Time.realtimeSinceStartupAsDouble + 5;
+                SaveMotionReport(false);
+            }
         }
         private void LateUpdate()
         {
@@ -372,10 +380,14 @@ namespace Actor.Presentation
             }
             catch (Exception) { return false; }
         }
-        private void SaveMotionReport()
+        private void SaveMotionReport(bool final)
         {
-            string path = motionReportPath; motionReportPath = null;
-            if (path == null || !SafeProofPath(path, ".json")) return;
+            string path = motionReportPath;
+            if (final) motionReportPath = null;
+            if (path == null) return;
+            if (!motionReportCreated && !SafeProofPath(path, ".json")) { motionReportPath = null; return; }
+            string pending = path + ".partial";
+            bool createdPending = false;
             try
             {
                 var report = new MotionRenderReport { elapsed_seconds = motionStarted >= 0 ? Math.Max(0, Time.realtimeSinceStartupAsDouble - motionStarted) : 0,
@@ -386,12 +398,21 @@ namespace Actor.Presentation
                     render_intervals = renderIntervals.Summary(), applied_intervals = appliedIntervals.Summary(), presented_intervals = presentedIntervals.Summary() };
                 string transport = session != null ? JsonUtility.ToJson(session.MotionDiagnostics()) : "{}";
                 byte[] bytes = Encoding.UTF8.GetBytes("{\"schema\":\"actor.broadcast-motion.v1\",\"render\":" + JsonUtility.ToJson(report) + ",\"transport\":" + transport + "}");
-                if (bytes.Length > 32768) return;
-                using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                if (PrivateFileMode(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), 384) != 0) return;
-                stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
+                if (bytes.Length > 32768) { motionReportPath = null; return; }
+                using (var stream = new FileStream(pending, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    createdPending = true;
+                    if (PrivateFileMode(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), 384) != 0) throw new IOException();
+                    stream.Write(bytes, 0, bytes.Length); stream.Flush(true);
+                }
+                // A platform signal can skip Unity shutdown callbacks. Retain
+                // complete periodic snapshots, never a half-written JSON file.
+                if (motionReportCreated) File.Replace(pending, path, null);
+                else File.Move(pending, path);
+                createdPending = false; motionReportCreated = true;
             }
-            catch (Exception) { } // Optional numeric QA only; never log path or game state.
+            catch (Exception) { motionReportPath = null; } // Optional QA; no retry or path/state logging.
+            finally { if (createdPending) try { File.Delete(pending); } catch (Exception) { } }
         }
         private void CaptureProbeOnce()
         {
@@ -414,8 +435,8 @@ namespace Actor.Presentation
         }
         private void RemoveActor(string key) { var proxy = actors[key]; proxy.Name?.RemoveFromHierarchy(); Destroy(proxy.Root); actors.Remove(key); }
         private void Clear() { foreach (string key in actors.Keys.ToArray()) RemoveActor(key); foreach (var body in bodies.Values) Destroy(body.Root); bodies.Clear(); Applied = null; applied = 0; }
-        private void OnApplicationQuit() => SaveMotionReport();
-        private void OnDisable() { SaveMotionReport(); RenderPipelineManager.endCameraRendering -= Rendered; StopAllCoroutines(); capturePending = false; Clear(); hud?.RemoveFromHierarchy(); notesHud?.RemoveFromHierarchy(); hud = notesHud = null; confirmed.Clear(); if (Current == this) Current = null; }
+        private void OnApplicationQuit() => SaveMotionReport(true);
+        private void OnDisable() { SaveMotionReport(true); RenderPipelineManager.endCameraRendering -= Rendered; StopAllCoroutines(); capturePending = false; Clear(); hud?.RemoveFromHierarchy(); notesHud?.RemoveFromHierarchy(); hud = notesHud = null; confirmed.Clear(); if (Current == this) Current = null; }
 #else
         internal bool Sight(out Vector2 eye, out float radius, out ulong epoch) { eye = Vector2.zero; radius = 0; epoch = 0; return false; }
 #endif

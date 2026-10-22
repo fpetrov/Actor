@@ -44,10 +44,13 @@ old-mask translation or invented camera position.
 ## Numeric measurements
 
 The native factory supplies a fresh private `motion.json` destination within its
-owned session directory. On ordinary shutdown, the presenter writes numeric
-render, apply, receipt and presentation counters and interval distributions.
+owned session directory. The presenter writes complete numeric snapshots every
+five seconds and on ordinary shutdown: render, apply, receipt and presentation
+counters and interval distributions. The fresh private partial file is atomically
+replaced, so a platform termination that skips Unity callbacks can retain the
+last complete snapshot. Its last few seconds can be missing.
 No actor identifiers, positions, roles, evidence, text or credentials enter this
-report. A hard kill or crash can leave no report; that is missing evidence.
+report. A crash before the first snapshot can leave no report; that is missing evidence.
 Samples retain the latest 1,024 intervals plus all-time count and maximum.
 
 The server's existing postgame summary directory also receives a numeric
