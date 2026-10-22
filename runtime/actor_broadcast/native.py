@@ -414,10 +414,12 @@ class PreparedNativeRun:
         if self.sink.public_status.get("renderer_ready") is not True: raise NativeError("audio_renderer_unavailable")
         if not self.scheduler._fresh(): raise NativeError("broadcast_presented_view_stale")
 
-    def _obs_event(self, _):
+    def _obs_event(self, code):
         # Setup events are re-audited before readiness. Once ready they are
         # unsafe until a later explicitly prepared run; no silent rebinding.
-        if self._flags["obs"]: self._trip("obs_graph_changed")
+        if self._flags["obs"]:
+            self._trip(code if code in {"obs_owned_stream_inactive", "obs_owned_stream_reconnecting",
+                "obs_owned_stream_status_unverified"} else "obs_graph_changed")
 
     async def _obtain_admission(self):
         # An HTTP POST may reach CP even when its local await is cancelled.
@@ -529,6 +531,7 @@ class PreparedNativeRun:
                 if self._binding is not None and not self.window.verify(self._binding): raise NativeError("broadcast_window_lost")
                 if self._flags["obs"] and now >= next_obs:
                     next_obs = now + 1
+                    await self.obs.check_stream_health()
                     if not (await self.obs.audit()).passed or not await self._verify_channel(self.config.channel):
                         raise NativeError("obs_route_or_destination_changed")
                 if self._flags["audio"] and self.sink.public_status.get("renderer_ready") is not True:

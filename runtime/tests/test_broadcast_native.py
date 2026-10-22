@@ -152,6 +152,7 @@ class Fakes:
                 assert kwargs == {"protected_backup_confirmed": True, "adopt_empty_collection": True, "native_size": (800,600)}
                 own.calls.append("obs-prepare")
             async def audit(self): return Obj(passed=True)
+            async def check_stream_health(self): pass
             async def complete_startup(self): own.calls.append("obs-startup-complete"); return Obj(passed=True)
             async def emergency_stop(self): own.live = False; own.calls.append("obs-emergency")
             async def cleanup_owned_inputs(self): own.calls.append("obs-owned-inputs-removed")
@@ -605,3 +606,30 @@ async def test_production_prepare_requires_own_native_png_before_obs_graph_mutat
             on_unsafe=lambda _:None,on_terminal=lambda:None)
     assert 'obs-prepare' not in fakes.calls and not factory._owned
     assert fakes.process.poll()==0 and not fakes.lease.held
+
+
+@pytest.mark.parametrize('event_present',[False,True])
+async def test_native_real_owned_stream_health_revokes_run_for_event_or_missing_event_poll(tmp_path,event_present):
+    from test_broadcast_obs import controller
+    fakes=Fakes(tmp_path);factory,run,_,unsafe,_=await prepared(fakes)
+    original=run.obs; obs,graph=controller();obs.on_unsafe=run._obs_event
+    obs._owned_stream=obs._stream_confirmed=True;graph.active=True
+    assert (await obs.audit()).passed
+    run.obs=obs
+    try:
+        graph.active=False
+        if event_present:
+            graph.on_event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPED'})
+            assert unsafe==['obs_owned_stream_inactive'] and not run._route_guard()
+        # No event is needed: the production native guard invokes the actual
+        # controller status query on its normal one-second OBS audit cadence.
+        for _ in range(140):
+            if unsafe and not obs._owned_stream: break
+            await asyncio.sleep(.01)
+        assert unsafe==['obs_owned_stream_inactive'] and not run._route_guard()
+        assert not obs._owned_stream and not graph.active
+        assert not any(kind=='StopStream' for kind,_ in graph.calls)  # Already inactive.
+        assert any(kind=='GetStreamStatus' for kind,_ in graph.calls)
+    finally:
+        run.obs=original;await factory.aclose()
+    assert not factory._owned and not fakes.lease.held

@@ -774,3 +774,251 @@ async def test_any_manual_crop_change_after_pin_fails_strict_audit_without_recro
     before=len(graph.calls); graph.transform['cropTop']=63
     assert not (await c.audit()).passed and not c.route_verified
     assert not any(kind.startswith('Set') for kind,_ in graph.calls[before:])
+
+
+@pytest.mark.parametrize('data,reason', [
+    ({'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPED'},'obs_owned_stream_inactive'),
+    ({'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPING'},'obs_owned_stream_inactive'),
+    ({'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_RECONNECTING'},'obs_owned_stream_reconnecting'),
+    ({'outputActive':True,'outputState':'OBS_WEBSOCKET_OUTPUT_RECONNECTED'},'obs_owned_stream_reconnecting'),
+    ({'outputActive':True,'outputState':'UNKNOWN'},'obs_owned_stream_status_unverified'),
+])
+async def test_confirmed_owned_stream_event_revokes_route_and_latches_exact_safe_failure(data,reason):
+    c,graph=controller(); unsafe=[]; c.on_unsafe=unsafe.append
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    assert c._stream_confirmed and c.route_verified
+    graph.on_event('StreamStateChanged',data)
+    assert c._owned_stream and c._stream_confirmed and not c.route_verified
+    assert unsafe==[reason] and c._stream_failure==reason
+    graph.on_event('StreamStateChanged',{'outputActive':True,'outputState':'OBS_WEBSOCKET_OUTPUT_STARTED'})
+    assert (await c.audit()).passed and not c.route_verified  # No silent recovery.
+    with pytest.raises(ObsError,match=reason): await c.check_stream_health()
+    with pytest.raises(ObsError,match=reason):
+        await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    assert unsafe==[reason]
+
+
+async def test_starting_inactive_event_is_not_failure_and_confirmation_requires_fresh_status():
+    class Starting(Graph):
+        starting=False; confirms=0
+        async def request(self,kind,data=None,**kwargs):
+            result=await super().request(kind,data,**kwargs)
+            if kind=='StartStream':
+                self.starting=True
+                self.on_event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STARTING'})
+            if kind=='GetStreamStatus' and self.starting:
+                self.confirms+=1
+                if self.confirms==1:
+                    self.on_event('StreamStateChanged',{'outputActive':True,'outputState':'OBS_WEBSOCKET_OUTPUT_STARTED'})
+                return {'outputActive':True,'outputReconnecting':False}
+            return result
+    c,graph=controller(Starting());unsafe=[];c.on_unsafe=unsafe.append
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    assert graph.confirms==2 and c._stream_confirmed and c.route_verified and not unsafe
+    # Healthy idempotence still rechecks the actual output.
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    assert graph.confirms==3 and sum(kind=='StartStream' for kind,_ in graph.calls)==1
+
+
+@pytest.mark.parametrize('state,reason', [
+    ({'outputActive':False,'outputReconnecting':False},'obs_owned_stream_inactive'),
+    ({'outputActive':True,'outputReconnecting':True},'obs_owned_stream_reconnecting'),
+    ({'outputActive':True},'obs_owned_stream_status_unverified'),
+])
+async def test_missing_stream_event_is_detected_by_actual_status_poll(state,reason):
+    c,graph=controller();unsafe=[];c.on_unsafe=unsafe.append
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    original=graph.request
+    async def status(kind,*args,**kwargs):
+        if kind=='GetStreamStatus':
+            assert kwargs.get('timeout')==1
+            return state
+        return await original(kind,*args,**kwargs)
+    graph.request=status
+    with pytest.raises(ObsError,match=reason): await c.check_stream_health()
+    assert unsafe==[reason] and not c.route_verified and c._owned_stream
+
+
+async def test_status_poll_error_latches_failure_without_leaking_server_error():
+    c,graph=controller();unsafe=[];c.on_unsafe=unsafe.append
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    async def failed(*args,**kwargs): raise RuntimeError('private server detail')
+    graph.request=failed
+    with pytest.raises(ObsError,match='^obs_owned_stream_status_unverified$'): await c.check_stream_health()
+    assert unsafe==['obs_owned_stream_status_unverified'] and not c.route_verified
+
+
+async def test_foreign_output_and_unconfirmed_owned_intent_are_not_claimed_as_live_or_stopped():
+    c,graph=controller();unsafe=[];c.on_unsafe=unsafe.append;graph.active=True
+    c._event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPED'})
+    before=len(graph.calls);await c.check_stream_health();await c.stop_stream()
+    assert graph.active and len(graph.calls)==before and not unsafe
+    c._owned_stream=True
+    with pytest.raises(ObsError,match='obs_owned_stream_transition_pending'):
+        await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    assert not c._stream_confirmed and len(graph.calls)==before
+
+
+@pytest.mark.parametrize('lost_ack',[False,True])
+async def test_intentional_stop_events_and_lost_response_do_not_report_unexpected_drop(lost_ack):
+    class Deliberate(Graph):
+        async def request(self,kind,data=None,**kwargs):
+            result=await super().request(kind,data,**kwargs)
+            if kind=='StopStream':
+                self.on_event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPING'})
+                self.on_event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPED'})
+                if lost_ack: raise ObsError('obs_request_failed')
+            return result
+    c,graph=controller(Deliberate());unsafe=[];c.on_unsafe=unsafe.append
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    if lost_ack:
+        with pytest.raises(ObsError): await c.stop_stream()
+        assert c._owned_stream and c._stream_stopping and c._stream_confirmed
+        await c.check_stream_health()  # Ownership stays available for retry.
+    await c.stop_stream()
+    assert not c._owned_stream and not c._stream_confirmed and not c._stream_stopping
+    assert not unsafe and sum(kind=='StopStream' for kind,_ in graph.calls)==1
+
+
+async def test_inflight_health_poll_cannot_misclassify_deliberate_stop():
+    c,graph=controller();unsafe=[];c.on_unsafe=unsafe.append
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    original=graph.request;entered=asyncio.Event();release=asyncio.Event();once=False
+    async def delayed(kind,*args,**kwargs):
+        nonlocal once
+        if kind=='GetStreamStatus' and not once:
+            once=True;entered.set();await release.wait()
+            return {'outputActive':False,'outputReconnecting':False}
+        return await original(kind,*args,**kwargs)
+    graph.request=delayed
+    poll=asyncio.create_task(c.check_stream_health());await entered.wait()
+    await c.stop_stream();release.set();await poll
+    assert not unsafe and not c._owned_stream and not c._stream_failure
+
+
+async def test_cancelled_intentional_stop_keeps_stop_intent_and_retries_owned_cleanup():
+    c,graph=controller();unsafe=[];c.on_unsafe=unsafe.append
+    await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    original=graph.request;entered=asyncio.Event()
+    async def hanging(kind,*args,**kwargs):
+        if kind=='GetStreamStatus': entered.set();await asyncio.Event().wait()
+        return await original(kind,*args,**kwargs)
+    graph.request=hanging
+    stopping=asyncio.create_task(c.stop_stream());await entered.wait();stopping.cancel()
+    with pytest.raises(asyncio.CancelledError): await stopping
+    assert c._owned_stream and c._stream_confirmed and c._stream_stopping
+    c._event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPED'})
+    await c.check_stream_health();assert not unsafe
+    graph.request=original;await c.stop_stream()
+    assert not c._owned_stream and not c._stream_stopping
+
+
+async def test_cancelled_start_keeps_owned_intent_until_actual_stop_without_false_health_failure():
+    entered=asyncio.Event();release=asyncio.Event()
+    class PendingStart(Graph):
+        async def request(self,kind,data=None,**kwargs):
+            result=await super().request(kind,data,**kwargs)
+            if kind=='StartStream':
+                self.on_event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STARTING'})
+                entered.set();await release.wait()
+            if kind=='StopStream':
+                self.on_event('StreamStateChanged',{'outputActive':False,'outputState':'OBS_WEBSOCKET_OUTPUT_STOPPED'})
+            return result
+    c,graph=controller(PendingStart());unsafe=[];c.on_unsafe=unsafe.append
+    starting=asyncio.create_task(c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True)))
+    await entered.wait()
+    assert c._owned_stream and not c._stream_confirmed and not c._stream_stopping
+    await c.check_stream_health();starting.cancel();release.set()
+    with pytest.raises(asyncio.CancelledError): await starting
+    assert not graph.active and not c._owned_stream and not c._stream_confirmed
+    assert not c._stream_stopping and not unsafe
+    assert sum(kind=='StopStream' for kind,_ in graph.calls)==1
+
+
+@pytest.mark.parametrize('delay_rpc',[False,True])
+@pytest.mark.parametrize('emergency',[False,True])
+async def test_concurrent_stop_never_clears_ownership_before_delayed_start_commits(delay_rpc,emergency):
+    entered=asyncio.Event();activate=asyncio.Event()
+    class DelayedStart(Graph):
+        async def request(self,kind,data=None,**kwargs):
+            if kind=='StartStream':
+                self.calls.append((kind,data or {}));entered.set()
+                if delay_rpc:
+                    await activate.wait();self.active=True
+                return {}
+            return await super().request(kind,data,**kwargs)
+    c,graph=controller(DelayedStart());unsafe=[];c.on_unsafe=unsafe.append
+    starting=asyncio.create_task(c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True)))
+    await entered.wait()
+    stopping=asyncio.create_task(c.emergency_stop() if emergency else c.stop_stream());await asyncio.sleep(.06)
+    assert not stopping.done() and c._owned_stream and c._stream_start_pending and c._stream_stopping
+    assert not graph.active
+    # Cover both a delayed RPC response and a queued frontend activation AFTER
+    # a successful StartStream response (the real API explicitly queues it).
+    graph.active=True;activate.set()
+    await asyncio.wait_for(stopping,1)
+    with pytest.raises(ObsError,match='obs_start_interrupted'): await asyncio.wait_for(starting,1)
+    assert not graph.active and not c._owned_stream and not c._stream_start_pending
+    assert not unsafe and sum(kind=='StopStream' for kind,_ in graph.calls)==1
+
+
+async def test_unknown_cancelled_start_retains_ownership_on_early_inactive_until_later_retry():
+    c,graph=controller();c._owned_stream=c._stream_start_pending=True
+    c.START_SETTLE_TIMEOUT_SECONDS=.08
+    with pytest.raises(ObsError,match='obs_owned_stream_start_pending'): await c.stop_stream()
+    assert c._owned_stream and c._stream_start_pending and c._stream_stopping
+    assert not any(kind=='StopStream' for kind,_ in graph.calls)
+    # A late remote commit is still ours: cleanup can retry it rather than
+    # orphaning it or declaring the lease released from an early idle status.
+    graph.active=True;await c.stop_stream()
+    assert not graph.active and not c._owned_stream and not c._stream_start_pending
+
+
+async def test_explicit_rejected_start_never_stops_existing_foreign_stream():
+    class RejectedStart(Graph):
+        async def request(self,kind,data=None,**kwargs):
+            if kind=='StartStream':
+                self.calls.append((kind,data or {}));self.active=True
+                raise ObsError('obs_request_rejected',request_status_code=500)
+            return await super().request(kind,data,**kwargs)
+    c,graph=controller(RejectedStart())
+    with pytest.raises(ObsError):
+        await c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True))
+    assert graph.active and not c._owned_stream and not c._stream_start_pending
+    assert not any(kind=='StopStream' for kind,_ in graph.calls)
+
+
+async def test_concurrent_stop_waits_for_delayed_rejected_start_and_never_stops_foreign_output():
+    entered=asyncio.Event();reject=asyncio.Event()
+    class DelayedRejection(Graph):
+        async def request(self,kind,data=None,**kwargs):
+            if kind=='StartStream':
+                self.calls.append((kind,data or {}));entered.set();await reject.wait()
+                raise ObsError('obs_request_rejected',request_status_code=500)
+            return await super().request(kind,data,**kwargs)
+    c,graph=controller(DelayedRejection())
+    starting=asyncio.create_task(c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True)))
+    await entered.wait();graph.active=True  # A foreign start wins the RPC race.
+    stopping=asyncio.create_task(c.stop_stream());await asyncio.sleep(.06)
+    assert not stopping.done() and graph.active and not any(kind=='StopStream' for kind,_ in graph.calls)
+    reject.set();await stopping
+    with pytest.raises(ObsError,match='obs_request_rejected'): await starting
+    assert graph.active and not c._owned_stream and not c._stream_start_task
+    assert not any(kind=='StopStream' for kind,_ in graph.calls)
+
+
+async def test_cancelled_start_rpc_is_retained_until_real_result_then_owned_late_start_is_stopped():
+    entered=asyncio.Event();release=asyncio.Event()
+    class Pending(Graph):
+        async def request(self,kind,data=None,**kwargs):
+            if kind=='StartStream':
+                self.calls.append((kind,data or {}));entered.set();await release.wait();self.active=True;return {}
+            return await super().request(kind,data,**kwargs)
+    c,graph=controller(Pending());c.START_SETTLE_TIMEOUT_SECONDS=.08
+    starting=asyncio.create_task(c.start_stream(PublicStartPermit('fedorr_codex',time.monotonic()+5,True)))
+    await entered.wait();task=c._stream_start_task;starting.cancel()
+    with pytest.raises(ObsError,match='obs_owned_stream_start_pending'): await starting
+    assert c._stream_start_task is task and not task.done() and not task.cancelled() and c._owned_stream
+    release.set();await task;assert graph.active
+    await c.stop_stream()
+    assert not graph.active and not c._owned_stream and c._stream_start_task is None

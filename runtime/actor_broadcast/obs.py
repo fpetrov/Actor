@@ -245,11 +245,16 @@ class ObsController:
     VIDEO = "ACTOR Observer Window"
     STABILIZE_TIMEOUT_SECONDS = 3.0
     STABILIZE_QUIET_SECONDS = .15
+    START_SETTLE_TIMEOUT_SECONDS = 2.0
 
     def __init__(self, client: ObsClient, *, window_guard, channel_guard, on_unsafe=None):
         self.client = client; self.window_guard = window_guard; self.channel_guard = channel_guard
         self.on_unsafe = on_unsafe; self._original = None; self._prepared = False; self._binding = None
         self._renderer_url = None; self._owned_stream = False; self._graph_ok = False
+        self._stream_confirmed = False; self._stream_stopping = False
+        self._stream_start_pending = False
+        self._stream_start_task = None
+        self._stream_failure = None; self._stream_event_generation = 0
         self._graph_generation = 0
         self._last_audit_at = -float("inf")
         self._owner_nonce = secrets.token_hex(16); self._owned_inputs = {}; self._creating_inputs = set()
@@ -257,15 +262,27 @@ class ObsController:
         self._startup_pending = True
         self._native_size = None; self._capture_shape = None; self._capture_crop_top = 0
         self._setup_lock = asyncio.Lock(); self._stream_lock = asyncio.Lock(); self._record_owned = False
+        self._stream_stop_lock = asyncio.Lock()
         self._audit_lock = asyncio.Lock()
         self._old_callback = client.on_event; client.on_event = self._event
 
     @property
     def route_verified(self): return (self._graph_ok and 0 <= time.monotonic()-self._last_audit_at <= 2
                                       and self._prepared and self._expected_scene in ("ACTOR Match", "ACTOR Ending")
+                                      and self._stream_failure is None
                                       and self.window_guard(self._binding))
 
     def _event(self, name, data):
+        if name == "StreamStateChanged":
+            self._stream_event_generation += 1
+            if self._owned_stream and self._stream_confirmed and not self._stream_stopping:
+                state = data.get("outputState")
+                if state in ("OBS_WEBSOCKET_OUTPUT_RECONNECTING", "OBS_WEBSOCKET_OUTPUT_RECONNECTED"):
+                    self._fail_stream("obs_owned_stream_reconnecting")
+                elif data.get("outputActive") is False:
+                    self._fail_stream("obs_owned_stream_inactive")
+                elif data.get("outputActive") is not True or state != "OBS_WEBSOCKET_OUTPUT_STARTED":
+                    self._fail_stream("obs_owned_stream_status_unverified")
         if name == "CurrentProgramSceneChanged" and data.get("sceneName") != self._expected_scene:
             self._graph_ok = False; self._graph_generation += 1
             if self.on_unsafe is not None: self.on_unsafe("obs_program_scene_changed")
@@ -282,6 +299,34 @@ class ObsController:
             self._graph_generation += 1
             if self.on_unsafe is not None: self.on_unsafe("obs_graph_changed")
         if self._old_callback is not None: self._old_callback(name, data)
+
+    def _fail_stream(self, code):
+        self._graph_ok = False
+        if self._stream_failure is None:
+            self._stream_failure = code; self._graph_generation += 1
+            if self.on_unsafe is not None: self.on_unsafe(code)
+
+    async def check_stream_health(self):
+        """Poll only our confirmed public output; events revoke it immediately."""
+        if not self._owned_stream or not self._stream_confirmed or self._stream_stopping: return
+        if self._stream_failure is not None: raise ObsError(self._stream_failure)
+        try:
+            state = await self.client.request("GetStreamStatus", timeout=1)
+        except asyncio.CancelledError: raise
+        except Exception:
+            if self._owned_stream and self._stream_confirmed and not self._stream_stopping:
+                self._fail_stream("obs_owned_stream_status_unverified")
+                raise ObsError("obs_owned_stream_status_unverified") from None
+            return
+        # Deliberate Stop may have started while this query was in flight.
+        if not self._owned_stream or not self._stream_confirmed or self._stream_stopping: return
+        if state.get("outputReconnecting") is True:
+            self._fail_stream("obs_owned_stream_reconnecting")
+        elif state.get("outputActive") is False:
+            self._fail_stream("obs_owned_stream_inactive")
+        elif state.get("outputActive") is not True or state.get("outputReconnecting") is not False:
+            self._fail_stream("obs_owned_stream_status_unverified")
+        if self._stream_failure is not None: raise ObsError(self._stream_failure)
 
     async def require_idle(self):
         for request in ("GetStreamStatus", "GetRecordStatus", "GetVirtualCamStatus"):
@@ -729,7 +774,11 @@ class ObsController:
 
     async def start_stream(self, permit: PublicStartPermit):
         async with self._stream_lock:
-            if self._owned_stream: return
+            if self._stream_failure is not None: raise ObsError(self._stream_failure)
+            if self._owned_stream:
+                if not self._stream_confirmed or self._stream_stopping: raise ObsError("obs_owned_stream_transition_pending")
+                await self.check_stream_health()
+                return
             if self._startup_pending: raise ObsError("obs_startup_incomplete")
             if (not isinstance(permit, PublicStartPermit) or permit.explicit_public_start is not True
                 or permit.channel_login != "fedorr_codex" or type(permit.expires_at_monotonic) not in (int, float)
@@ -746,12 +795,30 @@ class ObsController:
             # lease establish ownership before the request can affect OBS.
             # A lost response must not turn an owned output into an orphan.
             self._owned_stream = True
+            self._stream_confirmed = False; self._stream_stopping = False; self._stream_start_pending = True
             try:
-                await self.client.request("StartStream")
+                try:
+                    task = self._stream_start_task = asyncio.create_task(self.client.request("StartStream"))
+                    task.add_done_callback(lambda result: None if result.cancelled() else result.exception())
+                    await asyncio.shield(task)
+                except ObsError as error:
+                    # An explicit server rejection did not accept our start.
+                    # In particular OutputRunning may refer to a foreign output.
+                    if error.code == "obs_request_rejected" and error.request_status_code is not None:
+                        self._owned_stream = self._stream_start_pending = False
+                    raise
                 deadline = time.monotonic() + 10
                 while time.monotonic() < deadline:
+                    generation = self._stream_event_generation
                     state = await self.client.request("GetStreamStatus", timeout=max(.1, min(2, deadline - time.monotonic())))
-                    if state.get("outputActive") is True and state.get("outputReconnecting") is False: return
+                    if state.get("outputActive") is True: self._stream_start_pending = False
+                    if not self._owned_stream or self._stream_stopping and not self._stream_start_pending:
+                        raise ObsError("obs_start_interrupted")
+                    if (generation == self._stream_event_generation and state.get("outputActive") is True
+                            and state.get("outputReconnecting") is False):
+                        self._stream_confirmed = True
+                        self._stream_start_task = None
+                        return
                     await asyncio.sleep(.25)
                 raise ObsError("obs_live_unconfirmed")
             except BaseException:
@@ -765,15 +832,46 @@ class ObsController:
 
     async def stop_stream(self):
         if not self._owned_stream: return
-        if (await self.client.request("GetStreamStatus", timeout=2)).get("outputActive") is False:
-            self._owned_stream = False; return
-        await self.client.request("StopStream")
-        deadline = time.monotonic() + 10
-        while time.monotonic() < deadline:
-            if (await self.client.request("GetStreamStatus", timeout=max(.1, min(2, deadline - time.monotonic())))).get("outputActive") is False:
-                self._owned_stream = False; return
-            await asyncio.sleep(.25)
-        raise ObsError("obs_stop_unconfirmed")
+        # Intent precedes every await and survives cancellation/lost responses.
+        # STOPPING/STOPPED from our own request is not an unexpected failure.
+        self._stream_stopping = True
+        async with self._stream_stop_lock:
+            if not self._owned_stream: return
+            task = self._stream_start_task
+            if task is not None:
+                # A cancelled caller cannot cancel or forget a mutating RPC.
+                # In particular, active output alone cannot establish that a
+                # still-pending Start was accepted rather than rejected500.
+                done, _ = await asyncio.wait((task,), timeout=self.START_SETTLE_TIMEOUT_SECONDS)
+                if task not in done: raise ObsError("obs_owned_stream_start_pending")
+                error = None
+                if not task.cancelled(): error = task.exception()
+                if (isinstance(error, ObsError) and error.code == "obs_request_rejected"
+                        and error.request_status_code is not None):
+                    self._owned_stream = self._stream_start_pending = self._stream_confirmed = self._stream_stopping = False
+                    self._stream_start_task = None
+                    return
+                self._stream_start_task = None
+            # StartStream queues a frontend start before its response; an early
+            # inactive status cannot prove that queued activation was cancelled.
+            settle_deadline = time.monotonic() + self.START_SETTLE_TIMEOUT_SECONDS
+            while True:
+                state = await self.client.request("GetStreamStatus", timeout=max(.1, min(2, settle_deadline-time.monotonic())))
+                if state.get("outputActive") is True:
+                    self._stream_start_pending = False
+                    break
+                if state.get("outputActive") is not False: raise ObsError("obs_stop_unconfirmed")
+                if not self._stream_start_pending:
+                    self._owned_stream = self._stream_confirmed = self._stream_stopping = False; return
+                if time.monotonic() >= settle_deadline: raise ObsError("obs_owned_stream_start_pending")
+                await asyncio.sleep(.05)
+            await self.client.request("StopStream")
+            deadline = time.monotonic() + 10
+            while time.monotonic() < deadline:
+                if (await self.client.request("GetStreamStatus", timeout=max(.1, min(2, deadline - time.monotonic())))).get("outputActive") is False:
+                    self._owned_stream = self._stream_confirmed = self._stream_stopping = False; return
+                await asyncio.sleep(.25)
+            raise ObsError("obs_stop_unconfirmed")
 
     async def stop_record(self):
         if not self._record_owned: return {}
