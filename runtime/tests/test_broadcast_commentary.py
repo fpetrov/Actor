@@ -186,11 +186,124 @@ async def test_p1_wait_is_bounded_and_completed_prefix_only_is_covered():
     assert speech.acknowledge(scheduler,clock,index=0)
     await pump(scheduler)
     assert len(speech.cancellations)==1
-    rows=list(scheduler.spoken.records.values())
+    assert len(provider.requests)==2 and provider.requests[-1].candidate.priority==1
+    assert clock.now-20.2<=scheduler.config.idle.max_preemption_wait_seconds
+    rows=[row for row in scheduler.spoken.records.values() if row.segment.key.utterance_id==first.key.utterance_id]
     assert len(rows)==1 and rows[0].status=="completed"  # Unsubmitted suffix is not fabricated playback history.
     assert len(scheduler.spoken.recent())==1
     assert not scheduler.playback_ack(PlaybackAck(first.scope,first.key,"completed",24000,24000,clock.now))
     await scheduler.stop()
+
+
+async def test_p1_preemption_dispatches_at_deadline_with_fresh_heartbeat_without_twelve_second_cooldown():
+    clock=Clock();provider=Provider(segments=3);scheduler,_,speech=system(clock,provider)
+    scheduler.observe(view(clock,facts=[fact(clock)]));scheduler.ready()
+    clock.advance(20);await fresh(scheduler,clock)
+    clock.advance(.2);arrived=clock.now
+    await fresh(scheduler,clock,facts=[fact(clock,'important',priority=1)])
+    for _ in range(5):
+        clock.advance(.25);await fresh(scheduler,clock)
+        assert len(provider.requests)==1
+    clock.advance(.25);await fresh(scheduler,clock)
+    assert clock.now-arrived==1.5
+    assert len(provider.requests)==2 and provider.requests[-1].candidate.priority==1
+    assert provider.requests[-1].candidate.mode=='reactive' and provider.max_active==1
+    assert len(speech.cancellations)==1 and not scheduler._p1_cooldown_bypass
+    await scheduler.stop()
+
+
+async def test_p1_preemption_bypass_is_one_shot_and_does_not_displace_another_p1():
+    clock=Clock();provider=Provider();scheduler,_,speech=system(clock,provider)
+    scheduler.observe(view(clock,facts=[fact(clock)]));scheduler.ready()
+    clock.advance(20);await fresh(scheduler,clock)
+    clock.advance(.2);await fresh(scheduler,clock,facts=[fact(clock,'important',priority=1)])
+    assert speech.acknowledge(scheduler,clock,index=0)
+    await pump(scheduler)
+    assert len(provider.requests)==2
+    clock.advance(.2);await fresh(scheduler,clock,facts=[fact(clock,'new-p1',priority=1)])
+    assert scheduler._p1_deadline is None  # Equal-priority work keeps its turn.
+    assert speech.acknowledge(scheduler,clock,index=1)
+    for index in range(8):
+        clock.advance(.5);await fresh(scheduler,clock,facts=[fact(clock,'flood-'+str(index),priority=1)])
+        assert len(provider.requests)==2
+    assert scheduler.report()['silence_reason'] in ('cooldown','coalescing')
+    assert len(speech.cancellations)==1
+    await scheduler.stop()
+
+
+async def test_ordinary_p1_after_completed_work_keeps_normal_cooldown():
+    clock=Clock();scheduler,provider,speech=system(clock)
+    scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));scheduler.ready()
+    await pump(scheduler);assert speech.acknowledge(scheduler,clock)
+    await pump(scheduler)
+    clock.advance(.2);await fresh(scheduler,clock,facts=[fact(clock,'ordinary-p1',priority=1)])
+    clock.advance(1.5);await fresh(scheduler,clock)
+    assert len(provider.requests)==1 and scheduler.report()['silence_reason']=='cooldown'
+    assert scheduler._p1_deadline is None and not scheduler._p1_cooldown_bypass
+    await scheduler.stop()
+
+
+async def test_p1_does_not_preempt_active_critical_work_or_gain_its_cooldown_exemption():
+    clock=Clock();scheduler,provider,speech=system(clock)
+    scheduler.observe(view(clock,facts=[fact(clock,priority=0)]));scheduler.ready()
+    await pump(scheduler)
+    clock.advance(.2);await fresh(scheduler,clock,facts=[fact(clock,'important',priority=1)])
+    clock.advance(1.5);await fresh(scheduler,clock)
+    assert len(provider.requests)==1 and speech.cancellations==[]
+    assert scheduler._p1_deadline is None and not scheduler._p1_cooldown_bypass
+    assert speech.acknowledge(scheduler,clock)
+    await pump(scheduler)
+    assert len(provider.requests)==1 and scheduler.report()['silence_reason']=='cooldown'
+    await scheduler.stop()
+
+
+async def test_p1_preemption_attempt_uses_shared_budget_once_even_when_budget_refuses():
+    clock=Clock();provider=Provider();config=CommentaryConfig(hard_calls_per_match=1)
+    scheduler,_,speech=system(clock,provider,config)
+    scheduler.observe(view(clock,facts=[fact(clock)]));scheduler.ready()
+    clock.advance(20);await fresh(scheduler,clock)
+    clock.advance(.2);await fresh(scheduler,clock,facts=[fact(clock,'important',priority=1)])
+    clock.advance(1.5);await fresh(scheduler,clock)
+    assert len(provider.requests)==1 and len(speech.cancellations)==1
+    assert scheduler.report()['silence_reason']=='budget'
+    assert not scheduler._p1_cooldown_bypass
+    # The failed attempt cannot bypass cooldown repeatedly or on new P1 flood.
+    for index in range(4):
+        clock.advance(.5);await fresh(scheduler,clock,facts=[fact(clock,'later-'+str(index),priority=1)])
+    assert len(provider.requests)==1
+    assert scheduler.report()['counts']['budget_match_calls']==1
+    await scheduler.stop()
+
+
+async def test_p1_arriving_during_idle_budget_reservation_blocks_old_turn_without_refund_or_lost_fact():
+    clock=Clock();provider=Provider();speech=Speech()
+    class GateBudget(BudgetLedger):
+        def __init__(self):
+            super().__init__(clock=clock.wall)
+            self.entered=asyncio.Event();self.release=asyncio.Event()
+        async def reserve(self,*args,**kwargs):
+            if args[1]=='idle_recap':
+                self.entered.set();await self.release.wait()
+            return await super().reserve(*args,**kwargs)
+    budget=GateBudget()
+    scheduler=CommentaryScheduler(provider,speech,budget,clock=clock.monotonic,wall_clock=clock.wall)
+    scheduler.observe(view(clock,facts=[fact(clock)]));scheduler.ready();clock.advance(20)
+    scheduler.observe(view(clock,sequence=2))
+    pending=asyncio.create_task(scheduler.step())
+    await budget.entered.wait()
+    important=fact(clock,'important',priority=1)
+    scheduler.observe(view(clock,sequence=3,facts=[important]))
+    budget.release.set();await pending
+    assert provider.requests==[] and speech.segments==[]
+    assert scheduler.report()['silence_reason']=='higher_priority_arrived'
+    assert important.ref in scheduler._pending
+    assert (await budget.report())['calls']==1  # Unused reservation remains conservatively charged.
+    clock.advance(.5);await fresh(scheduler,clock)
+    assert len(provider.requests)==1 and provider.requests[0].candidate.priority==1
+    assert provider.requests[0].candidate.mode=='reactive' and important.ref in provider.requests[0].candidate.evidence
+    assert (await budget.report())['calls']==2 and provider.max_active==1
+    assert scheduler.report()['counts']['priority_superseded_admissions']==1
+    await scheduler.stop();await budget.close()
 
 
 async def test_short_russian_segment_gets_full_twelve_second_frame_cap_and_ack_backpressure():

@@ -49,6 +49,8 @@ class CommentaryScheduler:
         self._needs_cancel = False
         self._cancel_reason = None
         self._p1_deadline = None
+        self._p1_preempting_refs = set()
+        self._p1_cooldown_bypass = set()
         self._coalesce_deadline = 0.0
         self._last_admission = -float("inf")
         self.last_noteworthy_observation_at = 0.0
@@ -129,6 +131,9 @@ class CommentaryScheduler:
             self.view.expires_at_unix_ms > int(self.wall_clock()*1000))
 
     def _invalidate(self, reason):
+        if reason not in ('important_event_boundary','important_event_deadline'):
+            self._p1_deadline = None
+            self._p1_preempting_refs.clear(); self._p1_cooldown_bypass.clear()
         self._epoch += 1  # Synchronous fencing precedes any await/provider IPC.
         self._needs_cancel = True
         self._cancel_reason = reason
@@ -192,8 +197,10 @@ class CommentaryScheduler:
                     self._pending.pop(victim); self._counts["coalesced_dropped"] += 1
                 if fact.priority == 0:
                     self._invalidate("critical_event")
-                elif fact.priority == 1 and (self._active or self._speech_pending):
+                elif fact.priority == 1 and not self._needs_cancel and self._lower_priority_active():
+                    self._p1_preempting_refs.add(fact.ref)
                     self._p1_deadline = min(self._p1_deadline or float("inf"), now+self.config.idle.max_preemption_wait_seconds)
+        self._p1_preempting_refs.intersection_update(self._pending)
         if view.terminal and (previous is None or not previous.terminal):
             self._invalidate("match_ended")
             self._offered.clear()
@@ -213,6 +220,12 @@ class CommentaryScheduler:
     def _suppress(self, reason):
         if self.last_suppression != reason: self._suppressions[reason] += 1
         self.last_suppression = reason
+
+    def _lower_priority_active(self):
+        priorities=[segment.priority for segment,_ in self._speech_pending.values()]
+        if self._active is not None and not self._active.done() and self._active_request is not None:
+            priorities.append(self._active_request.candidate.priority)
+        return bool(priorities) and min(priorities)>1
 
     def _candidate(self, refs, mode, priority):
         facts=[(ref,self.evidence.resolve(ref).model_dump(mode="json")) for ref in refs if self.evidence.resolve(ref)]
@@ -360,6 +373,9 @@ class CommentaryScheduler:
     async def _cancel_active(self, *, emergency=False):
         async with self._preempt_lock:
             cancelled=True
+            preemption_epoch=self._epoch
+            preemption_reason=self._cancel_reason
+            preemption_refs=set(self._p1_preempting_refs)
             request=self._active_request
             cancellations={(segment.scope,segment.key.utterance_id,segment.key.utterance_epoch)
                 for segment,_ in self._speech_pending.values()}
@@ -395,6 +411,13 @@ class CommentaryScheduler:
                 if not self._active.cancelled(): self._active.exception()
             if self._active is None or self._active.done():self._active=None
             if cancelled:self._active_request=None
+            if (cancelled and self._epoch==preemption_epoch and
+                    preemption_reason in ('important_event_boundary','important_event_deadline')):
+                # Only the exact facts which displaced lower-priority work can
+                # bypass one cooldown. No blanket P1 flood exemption or quota.
+                self._p1_cooldown_bypass={ref for ref in preemption_refs
+                    if ref in self._pending and self._pending[ref][0]==1}
+            self._p1_preempting_refs.clear()
             self._p1_deadline=None;self._needs_cancel=False
             self._counts["preemptions"]+=1
             return cancelled
@@ -440,7 +463,8 @@ class CommentaryScheduler:
         if self._provider_failed:self._suppress("provider_unavailable");return
         if self._active or self._speech_pending:self._suppress("speaking" if self._speech_pending else "llm_active");return
         self._pending=OrderedDict((ref,row) for ref,row in self._pending.items() if self.evidence.resolve(ref))
-        candidate=None;analysis_key=None;offered=None
+        self._p1_cooldown_bypass.intersection_update(self._pending)
+        candidate=None;analysis_key=None;offered=None;preemption_bypass=False
         if self.view.terminal:
             if self._terminal_outro_started:
                 if self._outro_needs_fallback:
@@ -453,9 +477,10 @@ class CommentaryScheduler:
                 await self._fallback_outro();return
         elif self._pending:
             priority=min(row[0] for row in self._pending.values())
-            if priority>0 and now<self._coalesce_deadline:self._suppress("coalescing");return
-            if priority>0 and now-self._last_admission<self.config.normal_cooldown_seconds:self._suppress("cooldown");return
             refs=sorted(self._pending,key=lambda ref:(self._pending[ref][0],self._pending[ref][1],ref.id))[:8]
+            preemption_bypass=priority==1 and bool(self._p1_cooldown_bypass.intersection(refs))
+            if priority>0 and not preemption_bypass and now<self._coalesce_deadline:self._suppress("coalescing");return
+            if priority>0 and not preemption_bypass and now-self._last_admission<self.config.normal_cooldown_seconds:self._suppress("cooldown");return
             candidate=self._candidate(refs,"reactive",priority)
         elif self._offered and (self._offered[0][0]!="chat_response" or now-self._last_chat_admission>=60):
             offered=self._offered.pop(0)
@@ -479,12 +504,23 @@ class CommentaryScheduler:
         try:reserved_input=reservation_input_tokens(self.provider,request)
         except ValueError:
             self._provider_failed=True;self._suppress("provider_reservation_invalid");return
+        # Attempt once through the unchanged shared budget. A refusal consumes
+        # the bypass too; later P1 facts cannot reuse it to hammer admission.
+        if preemption_bypass:self._p1_cooldown_bypass.clear()
         decision=await self.budget.reserve(self.view.scope.match_id,candidate.mode,candidate.priority,
             reserved_input,request.max_output_tokens,calls=calls,analysis_key=analysis_key)
         # An observation can arrive during durable I/O. Fence again before any
         # SDK call. A cancelled reservation remains charged conservatively.
         if not self._valid(request):
             self._counts["stale_admissions"]+=1;return
+        if any(priority<candidate.priority and self.evidence.resolve(ref) is not None
+                for ref,(priority,_) in self._pending.items()):
+            # A higher-priority fact can arrive during durable reservation even
+            # before there is an active turn to preempt. Do not launch the old
+            # lower-priority candidate. Its reservation stays conservatively
+            # charged; the next tick selects the real pending priority.
+            self._counts['priority_superseded_admissions']+=1
+            self._suppress('higher_priority_arrived');self._wake.set();return
         if decision.reservation is None:
             self._suppress("budget");self._counts["budget_"+decision.reason]+=1
             self.next_idle_retry_at=now+self.config.idle.empty_candidate_backoff_seconds
@@ -531,6 +567,7 @@ class CommentaryScheduler:
         if self._stop_complete:return
         self._closed=True;self._ready=False;self._epoch+=1
         self._pending.clear();self._offered.clear();self._wake.set();self._capacity.set()
+        self._p1_preempting_refs.clear();self._p1_cooldown_bypass.clear();self._p1_deadline=None
         if self._stop_task is None or self._stop_task.done():
             self._stop_task=asyncio.create_task(self._finish_stop(emergency=emergency))
             self._stop_task.add_done_callback(lambda task:None if task.cancelled() else task.exception())
