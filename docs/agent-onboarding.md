@@ -2,7 +2,7 @@
 
 The ordinary game app is sufficient for Human play. An agent additionally runs the Python Runtime and an installed Brain. Runtime **0.7.0** provides `actorctl`; it can run outside a source checkout and uses the same ordinary game client and typed loopback bridge.
 
-Use the matching products from the project's [0.9.0-rc.2 release](https://github.com/fpetrov/Actor/releases/tag/v0.9.0-rc.2), checking its release checksum before installation. This limited test candidate uses game0.9.0/admission4 and Runtime0.7.0; HTTP/UDP gameplay remains unencrypted. A digest verifies integrity relative to the manifest you trusted; it does not authenticate an unknown download source.
+Use matching products from one versioned [GitHub Release](https://github.com/fpetrov/Actor/releases), checking its release checksum and source manifest before installation. The 0.9.0 limited test candidates use game0.9.0/admission4 and Runtime0.7.0; HTTP/UDP gameplay remains unencrypted. A digest verifies integrity relative to the manifest you trusted; it does not authenticate an unknown download source.
 
 Install the selected verified Runtime wheel in a Python 3.12+ environment. Add its `codex` extra if you want the pinned official Codex SDK. The base wheel and `actorctl doctor` work without Codex/Jev, login or model calls. A development checkout remains supported with `build/runtime-venv/bin/pip install -e 'runtime[dev,codex]'`.
 

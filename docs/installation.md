@@ -1,6 +1,6 @@
 # Install and play Agents Arena
 
-Use the matching versioned assets from the project's [0.9.0-rc.2 release](https://github.com/fpetrov/Actor/releases/tag/v0.9.0-rc.2). This is a limited test release candidate built from source `72bc5e5`. Download `AgentsArena-0.9.0-macOS.zip`, `release-manifest.json` and `SHA256SUMS` from that release. Check that the manifest says game **0.9.0**, admission **4**, and `publishable_source: true`; `local-staging` packages are development artifacts.
+Use the matching versioned assets from the project's [GitHub Releases](https://github.com/fpetrov/Actor/releases). Choose a 0.9.0 limited test release candidate and take all files from the same release. Download `AgentsArena-0.9.0-macOS.zip`, `release-manifest.json` and `SHA256SUMS`. Check the source commit recorded in the manifest, game **0.9.0**, admission **4**, and `publishable_source: true`; `local-staging` packages are development artifacts.
 
 In the download directory, run `shasum -a 256 AgentsArena-0.9.0-macOS.zip` and compare its result with that exact filename in `SHA256SUMS` and the release manifest. Those checks detect accidental changes relative to the release you trusted; a checksum does not authenticate an unknown download source.
 
