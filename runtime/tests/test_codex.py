@@ -265,15 +265,15 @@ async def test_game_injection_is_external_message_never_user_text(session, monke
     assert sdk.clients[0].closed
 
 
-async def test_one_sdk_process_one_thread_reused_between_decisions(session):
+async def test_one_sdk_process_fresh_thread_between_self_contained_decisions(session):
     sdk = FakeSDK()
     brain = CodexBrain(adapter=sdk.adapter())
     runner = ObjectiveRunner(session, registry(), brain)
     result = await runner.run(Objective(text="Wait briefly and finish"))
     assert result.status == "succeeded" and result.decision_count == 2
     assert result.skill_results[0]["status"] == "succeeded"
-    assert len(sdk.clients) == len(sdk.thread_options) == 1
-    assert sum(isinstance(item, TextInput) for item in sdk.inputs) == 1
+    assert len(sdk.clients)==1 and len(sdk.thread_options)==2
+    assert sum(isinstance(item, TextInput) for item in sdk.inputs)==2
     assert sum(isinstance(item, ExternalMessage) for item in sdk.inputs) == 2
     assert brain.report()["adapter"]["unique_model_turns"] == 2
 
@@ -369,7 +369,7 @@ async def test_cancelled_close_still_closes_sdk_and_removes_workspace(session):
     assert sdk.clients[0].closed and adapter.closed and not workspace.exists()
 
 
-async def test_event_interrupts_public_turn_then_reuses_same_objective_thread(session):
+async def test_event_interrupts_public_turn_then_restates_same_objective_in_fresh_thread(session):
     from test_preemption import routing, emit
     router, sdk = routing(session), FakeSDK(blocked=True)
     adapter = sdk.adapter()
@@ -381,8 +381,8 @@ async def test_event_interrupts_public_turn_then_reuses_same_objective_thread(se
     emit(router, 4, "urgent:two")
     result = await asyncio.wait_for(task, timeout=1)
     assert result.status == "succeeded" and result.skill_results == []
-    assert len(sdk.clients) == len(sdk.thread_options) == 1
-    assert sum(isinstance(item, TextInput) for item in sdk.inputs) == 1
+    assert len(sdk.clients)==1 and len(sdk.thread_options)==2
+    assert sum(isinstance(item, TextInput) for item in sdk.inputs)==2
     snapshots = [json.loads(item.content) for item in sdk.inputs if isinstance(item, ExternalMessage)]
     assert snapshots[-1]["cognitive_revision"] == 2
     assert len(snapshots[-1]["trigger_events"]) == 2
@@ -417,8 +417,8 @@ async def test_adapter_single_flight_reserves_before_late_handle_reply_and_soft_
     assert not adapter.interrupt_requested
     reply = await adapter.decide("{}")
     assert reply.status == "completed" and reply.turn_id == "turn-1"
-    assert sum(isinstance(item, TextInput) for item in sdk.inputs) == 1
-    assert len(sdk.thread_options) == 1
+    assert sum(isinstance(item, TextInput) for item in sdk.inputs)==2
+    assert len(sdk.thread_options)==2
     await adapter.close()
 
 

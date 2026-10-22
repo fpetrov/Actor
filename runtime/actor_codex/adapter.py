@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from copy import deepcopy
 from dataclasses import dataclass
 import importlib
 from importlib.metadata import PackageNotFoundError, version
@@ -119,6 +120,9 @@ class OfficialCodexAdapter:
         self._decision_interrupt_requested = False
         self._decision_epoch = 0
         self.usage_totals = {}
+        self._usage_by_thread = {}; self._turn_threads = {}
+        self._thread_generation = self._thread_decisions = self._thread_rotations = 0
+        self._thread_options = None; self._episode_objective = None
         self._interrupt_lock = asyncio.Lock()
         self.turn_ids = set()
         self.interrupted_turn_ids = set()
@@ -181,6 +185,8 @@ class OfficialCodexAdapter:
         self._primary_handles.clear()
         self._last_decision_tools.clear()
         self.usage_totals.clear()
+        self._usage_by_thread.clear();self._turn_threads.clear()
+        self._thread_generation=self._thread_decisions=self._thread_rotations=0
         self._decision_epoch = 0
         self._decision_interrupt_requested = False
         self.schema = decision_schema(catalog)
@@ -201,24 +207,42 @@ class OfficialCodexAdapter:
             self.authentication_mode = account.account.root.type if account.account else None
             if account.requires_openai_auth and account.account is None:
                 raise ActorError("codex_authentication_required", "Sign in with: actor-runtime codex login")
-            self.thread = await self.client.thread_start(cwd=self.workspace.name,
+            self._thread_options = dict(cwd=self.workspace.name,
                 sandbox=self.sdk.Sandbox.read_only, approval_mode=self.sdk.ApprovalMode.deny_all,
                 ephemeral=True, model=self.model, base_instructions=BASE_INSTRUCTIONS,
                 config=_thread_policy(names),
-                developer_instructions="Available Runtime Skill catalog (trusted installed metadata):\n" +
-                    trusted_catalog)
-            self.objective = objective
+                developer_instructions="Available Runtime Skill catalog (trusted installed metadata):\n" +trusted_catalog)
+            self._episode_objective=objective
             self.interrupt_requested = False
             self.closed = False
+            await self._new_decision_thread()
         except BaseException:
             await self.close()
             raise
+
+    async def _new_decision_thread(self):
+        """The typed snapshot carries state; old snapshots need no model history.
+
+        Keep one owned SDK client/preflight for the episode. Every fresh public
+        ephemeral thread receives the same trusted objective/catalog/policy.
+        Usage stays cumulative across all those threads, including interrupts.
+        """
+        client=self.client
+        thread=await client.thread_start(**deepcopy(self._thread_options))
+        if (self.closed or self.client is not client or self.interrupt_requested
+                or self._decision_interrupt_requested):raise asyncio.CancelledError
+        if self._thread_generation:self._thread_rotations+=1
+        self._thread_generation+=1;self._usage_by_thread[self._thread_generation]={}
+        self._thread_decisions=0;self.thread=thread;self.objective=self._episode_objective
 
     async def _start_turn(self, input):
         if self.interrupt_requested or self._decision_interrupt_requested:
             raise asyncio.CancelledError
         handle = await self.thread.turn(input, output_schema=self.schema)
         self.handles.append(handle)
+        generation=self._turn_threads.setdefault(handle.id,self._thread_generation)
+        if generation!=self._thread_generation:
+            raise ActorError("codex_turn_incomplete","A model turn crossed its owned decision thread")
         if handle.id not in self.turn_ids:
             self._primary_handles[handle.id] = id(handle)
             self._turn_tools[handle.id] = ToolObservation()
@@ -257,6 +281,9 @@ class OfficialCodexAdapter:
         self._decision_done.clear()
         epoch = self._decision_epoch
         try:
+            if self._thread_decisions:
+                await self._new_decision_thread()
+            self._thread_decisions+=1
             if self.objective is not None:
                 # Public SDK input union keeps user TextInput separate from ExternalMessage.
                 objective = self.objective
@@ -310,15 +337,22 @@ class OfficialCodexAdapter:
             self._decision_interrupt_requested = False
 
     def _record_result(self, result):
+        generation=self._turn_threads.get(result.id)
+        if generation is None:
+            raise ActorError("codex_turn_incomplete","An unowned model turn cannot supply usage")
         self.completed_turns[result.id] = str(getattr(result.status, "value", result.status))
         usage = result.usage.model_dump(mode="json") if getattr(result, "usage", None) is not None else None
-        # SDK total is cumulative thread usage: taking maxima avoids counting
-        # the initial joined TextInput/ExternalMessage subscriptions twice.
+        # SDK total is cumulative PER THREAD. Keep each owned thread's maxima,
+        # then add only its delta to the whole episode. Joined subscriptions
+        # and late old-thread results cannot reset or duplicate the budget.
         if usage:
+            previous=self._usage_by_thread[generation]
             for key in ("input_tokens", "cached_input_tokens", "output_tokens", "total_tokens"):
                 value = usage.get("total", {}).get(key)
                 if type(value) is int and value >= 0:
-                    self.usage_totals[key] = max(self.usage_totals.get(key, 0), value)
+                    delta=max(0,value-previous.get(key,0))
+                    previous[key]=max(previous.get(key,0),value)
+                    self.usage_totals[key]=self.usage_totals.get(key,0)+delta
 
     async def _interrupt_handles(self):
         async with self._interrupt_lock:
@@ -384,6 +418,7 @@ class OfficialCodexAdapter:
             finally:
                 self.closed = True
                 self.client = self.thread = None
+                self.objective=self._episode_objective=self._thread_options=None
                 if self.workspace is not None:
                     self.workspace.cleanup()
                     self.workspace = None
@@ -396,6 +431,7 @@ class OfficialCodexAdapter:
                 "completed_turn_statuses": dict(self.completed_turns),
                 "decision_epoch": self._decision_epoch, "decision_active": self._decision_task is not None,
                 "usage_totals": dict(self.usage_totals),
+                "thread_scope":"one_decision","thread_rotations":self._thread_rotations,
                 "catalog": dict(self.catalog_metrics),
                 "mcp_servers_disabled": self._mcp_server_count,
                 "policy_preflight_pending": self._policy_preflight is not None and not self._policy_preflight.closed,
