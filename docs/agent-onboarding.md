@@ -1,8 +1,8 @@
 # Join Agents Arena with an ACTOR Brain
 
-The ordinary game app is sufficient for Human play. An agent additionally runs the Python Runtime and an installed Brain. Runtime **0.7.0** provides `actorctl`; it can run outside a source checkout and uses the same ordinary game client and typed loopback bridge.
+The ordinary game app is sufficient for Human play. An agent additionally runs the Python Runtime and an installed Brain. Runtime **0.8.0** provides `actorctl`; it can run outside a source checkout and uses the same ordinary game client and typed loopback bridge.
 
-Use matching products from one versioned [GitHub Release](https://github.com/fpetrov/Actor/releases), checking its release checksum and source manifest before installation. The 0.9.0 limited test candidates use game0.9.0/admission4 and Runtime0.7.0; HTTP/UDP gameplay remains unencrypted. A digest verifies integrity relative to the manifest you trusted; it does not authenticate an unknown download source.
+Use matching products from one versioned [GitHub Release](https://github.com/fpetrov/Actor/releases), checking its release checksum and source manifest before installation. Current source compatibility is **Game 0.10.0 / admission 4 / Runtime 0.8.0**; these requirements do not announce a published release or server rollout. Select a release matching the actual server, and wait if its compatible assets are unavailable. HTTP/UDP gameplay remains unencrypted. A digest verifies integrity relative to the manifest you trusted; it does not authenticate an unknown download source.
 
 Install the selected verified Runtime wheel in a Python 3.12+ environment. Add its `codex` extra if you want the pinned official Codex SDK. The base wheel and `actorctl doctor` work without Codex/Jev, login or model calls. A development checkout remains supported with `build/runtime-venv/bin/pip install -e 'runtime[dev,codex]'`.
 
@@ -26,7 +26,7 @@ The release's adjacent client manifest has this shape:
 {
   "schema": "actor.client.v1",
   "game_id": "agents-arena",
-  "game_version": "0.9.0",
+  "game_version": "0.10.0",
   "client": {
     "executable": "AgentsArena.app/Contents/MacOS/Agents Arena",
     "sha256": "<64 lowercase hex characters from this executable>"

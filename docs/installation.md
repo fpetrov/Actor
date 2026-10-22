@@ -1,15 +1,15 @@
 # Install and play Agents Arena
 
-Use the matching versioned assets from the project's [GitHub Releases](https://github.com/fpetrov/Actor/releases). Choose a 0.9.0 limited test release candidate and take all files from the same release. Download `AgentsArena-0.9.0-macOS.zip`, `release-manifest.json` and `SHA256SUMS`. Check the source commit recorded in the manifest, game **0.9.0**, admission **4**, and `publishable_source: true`; `local-staging` packages are development artifacts.
+For a server advertising Game **0.10.0 / admission4**, use matching versioned assets from the project's [GitHub Releases](https://github.com/fpetrov/Actor/releases). Take all files from the same release: `AgentsArena-0.10.0-macOS.zip`, `release-manifest.json` and `SHA256SUMS`. Check the source commit recorded in the manifest, game **0.10.0**, admission **4**, and `publishable_source: true`; `local-staging` packages are development artifacts. These instructions identify the compatible version; they do not announce a completed publication or server rollout. If the matching release is unavailable, do not substitute an older client.
 
-In the download directory, run `shasum -a 256 AgentsArena-0.9.0-macOS.zip` and compare its result with that exact filename in `SHA256SUMS` and the release manifest. Those checks detect accidental changes relative to the release you trusted; a checksum does not authenticate an unknown download source.
+In the download directory, run `shasum -a 256 AgentsArena-0.10.0-macOS.zip` and compare its result with that exact filename in `SHA256SUMS` and the release manifest. Those checks detect accidental changes relative to the release you trusted; a checksum does not authenticate an unknown download source.
 
 Extract with macOS Archive Utility or `ditto`, which preserves the app's executable permissions and internal framework links:
 
 ```sh
-mkdir -p "$HOME/Applications/Actor-0.9.0"
-ditto -x -k AgentsArena-0.9.0-macOS.zip "$HOME/Applications/Actor-0.9.0"
-open "$HOME/Applications/Actor-0.9.0/AgentsArena-macOS/AgentsArena.app"
+mkdir -p "$HOME/Applications/Actor-0.10.0"
+ditto -x -k AgentsArena-0.10.0-macOS.zip "$HOME/Applications/Actor-0.10.0"
+open "$HOME/Applications/Actor-0.10.0/AgentsArena-macOS/AgentsArena.app"
 ```
 
 The extracted `AgentsArena-macOS` directory also contains `client-manifest.json`, `build-info.json`, these instructions and font licensing. Keep the client manifest beside the app. Its executable path is relative to that directory: `AgentsArena.app/Contents/MacOS/Agents Arena`.
@@ -22,21 +22,23 @@ Move with WASD/arrow keys. E opens tasks and nearby actions; T opens communicati
 
 An unexpected transport loss offers a short authenticated reconnect while this client still holds its in-memory credential. Explicit Leave ends participation. Reconnect never revives an eliminated actor. A new expedition has a fresh match identity and no old role, vote, task or message state.
 
-Autonomous participation is optional. Verify the release's `actor_runtime-0.7.0-py3-none-any.whl` checksum in the same way. Use Python 3.12+ and an isolated environment; the base wheel includes ACTOR and its game plugin, while the `codex` extra separately installs the pinned official SDK. It contains no account credentials.
+Autonomous participation is optional. Verify the release's `actor_runtime-0.8.0-py3-none-any.whl` checksum in the same way. Use Python 3.12+ and an isolated environment; the base wheel includes ACTOR and its game plugin, while the `codex` extra separately installs the pinned official SDK. It contains no account credentials.
 
 ```sh
-python3 -m venv "$HOME/.venvs/actor-0.7.0"
-"$HOME/.venvs/actor-0.7.0/bin/python" -m pip install "/absolute/download/path/actor_runtime-0.7.0-py3-none-any.whl[codex]"
-"$HOME/.venvs/actor-0.7.0/bin/actorctl" doctor --client-manifest "$HOME/Applications/Actor-0.9.0/AgentsArena-macOS/client-manifest.json"
-"$HOME/.venvs/actor-0.7.0/bin/actorctl" codex status
-"$HOME/.venvs/actor-0.7.0/bin/actorctl" codex login
-"$HOME/.venvs/actor-0.7.0/bin/actorctl" join ROOMCODE --brain codex --client-manifest "$HOME/Applications/Actor-0.9.0/AgentsArena-macOS/client-manifest.json"
+python3 -m venv "$HOME/.venvs/actor-0.8.0"
+"$HOME/.venvs/actor-0.8.0/bin/python" -m pip install "/absolute/download/path/actor_runtime-0.8.0-py3-none-any.whl[codex]"
+"$HOME/.venvs/actor-0.8.0/bin/actorctl" doctor --client-manifest "$HOME/Applications/Actor-0.10.0/AgentsArena-macOS/client-manifest.json"
+"$HOME/.venvs/actor-0.8.0/bin/actorctl" codex status
+"$HOME/.venvs/actor-0.8.0/bin/actorctl" codex login
+"$HOME/.venvs/actor-0.8.0/bin/actorctl" join ROOMCODE --brain codex --client-manifest "$HOME/Applications/Actor-0.10.0/AgentsArena-macOS/client-manifest.json"
 ```
 
 Replace the absolute download path and `ROOMCODE` with your own values. The base install and `doctor` need no model login; `codex login` uses the official SDK flow. Each Codex participant needs its own ordinary client/Runtime/Brain session. See the project's [agent onboarding](https://github.com/fpetrov/Actor/blob/main/docs/agent-onboarding.md) and CLI help for `status`, `stop` and headless operation. No model credential belongs in the game app or game server.
 
-The optional `ACTOR-actor-play-0.7.0.zip` is a separate Codex Skill, containing only `actor-play/SKILL.md` and `actor-play/agents/openai.yaml`. After checksum verification, extract its `actor-play` folder into your chosen repository's `.agents/skills/`. It documents installed commands and does not install remote shell scripts or provide authentication. Human players do not need this Skill.
+The optional `ACTOR-actor-play-0.8.0.zip` is a separate Codex Skill, containing only `actor-play/SKILL.md` and `actor-play/agents/openai.yaml`. After checksum verification, extract its `actor-play` folder into your chosen repository's `.agents/skills/`. It documents installed commands and does not install remote shell scripts or provide authentication. Human players do not need this Skill.
+
+Broadcast observation is a separate operator workflow. Its dedicated commentary sign-in, local BF16 voice, protected OBS setup and explicit public-start action are described in the [Broadcast guide](https://github.com/fpetrov/Actor/blob/main/docs/broadcast.md). Joining a room as a player does not start a broadcast.
 
 The current VPS control-plane/game connection uses HTTP/UDP and remains a limited test RC. Executable downloads use GitHub HTTPS. Do not treat the gameplay transport as a secure public production service. Windows has not been built on this host; a macOS archive cannot run on Windows.
 
-For maintainers on macOS, `python3 scripts/package-release.py --output build/releases/0.9.0` packages existing builds; it does not build or publish them. It requires a clean reviewed commit, matching non-Development macOS/Linux Unity stamps, a Release Control Plane stamp and the matching Runtime wheel. `scripts/publish-control-plane.sh` records source content before tests/publish and rejects a changed source fingerprint before stamping the host and DLL hashes. Packaging compares the staged copies with the original file inventories and all three build stamps, then verifies archive membership and actual extraction, executable modes, internal symlinks, the relative client manifest and complete `SHA256SUMS` inventory before exposing the output directory. Run builds and packaging sequentially. Publishable packaging rejects a source change during the operation. `--allow-dirty` is for local inspection only and always records `publishable_source: false`. These checks do not prove notarization, a deterministic Unity compiler, native gameplay acceptance or a published GitHub release.
+For maintainers on macOS, `python3 scripts/package-release.py --output build/releases/0.10.0` packages existing builds into a fresh output directory; it does not build or publish them. It requires a clean reviewed commit, matching non-Development macOS/Linux Unity stamps, a Release Control Plane stamp and `build/runtime-dist/actor_runtime-0.8.0-py3-none-any.whl`. `scripts/publish-control-plane.sh` records source content before tests/publish and rejects a changed source fingerprint before stamping the host and DLL hashes. Packaging compares the staged copies with the original file inventories and all three build stamps, then verifies archive membership and actual extraction, executable modes, internal symlinks, the relative client manifest and complete `SHA256SUMS` inventory before exposing the output directory. The distribution contains five products plus the release manifest and checksum index: seven files, with six checksum entries. Run builds and packaging sequentially. Publishable packaging rejects a source change during the operation. `--allow-dirty` is for local inspection only and always records `publishable_source: false`. These checks do not prove notarization, a deterministic Unity compiler, native gameplay acceptance or a published GitHub release.
