@@ -16,6 +16,8 @@ namespace Actor.Editor
     // focuses a native window, captures a desktop or reads private actor state.
     public static class SocialPresentationVerification
     {
+        // Separate synthetic shader acceptance; it does not run or modify a match.
+        public static void VerifyStationFogSeal()=>StationAtmosphereVerification.VerifyFogSeal();
         private const string Atlas="Assets/Sprites/map.png";
         private const int Width=800,Height=1000;
         [Serializable] private sealed class CameraSetup
@@ -40,7 +42,7 @@ namespace Actor.Editor
         public static void ValidateProductionShaders(bool requireSupported=false)
         {
             bool graphics=SystemInfo.graphicsDeviceType!=GraphicsDeviceType.Null;
-            foreach(string filename in new[]{"AtmosphericPalette","StaticSurface"})
+            foreach(string filename in new[]{"AtmosphericPalette","StaticSurface","StationFog","StationBackdrop","StationGlow"})
             {
                 var shader=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Art/Atmospheric/"+filename+".shader");
                 if(shader==null)throw new InvalidOperationException("Missing production shader: "+filename);

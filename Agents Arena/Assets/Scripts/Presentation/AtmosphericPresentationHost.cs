@@ -18,7 +18,7 @@ namespace Actor.Presentation
             if(scene.name!="SocialDeduction"||Application.isBatchMode||SystemInfo.graphicsDeviceType==UnityEngine.Rendering.GraphicsDeviceType.Null)return;
             foreach(var root in scene.GetRootGameObjects())if(root.GetComponent<AtmosphericPresentationHost>()!=null)return;
             SocialAvatarArt.ClearCosmetics();
-            var host=new GameObject("Atmospheric Client Presentation");SceneManager.MoveGameObjectToScene(host,scene);host.AddComponent<AtmosphericPresentationHost>();host.AddComponent<SocialKillPresentation>();
+            var host=new GameObject("Atmospheric Client Presentation");SceneManager.MoveGameObjectToScene(host,scene);host.AddComponent<AtmosphericPresentationHost>();host.AddComponent<SocialKillPresentation>();host.AddComponent<StationAtmosphere2D>();
         }
         private void Update()
         {

@@ -13,7 +13,7 @@ namespace Actor.World
     public sealed class SocialFogRenderer : MonoBehaviour
     {
         [SerializeField] private float radius = 3.5f;
-        [SerializeField, Range(1, 3)] private float featherPixels = 2;
+        [SerializeField, Range(1, 16)] private float featherPixels = StationAtmosphereRules.FeatherPixels;
 #if !UNITY_SERVER
         private const int Rays = 192;
         private readonly Vector3[] vertices = new Vector3[(Rays + 1) * 3];
@@ -57,7 +57,11 @@ namespace Actor.World
                 legacyTiming = variant == "legacy30";
             }
             mesh = new Mesh { name = "Social Visibility Fog" }; mesh.MarkDynamic();
-            material = new Material(Shader.Find("Sprites/Default"));
+            var atmosphere = Resources.Load<Material>("Art/StationFog");
+            // Missing/unsupported cosmetic assets retain the original opaque
+            // black implementation rather than removing the privacy mask.
+            material = atmosphere != null && atmosphere.shader.isSupported
+                ? new Material(atmosphere) : new Material(Shader.Find("Sprites/Default"));
             gameObject.AddComponent<MeshFilter>().sharedMesh = mesh;
             view = gameObject.AddComponent<MeshRenderer>(); view.sharedMaterial = material; view.sortingOrder = 2000;
             SetColors(colors);
@@ -84,9 +88,7 @@ namespace Actor.World
         }
         private static float FeatherWorldWidth(float pixels, float orthographicSize, int pixelHeight)
         {
-            if (!float.IsFinite(pixels) || !float.IsFinite(orthographicSize) || orthographicSize <= 0 || pixelHeight <= 0) return 0;
-            float width = 2 * orthographicSize / pixelHeight * Mathf.Clamp(pixels, 1, 3);
-            return float.IsFinite(width) ? width : 0;
+            return StationAtmosphereRules.FeatherWorldWidth(pixels, orthographicSize, pixelHeight);
         }
         private static Vector2 Inset(Vector2 center, Vector2 endpoint, float width)
         {

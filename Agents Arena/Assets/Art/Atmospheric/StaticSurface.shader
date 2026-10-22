@@ -11,6 +11,7 @@ Shader "Actor/Static Surface Vision"
             #pragma vertex Vert
             #pragma fragment Frag
             #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/Core2D.hlsl"
+            #include "StationLighting.hlsl"
             #pragma multi_compile_instancing
             struct Attributes {float3 positionOS:POSITION;float2 uv:TEXCOORD0;half4 color:COLOR;UNITY_VERTEX_INPUT_INSTANCE_ID};
             struct Varyings {float4 positionCS:SV_POSITION;float2 uv:TEXCOORD0;float2 world:TEXCOORD1;half4 color:COLOR;};
@@ -39,7 +40,8 @@ Shader "Actor/Static Surface Vision"
                     float2 delta=visiblePosition-_SurfaceEye.xy;
                     clip(_SurfaceEye.z*_SurfaceEye.z-dot(delta,delta));
                 }
-                return SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv)*i.color;
+                half4 color=SAMPLE_TEXTURE2D(_MainTex,sampler_MainTex,i.uv)*i.color;
+                color.rgb=ActorStationLighting(color.rgb);return color;
             }
             ENDHLSL
         }

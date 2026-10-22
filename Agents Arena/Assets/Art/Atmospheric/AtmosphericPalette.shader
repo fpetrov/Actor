@@ -11,6 +11,7 @@ Shader "Actor/Atmospheric Palette"
             #pragma vertex Vert
             #pragma fragment Frag
             #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/Core2D.hlsl"
+            #include "StationLighting.hlsl"
             #pragma multi_compile_instancing
             struct Attributes { float3 positionOS:POSITION; float2 uv:TEXCOORD0; half4 color:COLOR; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct Varyings { float4 positionCS:SV_POSITION; float2 uv:TEXCOORD0; half4 color:COLOR; };
@@ -23,6 +24,7 @@ Shader "Actor/Atmospheric Palette"
                 // Magenta is a dedicated editable fabric mask, never an identity signal.
                 half mask=step(c.g,.025h)*step(.08h,c.r)*step(.08h,c.b)*step(abs(c.r-c.b),.06h);
                 c.rgb=lerp(c.rgb,_SkinColor.rgb*c.r,mask);
+                c.rgb=ActorStationLighting(c.rgb);
                 return c*i.color;
             }
             ENDHLSL
