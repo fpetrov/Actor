@@ -88,7 +88,10 @@ not the account's global subscription quota. No silent switch to a paid API exis
 
 The text provider uses official Codex SDK 0.162.1 and existing ChatGPT sign-in,
 with exactly gpt-6-luna and the lowest verified supported reasoning setting
-(`low` in the measured catalog). A single stream consumer
+(`low` in the measured catalog) for ordinary speech. A bounded public meeting
+comparison may use supported medium effort within the same turn and durable
+analysis quota; see [player watch and public discussion](broadcast-editorial.md).
+A single stream consumer
 admits only validated complete speech segments from final-answer text; reasoning,
 tools, JSON fragments and diagnostic text never reach speech. Player BrainDecision
 contracts remain unchanged. Episodes rotate with bounded permitted context and actual

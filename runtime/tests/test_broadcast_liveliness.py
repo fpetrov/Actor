@@ -21,6 +21,36 @@ class RandomSamples:
     def __call__(self):self.calls+=1;return next(self.values)
 
 
+async def test_stable_terminal_result_survives_departing_actors_and_completes_result_then_farewell():
+    clock=Clock();provider=Provider(blocked=True);scheduler,_,speech=system(clock,provider)
+    result=fact(clock,'terminal-result',priority=0)
+    scheduler.observe(view(clock,phase='GameOver',terminal=True,facts=[result],current={'actors':[{'actor_id':'visible'}]}))
+    assert scheduler.ready();await pump(scheduler)
+    assert provider.requests[0].candidate.mode=='outro'
+    epoch=scheduler._epoch
+    await fresh(scheduler,clock,phase='GameOver',terminal=True,facts=[result],current={'actors':[]})
+    assert scheduler._epoch==epoch and provider.interruptions==0
+    provider.release.set()
+    await await_provider_completion(scheduler)
+    assert len(speech.segments)==1 and speech.acknowledge(scheduler,clock)
+    await pump(scheduler)
+    assert len(speech.segments)==2 and speech.segments[-1].text==OUTRO_COURTESY
+    assert speech.acknowledge(scheduler,clock)
+    assert scheduler.report()['terminal_outro_finished'] is True
+    await scheduler.stop()
+
+
+async def test_genuine_new_terminal_critical_fact_still_interrupts_outdated_result():
+    clock=Clock();provider=Provider(blocked=True);scheduler,_,_=system(clock,provider)
+    initial=fact(clock,'terminal-result',priority=0)
+    scheduler.observe(view(clock,phase='GameOver',terminal=True,facts=[initial]));scheduler.ready();await pump(scheduler)
+    before=scheduler._epoch
+    corrected=replace(fact(clock,'corrected-terminal-result',priority=0),content={'winning_side':'Crew','win_reason':'tasks_completed'})
+    await fresh(scheduler,clock,phase='GameOver',terminal=True,facts=[initial,corrected])
+    assert scheduler._epoch>before and provider.interruptions==1
+    await scheduler.stop()
+
+
 def test_jitter_is_one_sample_per_quiet_anchor_or_cadence_config_not_poll_or_heartbeat():
     clock=Clock();samples=RandomSamples(0,1,.5)
     scheduler=CommentaryScheduler(Provider(),Speech(),clock=clock.monotonic,wall_clock=clock.wall,rng=samples)

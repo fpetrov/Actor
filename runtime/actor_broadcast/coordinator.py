@@ -230,10 +230,19 @@ class BroadcastCoordinator:
         for name in ('reactive','idle_recap','memory_callback'):
             count=calls.get(name,0) if isinstance(calls,dict) else None
             modes[name]=count if type(count)is int and 0<=count<=1000000 else None
+        director={};raw=details.get('director')
+        for name in ('intents','confirmed_presented_switches','rejected_selections','selection_timeouts',
+                'empty_frame_seeks','commands_dispatched','selection_results_accepted','selection_results_rejected'):
+            count=raw.get(name) if isinstance(raw,dict) else None
+            director[name]=count if type(count)is int and 0<=count<=1000000 else None
+        for name in ('pending','terminal'):
+            value=raw.get(name) if isinstance(raw,dict) else None
+            director[name]=value if type(value)is bool else None
         return {"state": self.state, "reason": self.reason, "channel": self.channel,
             "room_code": self.room_code, "broadcast_session_id": self.broadcast_session_id,
             "rooms": await self.factory.rooms(), "ready": dict(self._ready), "live": self.state == "Live",
             "chat_enabled": self.chat_enabled,
+            "camera_director":director,
             "last_spoken": details.get("last_spoken"), "usage": details.get("usage", {}),
             "commentary": {"idle_enabled": self.config.idle.enabled, "idle_after_seconds": self.config.idle.after_seconds,
                 "allow_memory_callbacks":self.config.idle.allow_memory_callbacks,

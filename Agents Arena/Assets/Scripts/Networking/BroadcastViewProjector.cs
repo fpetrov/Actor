@@ -35,6 +35,10 @@ namespace Actor.Networking
         private const long PresentationReceiptMaxAgeMs = 1000;
         private readonly HashSet<string> committed = new(StringComparer.Ordinal);
         private long switchedAt, now;
+        private string movementActor = "";
+        private float movementX, movementY;
+        private long movementAt;
+        private int movementState, reportedMovement;
         private ulong sequence, semantic = 1;
         private string publicSignature = "";
         internal BroadcastViewProjector(BroadcastScope identity, Func<float, float, float, float, bool> lineOfSight, long at)
@@ -69,7 +73,7 @@ namespace Actor.Networking
                 allowed = actor != null;
                 if (allowed) { next.AnchorId = ""; next.FocusActorId = actor.ActorId; next.X = actor.X; next.Y = actor.Y; }
             }
-            if (allowed) { camera = next; ++scope.ViewEpoch; switchedAt = at; last = presented = null; prepared.Clear(); lastRooms.Clear(); }
+            if (allowed) { camera = next; ++scope.ViewEpoch; switchedAt = at; last = presented = null; prepared.Clear(); lastRooms.Clear(); ResetMovement(); }
             return new BroadcastViewSelectionResultEvent { Scope = scope.Clone(), CorrelationId = command?.CorrelationId?.Length <= 64 ? command.CorrelationId : "",
                 Accepted = allowed, ReasonCode = allowed ? "view_selected" : "view_unavailable" };
         }
@@ -102,6 +106,50 @@ namespace Actor.Networking
             { revoked.Enqueue(facts[0].EvidenceId); committed.Remove(facts[0].EvidenceId); facts.RemoveAt(0); }
             while (revoked.Count > 96) revoked.Dequeue();
         }
+        private void ResetMovement()
+        { movementActor = ""; movementState = reportedMovement = 0; }
+        private static string TerminalSignature(BroadcastView view)
+        {
+            // Only the authoritative final result is critical after GameOver.
+            // Postgame avatar/body teardown and live cadence fields are not a
+            // new result; canonical protobuf bytes also avoid name delimiters.
+            var result = new BroadcastView { WinningSide = view.WinningSide, WinReason = view.WinReason };
+            result.FinalPlayers.Add(view.FinalPlayers.OrderBy(p => p.ActorId, StringComparer.Ordinal)
+                .ThenBy(p => p.DisplayName, StringComparer.Ordinal).ThenBy(p => p.Alignment).ThenBy(p => p.Life).Select(p => p.Clone()));
+            return "GameOver:" + Convert.ToBase64String(result.ToByteArray());
+        }
+        private void ObserveMovement(BroadcastView view)
+        {
+            // Derive motion only AFTER the same current radius/viewport/LOS and
+            // finite-data projection that authorizes the rendered actor row.
+            var focus = view.Actors.FirstOrDefault(a => a.ActorId == camera.FocusActorId);
+            if (focus == null) { ResetMovement(); return; }
+            if (movementActor != focus.ActorId)
+            {
+                movementActor = focus.ActorId; movementX = focus.X; movementY = focus.Y;
+                movementAt = now; movementState = 9; reportedMovement = 0;
+                return;
+            }
+            double speedSquared = (double)focus.VelocityX * focus.VelocityX + (double)focus.VelocityY * focus.VelocityY;
+            // Hysteresis rejects small stationary jitter; no motor input or
+            // hidden actor sample is retained as a movement observation.
+            bool moving = speedSquared >= (movementState == 9 ? .08 * .08 : .04 * .04);
+            if (moving)
+            {
+                double angle = Math.Atan2(focus.VelocityX, focus.VelocityY);
+                // Public value contract: 1N,2NE,3E,4SE,5S,6SW,7W,8NW,9stationary.
+                movementState = 1 + ((int)Math.Floor((angle + 2 * Math.PI + Math.PI / 8) / (Math.PI / 4)) % 8);
+            }
+            else movementState = 9;
+            if (reportedMovement != 0 && now - movementAt < 8000) return;
+            double dx = (double)focus.X - movementX, dy = (double)focus.Y - movementY;
+            if (moving ? dx * dx + dy * dy < .25 : reportedMovement is 0 or 9) return;
+            string room = lastRooms.TryGetValue(focus.ActorId, out var currentRoom) ? currentRoom ?? "" : "";
+            Note("movement-seen", Guid.NewGuid().ToString("N"), focus.ActorId, "", "", room, now, 2, focus.DisplayName, movementState);
+            // This timestamps the CURRENT observation, never a conjectured
+            // exact movement start/stop between source frames.
+            movementX = focus.X; movementY = focus.Y; movementAt = now; reportedMovement = movementState;
+        }
         internal BroadcastView Build(SocialMatchStateObservation state, SocialEmergencyStateObservation emergency, SocialMeetingObservation meeting,
             IEnumerable<Actor> actorInputs, IEnumerable<Body> bodyInputs, SocialMatchSummary terminal, long at)
         {
@@ -127,6 +175,7 @@ namespace Actor.Networking
                     Note("actor-seen", Guid.NewGuid().ToString("N"), a.Id, "", "", a.Room ?? "", now, 2, a.Name);
             }
             lastRooms.Clear(); foreach (var a in view.Actors) lastRooms[a.ActorId] = actors.First(p => p.Id == a.ActorId).Room;
+            ObserveMovement(view);
             foreach (var b in bodies.Where(b => Permits(b.X, b.Y)).OrderBy(b => b.Id))
             {
                 if (!BroadcastObserverRules.Id(b.Id) || !BroadcastObserverRules.Id(b.Victim)) continue;
@@ -146,12 +195,13 @@ namespace Actor.Networking
                 view.WinningSide = terminal.WinningSide; view.WinReason = terminal.WinReason;
                 view.FinalPlayers.Add(terminal.Players.Take(6).Select(p => new BroadcastFinalPlayer { ActorId = p.ActorId, DisplayName = p.DisplayName, Alignment = p.Alignment, Life = p.Life }));
             }
-            string signature = state.Phase + ":" + state.PhaseRevision + ":" + view.CrewTasksCompleted + ":" + view.EmergencyActive + ":" + view.Meeting?.Resolution + ":"
+            string signature = view.Terminal ? TerminalSignature(view) : state.Phase + ":" + state.PhaseRevision + ":" + view.CrewTasksCompleted + ":" + view.EmergencyActive + ":" + view.Meeting?.Resolution + ":"
                 + string.Join(",", view.Actors.Select(p => p.ActorId)) + ":" + string.Join(",", view.Bodies.Select(p => p.BodyId));
             if (signature != publicSignature)
             { publicSignature = signature; ++semantic; Note("public-state", Guid.NewGuid().ToString("N"), "", "", "", view.EmergencyRoomId, now, view.Terminal ? 0 : 2, state.Phase.ToString(), view.CrewTasksCompleted); }
             // A never-presented transient sighting cannot become later historical evidence.
             facts.RemoveAll(f => !committed.Contains(f.EvidenceId) && ((f.Predicate == "actor-seen" && !view.Actors.Any(a => a.ActorId == f.ActorId))
+                || (f.Predicate == "movement-seen" && (f.ActorId != movementActor || f.Value != movementState))
                 || (f.Predicate == "body-seen" && !view.Bodies.Any(b => b.VictimActorId == f.ActorId))
                 || (f.Predicate == "public-state" && f.Label != state.Phase.ToString())));
             view.SemanticRevision = semantic; view.Facts.Add(facts.Select(f => f.Clone())); view.RevokedEvidenceIds.Add(revoked);

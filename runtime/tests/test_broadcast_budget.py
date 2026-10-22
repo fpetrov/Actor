@@ -142,8 +142,8 @@ async def test_match_call_limit_survives_hour_window_and_disabled_optional_modes
     await ledger.close()
 
 
-async def test_optional_analysis_explicit_opt_in_one_per_meeting_three_per_match():
-    clock=Clock();ledger=BudgetLedger(clock=clock.wall)
+async def test_optional_analysis_can_be_disabled_and_is_one_per_meeting_three_per_match():
+    clock=Clock();ledger=BudgetLedger(clock=clock.wall,config=CommentaryConfig(analysis_enabled=False))
     assert (await ledger.reserve("one","analysis",0,100,100,analysis_key="meeting1")).reason=="analysis_disabled"
     ledger.config=CommentaryConfig(analysis_enabled=True)
     for index in range(3):

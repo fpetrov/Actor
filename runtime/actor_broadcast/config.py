@@ -52,7 +52,8 @@ class CommentaryConfig(Settings):
     feed_stale_seconds: float = Field(default=3, gt=0, le=10)
     provider_timeout_seconds: float = Field(default=45, gt=0, le=120)
     interrupt_timeout_seconds: float = Field(default=7, gt=0, le=10)
-    analysis_enabled: bool = False
+    # A meeting comparison replaces one normal turn; it has no separate caller.
+    analysis_enabled: bool = True
     analysis_max_calls_per_match: int = Field(default=3, ge=1, le=3)
     analysis_max_calls_per_meeting: int = Field(default=1, ge=1, le=1)
     idle: IdleConfig = Field(default_factory=IdleConfig)

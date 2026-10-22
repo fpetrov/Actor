@@ -32,6 +32,7 @@ from .bridge import BroadcastBridge
 from .budget import BudgetLedger
 from .chat import TokenPair, TwitchChatSource, TwitchDeviceAuth
 from .contracts import EditorialFact, PcmChunk, Scope, SegmentKey, SpeechSegment, SynthesisDone
+from .director import CameraDirector, ViewIntent
 from .obs import ObsClient, ObsConnection, ObsController, ObsError, capture_content_crop
 from .obs_firewall_attestor import FirewallAttestationClient
 from .ownership import ChannelLease
@@ -44,6 +45,15 @@ class NativeError(RuntimeError):
     def __init__(self, code, *, prepare_code=None, cleanup_stages=()):
         self.code = code; self.prepare_code = prepare_code; self.cleanup_stages = tuple(cleanup_stages)
         super().__init__(code)
+
+
+@dataclass
+class _DirectorSelection:
+    intent: ViewIntent
+    correlation_id: str
+    sent_at: float
+    after_sequence: int
+    result_received: bool = False
 
 
 def _prepare_code(error):
@@ -176,6 +186,7 @@ class NativeDependencies:
     budget: object = BudgetLedger
     scheduler: object = CommentaryScheduler
     projector: object = ArenaBroadcastProjector
+    director: object = CameraDirector
     auth: object = TwitchDeviceAuth
     chat: object = TwitchChatSource
     spawn: object = subprocess.Popen
@@ -185,8 +196,9 @@ class NativeDependencies:
 
 
 class NativeBroadcastFactory:
-    def __init__(self, config, store, *, dependencies=None):
+    def __init__(self, config, store, *, dependencies=None, guardian=None):
         self.config, self.store = config, store
+        self.guardian = guardian
         self.dependencies = dependencies or NativeDependencies()
         self._owned = []; self._preparing = False
         self._closed = False
@@ -237,6 +249,7 @@ class NativeBroadcastFactory:
         run = PreparedNativeRun(self, room_code, session_id, commentary, on_ready, on_unsafe, on_terminal)
         self._owned.append(run)
         try:
+            if self.guardian is not None: await self.guardian.begin_run(room_code, session_id)
             await run.prepare()
             return run
         except BaseException as error:
@@ -274,6 +287,8 @@ class PreparedNativeRun:
         self._release_admission = False; self._binding = None; self._channel_binding = None
         self._activated = False; self._record_directory_original = None; self._decoder = None
         self._admission_pending = None
+        self.director = None; self._director_selection = None
+        self._director_commands = self._director_results_accepted = self._director_results_rejected = 0
         self._close_task = None
         self.prepare_failure_code = None
         self.cleanup_failures = (); self.recovered_cleanup_stages = ()
@@ -323,7 +338,10 @@ class PreparedNativeRun:
         root = private_directory(c.state_directory)
         # Ownership is per channel, independent of configurable diagnostics or
         # installation state directories. Two configs must converge on one inode.
-        self.lease = d.lease(c.channel).acquire()
+        if self.factory.guardian is not None:
+            from .guardian_client import GuardianLease
+            self.lease = GuardianLease(self.factory.guardian).acquire()
+        else: self.lease = d.lease(c.channel).acquire()
         quota_root = private_directory(d.canonical_directory())
         scope_id = installation_identity(quota_root)
         runs = private_directory(root / "runs"); self.directory = runs / self.session_id
@@ -346,8 +364,12 @@ class PreparedNativeRun:
         if not await self.attestor.refresh() or not self.attestor.verified: raise NativeError("obs_firewall_attestation_required")
         self._require_healthy_provider()
         self._task(self._guard_loop())
-        key = await asyncio.to_thread(self.store.get, "broadcast-server-operator-key")
-        self.admission = d.admission(c.operator_forward_url, key, game_version=c.game_version, protocol_version=c.admission_protocol)
+        if self.factory.guardian is not None:
+            from .guardian_client import GuardianAdmission
+            self.admission = GuardianAdmission(self.factory.guardian)
+        else:
+            key = await asyncio.to_thread(self.store.get, "broadcast-server-operator-key")
+            self.admission = d.admission(c.operator_forward_url, key, game_version=c.game_version, protocol_version=c.admission_protocol)
         self.sink = d.sink(route_guard=self._route_guard)
         await self.sink.start()
         # Admission is short-lived; do not allocate it behind cold GPU/model setup.
@@ -366,8 +388,9 @@ class PreparedNativeRun:
         env["ACTOR_BROADCAST_MOTION_REPORT"] = str(self.directory / "motion.json")
         self.log = (self.directory / "process.log").open("xb")
         # Register the returned handle synchronously before any await/IO.
+        from .guardian_client import inherited_group_options
         self.process = d.spawn([str(client), *args, "--broadcast-observer"], env=env,
-            stdin=subprocess.DEVNULL, stdout=self.log, stderr=self.log, start_new_session=True)
+            stdin=subprocess.DEVNULL, stdout=self.log, stderr=self.log, **inherited_group_options())
         env.clear()
         self.window = d.window(self.process.pid, alive=lambda: self.process is not None and self.process.poll() is None)
         self.session = await self._stage(self.bridge.next_session(timeout=30), 31)
@@ -380,8 +403,14 @@ class PreparedNativeRun:
         if not self.attestor.verified: raise NativeError("obs_firewall_attestation_required")
         self.obs_client = d.obs_client(ObsConnection(c.obs_endpoint, password, firewall_verified=True))
         await self._stage(self.obs_client.connect(), 10)
-        self.obs = d.obs_controller(self.obs_client, window_guard=self.window.verify,
-            channel_guard=self._verify_channel, on_unsafe=self._obs_event)
+        if self.factory.guardian is not None:
+            from .guardian_client import GuardianObsController, ReadOnlyObsClient
+            self.obs_client = ReadOnlyObsClient(self.obs_client)
+            self.obs = GuardianObsController(self.factory.guardian, self.obs_client,
+                window_guard=self.window.verify, channel_guard=self._verify_channel, on_unsafe=self._obs_event)
+        else:
+            self.obs = d.obs_controller(self.obs_client, window_guard=self.window.verify,
+                channel_guard=self._verify_channel, on_unsafe=self._obs_event)
         self.native_size = read_native_size(self.native_probe_path)
         await self._stage(self.obs.prepare(self._binding, self.sink.renderer_url,
             protected_backup_confirmed=True, adopt_empty_collection=True, native_size=self.native_size), 20)
@@ -494,9 +523,64 @@ class PreparedNativeRun:
         view = self.projector.project(entry)
         if self.scheduler.observe(view):
             self._last_sequence = entry.sequence
+            if self.director is not None: self.director.observe(view)
             if view.terminal and not self._terminal:
                 self._terminal = True
                 if self._activated: asyncio.get_running_loop().call_soon(self.on_terminal)
+
+    def _direct_camera(self):
+        """One fixed typed RPC, never a model tool or a presentation ACK."""
+        if (not self._activated or self._closing or self._failure is not None or self._terminal
+                or self.director is None or self.scheduler is None or self.session is None): return
+        from extensions.agents_arena.v1.broadcast_pb2 import BroadcastScope, BroadcastSelectViewCommand, BroadcastViewSelectionResultEvent
+        view = self.scheduler.view
+        pending = self._director_selection
+        if pending is not None:
+            intent = pending.intent
+            inbox = getattr(self.session.world, "inboxes", {}).get("agents-arena.broadcast-view-selection-result")
+            def matching(result):
+                scope = result.scope
+                return (result.correlation_id == pending.correlation_id and
+                    (scope.broadcast_session_id, scope.match_id, scope.observer_id, scope.connection_generation) ==
+                    (intent.scope.broadcast_session_id, intent.scope.match_id, self.observer_id, intent.scope.connection_generation)
+                    and scope.view_epoch == intent.scope.view_epoch + (1 if result.accepted else 0))
+            event = (inbox.find(self.observer_id, BroadcastViewSelectionResultEvent, matching,
+                after_sequence=pending.after_sequence) if inbox is not None and not pending.result_received else None)
+            if event is not None and pending.sent_at <= event.received_at <= pending.sent_at + 5:
+                pending.result_received = True
+                accepted = event.payload.accepted
+                self.director.selection_result(intent, accepted)
+                if accepted: self._director_results_accepted += 1
+                else:
+                    self._director_results_rejected += 1; self._director_selection = None
+            # The real frame may precede its result event in one capture pass.
+            # Still match the event above; neither ordering invents a frame.
+            if view is None or view.scope != intent.scope or time.monotonic() - pending.sent_at >= 5:
+                self._director_selection = None
+        if self._director_selection is not None: return
+        if not getattr(self.scheduler, "camera_change_allowed", False): return
+        intent = self.director.next_intent()
+        if intent is None: return
+        # All checks and enqueue remain synchronous in this event-loop turn:
+        # no speech, newer view or scope change may slip across an await.
+        view = self.scheduler.view
+        remaining = intent.expires_at_unix_ms - int(time.time() * 1000)
+        if (not self.scheduler.camera_change_allowed or view is None or view.scope != intent.scope
+                or view.sequence != intent.presentation_sequence or remaining <= 0):
+            self.director.selection_result(intent, False); return
+        correlation = uuid4().hex
+        command = BroadcastSelectViewCommand(scope=BroadcastScope(
+            broadcast_session_id=intent.scope.broadcast_session_id, match_id=intent.scope.match_id,
+            observer_id=self.observer_id, connection_generation=intent.scope.connection_generation,
+            view_epoch=intent.scope.view_epoch), correlation_id=correlation,
+            anchor_id=intent.anchor_id, focus_actor_id=intent.focus_actor_id,
+            expires_at_unix_ms=intent.expires_at_unix_ms)
+        self._director_selection = _DirectorSelection(intent, correlation, time.monotonic(), self.session.last_received_sequence)
+        try:
+            self.session.command("agents-arena.broadcast-select-view", command,
+                target_actor_id=self.observer_id, ttl_ms=min(remaining, 500))
+        except Exception: raise NativeError("broadcast_camera_command_failed") from None
+        self._director_commands += 1
 
     async def _wait_presented_and_window(self):
         self._activated = False
@@ -525,6 +609,7 @@ class PreparedNativeRun:
                 if now >= next_pf:
                     next_pf = now + .5
                     if not await self.attestor.refresh(): raise NativeError("obs_firewall_attestation_lost")
+                if self.factory.guardian is not None: self.factory.guardian.require_alive()
                 if self.process is not None and self.process.poll() is not None: raise NativeError("broadcast_observer_exited")
                 if self._flags["model"]:
                     self._require_healthy_provider()
@@ -532,14 +617,21 @@ class PreparedNativeRun:
                     self._capture()
                     if self._flags["observer"] and not self.scheduler._fresh(): raise NativeError("broadcast_feed_stale")
                 if self._binding is not None and not self.window.verify(self._binding): raise NativeError("broadcast_window_lost")
+                audited = False
                 if self._flags["obs"] and now >= next_obs:
                     next_obs = now + 1
                     await self.obs.check_stream_health()
                     if not (await self.obs.audit()).passed or not await self._verify_channel(self.config.channel):
                         raise NativeError("obs_route_or_destination_changed")
+                    audited = True
                 if self._flags["audio"] and self.sink.public_status.get("renderer_ready") is not True:
                     self._flags["audio"] = False
                     raise NativeError("audio_renderer_unavailable")
+                # OBS audits above may await. Capture the newest actual view
+                # again before the synchronous speech/sequence admission gate.
+                if self._activated:
+                    if audited: self._capture()
+                    self._direct_camera()
                 await asyncio.sleep(.05)
         except asyncio.CancelledError: raise
         except Exception as error: self._trip(getattr(error, "code", "broadcast_guard_failed"))
@@ -554,6 +646,9 @@ class PreparedNativeRun:
         self._check()
         if self._closing or getattr(self, "_activated", False): return
         self._activated = True
+        # Preparation/voice warmup time earns no camera dwell.
+        self.director = self.deps.director()
+        if self.scheduler.view is not None: self.director.observe(self.scheduler.view)
         self._task(self.scheduler.run())
         if self._terminal: asyncio.get_running_loop().call_soon(self.on_terminal)
 
@@ -561,7 +656,10 @@ class PreparedNativeRun:
         report = self.scheduler.report() if self.scheduler is not None else {}
         return {"last_spoken": report.get("last_spoken"), "usage": await self.budget.report() if self.budget is not None else {},
             "idle_deadline_seconds": max(0, self.scheduler.idle_deadline - time.monotonic()) if self.scheduler is not None else None,
-            "chat_enabled": self.config.chat_enabled}
+            "chat_enabled": self.config.chat_enabled,
+            "director": {**(self.director.report() if self.director is not None else {}),
+                "commands_dispatched": self._director_commands, "selection_results_accepted": self._director_results_accepted,
+                "selection_results_rejected": self._director_results_rejected}}
 
     async def close(self, *, emergency=True):
         if self._closed: return
@@ -685,6 +783,11 @@ class PreparedNativeRun:
                     failures.remove("scheduler");recovered.append("scheduler_terminal_audio_flush")
             self.cleanup_failures = tuple(failures); self.recovered_cleanup_stages = tuple(recovered)
             if failures: raise NativeError("broadcast_owned_cleanup_incomplete", cleanup_stages=self.cleanup_failures)
+            if self.factory.guardian is not None:
+                try: await self.factory.guardian.end_run()
+                except BaseException:
+                    self.cleanup_failures = ("guardian",)
+                    raise NativeError("broadcast_owned_cleanup_incomplete", cleanup_stages=self.cleanup_failures) from None
             if self.lease is not None: self.lease.release(); self.lease = None
             self._closed = True
             if self in self.factory._owned: self.factory._owned.remove(self)
@@ -721,6 +824,7 @@ def audio_probe_measurement(raw, expected):
 async def record_audio_route(run):
     """Actual local record+decode; never StartStream or a generic audio device."""
     client, sink, obs = run.obs_client, run.sink, run.obs
+    guardian = getattr(getattr(run, "factory", None), "guardian", None)
     await obs.require_idle(); await obs.show("ACTOR Match")
     if not run._route_guard(): raise NativeError("audio_probe_route_unverified")
     directory = private_directory(run.directory / "audio-probe")
@@ -728,9 +832,13 @@ async def record_audio_route(run):
     if not isinstance(original, str): raise NativeError("audio_probe_record_directory_unavailable")
     recording = False; output = None; run._record_directory_original = original
     try:
-        await client.request("SetRecordDirectory", {"recordDirectory": str(directory)})
-        # Establish owned intent before RPC: a lost StartRecord ACK must also stop.
-        recording = True; obs._record_owned = True; await client.request("StartRecord")
+        if guardian is not None:
+            run._record_directory_original = None
+            recording = True; await obs.start_record(directory)
+        else:
+            await client.request("SetRecordDirectory", {"recordDirectory": str(directory)})
+            # Establish owned intent before RPC: a lost StartRecord ACK must also stop.
+            recording = True; obs._record_owned = True; await client.request("StartRecord")
         deadline = time.monotonic() + 4
         while (await client.request("GetRecordStatus")).get("outputActive") is not True:
             if time.monotonic() >= deadline: raise NativeError("audio_probe_recording_unconfirmed")
@@ -752,9 +860,10 @@ async def record_audio_route(run):
         output = Path(response.get("outputPath", "")).resolve()
         if not output.is_relative_to(directory) or not output.is_file() or output.stat().st_size > 32*1024**2:
             raise NativeError("audio_probe_recording_path_unverified")
+        from .guardian_client import inherited_group_options
         process = subprocess.Popen([str(run.config.ffmpeg_executable), "-nostdin", "-v", "error", "-protocol_whitelist", "file,pipe", "-i", str(output),
                 "-t", "10", "-vn", "-ac", "1", "-ar", "24000", "-f", "f32le", "pipe:1"],
-                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, start_new_session=True,
+                stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, **inherited_group_options(),
                 env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin"})
         run._decoder = process  # registered before a cancellable wait
         raw, _ = await asyncio.to_thread(process.communicate, timeout=8)
@@ -768,7 +877,7 @@ async def record_audio_route(run):
         try:
             if recording: await _cleanup(obs.stop_record(), 7)
         finally:
-            if not obs._record_owned:
+            if not obs._record_owned and guardian is None:
                 await _cleanup(client.request("SetRecordDirectory", {"recordDirectory": original}), 5)
                 run._record_directory_original = None
 
@@ -840,8 +949,9 @@ async def _decode_gray(run, path, *, crop=None, movie=False):
         filters.append(f"crop={width}:{height}:{x}:{y}")
     filters += ["scale=64:48", "format=gray"]
     args += ["-vf", ",".join(filters), "-f", "rawvideo", "pipe:1"]
+    from .guardian_client import inherited_group_options
     process = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
-        start_new_session=True, env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin"})
+        **inherited_group_options(), env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin"})
     run._decoder = process
     raw, _ = await asyncio.to_thread(process.communicate, timeout=5)
     if process.returncode or len(raw) != 64*48: raise NativeError("video_probe_decode_failed")

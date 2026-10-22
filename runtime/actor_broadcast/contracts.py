@@ -169,10 +169,14 @@ class CommentaryRequest:
     max_output_tokens: int
     utterance_id: str
     utterance_epoch: int
+    reasoning_effort: Literal["default", "medium"] = "default"
 
     def __post_init__(self):
         integer(self.max_output_tokens, 32, 4096); bounded_text(self.utterance_id, 128)
         integer(self.utterance_epoch, 1)
+        if self.reasoning_effort not in ("default", "medium") or (self.reasoning_effort=="medium" and
+                (self.candidate.mode!="analysis" or self.candidate.priority<2)):
+            raise ValueError("Additional reasoning requires a budgeted analysis candidate")
         object.__setattr__(self, "external_state", json_copy(self.external_state, 16384))
 
 

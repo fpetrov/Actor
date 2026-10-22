@@ -14,6 +14,7 @@ import math
 import os
 from pathlib import Path
 import re
+import secrets
 import signal
 import subprocess
 import sys
@@ -30,6 +31,16 @@ COMPLETION_SCHEMA = "actor.social-client-completion.v1"
 TOKEN = re.compile(r"[A-Za-z0-9_.:/-]{1,128}\Z")
 PROVIDERS = ("social-scripted", "codex", "codex-threat-audit", "social-fixture-vote", "social-fixture-parity",
     "social-fixture-sabotage", "social-fixture-tasks", "social-privacy-fixture")
+PLAYER_NAMES = ("Аня", "Борис", "Вера", "Глеб", "Даша", "Егор", "Жанна", "Зоя",
+    "Илья", "Кира", "Лена", "Мира", "Нина", "Олег", "Павел", "Рита",
+    "Саша", "Тимур", "Уля", "Фёдор", "Элла", "Юля", "Яна", "Лев")
+
+
+def participant_names(args, *, sample=None):
+    """Resolve public names once; the OS name picker never touches game RNG."""
+    if getattr(args, "player_names", None) is None:
+        args.player_names = list((sample or secrets.SystemRandom().sample)(PLAYER_NAMES, args.players))
+    return args.player_names
 
 
 class _RegisteredSpawn:
@@ -146,13 +157,14 @@ def completed_match(snapshots, expected):
 
 def plans(root, args):
     result = []
+    public_names = participant_names(args)
     for index in range(args.players):
         name = f"agent-{index + 1:02d}"
         output = args.output / name
         brain = args.brains[index] if args.brains else args.brain
         command = [sys.executable, str(root / "scripts/launch-agent.py"), "--operation", "match",
             "--match-policy", getattr(args, "match_policy", "agents-arena"), "--room", args.room, "--brain", brain,
-            "--objective", getattr(args, "objective", TRUSTED_OBJECTIVE), "--player-name", f"Agent {index + 1:02d}",
+            "--objective", getattr(args, "objective", TRUSTED_OBJECTIVE), "--player-name", public_names[index],
             "--port", str(args.base_port + index), "--output", str(output),
             "--memory", "sqlite", "--agent-profile", name, "--memory-database", str(output / "memory.sqlite3"),
             "--objective-timeout", str(min(args.timeout, 3600)), "--max-decisions", str(args.max_decisions)]
@@ -170,9 +182,10 @@ def plans(root, args):
 def process_metadata(launches, processes):
     by_name = dict(processes)
     rows = []
-    for name, output, _ in launches:
+    for name, output, command in launches:
         launch = read_report(output / "launch.json")
         row = {"agent": name, "launcher_pid": by_name[name].pid if name in by_name else None}
+        row["player_name"] = command[command.index("--player-name") + 1] if "--player-name" in command else None
         for key in ("runtime_pid", "client_pid", "bridge_port"):
             value = launch.get(key)
             row[key] = value if type(value) is int and value > 0 else None
@@ -255,6 +268,8 @@ def arguments(argv=None):
     parser.add_argument("--match-policy", default="agents-arena",
         help="Installed lifecycle policy; optional fixture policies must be installed explicitly")
     parser.add_argument("--brains", nargs="+", choices=PROVIDERS, help="One provider per numbered participant, never a role assignment")
+    parser.add_argument("--player-names", nargs="+",
+        help="Exactly --players distinct public names; default samples short Russian names without replacement")
     parser.add_argument("--objective", default=TRUSTED_OBJECTIVE,
         help="One shared trusted goal, identical for every participant; does not assign hidden roles")
     parser.add_argument("--base-port", type=int, default=50051)
@@ -295,6 +310,13 @@ def arguments(argv=None):
         parser.error("--max-decisions must be between 1 and 64")
     if args.brains and len(args.brains) != args.players:
         parser.error("--brains must contain exactly --players providers")
+    if args.player_names is not None:
+        if (len(args.player_names) != args.players
+                or any(not 2 <= len(name) <= 24 or name != name.strip()
+                    or any(not (char.isalpha() or char.isdecimal() or char in " _-.") or ord(char) > 0xffff for char in name)
+                    for name in args.player_names)
+                or len({name.casefold() for name in args.player_names}) != args.players):
+            parser.error("--player-names requires distinct names of 2–24 letters/digits/spaces/_/./-, without edge whitespace")
     if args.output is None:
         args.output = root / "build/social-deduction-validation" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
     args.output = args.output.resolve()

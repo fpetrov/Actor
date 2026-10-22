@@ -5,6 +5,7 @@ import json
 import math
 
 from .contracts import CommentaryCandidate, CommentaryRequest
+from .editorial import editorial_frame
 
 
 def topic_key(mode, facts):
@@ -59,7 +60,11 @@ def build_context(candidate, view, evidence, spoken, config, *, utterance_id, ep
         "evidence":values,"actually_spoken":spoken.recent(6),"topic_key":candidate.topic_key,
         "speech_presentation":speech_presentation(candidate,config),
         "historical_callback":candidate.mode=="memory_callback",
-        "public_notes":evidence.selected_notes(set(candidate.evidence))}
+        "public_notes":evidence.selected_notes(set(candidate.evidence)),
+        "editorial_frame":editorial_frame(view,values)}
+    if (view.phase in ("Discussion","Voting","VoteResolution") and candidate.priority>1
+            and external["editorial_frame"]["public_arguments"]):
+        external["speech_presentation"].update(purpose="meeting_arguments",words_target=[40,65],clauses_preferred=[3,4])
     maximum=config.client_context_hard_tokens*4
     target=(config.idle.context_target_tokens if candidate.mode in ("idle_recap","memory_callback") else config.context_target_tokens)*4
     encoded=lambda:json.dumps(external,ensure_ascii=False,separators=(",",":"),allow_nan=False).encode()
@@ -69,8 +74,8 @@ def build_context(candidate, view, evidence, spoken, config, *, utterance_id, ep
     while len(encoded())>target and external["actually_spoken"]: external["actually_spoken"].pop()
     if len(encoded())>maximum: raise ValueError("Selected evidence exceeds commentary context budget")
     return CommentaryRequest(candidate,external,
-        config.idle.max_output_tokens if candidate.mode in ("idle_recap","memory_callback") else 512,
-        utterance_id,epoch)
+        config.idle.max_output_tokens if candidate.mode in ("idle_recap","memory_callback") else 768 if candidate.mode=="analysis" else 512,
+        utterance_id,epoch,"medium" if candidate.mode=="analysis" and candidate.priority>=2 else "default")
 
 
 def estimated_tokens(request):

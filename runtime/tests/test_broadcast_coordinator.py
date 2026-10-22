@@ -89,6 +89,23 @@ async def test_double_preview_rejected_and_preview_never_publishes():
     assert factory.run.closed
 
 
+async def test_director_status_exposes_only_bounded_numeric_results_without_targets_or_events():
+    factory=Factory();controller=BroadcastCoordinator(factory)
+    try:
+        await preview(controller)
+        async def details():
+            return {'director':{'intents':4,'confirmed_presented_switches':3,'commands_dispatched':4,
+                'pending':False,'terminal':False,'selection_timeouts':True,'rejected_selections':-1,
+                'focus_actor_id':'private-target','text':'private-event'}}
+        factory.run.status=details
+        result=(await controller.status())['camera_director']
+        assert result['intents']==4 and result['confirmed_presented_switches']==3 and result['commands_dispatched']==4
+        assert result['pending'] is False and result['terminal'] is False
+        assert result['selection_timeouts'] is None and result['rejected_selections'] is None
+        assert 'private' not in str(result) and 'focus_actor_id' not in result
+    finally:await controller.aclose()
+
+
 async def test_partial_commentary_configuration_preserves_other_policy_and_active_scheduler():
     factory=Factory();controller=BroadcastCoordinator(factory)
     before=controller.config.model_dump();seen=[]

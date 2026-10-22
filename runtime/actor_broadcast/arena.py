@@ -48,7 +48,8 @@ class ArenaBroadcastProjector:
             "phase_revision":view.phase_revision,"phase_ends_at_unix_ms":view.phase_ends_at_unix_ms,
             "crew_tasks_completed":view.crew_tasks_completed,"task_threshold":view.task_threshold,
             "visible_actor_ids":[actor.actor_id for actor in view.actors],
-            "actors":[{"actor_id":actor.actor_id,"display_name":actor.display_name,"x":actor.x,"y":actor.y} for actor in view.actors],
+            "actors":[{"actor_id":actor.actor_id,"display_name":actor.display_name,"x":actor.x,"y":actor.y,
+                "velocity_x":actor.velocity_x,"velocity_y":actor.velocity_y} for actor in view.actors],
             "bodies":[{"body_id":body.body_id,"victim_actor_id":body.victim_actor_id,"victim_display_name":body.victim_display_name,
                        "x":body.x,"y":body.y} for body in view.bodies],
             "emergency":{"active":view.emergency_active,"ends_at_unix_ms":view.emergency_ends_at_unix_ms,"room_id":view.emergency_room_id}}

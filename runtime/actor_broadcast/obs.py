@@ -74,6 +74,7 @@ class ObsClient:
         self.config = config; self._connect = connect; self.on_event = on_event
         self._ws = None; self._reader = None; self._pending = {}; self._send_lock = asyncio.Lock()
         self.available_requests = frozenset(); self.version = None
+        self.mutation_guard = None
 
     async def connect(self):
         if self._ws is not None: return self.version
@@ -165,6 +166,10 @@ class ObsClient:
         identity = secrets.token_hex(16); fut = asyncio.get_running_loop().create_future(); self._pending[identity] = fut
         try:
             async with self._send_lock:
+                # A guardian can revoke ownership while this request waits
+                # behind another send. Recheck under the actual wire lock.
+                if not request_type.startswith("Get") and self.mutation_guard is not None and self.mutation_guard(request_type, data or {}) is not True:
+                    raise ObsError("obs_guardian_ownership_lost")
                 await asyncio.wait_for(self._ws.send(json.dumps({"op": 6, "d": {
                     "requestType": request_type, "requestId": identity, "requestData": data or {}}}, allow_nan=False)), timeout)
             response = await asyncio.wait_for(asyncio.shield(fut), timeout)
@@ -262,6 +267,9 @@ class ObsController:
         self._startup_pending = True
         self._native_size = None; self._capture_shape = None; self._capture_crop_top = 0
         self._setup_lock = asyncio.Lock(); self._stream_lock = asyncio.Lock(); self._record_owned = False
+        self._record_start_task = None; self._record_start_pending = False
+        self._record_directory_original = None
+        self._record_confirmed = False; self._record_stopping = False
         self._stream_stop_lock = asyncio.Lock()
         self._audit_lock = asyncio.Lock()
         self._old_callback = client.on_event; client.on_event = self._event
@@ -873,18 +881,76 @@ class ObsController:
                 await asyncio.sleep(.25)
             raise ObsError("obs_stop_unconfirmed")
 
+    async def start_record(self, directory):
+        """Own directory restoration and the actual StartRecord transaction.
+
+        Guardian callers retain this controller across cancellation/IPC loss.
+        An explicit rejection cannot grant ownership of a foreign recording.
+        """
+        if self._record_owned or self._record_start_task is not None:
+            raise ObsError("obs_record_transition_pending")
+        await self.require_idle()
+        if not self.route_verified: raise ObsError("obs_graph_audit_failed")
+        original = (await self.client.request("GetRecordDirectory")).get("recordDirectory")
+        if not isinstance(original, str): raise ObsError("obs_record_directory_unverified")
+        self._record_directory_original = original
+        await self.client.request("SetRecordDirectory", {"recordDirectory": str(directory)})
+        self._record_owned = self._record_start_pending = True
+        self._record_confirmed = self._record_stopping = False
+        task = self._record_start_task = asyncio.create_task(self.client.request("StartRecord"))
+        task.add_done_callback(lambda value: None if value.cancelled() else value.exception())
+        try:
+            result = await asyncio.shield(task)
+        except ObsError as error:
+            if error.code == "obs_request_rejected" and error.request_status_code is not None:
+                self._record_owned = self._record_start_pending = False; self._record_start_task = None
+            raise
+        deadline = time.monotonic() + 4
+        while time.monotonic() < deadline:
+            if (await self.client.request("GetRecordStatus", timeout=1)).get("outputActive") is True:
+                self._record_start_pending = False; self._record_start_task = None
+                self._record_confirmed = True
+                return result
+            await asyncio.sleep(.05)
+        raise ObsError("obs_record_start_unconfirmed")
+
+    async def restore_record_directory(self):
+        if self._record_directory_original is None: return
+        if self._record_owned or self._record_start_task is not None:
+            raise ObsError("obs_record_transition_pending")
+        await self.require_idle()
+        await self.client.request("SetRecordDirectory", {"recordDirectory": self._record_directory_original})
+        self._record_directory_original = None
+
     async def stop_record(self):
         if not self._record_owned: return {}
+        self._record_stopping = True
+        if self._record_start_task is not None:
+            task = self._record_start_task
+            done, _ = await asyncio.wait((task,), timeout=self.START_SETTLE_TIMEOUT_SECONDS)
+            if task not in done: raise ObsError("obs_record_start_pending")
+            error = None if task.cancelled() else task.exception()
+            if isinstance(error, ObsError) and error.code == "obs_request_rejected" and error.request_status_code is not None:
+                self._record_owned = self._record_start_pending = self._record_confirmed = self._record_stopping = False; self._record_start_task = None
+                return {}
+            self._record_start_task = None
+        if self._record_start_pending:
+            deadline = time.monotonic() + self.START_SETTLE_TIMEOUT_SECONDS
+            while time.monotonic() < deadline:
+                if (await self.client.request("GetRecordStatus", timeout=1)).get("outputActive") is True:
+                    self._record_start_pending = False; break
+                await asyncio.sleep(.05)
+            if self._record_start_pending: raise ObsError("obs_record_start_pending")
         # A previous StopRecord may have committed with a lost response.
         # Confirm inactivity before retrying, rather than treating OBS's
         # "not recording" rejection as an uncloseable owned resource.
         if (await self.client.request("GetRecordStatus", timeout=1)).get("outputActive") is False:
-            self._record_owned = False; return {}
+            self._record_owned = self._record_confirmed = self._record_stopping = False; return {}
         result = await self.client.request("StopRecord", timeout=5)
         deadline = time.monotonic() + 2
         while time.monotonic() < deadline:
             if (await self.client.request("GetRecordStatus", timeout=1)).get("outputActive") is False:
-                self._record_owned = False; return result
+                self._record_owned = self._record_confirmed = self._record_stopping = False; return result
             await asyncio.sleep(.05)
         raise ObsError("obs_record_stop_unconfirmed")
 

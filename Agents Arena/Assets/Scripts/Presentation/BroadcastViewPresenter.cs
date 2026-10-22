@@ -247,6 +247,9 @@ namespace Actor.Presentation
             var text = new StringBuilder();
             text.Append("Broadcast · ").Append(frame.Phase).Append("\nTasks ").Append(frame.CrewTasksCompleted).Append('/').Append(frame.TaskThreshold);
             if (frame.PhaseEndsAtUnixMs > 0) text.Append(" · ").Append(Math.Max(0, (frame.PhaseEndsAtUnixMs - frame.ObservedAtUnixMs) / 1000)).Append("s");
+            var focus = frame.Actors.FirstOrDefault(actor => actor.ActorId == frame.Camera.FocusActorId);
+            if (focus != null) text.Append("\nWatching · ").Append(focus.DisplayName);
+            else if (frame.Camera.AnchorId.Length > 0) text.Append("\nView · ").Append(frame.Camera.AnchorId);
             if (frame.EmergencyActive) text.Append("\nEmergency · ").Append(frame.EmergencyRoomId).Append(" · ")
                 .Append(Math.Max(0, (frame.EmergencyEndsAtUnixMs - frame.ObservedAtUnixMs) / 1000)).Append("s");
             foreach (var actor in frame.Actors) text.Append("\n").Append(actor.DisplayName).Append(" · ").Append(actor.X.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
@@ -281,9 +284,12 @@ namespace Actor.Presentation
                 : fact.Predicate == "attack-witnessed" ? "Visible attack · " + Name(frame, fact.ActorId) + " → " + Name(frame, fact.TargetActorId)
                 : fact.Predicate == "activity-seen" ? Name(frame, fact.ActorId) + " · console activity " + fact.Label
                 : fact.Predicate == "actor-seen" ? "Observed · " + fact.Label + " · " + fact.RoomId
+                : fact.Predicate == "movement-seen" ? "Observed motion · " + fact.Label + " · " + MovementText(fact.Value) + " · " + fact.RoomId
                 : fact.Predicate == "body-seen" ? "Observed body · " + fact.Label
                 : "Public state · " + fact.Label + " · tasks " + fact.Value);
         }
+        private static string MovementText(long value) => value switch
+        { 1 => "north", 2 => "northeast", 3 => "east", 4 => "southeast", 5 => "south", 6 => "southwest", 7 => "west", 8 => "northwest", 9 => "stationary", _ => "unavailable" };
         private static bool FullyVisible(Label label)
         {
             if (label?.panel == null || label.resolvedStyle.display == DisplayStyle.None || !label.visible) return false;

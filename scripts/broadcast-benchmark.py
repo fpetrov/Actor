@@ -14,12 +14,14 @@ import math
 import os
 from pathlib import Path
 import time
+from types import SimpleNamespace
 from uuid import uuid4
 
 from actor_broadcast.budget import BudgetLedger
 from actor_broadcast.config import CommentaryConfig
 from actor_broadcast.context import reservation_input_tokens, speech_presentation
 from actor_broadcast.contracts import CommentaryCandidate, CommentaryRequest, EvidenceRef, ProviderSegment, ProviderTerminal, Scope
+from actor_broadcast.editorial import editorial_frame
 from actor_broadcast.native import installation_identity, private_directory
 from actor_broadcast.ownership import ChannelLease
 from actor_codex.commentary import CodexCommentaryProvider
@@ -51,6 +53,89 @@ CASES = (
 
 CRITICAL_PREDICATES = frozenset({"alarm_started", "body_report", "vote_started", "vote_tied",
     "witnessed_attack", "emergency_meeting", "terminal_result"})
+
+EDITORIAL_CASES = ("focused_movement_history", "stopped_near_console", "memory_link",
+    "attributed_meeting_arguments", "voting_unknown_ballots", "confirmed_public_tally",
+    "visibility_loss_uncertainty", "terminal_result")
+
+
+def editorial_request(index, case, *, now, config, session, match):
+    """Richer authored input through real framing helpers, never a fake ACK."""
+    if type(index) is not int or not 1 <= index <= len(EDITORIAL_CASES) or case != EDITORIAL_CASES[index-1]:
+        raise ValueError("Unknown authored editorial case")
+    names = {"lena": "Лена", "oleg": "Олег", "nina": "Нина"}
+    current = {"camera": {"anchor_id": "", "focus_actor_id": "lena"},
+        "actors": [{"actor_id": "lena", "display_name": "Лена"}, {"actor_id": "oleg", "display_name": "Олег"}],
+        "visible_actor_ids": ["lena", "oleg"], "crew_tasks_completed": 3, "task_threshold": 8,
+        "meeting": {"meeting_id": "", "participants": [], "result": [], "resolution": "", "ejected_actor_id": ""}}
+    mode, phase, priority = "reactive", "Exploration", 2
+    rows = []
+    def add(predicate, text, *, subjects=(), age=0, kind="historical_observation", room="", value=0):
+        ref = EvidenceRef(f"benchmark-editorial-{index}-{len(rows)+1}", "1")
+        rows.append({"ref": asdict(ref), "kind": kind, "origin": "game", "source_event_id": ref.id,
+            "observed_at_unix_ms": now-age*1000, "expires_at_unix_ms": now+300000,
+            "age_at_presented_view_seconds": age, "subjects": list(subjects), "predicate": predicate,
+            "value": {"text": text, "actor_id": subjects[0] if subjects else "", "room_id": room,
+                "label": names.get(subjects[0], "") if subjects else "", "value": value}})
+    if case == "focused_movement_history":
+        add("actor-seen", "Две минуты назад Лена была видна в инженерной; это не её текущее место.", subjects=("lena",), age=120, room="engineering")
+        add("movement-seen", "На свежем кадре Лена движется на восток по холлу; Олег виден у входа.", subjects=("lena",), room="main-hall", value=3)
+        add("actor-seen", "Сейчас Олег виден у входа в холл; намерение Лены неизвестно.", subjects=("oleg",), room="main-hall")
+    elif case == "stopped_near_console":
+        add("movement-seen", "Восемь секунд назад Лена двигалась к видимой консоли в инженерной.", subjects=("lena",), age=8, room="engineering", value=5)
+        add("movement-seen", "Теперь Лена остановилась рядом с консолью; содержимое её личной задачи не видно.", subjects=("lena",), room="engineering", value=9)
+        add("public-state", "Публичный прогресс остаётся три из восьми; остановка сама по себе не подтверждает выполнение задачи.", value=3)
+    elif case == "memory_link":
+        mode, priority = "memory_callback", 3
+        add("actor-seen", "Полторы минуты назад Лена и Олег были одновременно видны в инженерной.", subjects=("lena", "oleg"), age=90, room="engineering")
+        add("movement-seen", "На текущем кадре Лена снова идёт к видимому входу инженерной, а Олег остаётся в холле.", subjects=("lena",), room="main-hall", value=5)
+        add("actor-seen", "Олег сейчас виден в холле; прошлое совместное появление не доказывает общий план.", subjects=("oleg",), room="main-hall")
+    elif case in ("attributed_meeting_arguments", "voting_unknown_ballots", "confirmed_public_tally"):
+        phase = {"attributed_meeting_arguments": "Discussion", "voting_unknown_ballots": "Voting", "confirmed_public_tally": "VoteResolution"}[case]
+        if phase == "Discussion": mode = "analysis"
+        current["camera"] = {"anchor_id": "main-hall", "focus_actor_id": ""}
+        current["meeting"].update(meeting_id="authored-meeting-one", participants=[
+            {"actor_id": identity, "display_name": name, "life": "Alive"} for identity, name in names.items()])
+        add("discussion-claim", "Лена: «Я пришла из инженерной, Олег был у входа в холл».", subjects=("lena",), age=12, kind="player_claim")
+        add("discussion-claim", "Олег отвечает Лене: «У входа я был раньше, потом ушёл к складу».", subjects=("oleg",), age=8, kind="player_claim")
+        add("discussion-claim", "Нина: «Я видела Олега у входа, но не видела, куда он ушёл».", subjects=("nina",), age=5, kind="player_claim")
+        if phase == "Discussion":
+            add("discussion-claim", "Лена уточняет Нине: «Тогда мы могли видеть его в разное время; нужен порядок событий».", subjects=("lena",), kind="player_claim")
+        elif phase == "Voting":
+            add("public-state", "Голосование открыто; персональные бюллетени и итог ещё неизвестны.")
+        else:
+            current["meeting"].update(result=[{"candidate_actor_id": "oleg", "votes": 2},
+                {"candidate_actor_id": "", "votes": 1}], resolution="ejected", ejected_actor_id="oleg", participants=[])
+            current["actors"] = [{"actor_id": "lena", "display_name": "Лена"}]
+            current["visible_actor_ids"] = ["lena"]
+            add("vote-result", "Опубликован итог: два голоса за Олега, один пропуск; Олег исключён. Кто как голосовал, не раскрыто.", subjects=("oleg",), value=2)
+    elif case == "visibility_loss_uncertainty":
+        mode, priority = "idle_recap", 3
+        current["camera"] = {"anchor_id": "security", "focus_actor_id": ""}
+        current["actors"] = [{"actor_id": "oleg", "display_name": "Олег"}]
+        current["visible_actor_ids"] = ["oleg"]
+        add("actor-seen", "Сорок секунд назад Лена была видна у входа в охрану; теперь её в кадре нет.", subjects=("lena",), age=40, room="security")
+        add("actor-seen", "Сейчас Олег виден в охране. Текущее место Лены и её дальнейший маршрут неизвестны.", subjects=("oleg",), room="security")
+        add("public-state", "Публичный прогресс задач не изменился: три из восьми.", value=3)
+    else:
+        mode, phase, priority = "outro", "GameOver", 0
+        current["crew_tasks_completed"] = 8
+        current["terminal"] = {"winning_side": "Crew", "win_reason": "tasks_completed"}
+        add("public-state", "Сервер завершил матч: экипаж победил выполнением восьми задач из восьми. Это подтверждённый итог.", value=8)
+    refs = tuple(EvidenceRef(**row["ref"]) for row in rows)
+    candidate = CommentaryCandidate(Scope(session, match, 1, 1), index, uuid4().hex, mode,
+        priority, case, refs, now+300000)
+    framing_view = SimpleNamespace(current=current, phase=phase)
+    external = {"mode": mode, "phase": phase, "current_view": current, "actually_spoken": [],
+        "presented_view_observed_at_unix_ms": now, "evidence": rows, "public_notes": [],
+        "historical_callback": mode == "memory_callback", "topic_key": case,
+        "speech_presentation": speech_presentation(candidate, config),
+        "editorial_frame": editorial_frame(framing_view, rows)}
+    if phase in ("Discussion", "Voting", "VoteResolution") and priority > 1:
+        external["speech_presentation"].update(purpose="meeting_arguments", words_target=[40,65], clauses_preferred=[3,4])
+    return CommentaryRequest(candidate, external, 768 if mode == "analysis" else
+        config.idle.max_output_tokens if mode in ("idle_recap", "memory_callback") else 512,
+        uuid4().hex, 1, "medium" if mode == "analysis" else "default")
 
 
 def authored_request(index, case, *, now, config, session, match):
@@ -96,29 +181,43 @@ def percentile(values, q):
 
 
 async def run(args):
+    suite = getattr(args, "suite", "standard")
+    if suite not in ("standard", "editorial"): raise ValueError("Unknown authored suite")
+    cases = EDITORIAL_CASES if suite == "editorial" else CASES
+    start_case=getattr(args,"start_case",1)
+    if type(start_case)is not int or not 1<=start_case<=len(cases):raise ValueError("Invalid authored start case")
+    limit = args.limit if args.limit is not None else len(cases)-start_case+1
+    if type(limit) is not int or not 1 <= limit <= len(cases)-start_case+1: raise ValueError("Invalid authored case limit")
+    make_request = editorial_request if suite == "editorial" else authored_request
     config = CommentaryConfig()
     root = private_directory(Path.home() / ".actor" / "broadcast")
     lease = ChannelLease(args.channel).acquire()
     budget = BudgetLedger(root / "quota.sqlite", quota_scope_id="installation:" + installation_identity(root), config=config)
     provider = CodexCommentaryProvider(codex_home=args.codex_home.expanduser().absolute())
     report = {"schema": "actor.broadcast-provider-benchmark.v1", "scenarios": "authored_public_synthetic",
-        "authored_fixture_version": 2, "controller_courtesy_audio": False,
+        "authored_fixture_version": 3 if suite == "editorial" else 2, "suite": suite,
+        "controller_courtesy_audio": False,
         "real_provider": True, "native_presentation": False, "tts": False, "playback": False,
-        "obs_recording": False, "twitch_ingest": False, "model": "gpt-6-luna", "cases_requested": args.limit,
+        "obs_recording": False, "twitch_ingest": False, "model": "gpt-6-luna", "cases_requested": limit,
+        "max_provider_turns": limit,
+        "start_case":start_case,
         "shared_production_quota": True, "attempts": [], "completed": False, "cleanup_completed": False}
     started = time.monotonic(); session, match = uuid4().hex, uuid4().hex
     deadline = started + args.total_timeout
     try:
+        if type(provider.max_provider_calls) is not int or provider.max_provider_calls != 1:
+            raise RuntimeError("benchmark_provider_call_cap")
         report["startup"] = await asyncio.wait_for(provider.prepare(), 30)
         floor=getattr(provider,"minimum_input_reservation",None)
         if floor is not None: await budget.raise_unknown_input_floor(floor)
-        for index, case in enumerate(CASES[:args.limit], 1):
-            request = authored_request(index, case, now=int(time.time() * 1000), config=config, session=session, match=match)
+        for index, case in enumerate(cases[start_case-1:start_case-1+limit], start_case):
+            request = make_request(index, case, now=int(time.time() * 1000), config=config, session=session, match=match)
             candidate = request.candidate; mode = candidate.mode
+            analysis_key = request.external_state["current_view"]["meeting"]["meeting_id"] if mode == "analysis" else None
             while True:
                 if time.monotonic() >= deadline: raise TimeoutError("benchmark_total_timeout")
                 decision = await budget.reserve(match, mode, candidate.priority, reservation_input_tokens(provider,request),
-                    request.max_output_tokens, calls=provider.max_provider_calls)
+                    request.max_output_tokens, calls=provider.max_provider_calls, analysis_key=analysis_key)
                 if decision.reservation is not None: break
                 if decision.reason not in {"minute_calls", "normal_rate", "normal_burst", "critical_reserve", "idle_minute"}:
                     raise RuntimeError("budget_" + decision.reason)
@@ -151,7 +250,8 @@ async def run(args):
         # Diagnostic payloads may contain SDK internals. Keep only bounded local codes.
         known = str(error)
         allowed = {"provider_case_incomplete", "benchmark_total_timeout", "budget_clock_rollback", "budget_hourly_calls",
-            "budget_match_calls", "budget_input_tokens", "budget_output_tokens", "budget_soft_pressure", "budget_idle_hour", "budget_idle_match"}
+            "budget_match_calls", "budget_input_tokens", "budget_output_tokens", "budget_soft_pressure", "budget_idle_hour", "budget_idle_match",
+            "budget_analysis_disabled", "budget_analysis_match", "budget_analysis_meeting", "benchmark_provider_call_cap"}
         report["error_code"] = known if known in allowed else "benchmark_failed"
     finally:
         cleanup_errors = []
@@ -185,12 +285,19 @@ def main():
     parser.add_argument("--execute-real", action="store_true", help="Spend shared commentary quota using existing official ChatGPT sign-in")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--channel", choices=("fedorr_codex",), default="fedorr_codex")
-    parser.add_argument("--limit", type=int, choices=range(1, 21), default=20)
+    parser.add_argument("--suite", choices=("standard", "editorial"), default="standard",
+        help="Existing 20 authored scenarios or 8 richer focused-player/meeting cases (no native/audio proof)")
+    parser.add_argument("--limit", type=int, choices=range(1, 21), default=None)
+    parser.add_argument("--start-case",type=int,default=1,help="First authored case for a bounded targeted regression")
     parser.add_argument("--codex-home", type=Path, default=Path.home()/".actor/broadcast/codex-home",
         help="Dedicated officially authenticated commentator profile; never resets the shared budget")
     parser.add_argument("--total-timeout", type=float, default=1800)
     args = parser.parse_args()
     if not args.execute_real: parser.error("--execute-real is required; no provider call was started")
+    maximum = len(EDITORIAL_CASES) if args.suite == "editorial" else len(CASES)
+    if not 1<=args.start_case<=maximum:parser.error("start case exceeds the selected authored suite")
+    if args.limit is None: args.limit = maximum-args.start_case+1
+    if args.limit > maximum-args.start_case+1: parser.error("limit exceeds the selected authored suite")
     if not 60 <= args.total_timeout <= 1800: parser.error("total timeout must be 60–1800 seconds")
     args.output = args.output.expanduser().absolute()
     return asyncio.run(run(args))

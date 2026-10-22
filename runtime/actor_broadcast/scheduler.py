@@ -21,6 +21,7 @@ from .context import build_context, reservation_input_tokens, topic_key
 from .evidence import EvidenceLedger
 from .spoken import SpokenLedger
 from .latency import LatencyTelemetry
+from .editorial import discussion_refs, heard_materials, material_key, REPEATABLE_PREDICATES
 
 INTRO_COURTESY="Здравствуйте! Рады вас видеть."
 OUTRO_COURTESY="Спасибо, что были с нами. До встречи!"
@@ -86,6 +87,8 @@ class CommentaryScheduler:
         self._calls_by_mode = Counter()
         self._suppressions = Counter()
         self._contexts = []
+        self._discussion_attempts = OrderedDict()
+        self._analysis_attempted = set()
         self.last_suppression = None
 
     def ready(self):
@@ -206,6 +209,7 @@ class CommentaryScheduler:
             self._offered.clear()
             if previous.scope.match_id != view.scope.match_id or previous.scope.broadcast_session_id != view.scope.broadcast_session_id:
                 self.evidence = None; self.spoken = SpokenLedger(); self._ready = False
+                self._discussion_attempts.clear();self._analysis_attempted.clear()
                 self._consecutive_idle = 0; self._terminal_outro_started = False
                 self._outro_utterance_id=None;self._outro_provider_complete=False;self._outro_needs_fallback=False
                 self._outro_courtesy_started=False
@@ -290,16 +294,40 @@ class CommentaryScheduler:
         return CommentaryCandidate(self.view.scope,self.view.sequence,uuid4().hex,mode,priority,topic,
             tuple(ref for ref,_ in facts),min(value["expires_at_unix_ms"] for _,value in facts))
 
+    def _discussion_candidate(self):
+        refs=discussion_refs(self.view,self.evidence,self.spoken,self.clock(),int(self.wall_clock()*1000),self._discussion_attempts)
+        if not refs:return None,None
+        speakers={self.evidence.resolve(ref).source_actor_id for ref in refs}
+        subjects=set(speakers)
+        # A comparison can recall a real permitted sighting, never a player's
+        # private alibi or a model-generated account of what happened.
+        history=sorted(((value["observed_at_unix_ms"],ref.id,ref.version,ref) for ref,value in self.evidence.facts()
+            if value["kind"]=="historical_observation" and subjects.intersection(value["content"]["editorial"]["subjects"])),reverse=True)
+        refs=refs+tuple(row[-1] for row in history[:8-len(refs)])
+        meeting=self.view.current.get("meeting",{}).get("meeting_id","")
+        analyse=(self.config.analysis_enabled and len(speakers)>=2 and isinstance(meeting,str) and 0<len(meeting.encode())<=128
+            and meeting not in self._analysis_attempted and len(self._analysis_attempted)<16)
+        return self._candidate(refs,"analysis" if analyse else "reactive",2),meeting if analyse else None
+
+    @property
+    def camera_change_allowed(self):
+        """The director waits for actual speech drain; P0/P1 always keep focus."""
+        return bool(self._ready and self._fresh() and not self._closed and not self.view.terminal
+            and not self._needs_cancel and not self._active and not self._speech_pending
+            and not any(priority<=1 for priority,_ in self._pending.values()))
+
     def _select_idle(self):
         now,wall=self.clock(),int(self.wall_clock()*1000)
         visible=set(self.view.current.get("visible_actor_ids",()))
         room=self.view.current.get("room_id")
         recent=[]; callbacks=[]
         noted=self.evidence.noted_refs()
+        heard=heard_materials(self.evidence,self.spoken,now)
         for ref,value in self.evidence.facts():
             metadata=value["content"]["editorial"]
             age=(wall-value["observed_at_unix_ms"])/1000
             if age < 0 or self.spoken.covered(ref,now,self.config.idle.same_topic_repeat_seconds): continue
+            if metadata["predicate"] in REPEATABLE_PREDICATES and material_key(value) in heard:continue
             score=(metadata["priority"]*-10 + len(visible.intersection(metadata["subjects"]))*3 +
                 (2 if metadata["unresolved"] else 0) + (1 if room and value["content"]["value"].get("room_id")==room else 0))
             row=(score,-age,ref.id,ref.version,ref)
@@ -529,8 +557,15 @@ class CommentaryScheduler:
         if self._provider_failed:self._suppress("provider_unavailable");return
         if self._active or self._speech_pending:self._suppress("speaking" if self._speech_pending else "llm_active");return
         self._pending=OrderedDict((ref,row) for ref,row in self._pending.items() if self.evidence.resolve(ref))
+        heard=heard_materials(self.evidence,self.spoken,now)
+        for ref,(priority,_) in tuple(self._pending.items()):
+            source=self.evidence.resolve(ref)
+            if (priority>=2 and source.content["editorial"]["predicate"] in REPEATABLE_PREDICATES
+                    and material_key(source.model_dump(mode="json")) in heard):
+                self._pending.pop(ref);self._counts["heard_material_suppressed"]+=1
         self._p1_cooldown_bypass.intersection_update(self._pending)
         candidate=None;analysis_key=None;offered=None;preemption_bypass=False
+        discussion,discussion_key=self._discussion_candidate() if not self.view.terminal else (None,None)
         if not self.view.terminal:self._queue_public_intro()
         if self.view.terminal:
             if self._terminal_outro_started:
@@ -544,9 +579,16 @@ class CommentaryScheduler:
             self._terminal_outro_started=True
             if candidate is None:
                 await self._fallback_outro();return
+        elif discussion is not None and not any(row[0]<=1 for row in self._pending.values()):
+            if now<self._coalesce_deadline:self._suppress("coalescing");return
+            if now-self._last_admission<self.config.normal_cooldown_seconds:self._suppress("cooldown");return
+            candidate,analysis_key=discussion,discussion_key
         elif self._pending:
             priority=min(row[0] for row in self._pending.values())
-            refs=sorted(self._pending,key=lambda ref:(self._pending[ref][0],self._pending[ref][1],ref.id))[:8]
+            focus=self.view.current.get("camera",{}).get("focus_actor_id","")
+            refs=sorted(self._pending,key=lambda ref:(self._pending[ref][0],
+                0 if focus and focus in self.evidence.resolve(ref).content["editorial"]["subjects"] else 1,
+                self._pending[ref][1],ref.id))[:8]
             preemption_bypass=priority==1 and bool(self._p1_cooldown_bypass.intersection(refs))
             if priority>0 and not preemption_bypass and now<self._coalesce_deadline:self._suppress("coalescing");return
             if priority>0 and not preemption_bypass and now-self._last_admission<self.config.normal_cooldown_seconds:self._suppress("cooldown");return
@@ -582,6 +624,10 @@ class CommentaryScheduler:
         if preemption_bypass:self._p1_cooldown_bypass.clear()
         decision=await self.budget.reserve(self.view.scope.match_id,candidate.mode,candidate.priority,
             reserved_input,request.max_output_tokens,calls=calls,analysis_key=analysis_key)
+        if candidate.mode=="analysis" and analysis_key is not None:
+            # Also latch a durable nested-quota refusal: a restart cannot evade
+            # it, and the next ordinary comparison need not retry analysis.
+            self._analysis_attempted.add(analysis_key)
         # An observation can arrive during durable I/O. Fence again before any
         # SDK call. A cancelled reservation remains charged conservatively.
         if not self._valid(request):
@@ -601,6 +647,11 @@ class CommentaryScheduler:
             if candidate.mode=="outro":await self._fallback_outro()
             return
         for ref in candidate.evidence:self._pending.pop(ref,None)
+        for ref in candidate.evidence:
+            source=self.evidence.resolve(ref)
+            if source is not None and source.kind=="player_claim" and source.content["editorial"].get("origin","game")=="game":
+                self._discussion_attempts[ref]=now
+        while len(self._discussion_attempts)>96:self._discussion_attempts.popitem(last=False)
         self._active_request=request
         if candidate.mode=="intro":self._public_intro_pending=False
         self.latency.admitted(request,self.view)

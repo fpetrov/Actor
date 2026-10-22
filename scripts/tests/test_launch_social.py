@@ -15,6 +15,9 @@ SCRIPT = Path(__file__).resolve().parents[1] / "launch-social-agents.py"
 SPEC = importlib.util.spec_from_file_location("launch_social_agents", SCRIPT)
 LAUNCHER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(LAUNCHER)
+AGENT_SPEC = importlib.util.spec_from_file_location("launch_agent_names", SCRIPT.with_name("launch-agent.py"))
+AGENT = importlib.util.module_from_spec(AGENT_SPEC)
+AGENT_SPEC.loader.exec_module(AGENT)
 
 
 def argument(command, name):
@@ -93,11 +96,72 @@ class SocialLaunchTests(unittest.TestCase):
                 self.assertEqual(len(commands), players)
                 self.assertEqual({argument(command, "--objective") for command in commands}, {goal})
                 self.assertEqual([argument(command, "--player-name") for command in commands],
-                    [f"Agent {index + 1:02d}" for index in range(players)])
+                    args.player_names)
                 for command in commands:
                     self.assertEqual(command.count("--objective"), 1)
                     for prohibited in ("--alignment", "--role", "--seed", "--target", "--winner"):
                         self.assertNotIn(prohibited, command)
+
+    def test_russian_name_pool_is_short_unique_and_shared_by_standalone_defaults(self):
+        self.assertEqual(LAUNCHER.PLAYER_NAMES, AGENT.PLAYER_NAMES)
+        self.assertEqual(len(LAUNCHER.PLAYER_NAMES), 24)
+        self.assertEqual(len(set(LAUNCHER.PLAYER_NAMES)), 24)
+        for name in LAUNCHER.PLAYER_NAMES:
+            self.assertTrue(2 <= len(name) <= 6)
+            self.assertTrue(all("А" <= letter <= "я" or letter in "Ёё" for letter in name))
+
+    def test_name_sampling_is_once_without_replacement_and_preserves_internal_identity(self):
+        for count in (4, 5, 6):
+            with tempfile.TemporaryDirectory() as folder, self.subTest(players=count):
+                root, args = LAUNCHER.arguments(["--room", "ABC123", "--players", str(count), "--output", folder])
+                chosen = list(reversed(LAUNCHER.PLAYER_NAMES))[:count]
+                with patch.object(LAUNCHER.secrets, "SystemRandom") as random:
+                    random.return_value.sample.return_value = chosen
+                    first = LAUNCHER.plans(root, args)
+                    second = LAUNCHER.plans(root, args)
+                    random.return_value.sample.assert_called_once_with(LAUNCHER.PLAYER_NAMES, count)
+                self.assertEqual(first, second)
+                self.assertEqual([argument(command, "--player-name") for _, _, command in first], chosen)
+                for index, (identity, output, command) in enumerate(first, 1):
+                    self.assertEqual(identity, f"agent-{index:02d}")
+                    self.assertEqual(output, args.output / identity)
+                    self.assertEqual(argument(command, "--agent-profile"), identity)
+                    self.assertEqual(argument(command, "--memory-database"), str(output / "memory.sqlite3"))
+
+    def test_explicit_public_names_are_preserved_without_consuming_randomness(self):
+        names = ["Лена", "Олег", "Public.Name", "Player Four"]
+        with tempfile.TemporaryDirectory() as folder:
+            root, args = LAUNCHER.arguments(["--room", "ABC123", "--output", folder, "--player-names", *names])
+            with patch.object(LAUNCHER.secrets, "SystemRandom", side_effect=AssertionError("explicit names need no picker")):
+                commands = LAUNCHER.plans(root, args)
+            self.assertEqual([argument(command, "--player-name") for _, _, command in commands], names)
+        for explicit in ("Лена", "Custom Name", " Agent-kept-verbatim "):
+            self.assertEqual(AGENT.participant_name(explicit, sample=lambda *_: self.fail("unexpected picker")), explicit)
+        calls = []
+        def picker(pool, count):
+            calls.append((pool, count)); return ["Кира"]
+        self.assertEqual(AGENT.participant_name(sample=picker), "Кира")
+        self.assertEqual(calls, [(AGENT.PLAYER_NAMES, 1)])
+
+    def test_invalid_name_overrides_fail_before_any_owned_process(self):
+        invalid = [["Аня"] * 4, ["Аня", "аня", "Мира", "Олег"], ["Аня"] * 3,
+            [" Лена", "Олег", "Мира", "Ян"], ["Я", "Олег", "Мира", "Ян"],
+            ["x" * 25, "Олег", "Мира", "Ян"], ["Bad<name>", "Олег", "Мира", "Ян"],
+            ["Лена\0", "Олег", "Мира", "Ян"], ["Лена😀", "Олег", "Мира", "Ян"]]
+        for names in invalid:
+            with self.subTest(names=names), patch("sys.stderr"), patch.object(LAUNCHER.subprocess, "Popen") as spawn:
+                with self.assertRaises(SystemExit):
+                    LAUNCHER.arguments(["--room", "ABC123", "--player-names", *names])
+                spawn.assert_not_called()
+
+    def test_existing_process_manifest_retains_resolved_names_before_child_reports(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root, args = LAUNCHER.arguments(["--room", "ABC123", "--output", folder])
+            launches = LAUNCHER.plans(root, args)
+            metadata = LAUNCHER.process_metadata(launches, [])
+            self.assertEqual([row["player_name"] for row in metadata["agents"]], args.player_names)
+            self.assertEqual([row["agent"] for row in metadata["agents"]], [f"agent-{i:02d}" for i in range(1, 5)])
+            self.assertTrue(all(row["launcher_pid"] is None for row in metadata["agents"]))
 
     def test_objective_default_is_unchanged_and_maximum_length_is_supported(self):
         with tempfile.TemporaryDirectory() as folder:

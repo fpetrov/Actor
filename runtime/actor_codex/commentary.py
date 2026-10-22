@@ -36,6 +36,20 @@ INSTRUCTIONS = (
     "четвёртая допустима только если она краткая, добавляет смысл и разрешена max_segments. Не превращай одну фразу в длинный монолог. "
     "В тишине обсуди конкретную деталь текущей игры или свяжи её с прежним разрешённым эпизодом; явно отметь давность и неопределённость. "
     "Не пересказывай actually_spoken другими словами и не начинай каждую реплику одинаково. Не выдумывай развитие ради разговора. "
+    "editorial_frame задаёт тему кадра: в player_watch начни с имени выбранного игрока и его наблюдаемого действия. "
+    "Свяжи направление, переход комнаты или работу у консоли с разрешённой историей этого игрока, если это добавляет смысл. "
+    "Значения movement-seen описывают видимое движение в указанное время, не цель и не скрытую задачу. "
+    "О намерении говори лишь как о возможности, если есть конкретная опора; не приписывай план каждому шагу. "
+    "В meeting_arguments перескажи существенные доводы всех выбранных public_arguments, называя авторов; "
+    "связанные доводы можно объединить, но не сливай независимые голоса в безымянное «все считают». "
+    "В КАЖДОЙ отдельной фразе с пересказом player_claim явно назови автора и пометь это его словами или версией; "
+    "атрибуция из предыдущего сегмента не распространяется на следующий. Чужое «я был у входа» остаётся заявлением о месте, "
+    "оно не означает «я видел другого игрока». Чужое «не видел, куда он ушёл» означает только отсутствие такого наблюдения: "
+    "не заменяй его на «не знает, куда он ушёл», «он не уходил» или утверждение о чужом состоянии ума. "
+    "Не читай чат дословно подряд: объясни, кто на что отвечает, что подтверждено наблюдением, а что остаётся заявлением. "
+    "Добавь короткое собственное мнение о силе аргумента или открытом вопросе, если материал это позволяет. "
+    "Мнение помечай естественно: «мне пока убедительнее…», «я бы проверил…», без вердикта о скрытой роли. "
+    "Во время голосования связывай публичные доводы с опубликованным итогом только после его появления; тайные бюллетени недоступны. "
     "Контроллер отдельно произносит тёплое приветствие зрителям в intro и благодарность с прощанием в outro (courtesy_handled_locally). "
     "В intro дай только одну короткую фразу о разрешённой текущей ситуации; не повторяй приветствие и не изображай новое начало матча. "
     "В outro дай только одну короткую фразу с подтверждённым итогом; не повторяй благодарность/прощание и не объявляй победителя без источника. "
@@ -214,6 +228,8 @@ class CodexCommentaryProvider:
         self._model_verified=False
         self._policy=None
         self._last_input_tokens=0
+        self._supported_efforts=frozenset()
+        self._effort_counts={}
 
     # Includes conservative SDK/service-prefix overhead beyond external JSON.
     # This is a local reservation, never a claimed server-side token cap.
@@ -336,16 +352,24 @@ class CodexCommentaryProvider:
             self._last_input_tokens=0
 
     def _set_reasoning(self,efforts):
+        self._supported_efforts=frozenset(efforts)
         if self.reasoning_effort in efforts:return
         if self.reasoning_effort in ("none","minimal") and "low" in efforts:self.reasoning_effort="low"
         else:
             self._poisoned=True
             raise ActorError("commentary_reasoning_unavailable","A minimal supported reasoning setting is required")
 
-    async def _start(self, input, references, *, max_segments=4):
+    def _request_effort(self,request):
+        if request.reasoning_effort=="medium" and "medium" in self._supported_efforts:
+            return "medium"
+        return self.reasoning_effort
+
+    async def _start(self, input, references, *, max_segments=4, effort=None):
         if self._interrupted:raise asyncio.CancelledError
         # Public AsyncThread.turn forwards effort to TurnStartParams.
-        handle=await self.thread.turn(input,output_schema=speech_schema(references,max_segments=max_segments),effort=self.reasoning_effort)
+        selected=self.reasoning_effort if effort is None else effort
+        handle=await self.thread.turn(input,output_schema=speech_schema(references,max_segments=max_segments),effort=selected)
+        self._effort_counts[selected]=self._effort_counts.get(selected,0)+1
         self._handles.append(handle)
         if handle.id not in self._primary:
             self._primary[handle.id]=id(handle);self._tools[handle.id]=ToolObservation()
@@ -424,7 +448,7 @@ class CodexCommentaryProvider:
                 external=json.dumps(request.external_state,ensure_ascii=False,separators=(",",":"))
                 stage="external_start"
                 await self._start(self.sdk.ExternalMessage(tool_name="actor_broadcast",namespace="presented_view",content=external),
-                    request.candidate.evidence,max_segments=maximum)
+                    request.candidate.evidence,max_segments=maximum,effort=self._request_effort(request))
                 stage="stream_decode"
                 collectors=[asyncio.create_task(consume(handle)) for handle in self._handles]
                 await asyncio.gather(*collectors)
@@ -584,6 +608,7 @@ class CodexCommentaryProvider:
             "usage_totals":dict(self._all_usage),"observed_tool_items":self._tool_items,
             "decision_active":self._task is not None,"closed":self._closed,"poisoned":self._poisoned,
             "model_catalog_verified":self._model_verified,"reasoning_effort":self.reasoning_effort,
+            "turns_by_reasoning_effort":dict(self._effort_counts),
             "environment_isolated":self._environment_isolated,
             "capability_policy":self._policy.report() if self._policy is not None else None,
             "minimum_input_reservation":self.minimum_input_reservation,

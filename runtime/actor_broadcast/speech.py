@@ -200,9 +200,10 @@ class MlxSpeechSynthesizer:
                 env = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "C", "PYTHONUTF8": "1",
                        "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1",
                        "HF_HUB_DISABLE_IMPLICIT_TOKEN": "1", "TOKENIZERS_PARALLELISM": "false"}
+                from .guardian_client import inherited_group_options
                 self._process = self._process_factory(command, pass_fds=(child.fileno(),),
                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                    start_new_session=True, env=env)
+                    **inherited_group_options(), env=env)
             except BaseException:
                 parent.close(); self._ready = None; raise
             finally: child.close()

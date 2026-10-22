@@ -7,8 +7,12 @@ from importlib import metadata
 import json
 import os
 from pathlib import Path
+import re
 import signal
+import socket
+import stat
 import subprocess
+import sys
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
@@ -19,6 +23,44 @@ from .coordinator import BroadcastCoordinator, CoordinatorError, reason_code
 from .installation import BroadcastInstallation
 
 DEFAULT_CONFIG = Path.home() / ".config/actor/broadcast.json"
+
+
+def _write_guardian_state(directory, value):
+    """Small private diagnostic receipt; its failure never gates cleanup."""
+    path=Path(directory)/"guardian.json";pending=path.with_suffix(".partial");created=False
+    try:
+        raw=(json.dumps(value,allow_nan=False,separators=(",",":"))+"\n").encode()
+        if len(raw)>8192:return False
+        if path.exists() or path.is_symlink():
+            info=path.lstat()
+            if not stat.S_ISREG(info.st_mode) or info.st_uid!=os.geteuid() or info.st_nlink!=1 or info.st_mode&0o077:return False
+        fd=os.open(pending,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600);created=True
+        with os.fdopen(fd,"wb")as stream:
+            os.fchmod(stream.fileno(),0o600);stream.write(raw);stream.flush();os.fsync(stream.fileno())
+        os.replace(pending,path);created=False;return True
+    except Exception:return False
+    finally:
+        if created:
+            try:pending.unlink()
+            except OSError:pass
+
+
+def _guardian_pending(directory):
+    try:
+        fd=os.open(Path(directory)/"guardian.json",os.O_RDONLY|os.O_NOFOLLOW)
+        with os.fdopen(fd,"rb")as stream:
+            info=os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode)or info.st_uid!=os.geteuid()or info.st_nlink!=1 or info.st_mode&0o077 or info.st_size>8192:return None
+            value=json.load(stream)
+        if (value.get("schema")!="actor.broadcast-guardian.v1"or value.get("owner_uid")!=os.geteuid()
+                or value.get("closed")is not False or not owned_process(value.get("processes",{}).get("guardian"))):return None
+        reason=value.get("reason")
+        if not isinstance(reason,str)or not re.fullmatch(r"[a-z][a-z0-9_]{0,63}",reason):reason="broadcast_guardian_cleanup_pending"
+        stages=value.get("cleanup_failures",[])
+        if not isinstance(stages,list)or len(stages)>8 or any(x not in {"operation","run","group","services","transport"}for x in stages):stages=[]
+        return {"state":"Failed","reason":reason,"guardian":{"lease_held":value.get("lease_held")is True,
+            "closed":False,"cleanup_failures":stages}}
+    except (OSError,ValueError,TypeError,AttributeError):return None
 
 
 def add_parser(commands):
@@ -99,7 +141,7 @@ def _doctor(config):
     return result
 
 
-async def _serve(args, config):
+async def _serve(args, config, *, guardian=None):
     from .native import NativeBroadcastFactory
     from .operator import OperatorServer
     from .secrets import MacOSKeychainSecretStore
@@ -111,7 +153,7 @@ async def _serve(args, config):
     state = {"schema": "actor.launch.v1", "owner_uid": os.getuid(), "game": config.game_id,
         "brain": "broadcast", "state": "starting", "processes": {"launcher": process_identity(os.getpid())}}
     write_state(output, state)
-    forward = OwnedSshForward(config.ssh, output / "ssh.log") if config.ssh is not None else None
+    forward = OwnedSshForward(config.ssh, output / "ssh.log") if config.ssh is not None and guardian is None else None
     controller = server = factory = None
     startup_failure = None
     stopping = asyncio.Event(); loop = asyncio.get_running_loop()
@@ -120,7 +162,7 @@ async def _serve(args, config):
         if forward is not None:
             await forward.start(); state["processes"]["ssh"] = process_identity(forward.process.pid)
         store = MacOSKeychainSecretStore()
-        factory = NativeBroadcastFactory(config, store)
+        factory = NativeBroadcastFactory(config, store, guardian=guardian) if guardian is not None else NativeBroadcastFactory(config, store)
         controller = BroadcastCoordinator(factory, channel=config.channel, config=config.commentary, chat_enabled=config.chat_enabled)
         server = OperatorServer(controller, secret_store=store, port=args.port)
         await server.start()
@@ -151,14 +193,116 @@ async def _serve(args, config):
         if cleanup_failed: raise CoordinatorError("broadcast_cleanup_failed")
 
 
+async def _supervised_serve(args, config):
+    """The public CLI's surviving owner; no native/SDK work in its child pre-hello."""
+    from .guardian_services import GuardianServices, controller_group_members
+    from .native import private_directory
+    from .secrets import MacOSKeychainSecretStore
+    from .supervisor import FramedSocket, GuardianHost, RetainedControllerGroup
+    output = (args.output or config.state_directory / (time.strftime("%Y%m%dT%H%M%S") + "-" + os.urandom(4).hex())).expanduser().absolute()
+    private_directory(output)
+    if (output / "launch.json").exists() or (output / "guardian.json").exists():
+        raise CoordinatorError("broadcast_launch_exists")
+    forward = OwnedSshForward(config.ssh, output / "ssh.log") if config.ssh is not None else None
+    services = GuardianServices(config, MacOSKeychainSecretStore(), forward=forward)
+    parent, child = socket.socketpair(); process = group = host = transport = None
+    receipts=None;receipt_stop=asyncio.Event();receipt_failed=False;identities={"guardian":None,"controller":None}
+    async def receipt():
+        nonlocal receipt_failed
+        document={"schema":"actor.broadcast-guardian.v1","owner_uid":os.geteuid(),"processes":identities,
+            "identity_complete":all(x is not None for x in identities.values()),
+            "terminal":host is not None and host.terminal,"reason":host.reason if host is not None else None,
+            "closed":host is not None and host.closed,
+            "lease_held":host is not None and getattr(host,"lease",None)is not None,
+            "cleanup_failures":list(host.cleanup_failures)if host is not None else []}
+        if not await asyncio.to_thread(_write_guardian_state,output,document):
+            receipt_failed=True
+            if host is not None and not host.closed:host.fail("supervisor_receipt_failed")
+    async def receipt_loop():
+        while not receipt_stop.is_set():
+            await receipt()
+            try:await asyncio.wait_for(receipt_stop.wait(),.5)
+            except TimeoutError:pass
+    loop = asyncio.get_running_loop()
+    stop_requested = False
+    def stop_owner():
+        nonlocal stop_requested
+        stop_requested = True
+        if host is not None: host.fail("supervisor_operator_stop")
+    # Signal callbacks run on the loop, after the synchronous Popen->group
+    # registration, never in that boundary. Install before any owned spawn.
+    for signum in (signal.SIGINT, signal.SIGTERM): loop.add_signal_handler(signum, stop_owner)
+    try:
+        await services.start_forward()
+        if stop_requested: return 130
+        allowed = {"HOME", "USER", "LOGNAME", "PATH", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE", "TZ"}
+        environment = {key: value for key, value in os.environ.items() if key in allowed}
+        environment["ACTOR_BROADCAST_GUARDIAN_FD"] = str(child.fileno())
+        command = [sys.executable, "-m", "actor_broadcast.guardian_entry", "--config", str(args.config.expanduser().absolute()),
+            "--output", str(output), "--port", str(args.port), "--action", args.broadcast_action]
+        if args.broadcast_action == "preview": command.extend(("--room", args.room))
+        # Popen returns only after setsid. No await, log close, diagnostic write
+        # or signal handler can run before this exact new group is registered.
+        process = subprocess.Popen(command, env=environment, pass_fds=(child.fileno(),), start_new_session=True)
+        child.close(); environment.clear()
+        group = RetainedControllerGroup(process, group_members=controller_group_members)
+        host = GuardianHost(config.channel, group, services)
+        transport = FramedSocket(parent)
+        identities["guardian"]=await asyncio.to_thread(process_identity,os.getpid())
+        identities["controller"]=await asyncio.to_thread(process_identity,process.pid)
+        if not all(identities.values()):
+            receipt_failed=True;host.fail("supervisor_identity_unverified")
+        receipts=asyncio.create_task(receipt_loop(),name="broadcast-guardian-receipts")
+        if stop_requested: host.fail("supervisor_operator_stop")
+        closed = await host.serve(transport)
+        # An unresolved transaction/resource must keep the actual lease
+        # owner alive. Retrying retained cleanup cannot create a new run.
+        while not closed:
+            await asyncio.sleep(1)
+            closed = await host.retry_cleanup()
+        return 0 if host.reason in ("supervisor_shutdown", "supervisor_operator_stop") else 1
+    finally:
+        child.close()
+        if host is not None:
+            if not host.closed:
+                # Cancellation of an outer waiter does not cancel the retained
+                # host cleanup. Keep this coroutine alive until proof succeeds.
+                while not await host.retry_cleanup(): await asyncio.sleep(1)
+        elif group is not None:
+            await group.terminate(); await services.close()
+        else:
+            # The child has not passed its handshake and cannot start native
+            # resources. Only its exact returned handle is eligible here.
+            if process is not None:
+                process.terminate()
+                try: await asyncio.to_thread(process.wait, 2)
+                except subprocess.TimeoutExpired: process.kill(); await asyncio.to_thread(process.wait)
+            await services.close()
+        if transport is not None: await transport.aclose()
+        else: parent.close()
+        receipt_stop.set()
+        if receipts is not None:await asyncio.shield(receipts)
+        if host is not None:await receipt()
+        for signum in (signal.SIGINT, signal.SIGTERM): loop.remove_signal_handler(signum)
+        if receipt_failed:raise CoordinatorError("broadcast_guardian_receipt_failed")
+
+
 class _NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, *args, **kwargs): raise CoordinatorError("operator_redirect_rejected")
 
 
 def _control(args):
     from .secrets import MacOSKeychainSecretStore
-    state = read_state(args.run)
+    try:state = read_state(args.run)
+    except Exception:
+        guardian=_guardian_pending(args.run)
+        if guardian is not None and args.broadcast_action=="status":print(json.dumps(guardian,indent=2));return 0
+        raise
     if state.get("brain") != "broadcast" or not owned_process(state.get("processes", {}).get("launcher")):
+        guardian=_guardian_pending(args.run)
+        if guardian is not None:
+            if args.broadcast_action=="status":print(json.dumps(guardian,indent=2));return 0
+            raise CoordinatorError("broadcast_guardian_cleanup_pending")
         raise CoordinatorError("broadcast_controller_not_running")
     port = state.get("operator_port")
     if type(port) is not int or not 1024 <= port <= 65535: raise CoordinatorError("broadcast_operator_port_invalid")
@@ -204,7 +348,7 @@ def command(args):
             report=asyncio.run(twitch_login(config.twitch_client_id,expected_login=config.channel))
             print(json.dumps(report,indent=2));return 0
         if not 0 <= args.port <= 65535 or 0 < args.port < 1024: raise CoordinatorError("operator_port_invalid")
-        return asyncio.run(_serve(args, config))
+        return asyncio.run(_supervised_serve(args, config))
     except KeyboardInterrupt: return 130
     except Exception as error:
         print(json.dumps({"code": reason_code(error, "broadcast_configuration_invalid")})); return 1

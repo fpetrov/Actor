@@ -3,6 +3,9 @@
 This is a bounded editorial change. It does not change the model, BF16 voice,
 evidence permissions, durable quotas, provider concurrency or audio queue.
 
+Player focus, public discussion summaries and selectively budgeted meeting
+analysis are described in [player watch and public discussion](broadcast-editorial.md).
+
 Quiet-time eligibility uses the latest noteworthy observation, actual terminal
 playback ACK or readiness timestamp. The default delay is 20 seconds with a
 uniform ±25% jitter (15–25 seconds), clamped to 5–120 seconds. A sample is retained

@@ -16,6 +16,16 @@ import time
 from urllib.parse import urlsplit
 
 
+PLAYER_NAMES = ("Аня", "Борис", "Вера", "Глеб", "Даша", "Егор", "Жанна", "Зоя",
+    "Илья", "Кира", "Лена", "Мира", "Нина", "Олег", "Павел", "Рита",
+    "Саша", "Тимур", "Уля", "Фёдор", "Элла", "Юля", "Яна", "Лев")
+
+
+def participant_name(explicit=None, *, sample=None):
+    """One local default; multiple independent launches may supply distinct names."""
+    return explicit if explicit is not None else (sample or secrets.SystemRandom().sample)(PLAYER_NAMES, 1)[0]
+
+
 class _RegisteredSpawn:
     """Defer an interrupt only until a newly created child is owned by cleanup."""
 
@@ -59,7 +69,7 @@ def main():
     parser.add_argument("--memory-database", type=Path)
     parser.add_argument("--agent-profile", help="Explicit persistent identity for local episodic memory")
     parser.add_argument("--no-event-routing", action="store_true")
-    parser.add_argument("--player-name", default="Agent Pilot")
+    parser.add_argument("--player-name", help="Public name; default picks a short Russian name using OS randomness")
     parser.add_argument("--port", type=int, default=50051)
     parser.add_argument("--decision-timeout", type=float, default=120)
     parser.add_argument("--objective-timeout", type=float, default=600)
@@ -69,6 +79,7 @@ def main():
     parser.add_argument("--client", type=Path, default=root / "build/agents-arena-client/AgentsArena.app/Contents/MacOS/Agents Arena")
     parser.add_argument("--api-url", help="Optional absolute HTTP(S) lobby API base URL for this ordinary client")
     args = parser.parse_args()
+    args.player_name = participant_name(args.player_name)
     if len(args.room) != 6 or not args.room.isascii() or not args.room.isalnum() or not (1024 <= args.port <= 65535):
         parser.error("Invalid room code or local bridge port")
     if not args.objective.strip() or len(args.objective) > 4096:
@@ -152,6 +163,7 @@ def main():
             "launcher_pid": os.getpid(), "runtime_pid": server.pid, "client_pid": client.pid,
             "bridge_port": args.port, "brain": args.brain,
             "operation": args.operation,
+            "player_name": args.player_name,
             "headless_client": args.headless_client,
             "bridge_credential_sha256": hashlib.sha256(environment["ACTOR_BRIDGE_TOKEN"].encode()).hexdigest(),
             "memory_database": str(args.memory_database.resolve()) if args.memory_database else None,

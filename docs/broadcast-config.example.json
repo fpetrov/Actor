@@ -24,6 +24,9 @@
   "state_directory": "~/.local/state/actorctl/broadcast",
   "ffmpeg_executable": "/opt/homebrew/bin/ffmpeg",
   "commentary": {
+    "analysis_enabled": true,
+    "analysis_max_calls_per_match": 3,
+    "analysis_max_calls_per_meeting": 1,
     "idle": {
       "enabled": true,
       "after_seconds": 20.0
