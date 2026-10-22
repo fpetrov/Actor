@@ -30,6 +30,7 @@
     <Compile Include="../../shared/com.actor.contracts/Runtime/ObserverTicketCodec.cs" Link="Admission/ObserverTicketCodec.cs" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Networking/BroadcastPresentationRules.cs" Link="ArenaGame/BroadcastPresentationRules.cs" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Presentation/TemporalFogRules.cs" Link="ArenaPresentation/TemporalFogRules.cs" />
+    <Compile Include="../../Agents Arena/Assets/Scripts/Presentation/FogRefreshRules.cs" Link="ArenaPresentation/FogRefreshRules.cs" />
     <Compile Include="../../Agents Arena/Assets/Scripts/Actor/BroadcastGameAdapter.cs" Link="ArenaGame/BroadcastGameAdapter.cs" />
     <Using Include="Xunit" />
   </ItemGroup>
