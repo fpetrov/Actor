@@ -14,6 +14,7 @@ import time
 
 from .admission import ObserverAdmission
 from .obs import GraphAudit, ObsError, ObsController
+from .obs_firewall_attestor import peer_uid
 
 
 class GuardianError(RuntimeError):
@@ -43,33 +44,43 @@ class GuardianClient:
 
     @classmethod
     async def from_inherited_fd(cls, fd):
+        global _context
         from .supervisor import FramedSocket
         if type(fd) is not int or fd < 3 or not stat.S_ISSOCK(os.fstat(fd).st_mode):
             raise GuardianError("guardian_private_socket_required")
         connection = socket.socket(fileno=fd)
+        client = None
         try:
             if connection.family != socket.AF_UNIX or connection.type != socket.SOCK_STREAM:
                 raise GuardianError("guardian_private_socket_required")
             if connection.getsockname() not in ("", b"") or connection.getpeername() not in ("", b""):
                 raise GuardianError("guardian_private_socket_required")
-            if hasattr(connection, "getpeereid"):
-                if connection.getpeereid()[0] != os.geteuid(): raise GuardianError("guardian_peer_invalid")
-            elif hasattr(socket, "SO_PEERCRED"):
+            # CPython 3.12 on Darwin exposes neither socket.getpeereid nor
+            # SO_PEERCRED. Reuse the audited public libc getpeereid helper.
+            try: uid = peer_uid(connection)
+            except Exception: raise GuardianError("guardian_peer_unverified") from None
+            if type(uid) is not int or uid != os.geteuid(): raise GuardianError("guardian_peer_invalid")
+            if hasattr(socket, "SO_PEERCRED"):
                 import struct
                 peer, uid, _ = struct.unpack("3i", connection.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
                 if uid != os.geteuid() or peer != os.getppid(): raise GuardianError("guardian_peer_invalid")
-            else: raise GuardianError("guardian_peer_unverified")
             if os.getsid(0) != os.getpid() or os.getpgrp() != os.getpid():
                 raise GuardianError("guardian_isolated_controller_required")
+            if _context is not None: raise GuardianError("guardian_context_exists")
             connection.set_inheritable(False); connection.setblocking(False)
             client = cls(FramedSocket(connection))
             await client.start()
-            global _context
             if _context is not None: raise GuardianError("guardian_context_exists")
             _context = client
             return client
         except BaseException:
-            connection.close(); raise
+            connection.close()
+            if client is not None:
+                # A rejected/cancelled hello cannot leave a receiver/heartbeat
+                # alive or send a shutdown RPC through an unaccepted context.
+                client._fail("guardian_connection_lost")
+                await client.aclose()
+            raise
 
     async def start(self):
         self._reader = asyncio.create_task(self._receive(), name="broadcast-guardian-receiver")
