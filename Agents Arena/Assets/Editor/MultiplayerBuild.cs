@@ -227,6 +227,18 @@ namespace Actor.Editor
             if (process.ExitCode != 0) throw new InvalidOperationException("Cannot record build source provenance.");
             return output;
         }
+        private static void CodeSign(string arguments, string bundle)
+        {
+            // No shell is involved. Keep the controlled output path one quoted
+            // argument; reject ambiguous quoting before invoking the tool.
+            if (bundle.IndexOfAny(new[] { '"', '\r', '\n' }) >= 0)
+                throw new InvalidOperationException("Unsupported signing output path.");
+            using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("/usr/bin/codesign", arguments + " \"" + bundle + "\"")
+            { UseShellExecute = false, RedirectStandardError = true, CreateNoWindow = true });
+            string error = process.StandardError.ReadToEnd(); process.WaitForExit();
+            if (process.ExitCode != 0)
+                throw new InvalidOperationException("macOS ad-hoc signature check failed: " + error);
+        }
         private static void Build(BuildPlayerOptions options)
         {
             string sourceCommit = Git("rev-parse HEAD").Trim();
@@ -239,6 +251,14 @@ namespace Actor.Editor
             BuildReport report = BuildPipeline.BuildPlayer(options);
             if (report.summary.result != BuildResult.Succeeded)
                 throw new InvalidOperationException("Build failed: " + report.summary.result + ", errors=" + report.summary.totalErrors);
+            if (options.target == BuildTarget.StandaloneOSX)
+            {
+                // Unity can rewrite a nested library while retaining its old
+                // signature. Repair and verify our complete ad-hoc bundle before
+                // it receives a successful release stamp. This is not notarization.
+                CodeSign("--force --deep --sign -", options.locationPathName);
+                CodeSign("--verify --deep --strict", options.locationPathName);
+            }
             File.WriteAllText(stampPath, JsonUtility.ToJson(new BuildStamp
             {
                 schema = "actor.unity-build.v1", game_version = PlayerSettings.bundleVersion,
