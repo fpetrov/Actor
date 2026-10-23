@@ -130,6 +130,7 @@ class OfficialCodexAdapter:
         self._turn_tools = {}
         self._primary_handles = {}
         self._last_decision_tools = {}
+        self._decision_turn_request_attempted = False
         self._decision_task = None
         self._decision_done = asyncio.Event()
         self.authentication_mode = None
@@ -238,6 +239,9 @@ class OfficialCodexAdapter:
     async def _start_turn(self, input):
         if self.interrupt_requested or self._decision_interrupt_requested:
             raise asyncio.CancelledError
+        # A cancelled request can reach the SDK before returning its handle.
+        # Register the attempt before awaiting; empty handles then remain unknown.
+        self._decision_turn_request_attempted = True
         handle = await self.thread.turn(input, output_schema=self.schema)
         self.handles.append(handle)
         generation=self._turn_threads.setdefault(handle.id,self._thread_generation)
@@ -279,6 +283,7 @@ class OfficialCodexAdapter:
         started = time.monotonic()
         self._decision_task = asyncio.current_task()
         self._decision_done.clear()
+        self._decision_turn_request_attempted = False
         epoch = self._decision_epoch
         try:
             if self._thread_decisions:
@@ -327,7 +332,10 @@ class OfficialCodexAdapter:
                              {"exception_type": type(error).__name__}) from error
         finally:
             observed = [self._turn_tools[identity] for identity in {handle.id for handle in self.handles}]
-            complete = bool(observed) and all(item.complete for item in observed)
+            # ThreadStart alone requests no model turn. Cancellation during its
+            # fresh-thread wait proves zero, while an attempted Turn without a
+            # handle/terminal still cannot certify complete item coverage.
+            complete = all(item.complete for item in observed) if observed else not self._decision_turn_request_attempted
             self._last_decision_tools = {"tool_calls": sum(item.count for item in observed) if complete else None,
                 "tool_count_complete": complete, "tool_count_scope": "sdk_item_lifecycle",
                 "observed_tool_items": sum(item.count for item in observed)}
