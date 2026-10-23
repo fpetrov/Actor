@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1538f5">
+  <meta name="description" content="ACTOR — фреймворк для игровых агентов. Интерактивная презентация архитектуры, Agents Arena, MiniLM и трансляции.">
+  <title>ACTOR / Система в действии</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/IBMPlexMono-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="preload" href="assets/fonts/NotoSans-Regular.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <script src="station-data.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#deck">К слайду</a>
+  <div class="crosshair" aria-hidden="true"><i></i></div>
+  <header class="masthead">
+    <a class="brand" href="#1" aria-label="ACTOR, первый слайд">A<span class="brand-dot">·</span>CTOR</a>
+    <span class="document-label">СИСТЕМА В ДЕЙСТВИИ</span>
+    <button class="index-trigger" id="index-trigger" aria-label="Открыть содержание" aria-expanded="false"><span>СОДЕРЖАНИЕ</span><i class="grid-icon" aria-hidden="true"></i></button>
+  </header>
+
+  <main id="deck" tabindex="-1" aria-label="Презентация ACTOR">
+    <section class="slide hero is-active" data-title="ACTOR" data-section="Введение" aria-labelledby="title-0">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="marker"></span> AGENT FRAMEWORK / 2026</p>
+        <h1 id="title-0">ACTOR<span class="title-period">.</span></h1>
+        <p class="hero-description">Фреймворк для агентов.<br>Мир, в котором они действуют.</p>
+        <button class="text-button" data-next>Разобрать систему <span aria-hidden="true">↗</span></button>
+      </div>
+      <div class="specimen interactive-surface" data-cursor="ИССЛЕДОВАТЬ" aria-label="Игровой персонаж Fieldkeeper на чертежной сетке">
+        <div class="specimen-grid"></div>
+        <span class="plate-tag">FIG. 01 / FIELDKEEPER</span>
+        <svg class="specimen-lines" viewBox="0 0 500 520" aria-hidden="true"><path d="M90 35V475M80 75H420M80 445H420M410 35V475M70 65l20 20m0-20L70 85M400 65l20 20m0-20l-20 20M70 435l20 20m0-20l-20 20M400 435l20 20m0-20l-20 20"/><path class="faint" d="M250 20V500M20 260H480"/><circle cx="250" cy="260" r="183" class="faint"/></svg>
+        <div class="hero-sprite sprite" role="img" aria-label="Оригинальный персонаж Agents Arena"></div>
+        <div class="callout callout-head"><span>НАБЛЮДАЕТ</span><i></i></div>
+        <div class="callout callout-body"><i></i><span>ДЕЙСТВУЕТ</span></div>
+        <span class="specimen-coordinate">X 0.00 / Y 0.00</span>
+        <span class="specimen-caption">AGENTS ARENA / ORIGINAL ART</span>
+      </div>
+      <div class="slide-footnote">АРХИТЕКТУРА · ИГРА · ТРАНСЛЯЦИЯ</div>
+    </section>
+
+    <section class="slide" data-title="Три части агента" data-section="Принцип" aria-labelledby="title-1" inert>
+      <div class="slide-heading"><p class="eyebrow">01 / ПРИНЦИП</p><h2 id="title-1">Решать. Исполнять.<br><span class="muted">Проверять.</span></h2></div>
+      <div class="three-parts" role="group" aria-label="Три уровня системы">
+        <button class="part is-selected" data-part="brain"><span class="part-number">01</span><span class="part-glyph" aria-hidden="true">[ B ]</span><strong>Brain</strong><span>Выбирает план</span></button>
+        <div class="part-link" aria-hidden="true"><span>РЕШЕНИЕ</span>→</div>
+        <button class="part" data-part="runtime"><span class="part-number">02</span><span class="part-glyph" aria-hidden="true">{ R }</span><strong>Runtime</strong><span>Исполняет Skills</span></button>
+        <div class="part-link" aria-hidden="true"><span>КОМАНДА</span>→</div>
+        <button class="part" data-part="game"><span class="part-number">03</span><span class="part-glyph" aria-hidden="true">&lt; G &gt;</span><strong>Game</strong><span>Определяет результат</span></button>
+      </div>
+      <p class="diagram-detail" id="part-detail" aria-live="polite">Brain получает контекст и выбирает типизированный Skill или план.</p>
+      <p class="slide-footnote">ВЫБЕРИ УРОВЕНЬ, ЧТОБЫ УВИДЕТЬ ЕГО РОЛЬ</p>
+    </section>
+
+    <section class="slide" data-title="Общий язык" data-section="Контракты" aria-labelledby="title-2" inert>
+      <div class="split-heading"><div><p class="eyebrow">02 / КОНТРАКТЫ</p><h2 id="title-2">Общий язык.<br><span class="muted">Разные миры.</span></h2></div><p class="lede">Игра описывает, что можно<br>увидеть и сделать.</p></div>
+      <div class="contract-stack">
+        <button class="contract-row is-selected" data-contract="core"><span class="contract-index">I</span><strong>Core</strong><span>Сессия · каталог · результат команды</span><span class="row-plus" aria-hidden="true">−</span></button>
+        <button class="contract-row" data-contract="standard"><span class="contract-index">II</span><strong>Standard</strong><span>Движение · сообщения</span><span class="row-plus" aria-hidden="true">+</span></button>
+        <button class="contract-row" data-contract="arena"><span class="contract-index">III</span><strong>Arena</strong><span>Задания · роли · голосование</span><span class="row-plus" aria-hidden="true">+</span></button>
+      </div>
+      <div class="contract-detail"><span class="small-label">TYPED / VERSIONED / DISCOVERABLE</span><p id="contract-detail" aria-live="polite">Core связывает агента с игрой. Правила конкретного мира остаются в расширениях.</p></div>
+    </section>
+
+    <section class="slide connections" data-title="Как все связано" data-section="Архитектура" aria-labelledby="title-3" inert>
+      <div class="split-heading"><div><p class="eyebrow">03 / СВЯЗИ</p><h2 id="title-3">Два контура связи.</h2></div><div class="segmented" aria-label="Направление данных"><button class="is-selected" data-route="observation" aria-pressed="true">Наблюдение</button><button data-route="action" aria-pressed="false">Действие</button></div></div>
+      <div class="connection-board" data-route-view="observation">
+        <div class="zone-label local-label">ЛОКАЛЬНО / КОМПЬЮТЕР АГЕНТА</div><div class="zone-label server-label">СЕРВЕР ИГРЫ</div>
+        <div class="network-node runtime-node"><span class="node-top">PYTHON</span><strong>Runtime</strong><span>Brain · Skills · память</span></div>
+        <div class="network-edge grpc-edge"><span>gRPC / Protobuf</span><div class="wire"><i></i></div><small>loopback · bidirectional</small></div>
+        <div class="network-node unity-node"><span class="node-top">UNITY CLIENT</span><strong>SDK + Adapter</strong><span>Наблюдения · команды</span></div>
+        <div class="network-edge ngo-edge"><span>NGO / UDP</span><div class="wire"><i></i></div><small>игровая сеть</small></div>
+        <div class="network-node server-node"><span class="node-top">UNITY DEDICATED</span><strong>Game Server</strong><span>Физика · правила · видимость</span></div>
+        <div class="control-plane"><span>HTTP →</span><strong>Control Plane</strong><span>Лобби → допуск → запуск сервера</span></div>
+      </div>
+      <p class="diagram-detail" id="route-detail" aria-live="polite">Сервер отбирает доступные факты. Unity передает их в локальный Runtime.</p>
+      <p class="slide-footnote">PYTHON — gRPC-СЕРВЕР. UNITY — gRPC-КЛИЕНТ.</p>
+    </section>
+
+    <section class="slide plan-slide" data-title="План в работе" data-section="Исполнение" aria-labelledby="title-4" inert>
+      <div class="split-heading"><div><p class="eyebrow">04 / ИСПОЛНЕНИЕ</p><h2 id="title-4">Один план.<br><span class="muted">Несколько действий.</span></h2></div><p class="lede">Skills работают локально.<br>LLM не управляет каждым кадром.</p></div>
+      <div class="plan-visual"><div class="plan-origin"><span class="small-label">BRAIN</span><span>План принят</span><span class="bracket-arrow" aria-hidden="true">↘</span></div><div class="plan-track">
+        <button class="plan-step is-selected" data-step="0"><span class="step-top">01 / NAVIGATE</span><strong>Перейти</strong><span>В Engineering</span><i aria-hidden="true"></i></button>
+        <button class="plan-step" data-step="1"><span class="step-top">02 / WAIT</span><strong>Подождать</strong><span>Две секунды</span><i aria-hidden="true"></i></button>
+        <button class="plan-step" data-step="2"><span class="step-top">03 / NAVIGATE</span><strong>Вернуться</strong><span>В Main Hall</span><i aria-hidden="true"></i></button>
+      </div><div class="plan-return"><span class="small-label">BRAIN</span><span>Следующее решение</span></div></div>
+      <div class="plan-playback"><button class="outline-button" id="play-plan"><span aria-hidden="true">▷</span> Пройти план</button><p id="plan-detail" aria-live="polite">Навигация сама ведет персонажа и ждет подтверждения прибытия.</p></div>
+      <p class="slide-footnote">ДО 4 ШАГОВ · ДО 2 УСЛОВНЫХ РЕАКЦИЙ · ОДИН ЗАПАСНОЙ ШАГ</p>
+    </section>
+
+    <section class="slide dark classifier-slide" data-title="Когда менять план" data-section="MiniLM" aria-labelledby="title-5" inert>
+      <div class="split-heading"><div><p class="eyebrow">05 / MiniLM</p><h2 id="title-5">Новый факт.<br><span class="muted">Нужен новый план?</span></h2></div><p class="lede">MiniLM оценивает событие.<br>Brain принимает решение.</p></div>
+      <div class="classifier-demo"><div class="event-input"><span class="small-label">СИТУАЦИЯ / УЧЕБНЫЙ ПРИМЕР</span><strong>Агент увидел тело.</strong><div class="event-options" aria-label="Условие принятого плана"><button class="is-selected" data-scenario="covered" aria-pressed="true">Реакция есть в плане</button><button data-scenario="uncovered" aria-pressed="false">Реакции нет</button><button data-scenario="critical" aria-pressed="false">Сменилась фаза</button></div></div><div class="gate-connector" aria-hidden="true"><span></span>→</div><div class="gate-output"><span class="small-label" id="gate-label">ПЛАН УЧИТЫВАЕТ ФАКТ</span><div class="gate-symbol" id="gate-symbol" aria-hidden="true">↳</div><strong id="gate-title">Выполнить реакцию</strong><p id="gate-description">Runtime сообщает о теле по принятому плану. Новый вызов Brain пока не нужен.</p></div></div>
+      <div class="classifier-bottom"><span class="blue-label">ЛОКАЛЬНО / CPU</span><p>Критические события идут по правилам, мимо модели.</p><span class="small-label">v7 / DEVELOPMENT ONLY</span></div>
+    </section>
+
+    <section class="slide arena-slide" data-title="Agents Arena" data-section="Среда проверки" aria-labelledby="title-6" inert>
+      <div class="arena-copy"><p class="eyebrow">06 / AGENTS ARENA</p><h2 id="title-6">Общий мир.<br><span class="muted">Скрытые цели.</span></h2><p class="lede">Люди и агенты играют вместе.<br>Работают. Обсуждают. Голосуют.</p><div class="arena-modes"><span class="blue-label">SOCIAL DEDUCTION</span><span>4–6 игроков / 1 Impostor</span></div><button class="text-button" id="show-native">Посмотреть игру <span aria-hidden="true">↗</span></button><p class="arena-room-detail" id="room-detail" aria-live="polite">Выбери комнату на схеме.</p></div>
+      <div class="station-map interactive-surface"><span class="plate-tag">FIG. 02 / STATION PLAN</span><svg id="station-map" viewBox="0 0 660 620" role="group" aria-label="Карта станции Agents Arena"></svg><span class="map-note">ПЛАН ПО ГЕОМЕТРИИ ИГРЫ / НЕ ИГРОВОЙ КЛИЕНТ</span></div>
+    </section>
+
+    <section class="slide privacy-slide" data-title="Границы знания" data-section="Наблюдения" aria-labelledby="title-7" inert>
+      <div class="slide-heading"><p class="eyebrow">07 / НАБЛЮДЕНИЯ</p><h2 id="title-7">Только то,<br><span class="muted">что доступно персонажу.</span></h2></div>
+      <div class="sight-board"><div class="sight-stage" id="sight-stage"><div class="sight-ring"></div><div class="sight-grid"></div><div class="sight-person observer"><div class="small-sprite sprite"></div><span>АГЕНТ</span></div><div class="sight-wall"><span>СТЕНА</span></div><div class="sight-person hidden-person"><div class="small-sprite sprite"></div><span>ДРУГОЙ ИГРОК</span></div><div class="sight-ray" aria-hidden="true"></div><span class="sight-origin">СЕРВЕРНАЯ ВИДИМОСТЬ / LOS</span></div><div class="sight-copy"><span class="small-label">В КОНТЕКСТЕ АГЕНТА</span><h3 id="sight-title">За стеной — нет факта.</h3><p id="sight-description">Сервер не передает скрытого игрока. Интерфейс не может раскрыть его случайно.</p><button class="outline-button" id="toggle-sight" aria-pressed="false">Открыть линию видимости <span aria-hidden="true">↗</span></button><span class="demo-disclaimer">СХЕМА ПРИНЦИПА</span></div></div>
+      <p class="slide-footnote">НАБЛЮДЕНИЕ ≠ ЧУЖОЕ СООБЩЕНИЕ ≠ ГИПОТЕЗА</p>
+    </section>
+
+    <section class="slide agents-slide" data-title="Независимые агенты" data-section="Совместная игра" aria-labelledby="title-8" inert>
+      <div class="split-heading"><div><p class="eyebrow">08 / НЕЗАВИСИМОСТЬ</p><h2 id="title-8">Каждому агенту —<br><span class="muted">свой контекст.</span></h2></div><p class="lede">Свой Brain. Своя память.<br>Общение через игру.</p></div>
+      <div class="independent-diagram"><div class="agent-island"><span class="small-label">AGENT / A</span><div class="island-sprite sprite"></div><span class="island-component">Brain</span><span class="island-component">Runtime + SQLite</span><span class="island-private">СОБСТВЕННЫЕ НАБЛЮДЕНИЯ</span></div><div class="shared-world"><svg viewBox="0 0 300 160" aria-hidden="true"><path d="M0 30H300M0 130H300"/><path d="m280 22 10 8-10 8M20 122l-10 8 10 8"/><circle class="message-dot" cx="65" cy="30" r="4"/><circle class="message-dot reverse" cx="235" cy="130" r="4"/></svg><span class="small-label">ИГРОВОЙ СЕРВЕР</span><strong>Сообщение</strong><span>Автор · время · статус доставки</span><button class="text-button" id="send-message">Передать сообщение <span aria-hidden="true">→</span></button></div><div class="agent-island"><span class="small-label">AGENT / B</span><div class="island-sprite sprite alternate"></div><span class="island-component">Brain</span><span class="island-component">Runtime + SQLite</span><span class="island-private">СОБСТВЕННЫЕ НАБЛЮДЕНИЯ</span></div></div>
+      <p class="diagram-detail" id="message-detail" aria-live="polite">Получить сообщение — еще не значит узнать правду.</p>
+    </section>
+
+    <section class="slide dark broadcast-slide" data-title="Игра в эфире" data-section="Трансляция" aria-labelledby="title-9" inert>
+      <div class="split-heading"><div><p class="eyebrow">09 / BROADCAST</p><h2 id="title-9">Игра становится<br><span class="muted">трансляцией.</span></h2></div><span class="broadcast-tag"><i></i> TWITCH PIPELINE</span></div>
+      <div class="broadcast-flow"><button class="broadcast-node is-selected" data-broadcast="observer"><span class="node-top">01 / ВИДИТ</span><span class="broadcast-icon" aria-hidden="true">⊙</span><strong>Наблюдатель</strong><span>Отдельный Unity-клиент</span></button><div class="flow-arrow" aria-hidden="true">→</div><button class="broadcast-node" data-broadcast="commentator"><span class="node-top">02 / КОММЕНТИРУЕТ</span><span class="broadcast-icon" aria-hidden="true">[ : ]</span><strong>AI-комментатор</strong><span>Текст по фактам</span></button><div class="flow-arrow" aria-hidden="true">→</div><button class="broadcast-node" data-broadcast="voice"><span class="node-top">03 / ГОВОРИТ</span><span class="waveform" aria-hidden="true"></span><strong>Qwen3-TTS</strong><span>Локальный голос · MLX</span></button><div class="flow-arrow" aria-hidden="true">→</div><button class="broadcast-node" data-broadcast="stream"><span class="node-top">04 / ПОКАЗЫВАЕТ</span><span class="broadcast-icon" aria-hidden="true">↗</span><strong>OBS → Twitch</strong><span>Картинка + голос</span></button></div>
+      <div class="broadcast-caption"><span class="blue-label" id="broadcast-detail-label">READ-ONLY / OBSERVER</span><p id="broadcast-detail" aria-live="polite">Наблюдатель получает отдельный разрешенный вид мира. В игре он не действует.</p></div>
+      <p class="slide-footnote">КОММЕНТАТОР — ОТДЕЛЬНЫЙ КОНТУР, А НЕ ИГРОК СО СКРЫТОЙ РОЛЬЮ</p>
+    </section>
+
+    <section class="slide evidence-slide" data-title="Что проверено" data-section="Результат" aria-labelledby="title-10" inert>
+      <div class="slide-heading"><p class="eyebrow">10 / ПРОВЕРКА</p><h2 id="title-10">Код. Игра.<br><span class="muted">Измерения.</span></h2></div>
+      <div class="evidence-lines"><button class="evidence-row" data-evidence="fixtures"><span class="evidence-number">4</span><div><h3>Fixture-матча</h3><p>Правила и MiniLM. Два игровых сценария.</p></div><span class="evidence-mark">↗</span></button><button class="evidence-row" data-evidence="latency"><span class="evidence-number">17<span>мс</span></span><div><h3>Медиана MiniLM</h3><p>85 оценок в двух матчах. Apple M5.</p></div><span class="evidence-mark">↗</span></button><button class="evidence-row" data-evidence="broadcast"><span class="evidence-number word-number">LIVE</span><div><h3>Публичный Twitch-эфир</h3><p>Запуск подтвержден. Полная приемка еще открыта.</p></div><span class="evidence-mark">↗</span></button></div>
+      <p class="evidence-detail" id="evidence-detail" aria-live="polite">Выбери результат, чтобы увидеть условия проверки.</p>
+    </section>
+
+    <section class="slide final-slide" data-title="Система целиком" data-section="ACTOR" aria-labelledby="title-11" inert>
+      <p class="eyebrow">11 / СИСТЕМА ЦЕЛИКОМ</p><h2 id="title-11">От решения<br>к действию<span class="title-period">.</span></h2>
+      <div class="final-equation"><span>ACTOR</span><i>→</i><span>AGENTS ARENA</span><i>→</i><span>BROADCAST</span></div>
+      <p class="final-description">Связать агента с миром.<br>Проверить его в игре.<br>Показать, что произошло.</p>
+      <a class="repository-link" href="https://github.com/fpetrov/Actor" target="_blank" rel="noopener">github.com/fpetrov/Actor <span aria-hidden="true">↗</span></a><div class="final-stamp" aria-hidden="true"><span>A</span><small>END OF<br>TRANSMISSION</small></div>
+    </section>
+  </main>
+
+  <footer class="navigation"><div class="nav-meta"><span id="section-label">ВВЕДЕНИЕ</span><button id="notes-trigger" class="notes-trigger" aria-label="Открыть заметки докладчика" aria-expanded="false">ЗАМЕТКИ <span>N</span></button></div><div class="slide-progress" id="slide-progress" aria-label="Перейти к слайду"></div><div class="nav-controls"><span class="counter"><span id="current-page">01</span><span class="counter-divider">/</span><span>12</span></span><button id="prev" aria-label="Предыдущий слайд" disabled>←</button><button id="next" aria-label="Следующий слайд">→</button><button id="fullscreen" aria-label="На весь экран" title="На весь экран · F">⛶</button></div></footer>
+  <div class="slide-announcement sr-only" aria-live="polite" aria-atomic="true"></div>
+  <dialog id="overview" aria-labelledby="overview-title"><div class="dialog-top"><span id="overview-title">СОДЕРЖАНИЕ / ACTOR</span><button data-close aria-label="Закрыть содержание">✕</button></div><div id="overview-list"></div><p class="overview-hint">← → СЛАЙДЫ <span>N ЗАМЕТКИ</span><span>F ПОЛНЫЙ ЭКРАН</span><span>ESC ЗАКРЫТЬ</span></p></dialog>
+  <dialog id="notes" aria-labelledby="notes-title"><div class="dialog-top"><span id="notes-title">ЗАМЕТКИ ДОКЛАДЧИКА</span><button data-close aria-label="Закрыть заметки">✕</button></div><div class="notes-body"><span class="small-label" id="notes-time"></span><h3 id="notes-slide-title"></h3><div id="notes-copy"></div><div id="notes-sources"></div></div></dialog>
+  <dialog id="native-preview" aria-labelledby="native-title"><div class="dialog-top"><span id="native-title">AGENTS ARENA / ИГРОВОЙ КЛИЕНТ</span><button data-close aria-label="Закрыть скриншот">✕</button></div><img src="assets/arena-native.png" width="800" height="600" alt="Реальный клиент Agents Arena: персонажи в Main Hall, задания и ограниченная видимость"><p>Нативный клиент, 800 × 600. Исторический снимок M8, Game 0.9.0.</p></dialog>
+  <noscript><p class="noscript">Для интерактивных схем и навигации включи JavaScript. Все слайды также доступны при печати.</p></noscript>
+</body>
+</html>

@@ -4,9 +4,12 @@
 Control Plane endpoints; gameplay runs in the ordinary Unity application. It
 never requests join tickets, resume credentials or model credentials.
 
-Run `scripts/build-web.sh` from the repository to copy only `frontend/` into
-ignored `build/web/`. There is no npm dependency install, server rendering or
-bundled local environment. `web/tests/` stays outside the served directory.
+Run `scripts/build-web.sh` from the repository to copy `frontend/` into ignored
+`build/web/` and the presentation runtime files into `build/web/presentation/`.
+The presentation is authored in `presentation/` and served at `/presentation/`.
+Its research notes, QA previews and README stay outside the public bundle.
+There is no npm dependency install, server rendering or bundled local environment.
+`web/tests/` also stays outside the served directory.
 
 The release link points to the project's HTTPS GitHub Releases page. It does not
 assert that a particular new release is published or manufacture an asset URL.

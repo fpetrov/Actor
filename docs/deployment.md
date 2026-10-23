@@ -26,6 +26,23 @@ Production is Ubuntu 24.04 x86-64. nginx is installed as a system package; the .
 
 The existing VPS firewall was inspected and left unchanged (UFW inactive, no nftables rules). Public HTTP and actual UDP client connections were verified. Kestrel is not publicly bound; internal callbacks are not proxied. Do not proxy gameplay UDP through nginx.
 
+## Interactive presentation
+
+The buildless presentation lives in `presentation/` and is available at
+**http://5.181.134.236/presentation/**. `scripts/build-web.sh` includes only its
+runtime HTML/CSS/JS, credits and assets in `build/web/presentation/`; research
+notes and verification screenshots remain in Git and outside the served bundle.
+Relative asset paths support both the subdirectory URL and local preview.
+
+The existing nginx `root`, `index` and `try_files` already serve this route,
+including the trailing-slash redirect. No extra port or proxy is required.
+For a presentation-only update, stage and verify just the static presentation
+bundle, then place it at `/var/www/actor/presentation/` under the existing
+`/run/actor-deploy.lock`. Do not run the full native activation script for this
+static-only change: it deliberately drains admission and restarts services.
+Keep the current Control Plane/game artifacts and root lobby website intact.
+A later complete web build/deployment includes the same presentation runtime.
+
 ## Build requirements
 
 - Unity 6000.6.4f1, Linux Mono and Linux Dedicated Server build modules.

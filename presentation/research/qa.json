@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-23",
+  "source_commit": "aa5d46ec1fee4fbcab9292fc1f58f48fee3e1bb8",
+  "original_repository_access": "read_only",
+  "site": "HTML/CSS/JS without dependencies",
+  "checks": {
+    "js_syntax": "PASS: node --check app.js and station-data.js",
+    "source_paths": "PASS: 40 source links, 35 unique tracked files, pinned commit; fixed Broadcast anchor",
+    "forbidden_russian_letter": "PASS: zero occurrences in site and research prose",
+    "browser_console": "PASS: no warnings or errors observed",
+    "desktop_760x760": "PASS: all 12 slides fit without horizontal or vertical content overflow",
+    "desktop_1280x720": "PASS: all slides inspected, Arena height corrected",
+    "desktop_1920x1080": "PASS: all 12 slides fit without horizontal or vertical content overflow",
+    "interactions": [
+      "Brain/Runtime/Game selection",
+      "Core/Standard/Arena selection",
+      "observation/action path direction",
+      "three-step plan playback and completion",
+      "MiniLM covered/uncovered/critical scenarios",
+      "station room selection",
+      "native screenshot dialog",
+      "line-of-sight open/close",
+      "message sending and delivery explanation",
+      "broadcast stages and TTS explanation",
+      "evidence conditions",
+      "speaker notes with pinned sources",
+      "overview",
+      "arrow keyboard navigation",
+      "first/last bounds",
+      "direct slide hash loading"
+    ],
+    "reduced_motion": "CSS implementation inspected; OS preference not changed",
+    "full_screen": "browser API guarded; actual OS full-screen transition not separately verified",
+    "offline": "All assets local and no fetch/API/module imports. Embedded browser rejected file:// due to URL policy; direct file opening was not verified. HTTP preview is verified."
+  },
+  "limits": "No original Actor builds, tests, Unity clients, models or broadcasts were run. Diagrams are educational UI, not live model/game execution. Historical evidence remains historical."
+}

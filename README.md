@@ -43,6 +43,8 @@ Game 0.10.0, Arena extension 0.7.0, Runtime 0.8.0, ACTOR Core 1.0 and multiplaye
 
 **Website:** http://5.181.134.236/
 
+**Presentation:** http://5.181.134.236/presentation/ — interactive architecture walkthrough; source and speaker notes in [presentation/](presentation/README.md).
+
 **Source:** https://github.com/fpetrov/Actor (public)
 
 ## Play
