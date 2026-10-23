@@ -2,5 +2,9 @@
   "classifier": {
     "provider": "minilm",
     "timeout": 1.5
+  },
+  "brain": {
+    "plan_ahead": true,
+    "plan_ahead_max_age": 10
   }
 }

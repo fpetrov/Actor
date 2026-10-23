@@ -8,6 +8,7 @@ import pytest
 
 from actor_runtime.brains import FinishObjective, PlanReaction, SequenceBrain, SkillCall, SkillPlan
 from actor_runtime.objectives import Objective, ObjectiveRunner, ObjectiveStatus
+from actor_runtime.config import CognitiveConfig
 from actor_runtime.skills import SkillRegistry
 from actor_agents_arena import SOCIAL_VISIBLE_WORLD, SOCIAL_ACTION_RESULT
 from extensions.agents_arena.v1 import social_pb2 as pb
@@ -18,7 +19,8 @@ from actor_minilm.provider import MiniLMClassifier
 from actor_minilm.projection import project
 
 
-async def test_real_neural_classifier_uses_executing_plan_and_logs_exact_input(session, tmp_path):
+@pytest.mark.parametrize("plan_ahead", [False, True])
+async def test_real_neural_classifier_uses_executing_plan_and_logs_exact_input(session, tmp_path, plan_ahead):
     classifier = MiniLMClassifier(session.event_router.rules, capture_root=tmp_path)
     session.event_router.configure(classifier=classifier)
     own_task = pb.SocialTask(task_id="task-1", room_id="main-hall", x=0, y=-.94,
@@ -35,7 +37,8 @@ async def test_real_neural_classifier_uses_executing_plan_and_logs_exact_input(s
         conditions=[PlanReaction(capability_id=SOCIAL_VISIBLE_WORLD, field="bodies", response=call("agents-arena.report-visible-body"))],
         fallback=call("actor.wait", duration_seconds=.02))
     brain = SequenceBrain([plan, FinishObjective(status="success")], stop_on_skill_failure=False)
-    runner = ObjectiveRunner(session, SkillRegistry.discover(), brain, run_finalizers=False)
+    runner = ObjectiveRunner(session, SkillRegistry.discover(), brain,
+        config=CognitiveConfig(brain={"plan_ahead": plan_ahead}), run_finalizers=False)
     pending = asyncio.create_task(runner.run(Objective(text="Survive and complete crew tasks.")))
     try:
         await command(session, pb.SocialWorkTaskCommand)

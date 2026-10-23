@@ -20,11 +20,51 @@ foreground Skill is cancelled and fully cleaned up before that response starts.
 After the sequence, fallback or response finishes, control returns to the Brain.
 
 Critical lifecycle handling remains authoritative: phase changes, death and game
-over invalidate old execution. A neural request for review also supersedes the plan.
+over invalidate old execution. By default a neural request for review also supersedes the plan.
 Conditions cannot suppress mandatory critical reviews. Ordinary observation frames
 still do not trigger classification; only the first fresh matching observation of
 an active accepted condition is nominated for assessment. Already true conditions
 are checked against fresh self observations when a plan is accepted.
+
+## Background continuation
+
+Enable bounded lookahead in the local cognitive configuration:
+
+```json
+{
+  "classifier": {"provider": "minilm"},
+  "brain": {"plan_ahead": true, "plan_ahead_max_age": 10}
+}
+```
+
+While the last step of an accepted plan executes, the Runtime prepares at most
+one next decision through the same Brain. The context identifies this as
+`planning.mode = continuation`, names the accepted plan, and explicitly requires
+its successful completion. The next decision must describe what comes after that
+plan, without repeating its running steps or inventing their results. Preparation
+does not reserve actuators or execute commands. Single-Skill decisions retain the
+ordinary sequential behavior; a Brain can return a one-step plan to opt into lookahead.
+
+The prepared decision is validated against the current Skill catalog after the
+old foreground Skill has released its lease. Its age since preparation finished
+must not exceed `plan_ahead_max_age` seconds. Actual Skills still perform their
+freshness, availability and server-side action checks. A failed step, planned
+reaction, critical transition, disconnect or cancellation discards the continuation.
+Preparations count against the same decision/token budgets, including discarded
+answers. Providers without nonterminal `interrupt_decision` support stay sequential.
+
+With lookahead enabled, ordinary advisory reviews no longer interrupt the current
+Skill or invalidate an in-flight Brain answer. New messages remain pending for the
+next snapshot; accepting an older answer never acknowledges newer events. Critical
+reviews have a separate execution revision and retain their existing interruption
+and lifecycle policy. This reduces pauses without changing classifier weights or
+the default rules provider. It is opt-in; omit `brain.plan_ahead` to keep the prior behavior.
+
+Private lifecycle traces include `ContinuationStarted`, `ContinuationReady` and
+`ContinuationDiscarded`. The Objective report identifies prepared/discarded decisions
+and whether lookahead was enabled. Use `runtime/benchmarks/plan_ahead.py` to compare
+inter-action waits with a controlled model delay. That probe measures scheduling,
+not live-game strategy or visual quality.
 
 ## Example decision
 

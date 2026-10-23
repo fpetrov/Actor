@@ -101,6 +101,7 @@ class ObjectiveRunner:
         self.max_replans = max_replans
         self._replans = 0
         self._decision_epoch = 0
+        self._execution_epoch = 0
         self._persisted_skill_count = 0
         self.decision_timeout_seconds = decision_timeout_seconds
         self.objective_timeout_seconds = objective_timeout_seconds
@@ -129,6 +130,95 @@ class ObjectiveRunner:
         self._finalizer_results = []
         self._plan = None
         self._plan_reports = []
+        self.plan_ahead = bool(config is not None and config.brain.plan_ahead
+                               and callable(getattr(brain, "interrupt_decision", None)))
+        self._continuation = None
+
+    def _start_continuation(self):
+        plan = self._plan
+        if (not self.plan_ahead or self._continuation is not None or plan is None
+                or plan.state != "active" or plan.index != len(plan.decision.steps) - 1
+                or self.event_router is not None and self.event_router.preempt.is_set()
+                or len(self._decisions) >= self.max_decisions):
+            return
+        record = {"index": len(self._decisions) + 1, "status": "preparing",
+                  "duration_seconds": 0., "decision_reason": "plan_continuation"}
+        self._decisions.append(record)
+        pending = {"plan_id": plan.id, "record": record}
+        self._continuation = pending
+        pending["task"] = asyncio.create_task(self._prepare_continuation(pending),
+                                               name="actor-plan-continuation")
+        self._log("ContinuationStarted", plan_id=plan.id)
+
+    async def _prepare_continuation(self, pending):
+        record = pending["record"]
+        started = time.monotonic()
+        try:
+            context, epoch, included = await self._context(self.registry.catalog(self.session),
+                record["index"], self._skill_results[-1] if self._skill_results else None,
+                None, "plan_continuation", background=True,
+                planning={"mode": "continuation", "after_plan_id": pending["plan_id"],
+                          "requires_successful_completion": True})
+            record.update(cognitive_revision=epoch, context_bytes=context.external_bytes,
+                          estimated_tokens=context.estimated_tokens, trigger_event_ids=included)
+            execution_epoch = self.event_router.execution_revision if self.event_router is not None else 0
+            if self._continuation is not pending:
+                raise asyncio.CancelledError
+            self._decision_guard(self._decision_epoch)
+            validation_error = None
+            try:
+                raw = await asyncio.wait_for(self.brain.decide(context), self.decision_timeout_seconds)
+            except InvalidBrainDecision as error:
+                raw, validation_error = None, error
+            record["status"] = "prepared"
+            return {"context": context, "epoch": epoch, "included": included, "raw": raw,
+                    "record": record, "ready_at": time.monotonic(), "execution_epoch": execution_epoch,
+                    "validation_error": validation_error}
+        except BaseException:
+            record["status"] = "interrupted" if self.cancel_requested.is_set() else "discarded"
+            raise
+        finally:
+            record["duration_seconds"] = time.monotonic() - started
+
+    async def _discard_continuation(self, reason):
+        pending, self._continuation = self._continuation, None
+        if pending is None:
+            return
+        task = pending["task"]
+        if not task.done():
+            if not await self._cleanup_call(self.brain.interrupt_decision(), "continuation_interrupt"):
+                task.cancel()
+                self._observe_pending(task)
+                raise _Terminal(ObjectiveStatus.FAILED, "brain_interruption_failed")
+            task.cancel()
+            done, _ = await asyncio.wait((task,), timeout=self.cleanup_timeout_seconds)
+            if task not in done:
+                self._observe_pending(task)
+                raise _Terminal(ObjectiveStatus.FAILED, "brain_interruption_failed")
+        self._consume_completed(task)
+        pending["record"].update(status="discarded", discard_reason=reason)
+        self._log("ContinuationDiscarded", plan_id=pending["plan_id"], reason=reason)
+
+    async def _take_continuation(self):
+        pending = self._continuation
+        if pending is None:
+            return None
+        async def receive():
+            return await pending["task"]
+        try:
+            value = await self._wait(receive(), "brain", self.decision_timeout_seconds,
+                                     epoch=self._decision_epoch)
+            if time.monotonic() - value["ready_at"] > self.config.brain.plan_ahead_max_age:
+                await self._discard_continuation("expired")
+                return None
+            self._continuation = None
+            self._event_cursor = max(self._event_cursor,
+                max((event.sequence for event in value["context"].recent_events), default=0))
+            self._log("ContinuationReady", plan_id=pending["plan_id"])
+            return value
+        except BaseException:
+            await self._discard_continuation("invalidated")
+            raise
 
     def _log(self, event, **fields):
         self.session.emit_trace("objective_lifecycle", **{
@@ -307,6 +397,8 @@ class ObjectiveRunner:
         try:
             while True:
                 plan.take_reaction()
+                if plan.state != "active":
+                    await self._discard_continuation("plan_changed")
                 call = plan.current
                 self.session.emit_trace("plan_step", objective_id=self.objective.id,
                                         plan=plan.snapshot())
@@ -316,25 +408,32 @@ class ObjectiveRunner:
                 try:
                     result = await self._wait(self._dispatch_skill(call, epoch), "skill", epoch=epoch)
                 except _PlanReaction:
+                    await self._discard_continuation("planned_reaction")
                     self._decision_guard(epoch)
                     plan.take_reaction()
                     self._log("PlanReaction", plan_id=plan.id, condition=plan.triggered)
                     continue
                 self._check_plan_cleanup(result)
+                if result.status != "succeeded":
+                    await self._discard_continuation("step_failed")
                 if not plan.advance(result):
                     return result
         finally:
             # Keep the accepted plan visible to lifecycle guards until the
             # foreground lease has been revoked and cleanup has drained.
-            if self._active_phase == "skill" and self._active_task is not None and not self._active_task.done():
-                await self._abort_active()
-            if plan.state not in ("completed", "failed"):
-                plan.state = "invalidated"
-            self._plan_reports.append({"plan_id": plan.id, "state": plan.state,
-                "step_index": plan.index, "conditions_used": sorted(plan.used_conditions),
-                "fallback_used": plan.fallback_used})
-            self._log("PlanStopped", plan_id=plan.id, state=plan.state)
-            self.session.executable_plan = self._plan = None
+            try:
+                if self._active_phase == "skill" and self._active_task is not None and not self._active_task.done():
+                    await self._abort_active()
+                if plan.state not in ("completed", "failed"):
+                    plan.state = "invalidated"
+                if plan.state != "completed":
+                    await self._discard_continuation("plan_invalidated")
+            finally:
+                self._plan_reports.append({"plan_id": plan.id, "state": plan.state,
+                    "step_index": plan.index, "conditions_used": sorted(plan.used_conditions),
+                    "fallback_used": plan.fallback_used})
+                self._log("PlanStopped", plan_id=plan.id, state=plan.state)
+                self.session.executable_plan = self._plan = None
 
     @staticmethod
     def _check_plan_cleanup(result):
@@ -355,9 +454,14 @@ class ObjectiveRunner:
             raise _Terminal(ObjectiveStatus.FAILED, "event_routing_degraded")
         if time.monotonic() - self._started_at >= self.objective_timeout_seconds:
             raise _Terminal(ObjectiveStatus.FAILED, "objective_timeout")
-        if self._revision() != epoch:
+        if self._execution_changed(epoch):
             self._note_replan("acceptance")
             raise _Replan
+
+    def _execution_changed(self, epoch):
+        if self.plan_ahead and self.event_router is not None:
+            return self.event_router.execution_revision != self._execution_epoch
+        return self._revision() != epoch
 
     async def _preempt_active(self, phase):
         """Stop one operation completely before the existing loop replans."""
@@ -414,13 +518,16 @@ class ObjectiveRunner:
         effective_timeout = min(timeout, remaining) if timeout is not None else remaining
         self._active_task = asyncio.create_task(operation)
         self._active_phase = phase
+        if phase == "skill":
+            self._start_continuation()
         cancellation = asyncio.create_task(self.cancel_requested.wait())
         disconnected = asyncio.create_task(self.session.closed.wait())
         replan = None
         plan_change = None
         if self.event_router is not None and (phase == "skill" or
                 phase == "brain" and callable(getattr(self.brain, "interrupt_decision", None))):
-            signal = getattr(self.event_router, "preempt", self.event_router.replan) if phase == "skill" else self.event_router.replan
+            signal = (self.event_router.preempt if phase == "skill" else
+                      self.event_router.hard_replan if self.plan_ahead else self.event_router.replan)
             replan = asyncio.create_task(signal.wait())
         if phase == "skill" and self._plan is not None:
             plan_change = asyncio.create_task(self._plan.changed.wait())
@@ -444,7 +551,7 @@ class ObjectiveRunner:
             if episode_expired or operation_timed_out:
                 await self._abort_active(interrupt=True)
                 raise _Terminal(ObjectiveStatus.FAILED, "objective_timeout" if episode_expired else "brain_timeout")
-            stale_brain = phase == "brain" and epoch is not None and self._revision() != epoch
+            stale_brain = phase == "brain" and epoch is not None and self._execution_changed(epoch)
             preempt_skill = (phase == "skill" and replan is not None and replan in done
                              and self._active_task not in done)
             if not episode_expired and (stale_brain or preempt_skill):
@@ -509,7 +616,7 @@ class ObjectiveRunner:
                 raise _Terminal(ObjectiveStatus.FAILED, "memory_failure") from error
             self._persisted_skill_count += 1
 
-    async def _context(self, catalog, index, previous, validation_error, reason):
+    async def _context(self, catalog, index, previous, validation_error, reason, *, background=False, planning=None):
         from .snapshots import build_decision_context
         router = self.event_router
         current = self.scheduler.working_skill_metadata() or self._last_skill_metadata
@@ -517,11 +624,13 @@ class ObjectiveRunner:
         if self.memory is not None:
             try:
                 triggers = self._triggers()
-                memories = await self._wait(self.memory.retrieve(objective=self.objective.text,
+                retrieval = self.memory.retrieve(objective=self.objective.text,
                     current_skill=current,
                     capability_ids=tuple({event.entry.capability_id for event in triggers}),
                     type_urls=tuple({event.type_url for event in triggers}),
-                    tags=tuple({tag for event in triggers for tag in getattr(event.hints, "tags", ())})), "memory")
+                    tags=tuple({tag for event in triggers for tag in getattr(event.hints, "tags", ())}))
+                memories = (await asyncio.wait_for(retrieval, self.decision_timeout_seconds) if background
+                            else await self._wait(retrieval, "memory"))
             except ActorError as error:
                 raise _Terminal(ObjectiveStatus.FAILED, "memory_failure") from error
         # Capture after asynchronous retrieval, so an event arriving during IO
@@ -531,7 +640,7 @@ class ObjectiveRunner:
         if router is not None or self.memory is not None or self.config is not None:
             options.update(trigger_events=triggers,
                 routed_events=router.context_events() if router is not None and router.config.enabled else None,
-                memories=memories, decision_reason=self._replan_reason() if triggers else reason,
+                memories=memories, decision_reason=reason if background else self._replan_reason() if triggers else reason,
                 cognitive_revision=epoch, current_skill=current)
         if self.config is not None:
             bounds = self.config.context
@@ -546,13 +655,16 @@ class ObjectiveRunner:
         context = build_decision_context(self.session, self.objective, catalog,
             decision_index=index, event_cursor=self._event_cursor,
             previous_skill_result=previous, validation_error=validation_error,
+            planning=planning,
             working_knowledge=self.working_knowledge.context() if self.working_knowledge is not None else (), **options)
-        self._event_cursor = max((event.sequence for event in self.session.world.events), default=self._event_cursor)
+        if not background:
+            self._event_cursor = max((event.sequence for event in self.session.world.events), default=self._event_cursor)
         included = list(dict.fromkeys(event.event_id for event in (
             *getattr(context, "trigger_events", ()), *context.recent_events) if event.event_id))
         if router is not None:
             router.acknowledge_context(included, epoch)
-            router.clear_replan(epoch)
+            if not background:
+                router.clear_replan(epoch)
         return context, epoch, included
 
     async def run(self, objective: Objective) -> ObjectiveResult:
@@ -590,32 +702,52 @@ class ObjectiveRunner:
             if self.event_router is not None:
                 if self.manage_router:
                     await self._wait(self.event_router.start(self.objective,
-                        current_skill=self.scheduler.working_skill_metadata), "router")
+                        current_skill=self.scheduler.working_skill_metadata,
+                        background_planning=self.plan_ahead), "router")
                 else:
-                    self.event_router.update_context(self.objective, self.scheduler.working_skill_metadata)
+                    self.event_router.update_context(self.objective, self.scheduler.working_skill_metadata,
+                                                     background_planning=self.plan_ahead)
             await self._wait(self.brain.start(self.objective, catalog), "start", self.decision_timeout_seconds)
             validation_error = None
             repairs = 0
             previous_skill_result = None
             decision_reason = "objective_started"
-            for index in range(1, self.max_decisions + 1):
+            while len(self._decisions) < self.max_decisions or self._continuation is not None:
                 if self.event_router is not None and self.event_router.degraded:
                     raise _Terminal(ObjectiveStatus.FAILED, "event_routing_degraded")
                 await self._remember_skills()
                 catalog = self.registry.catalog(self.session)
-                context, epoch, included = await self._context(catalog, index, previous_skill_result,
-                    validation_error, self._replan_reason() if self._triggers() else decision_reason)
+                try:
+                    prepared = await self._take_continuation()
+                except _Replan:
+                    decision_reason = self._replan_reason()
+                    continue
+                if prepared is None and len(self._decisions) >= self.max_decisions:
+                    reason = "decision_limit"
+                    break
+                if prepared is not None:
+                    context, epoch, included = prepared["context"], prepared["epoch"], prepared["included"]
+                    record = prepared["record"]
+                    index = record["index"]
+                    self._execution_epoch = prepared["execution_epoch"]
+                else:
+                    index = len(self._decisions) + 1
+                    context, epoch, included = await self._context(catalog, index, previous_skill_result,
+                        validation_error, self._replan_reason() if self._triggers() else decision_reason)
+                    self._execution_epoch = self.event_router.execution_revision if self.event_router is not None else 0
                 self._decision_epoch = epoch
                 started = time.monotonic()
-                record = {"index": index, "duration_seconds": 0.0, "status": "running", "cognitive_revision": epoch}
-                record.update(context_bytes=len(context.external_json().encode("utf-8")),
-                    estimated_tokens=getattr(context, "estimated_tokens", None),
-                    trigger_event_ids=[event.event_id for event in context.trigger_events if event.event_id],
-                    decision_reason=getattr(context, "decision_reason", decision_reason))
-                self._decisions.append(record)
-                provider_validation_error = None
+                if prepared is None:
+                    record = {"index": index, "duration_seconds": 0.0, "status": "running", "cognitive_revision": epoch}
+                    record.update(context_bytes=len(context.external_json().encode("utf-8")),
+                        estimated_tokens=getattr(context, "estimated_tokens", None),
+                        trigger_event_ids=[event.event_id for event in context.trigger_events if event.event_id],
+                        decision_reason=getattr(context, "decision_reason", decision_reason))
+                    self._decisions.append(record)
+                provider_validation_error = prepared["validation_error"] if prepared is not None else None
                 try:
-                    raw = await self._wait(self.brain.decide(context), "brain", self.decision_timeout_seconds, epoch=epoch)
+                    raw = (prepared["raw"] if prepared is not None else
+                           await self._wait(self.brain.decide(context), "brain", self.decision_timeout_seconds, epoch=epoch))
                 except _Replan:
                     record["status"] = "stale"
                     decision_reason, validation_error, repairs = self._replan_reason(), None, 0
@@ -627,7 +759,8 @@ class ObjectiveRunner:
                     record["status"] = "interrupted" if self.cancel_requested.is_set() else "failed"
                     raise
                 finally:
-                    record["duration_seconds"] = time.monotonic() - started
+                    if prepared is None:
+                        record["duration_seconds"] = time.monotonic() - started
                 try:
                     self._decision_guard(epoch)
                 except _Replan:
@@ -662,7 +795,10 @@ class ObjectiveRunner:
                     decision_index=index, cognitive_revision=epoch,
                     trigger_event_ids=included, decision=decision.model_dump(mode="json"))
                 if self.event_router is not None:
-                    self.event_router.acknowledge_decision(included, epoch)
+                    if self.plan_ahead:
+                        self.event_router.acknowledge_decision(included, epoch, allow_newer_optional=True)
+                    else:
+                        self.event_router.acknowledge_decision(included, epoch)
                 if isinstance(decision, FinishObjective):
                     self._log("BrainDecision", kind="finish", status=decision.status)
                     terminal_status = (ObjectiveStatus.SUCCEEDED if decision.status == "success"
@@ -720,6 +856,7 @@ class ObjectiveRunner:
                       reason, type(error).__name__, self._public_failure_code(error))
         finally:
             await self._cleanup_call(self.scheduler.cancel(), "skill_cancel")
+            await self._cleanup_call(self._discard_continuation("objective_finished"), "continuation_cancel")
             if self.run_finalizers:
                 await self._cleanup_call(self._finalize_objective(
                     ObjectiveStatus.CANCELLED if self.cancel_requested.is_set() else terminal_status,
@@ -801,6 +938,7 @@ class ObjectiveRunner:
                 "finalizers": list(self._finalizer_results),
                 "plans": list(self._plan_reports),
                 "replan_count": self._replans, "cognitive_revision": self._revision(),
+                "plan_ahead": self.plan_ahead,
                 "event_router": self.event_router.report() if self.event_router is not None else None,
                 "pending_cleanup_tasks": sum(not task.done() for task in self._pending_cleanup_tasks),
                 "privacy": self.session.privacy.report()})

@@ -54,6 +54,8 @@ class MemoryConfig(Settings):
 
 
 class BrainConfig(Settings):
+    plan_ahead: bool = False
+    plan_ahead_max_age: float = Field(default=10, gt=0, le=120)
     decision_timeout: float = Field(default=120, gt=0, le=600)
     objective_timeout: float = Field(default=600, gt=0, le=3600)
     max_decisions: int = Field(default=16, ge=1, le=64)

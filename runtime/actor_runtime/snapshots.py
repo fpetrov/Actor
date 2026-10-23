@@ -85,6 +85,7 @@ class DecisionContext(BaseModel):
     cognitive_revision: int = 0
     current_skill: dict[str, JsonValue] | None = None
     current_plan: dict[str, JsonValue] | None = None
+    planning: dict[str, JsonValue] | None = None
     working_knowledge: list[dict[str, JsonValue]] = Field(default_factory=list)
     knowledge_omitted: int = 0
 
@@ -214,7 +215,7 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
                            now=None, max_observations=64, max_events=32,
                            max_payload_bytes=8192, max_external_bytes=65536,
                            trigger_events=(), routed_events=None, memories=(), decision_reason=None,
-                           cognitive_revision=0, current_skill=None, max_memories=8,
+                           cognitive_revision=0, current_skill=None, max_memories=8, planning=None,
                            max_event_payload_bytes=None, stale_after_seconds=3.0,
                            working_knowledge=(), max_working_knowledge=24, max_working_knowledge_bytes=8192,
                            selection: ContextSelection | None = None) -> DecisionContext:
@@ -321,6 +322,7 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
             "skill_succeeded" if previous_skill_result.get("status") == "succeeded" else "skill_failed"))[:128],
         cognitive_revision=cognitive_revision, current_skill=current_skill,
         current_plan=(session.executable_plan.snapshot() if getattr(session, "executable_plan", None) is not None else None),
+        planning=planning,
         working_knowledge=selected_knowledge, knowledge_omitted=len(knowledge_values)-len(selected_knowledge),
     )
     # Trigger data and the previous result survive ordinary budget pressure.

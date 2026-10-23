@@ -56,7 +56,11 @@ class EventRouter:
         self.policy_tags = tuple(policy_tags)
         self.replan = asyncio.Event()
         self.preempt = asyncio.Event()
+        self.hard_replan = asyncio.Event()
         self.cognitive_revision = 0
+        self.execution_revision = 0
+        self._last_preempt_revision = 0
+        self.background_planning = False
         self.degraded = False
         self.degraded_reason = None
         self.objective = None
@@ -156,8 +160,11 @@ class EventRouter:
         self.degraded_reason = reason
         self._counts["degraded_transitions"] += 1
         self.cognitive_revision += 1
+        self.execution_revision += 1
+        self._last_preempt_revision = self.cognitive_revision
         self.replan.set()
         self.preempt.set()
+        self.hard_replan.set()
         LOG.error("Event routing degraded session=%s reason=%s", self.session.session_id, reason)
 
     def ingest(self, entry, *, plan=None):
@@ -282,10 +289,11 @@ class EventRouter:
         return (event.observation_plan_id is None
                 or plan is not None and plan.id == event.observation_plan_id)
 
-    async def start(self, objective, current_skill=None):
+    async def start(self, objective, current_skill=None, *, background_planning=False):
         if self._worker is not None:
             raise RuntimeError("Event router already started")
         self.objective = objective
+        self.background_planning = background_planning
         if current_skill is not None:
             self.current_skill = current_skill
         self._closed = False
@@ -293,11 +301,12 @@ class EventRouter:
             self._worker = asyncio.create_task(self._run(), name="actor-event-router")
             self._wake.set()
 
-    def update_context(self, objective, current_skill=None):
+    def update_context(self, objective, current_skill=None, *, background_planning=False):
         """Change the bounded episode without restarting a session-owned worker."""
         if self._closed:
             raise ActorError("event_router_closed", "A closed router cannot be reused")
         self.objective = objective
+        self.background_planning = background_planning
         if current_skill is not None:
             self.current_skill = current_skill
 
@@ -316,6 +325,9 @@ class EventRouter:
             assessment = assessment.model_copy(update={"should_buffer": True, "should_remember": True,
                 "should_interrupt_skill": True, "should_request_brain_review": True,
                 "reason_code": "uncertain_critical_review"})
+        if (self.background_planning and assessment.should_request_brain_review
+                and assessment.urgency != "critical" and not event.hints.potentially_critical):
+            assessment = assessment.model_copy(update={"should_interrupt_skill": False})
         event.assessment = assessment
         event.assessed = True
         self._counts["events_classified"] += 1
@@ -347,6 +359,11 @@ class EventRouter:
         if not self.replan.is_set():
             self._counts["replans_requested"] += 1
         self.replan.set()
+        if (event.assessment.should_interrupt_skill or event.assessment.urgency == "critical"
+                or event.hints.potentially_critical):
+            self.execution_revision += 1
+            self._last_preempt_revision = self.cognitive_revision
+            self.hard_replan.set()
         if event.assessment.should_interrupt_skill:
             self.preempt.set()
         self._last_replan = time.monotonic()
@@ -431,9 +448,10 @@ class EventRouter:
                 self._record(event, "context_included")
         self._context_revision = revision
 
-    def acknowledge_decision(self, event_ids, revision):
+    def acknowledge_decision(self, event_ids, revision, *, allow_newer_optional=False):
         # Never acknowledge an unseen/newer strategic event using an old answer.
-        if revision != self.cognitive_revision:
+        if revision != self.cognitive_revision and not (
+                allow_newer_optional and self._last_preempt_revision <= revision <= self.cognitive_revision):
             return False
         for eid in event_ids:
             event = self._pending.get(eid)
@@ -451,6 +469,7 @@ class EventRouter:
         if revision == self.cognitive_revision:
             self.replan.clear()
             self.preempt.clear()
+            self.hard_replan.clear()
 
     async def close(self):
         self._closed = True
