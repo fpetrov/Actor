@@ -89,14 +89,19 @@ def event_rules():
             key = (event.session_id, state.match_id, event.entry.entity_id)
             signature = (state.alignment, state.duty, state.life, state.assigned,
                          state.connection_generation)
-            previous = own_transitions.pop(key, None)
-            own_transitions[key] = signature
-            if len(own_transitions) > 128:
-                own_transitions.popitem(last=False)
+            previous = own_transitions.get(key)
+            newer = previous is None or state.server_revision > previous[0]
+            if newer:
+                own_transitions.pop(key, None)
+                own_transitions[key] = (state.server_revision, signature)
+                if len(own_transitions) > 128:
+                    own_transitions.popitem(last=False)
             # Work toggles can_move and advances the own revision. These are
             # fresh inputs for Skill preflight, not new role/life transitions.
             # The first state or an evicted identity remains conservative.
-            if previous == signature and state.life == pb.SOCIAL_LIFE_ALIVE:
+            # hints() runs before Router deduplication: a replay must never
+            # rewrite the history used for the next genuine transition.
+            if newer and previous is not None and previous[1] == signature and state.life == pb.SOCIAL_LIFE_ALIVE:
                 return EventHints(semantic_id=identity, tags=("social_progress",))
         elif event.entry.capability_id == SOCIAL_EMERGENCY_CHANGED:
             identity = f"{state.match_id}:emergency:{state.server_revision}"

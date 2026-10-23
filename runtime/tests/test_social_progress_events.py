@@ -67,3 +67,15 @@ async def test_life_identity_role_and_assignment_changes_stay_critical(session, 
     await own_event(session, **changes)
     assert router.execution_revision > epoch
     assert router.hard_replan.is_set()
+
+
+async def test_replayed_own_revision_cannot_hide_a_later_role_transition(session):
+    router = await baseline(session)
+    await own_event(session, alignment=pb.SOCIAL_ALIGNMENT_IMPOSTOR, server_revision=5)
+    epoch = router.execution_revision
+    # The first Crew event had own revision 4. Its new wire sequence must not
+    # mutate transition history when semantic deduplication rejects the replay.
+    await own_event(session, alignment=pb.SOCIAL_ALIGNMENT_CREW, server_revision=4)
+    assert router.report()["counts"]["events_duplicated"] == 1
+    await own_event(session, alignment=pb.SOCIAL_ALIGNMENT_CREW, server_revision=7)
+    assert router.execution_revision > epoch
