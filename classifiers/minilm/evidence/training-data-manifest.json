@@ -1,0 +1,21 @@
+{
+  "policy_version": "conservative-v2",
+  "parent_manifest_sha256": "36ab528c64a6138ef9f472ce4f4371f7fc4929a2ae74a4843a843a7c9cfdf248",
+  "counts": {
+    "train": {
+      "rows": 2045,
+      "removed_ambiguous_completion": 11
+    },
+    "validation": {
+      "rows": 290,
+      "removed_ambiguous_completion": 12
+    }
+  },
+  "reason": "A completed Skill already schedules its normal Brain turn. The binary model input lacks pending-decision state, so uncovered successful completion is not a safe new event-review label.",
+  "future_matches_used": false,
+  "human_reviewed_new_labels": 0,
+  "files": {
+    "train.jsonl": "6eacb00b85c71f9bb0886db95c22ac16eee1f1fed5297bae7042347387f45942",
+    "validation.jsonl": "3d1239f328269ed2a7b19a814e27546cdc66aa3ac51bb323673bb06db2302b0a"
+  }
+}

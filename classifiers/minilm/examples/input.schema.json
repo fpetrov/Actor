@@ -1,0 +1,211 @@
+{
+  "$defs": {
+    "Event": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "direct_vision",
+            "server_public",
+            "server_private",
+            "own_action_result"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "payload": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Payload",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "source",
+        "payload"
+      ],
+      "title": "Event",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "Observation": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "enum": [
+            "direct_vision",
+            "server_public",
+            "own_state",
+            "memory"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "age_ms": {
+          "minimum": 0,
+          "title": "Age Ms",
+          "type": "integer"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "kind",
+        "source",
+        "age_ms",
+        "value"
+      ],
+      "title": "Observation",
+      "type": "object"
+    },
+    "Plan": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "title": "Action",
+          "type": "string"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Target"
+        },
+        "conditions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Conditions",
+          "type": "array"
+        },
+        "next_action": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Action"
+        },
+        "fallback": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Fallback"
+        }
+      },
+      "required": [
+        "action",
+        "target",
+        "conditions",
+        "next_action",
+        "fallback"
+      ],
+      "title": "Plan",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "enum": [
+        "0.1",
+        "0.2"
+      ],
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "game_id": {
+      "title": "Game Id",
+      "type": "string"
+    },
+    "ruleset": {
+      "title": "Ruleset",
+      "type": "string"
+    },
+    "own_role": {
+      "anyOf": [
+        {
+          "enum": [
+            "crew",
+            "impostor"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Own Role"
+    },
+    "phase": {
+      "anyOf": [
+        {
+          "enum": [
+            "tasks",
+            "meeting"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Phase"
+    },
+    "objective": {
+      "title": "Objective",
+      "type": "string"
+    },
+    "plan": {
+      "$ref": "#/$defs/Plan"
+    },
+    "event": {
+      "$ref": "#/$defs/Event"
+    },
+    "observations": {
+      "items": {
+        "$ref": "#/$defs/Observation"
+      },
+      "maxItems": 12,
+      "title": "Observations",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "game_id",
+    "ruleset",
+    "own_role",
+    "phase",
+    "objective",
+    "plan",
+    "event",
+    "observations"
+  ],
+  "title": "ClassifierInput",
+  "type": "object"
+}

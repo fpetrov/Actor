@@ -1,0 +1,30 @@
+{
+  "schema_version": "0.2",
+  "game_id": "agents-arena",
+  "ruleset": "social-deduction-0.9.0",
+  "own_role": "crew",
+  "phase": null,
+  "objective": "Play the match autonomously. Preserve your life, pursue your own side's victory conditions, and make decisions based only on observations, memory and communication legitimately available to your character. A finished Objective ends one bounded episode; only the authoritative game determines the match outcome.",
+  "plan": {
+    "action": "unknown",
+    "target": null,
+    "conditions": [],
+    "next_action": null,
+    "fallback": null
+  },
+  "event": {
+    "kind": "game_over",
+    "source": "server_public",
+    "payload": {
+      "phase": "game_over"
+    }
+  },
+  "observations": [
+    {
+      "kind": "self_life",
+      "source": "own_state",
+      "age_ms": 71,
+      "value": "alive"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "schema": "actor.local-classifier-input.v3",
+  "call_id": "synthetic-example-1",
+  "assessment_route": "configured_provider",
+  "input": {
+    "context": {
+      "objective": {
+        "id": "synthetic-objective",
+        "text": "Survive and complete crew tasks.",
+        "created_at": "2026-10-22T14:12:23.419906Z",
+        "status": "pending"
+      },
+      "current_skill": null,
+      "current_plan": null,
+      "relevant_state": [
+        {
+          "entity_id": "self",
+          "capability_id": "agents-arena.social-own-state",
+          "sequence": 1,
+          "revision": 1,
+          "age_ms": 0,
+          "data_policy": "private",
+          "expires_at_unix_ms": 0,
+          "type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialOwnStateObservation",
+          "payload": {
+            "alignment": "SOCIAL_ALIGNMENT_CREW",
+            "life": "SOCIAL_LIFE_ALIVE"
+          },
+          "opaque": false
+        },
+        {
+          "entity_id": "self",
+          "capability_id": "agents-arena.social-match-state",
+          "sequence": 2,
+          "revision": 2,
+          "age_ms": 0,
+          "data_policy": "public",
+          "expires_at_unix_ms": 0,
+          "type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialMatchStateObservation",
+          "payload": {
+            "phase": "SOCIAL_PHASE_EXPLORATION"
+          },
+          "opaque": false
+        }
+      ],
+      "policy_tags": []
+    },
+    "event": {
+      "id": "event-1",
+      "session_id": "session-1",
+      "extension_id": "agents-arena",
+      "extension_version": "0.6.0",
+      "type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleWorldObservation",
+      "entry": {
+        "entity_id": "self",
+        "capability_id": "agents-arena.social-visible-world",
+        "sequence": 3,
+        "revision": 3,
+        "age_ms": 0,
+        "data_policy": "private",
+        "expires_at_unix_ms": 0,
+        "type_url": "type.googleapis.com/actor.extensions.agents_arena.v1.SocialVisibleWorldObservation",
+        "payload": {
+          "recipient_actor_id": "self",
+          "bodies": [
+            {
+              "body_id": "body-1"
+            }
+          ]
+        },
+        "opaque": false
+      },
+      "hints": {
+        "priority": 0,
+        "potentially_critical": false,
+        "mandatory_review": false,
+        "semantic_id": "",
+        "aggregation_key": "",
+        "tags": []
+      },
+      "aggregate_count": 1
+    }
+  },
+  "supplementary_self_observations": [],
+  "label": null,
+  "source": "synthetic_protocol_fixture_not_live_capture"
+}

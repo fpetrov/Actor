@@ -62,3 +62,14 @@ jobs:
         run: python -m pip install -e 'runtime[dev,broadcast,codex]'
       - name: Verify real outgoing tool definitions with an auth-free local provider
         run: python -m pytest spikes/broadcast/test_provider_policy.py -q -o asyncio_mode=auto
+  minilm-classifier:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install Runtime and the optional local model package
+        run: python -m pip install './runtime[dev]' './classifiers/minilm[test]'
+      - name: Check real weights, private recording and executable-plan integration
+        run: python -m pytest classifiers/minilm/tests runtime/tests/test_minilm_integration.py -q -o asyncio_mode=auto

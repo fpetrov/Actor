@@ -25,6 +25,22 @@ class SkillCall(BaseModel):
     arguments: dict[str, JsonValue]
 
 
+class PlanReaction(BaseModel):
+    model_config = SkillCall.model_config
+    capability_id: str = Field(min_length=1, max_length=160)
+    field: str = Field(pattern=r"^[a-z][a-z0-9_]{0,63}$")
+    when: Literal["nonempty"] = "nonempty"
+    response: SkillCall
+
+
+class SkillPlan(BaseModel):
+    model_config = SkillCall.model_config
+    kind: Literal["plan"] = "plan"
+    steps: list[SkillCall] = Field(min_length=1, max_length=4)
+    conditions: list[PlanReaction] = Field(default_factory=list, max_length=2)
+    fallback: SkillCall | None = None
+
+
 class FinishObjective(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, frozen=True, allow_inf_nan=False,
                              revalidate_instances="always")
@@ -33,7 +49,7 @@ class FinishObjective(BaseModel):
     reason: str | None = Field(default=None, max_length=512)
 
 
-BrainDecision = Annotated[SkillCall | FinishObjective, Field(discriminator="kind")]
+BrainDecision = Annotated[SkillCall | SkillPlan | FinishObjective, Field(discriminator="kind")]
 DECISION_ADAPTER = TypeAdapter(BrainDecision)
 
 
@@ -103,6 +119,19 @@ def build_decision_schema(catalog: list[dict]) -> dict:
             },
             "required": ["kind", "skill_id", "arguments"],
         })
+    if branches:
+        calls = {"oneOf": deepcopy(branches)}
+        branches.append({"type": "object", "additionalProperties": False,
+            "properties": {"kind": {"type": "string", "const": "plan"},
+                "steps": {"type": "array", "minItems": 1, "maxItems": 4, "items": calls},
+                "conditions": {"type": "array", "maxItems": 2, "items": {
+                    "type": "object", "additionalProperties": False,
+                    "properties": {"capability_id": {"type": "string", "minLength": 1, "maxLength": 160},
+                        "field": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,63}$"},
+                        "when": {"type": "string", "const": "nonempty"}, "response": calls},
+                    "required": ["capability_id", "field", "when", "response"]}},
+                "fallback": {"anyOf": [calls, {"type": "null"}]}},
+            "required": ["kind", "steps", "conditions", "fallback"]})
     finish = FinishObjective.model_json_schema()
     finish["required"] = ["kind", "status"]
     branches.append(finish)

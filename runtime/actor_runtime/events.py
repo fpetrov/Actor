@@ -120,20 +120,33 @@ class EventRouter:
         self.policy_tags = tuple(policy_tags)
         if classifier_config is not None:
             self.classifier_config = classifier_config
+        bind = getattr(self.classifier, "bind_router", None)
+        if callable(bind):
+            bind(self)
 
-    def _context(self):
+    def classification_context(self):
         world = self.session.world
         # Compact self-only current state, fresh copies supplied by snapshotting
         # providers. Never a reference to the full game history.
         relevant = tuple(item for item in world.observations.values()
-                         if item.entity_id == world.self_actor_id)[:8]
-        return ClassificationContext(self.objective, self.current_skill(), relevant, self.policy_tags)
+                         if item.entity_id == world.self_actor_id)[:24]
+        plan = getattr(self.session, "executable_plan", None)
+        return ClassificationContext(self.objective, self.current_skill(), relevant, self.policy_tags,
+                                     plan.snapshot() if plan is not None else None)
+
+    def _context(self):
+        return self.classification_context()
 
     def _record(self, event, action):
         self._audit.append({"event_id": event.id, "sequence": event.entry.sequence,
             "action": action, "revision": self.cognitive_revision,
             "reason": event.assessment.reason_code if event.assessment else None,
             "aggregate_count": event.aggregate_count})
+        self.session.emit_trace("router", event_id=event.id, sequence=event.entry.sequence,
+            action=action, cognitive_revision=self.cognitive_revision,
+            assessment=event.assessment.model_dump(mode="json") if event.assessment else None,
+            mandatory_review=event.hints.mandatory_review, trigger_revision=event.trigger_revision,
+            handled=event.handled, aggregate_count=event.aggregate_count)
 
     def _fail_safe(self, reason):
         self.degraded = True
@@ -232,7 +245,14 @@ class EventRouter:
         if self.objective is not None and event.hints.potentially_critical and rule is not None:
             started = time.monotonic()
             try:
-                assessment = EventAssessment.model_validate(rule.assess(self._context(), event))
+                context = self.classification_context()
+                assessment = EventAssessment.model_validate(rule.assess(context, event))
+                observer = getattr(self.classifier, "observe_rule_assessment", None)
+                if callable(observer):
+                    try:
+                        observer(context, event, assessment)
+                    except Exception:
+                        self._counts["observer_errors"] += 1
                 self._apply(event, assessment)
                 self._counts["classifier_calls"] += 1
                 self._latencies.append((time.monotonic() - started) * 1000)
@@ -276,6 +296,11 @@ class EventRouter:
         if not assessment.should_request_brain_review:
             self._counts["events_ignored"] += 1
         self._record(event, "assessed")
+        plan = getattr(self.session, "executable_plan", None)
+        if not assessment.should_request_brain_review and plan is not None:
+            if plan.offer(event, self.session.world.self_actor_id):
+                self._counts["planned_reactions"] += 1
+                self._record(event, "plan_reaction_queued")
         if assessment.should_request_brain_review:
             critical = assessment.urgency == "critical" or event.hints.potentially_critical
             if critical or time.monotonic() - self._last_replan >= self.config.decision_cooldown:

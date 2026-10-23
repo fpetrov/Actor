@@ -1,0 +1,58 @@
+{
+  "architecture": "bert_sequence_classifier",
+  "status": "development_only",
+  "schema_version": "0.2",
+  "renderer": "features.render_canonical_v1",
+  "threshold": 0.5,
+  "max_sequence_length": 512,
+  "base_revision": "4ca70771034acceecb2e72475f72050fcdde4ddc",
+  "model_sha256": "fd10238301587a517815ea573d5923731d768c4ded9e99f972e4b941a77f09ff",
+  "training_seconds": 60.36672604100022,
+  "training_rows": 2045,
+  "epochs": 2,
+  "encoder_weights_changed": true,
+  "head_weights_changed": true,
+  "before_same_512_window": {
+    "count": 290,
+    "tp": 60,
+    "tn": 200,
+    "fp": 22,
+    "fn": 8,
+    "recall": 0.8823529411764706,
+    "macro_f1": 0.8651162790697675
+  },
+  "validation": {
+    "count": 290,
+    "tp": 67,
+    "tn": 220,
+    "fp": 2,
+    "fn": 1,
+    "recall": 0.9852941176470589,
+    "macro_f1": 0.9856650903758383
+  },
+  "development_guard_passed": true,
+  "peak_rss_bytes": 1894268928,
+  "save_reload_prediction_check": "passed",
+  "human_reviewed_new_labels": 0,
+  "scores_are_calibrated": false,
+  "default_model_changed": false,
+  "github_writes": false,
+  "model_version": "minilm-v7-r2",
+  "accepted_input_versions": [
+    "0.1",
+    "0.2"
+  ],
+  "runtime_projection": "arena-0.10.0-executable-plan-v1",
+  "parent_model_sha256": "160513340721b253a96b855ed42fb0925b4fd5d50e266aff606108f2f0cb63b8",
+  "learning_rate": 5e-06,
+  "batch_size": 8,
+  "seed": 20261023,
+  "weight_decay": 0.01,
+  "validation_rows": 290,
+  "training_recipe": "class-balanced weighted loss; AdamW; warmup 10%; linear decay",
+  "limitations": [
+    "Development validation is not an independent final test.",
+    "New match labels were authored by the assistant; zero new human-reviewed labels.",
+    "Mandatory game lifecycle rules must retain priority over model output."
+  ]
+}

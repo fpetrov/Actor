@@ -422,6 +422,11 @@ class SkillContext:
             raise SkillError("session_disconnected" if error.code == "SessionUnavailable" else "command_failed",
                              "Typed command could not be issued", {"capability_id": capability_id, "code": error.code}) from error
         self._lease.commands_sent += 1
+        plan = self._session.executable_plan
+        self._session.emit_trace("skill_command", command_id=result,
+            skill_id=self._definition.skill_id, cleanup=cleanup,
+            plan_id=plan.id if plan is not None else None,
+            plan_step_index=plan.index if plan is not None else None)
         return result
 
     async def sleep(self, seconds: float):
@@ -597,7 +602,7 @@ class SkillScheduler:
                             data_policy=definition.result_policy, expires_at_unix_ms=lease.private_until_unix_ms)
 
     async def cancel(self, *, reason="cancelled", details=None):
-        if reason not in ("cancelled", "preempted_by_event"):
+        if reason not in ("cancelled", "preempted_by_event", "planned_reaction"):
             raise ValueError("Unknown Skill cancellation reason")
         # Cancellation metadata is diagnostic JSON, never executable policy.
         metadata = json.loads(json.dumps(details or {}, allow_nan=False))

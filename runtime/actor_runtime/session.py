@@ -40,6 +40,9 @@ class RuntimeSession:
         self.extensions = {}
         self.world: WorldState | None = None
         self.event_router = None
+        self.executable_plan = None
+        self.trace_sink = None
+        self.trace_errors = 0
         self.mailbox = OutboundMailbox()
         self.ready = asyncio.Event()
         self.closed = asyncio.Event()
@@ -58,6 +61,14 @@ class RuntimeSession:
 
     def register_known_secret(self, value, *, expires_at_unix_ms=None):
         self.privacy.register_known_secret(value, expires_at_unix_ms=expires_at_unix_ms)
+
+    def emit_trace(self, trace_phase, **fields):
+        """Optional local diagnostic sink; never an actuator or a public log."""
+        if self.trace_sink is not None:
+            try:
+                self.trace_sink(trace_phase, fields)
+            except Exception:
+                self.trace_errors += 1
 
     async def accept(self, message: wire.GameToRuntime):
         if not message.session_id or len(message.session_id) > 128:
@@ -99,13 +110,17 @@ class RuntimeSession:
             if len(frame.observations) > 256:
                 raise ActorError("FrameTooLarge", "Observation frame exceeds 256 envelopes")
             # Installed typed payload policies also label private observations.
-            # Frames never enter event routing or invoke a classifier.
+            # Ordinary frames do not invoke classification. A running accepted
+            # plan may nominate one fresh observation when its condition first holds.
             observations = [self.event_router.prepare_entry(self._decode(item,
                 core.CAPABILITY_KIND_OBSERVATION, message.sequence, frame.revision))
                 for item in frame.observations]
             observations = [item for item in observations if item is not None]
             if self.world.apply_observations(observations, message.sequence, frame.revision):
                 self.observation_frames += 1
+                if self.executable_plan is not None:
+                    for entry in self.executable_plan.observation_candidates(observations, self.world.self_actor_id):
+                        self.event_router.ingest(entry)
                 await self.world.notify()
         elif body == "event":
             item = self._decode(message.event, core.CAPABILITY_KIND_EVENT,
@@ -130,6 +145,8 @@ class RuntimeSession:
             result = core.CommandResult()
             result.CopyFrom(message.command_result)
             self.command_results.append(result)
+            self.emit_trace("command_result", command_id=result.command_id,
+                            status=result.status, error_code=result.error.code)
             if result.status in (core.COMMAND_STATUS_REJECTED, core.COMMAND_STATUS_TIMED_OUT):
                 LOG.warning("Command %s status=%s code=%s", result.command_id,
                             result.status, result.error.code)
@@ -239,6 +256,8 @@ class RuntimeSession:
             self.mailbox.put_latest((target, capability_id), outgoing)
         else:
             self.mailbox.put_control(outgoing)
+        self.emit_trace("command_queued", command_id=command.command_id,
+                        capability_id=capability_id, ttl_ms=lifetime)
         return command.command_id
 
     def require(self, capability_id: str, payload_type: type[Message]):

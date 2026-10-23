@@ -159,7 +159,7 @@ async def serve(args, *, server_factory=None):
             from .memory import MemoryStore
             memory_store = MemoryStore.from_config(config.memory, session)
             router = session.event_router
-            classifier = ClassifierRegistry.create(config.classifier.provider,
+            classifier = await ClassifierRegistry.create_async(config.classifier.provider,
                 config=config.classifier, rules=router.rules)
             router.configure(config=config.router, classifier=classifier, memory=memory_store,
                 policy_tags=config.policy_tags, classifier_config=config.classifier)

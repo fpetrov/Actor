@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from importlib import metadata
+import inspect
 from typing import Literal, Protocol, Callable
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -31,6 +32,7 @@ class ClassificationContext:
     current_skill: object = None
     relevant_state: tuple = ()
     policy_tags: tuple[str, ...] = ()
+    current_plan: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -110,11 +112,25 @@ class RuleBasedEventClassifier:
 class ClassifierRegistry:
     """Future local/ONNX providers use the same async surface and entry point."""
     @staticmethod
-    def create(name, **options):
+    def _factory(name):
         points = metadata.entry_points(group="actor.classifiers", name=name)
         if len(points) != 1:
             raise ActorError("classifier_missing", "Exactly one installed classifier must match", {"provider": name})
-        return next(iter(points)).load()(**options)
+        return next(iter(points)).load()
+
+    @classmethod
+    def create(cls, name, **options):
+        factory = cls._factory(name)
+        if inspect.iscoroutinefunction(factory):
+            raise ActorError("classifier_async_required", "Use ClassifierRegistry.create_async for this provider")
+        return factory(**options)
+
+    @classmethod
+    async def create_async(cls, name, **options):
+        factory = cls._factory(name)
+        if inspect.iscoroutinefunction(factory):
+            return await factory(**options)
+        return cls.create(name, **options)
 
 
 def rules_factory(**options):

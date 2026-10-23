@@ -1,0 +1,109 @@
+{
+  "source": "Three frozen holdout attempts, not used to train v7",
+  "counts": {
+    "identical_frozen_inputs_and_predictions": 486,
+    "protected_critical_inputs": 245,
+    "critical_rule_decisions_unchanged": 245,
+    "unlabelled": 249,
+    "optional_inputs": 241
+  },
+  "human_reviewed_new_labels": 0,
+  "inference_latency_ms": {
+    "p50": 3.6522080044960603,
+    "p95": 4.1765419955481775
+  },
+  "labels": "Conservative assistant-authored input policy; ambiguous rows excluded",
+  "ordinary_events": {
+    "rules": {
+      "rows": 182,
+      "confusion_matrix_true_rows_predicted_columns": [
+        [
+          181,
+          0
+        ],
+        [
+          1,
+          0
+        ]
+      ],
+      "accuracy": 0.9945054945054945,
+      "macro_f1": 0.4986225895316804,
+      "review_precision": 0.0,
+      "review_recall": 0.0,
+      "missed_reviews": 1,
+      "unnecessary_reviews": 0
+    },
+    "neural": {
+      "rows": 182,
+      "confusion_matrix_true_rows_predicted_columns": [
+        [
+          181,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "accuracy": 1.0,
+      "macro_f1": 1.0,
+      "review_precision": 1.0,
+      "review_recall": 1.0,
+      "missed_reviews": 0,
+      "unnecessary_reviews": 0
+    }
+  },
+  "raw_all_events_diagnostic_only": {
+    "rules": {
+      "rows": 237,
+      "confusion_matrix_true_rows_predicted_columns": [
+        [
+          181,
+          30
+        ],
+        [
+          1,
+          25
+        ]
+      ],
+      "accuracy": 0.869198312236287,
+      "macro_f1": 0.769201771746301,
+      "review_precision": 0.45454545454545453,
+      "review_recall": 0.9615384615384616,
+      "missed_reviews": 1,
+      "unnecessary_reviews": 30
+    },
+    "neural": {
+      "rows": 237,
+      "confusion_matrix_true_rows_predicted_columns": [
+        [
+          211,
+          0
+        ],
+        [
+          3,
+          23
+        ]
+      ],
+      "accuracy": 0.9873417721518988,
+      "macro_f1": 0.9658583433373349,
+      "review_precision": 1.0,
+      "review_recall": 0.8846153846153846,
+      "missed_reviews": 3,
+      "unnecessary_reviews": 0
+    }
+  },
+  "ordinary_disagreements": [
+    {
+      "kind": "attack_result",
+      "label": 1,
+      "rules": false,
+      "neural": true
+    }
+  ],
+  "limitations": [
+    "Only one labelled positive optional event in this cohort; no broad superiority claim.",
+    "Raw all-event counts include terminal lifecycle reviews; they are not extra LLM calls.",
+    "This replay checks frozen inputs and policy parity, not new live win rate."
+  ]
+}

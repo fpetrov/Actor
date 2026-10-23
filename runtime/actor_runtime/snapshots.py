@@ -84,6 +84,7 @@ class DecisionContext(BaseModel):
     decision_reason: str = "objective_started"
     cognitive_revision: int = 0
     current_skill: dict[str, JsonValue] | None = None
+    current_plan: dict[str, JsonValue] | None = None
     working_knowledge: list[dict[str, JsonValue]] = Field(default_factory=list)
     knowledge_omitted: int = 0
 
@@ -319,6 +320,7 @@ def build_decision_context(session, objective: Objective, catalog: list[dict], *
         decision_reason=(decision_reason or ("objective_started" if previous_skill_result is None else
             "skill_succeeded" if previous_skill_result.get("status") == "succeeded" else "skill_failed"))[:128],
         cognitive_revision=cognitive_revision, current_skill=current_skill,
+        current_plan=(session.executable_plan.snapshot() if getattr(session, "executable_plan", None) is not None else None),
         working_knowledge=selected_knowledge, knowledge_omitted=len(knowledge_values)-len(selected_knowledge),
     )
     # Trigger data and the previous result survive ordinary budget pressure.

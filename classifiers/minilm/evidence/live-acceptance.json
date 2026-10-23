@@ -1,0 +1,192 @@
+{
+  "scope": "Real dedicated-server matches with four ordinary Unity clients and deterministic per-agent fixture Brains; not LLM strategy or win-rate evidence",
+  "all_four_scenario_provider_pairs_passed": true,
+  "frozen_model_sha256": "fd10238301587a517815ea573d5923731d768c4ded9e99f972e4b941a77f09ff",
+  "matches": [
+    {
+      "scenario": "vote",
+      "provider": "rules",
+      "strict_passed": true,
+      "reason": "impostors_eliminated",
+      "duration_ms": 186409,
+      "gameplay_counts": {
+        "kills": 1,
+        "body_reports": 1,
+        "meetings": 1,
+        "votes": 3,
+        "crew_tasks_completed": 0,
+        "sabotages": 0
+      },
+      "delivered_messages_received": 3,
+      "headless_loop_rate_mean": 59.59569725562264,
+      "all_process_cleanup_verified": true,
+      "independent_processes": true
+    },
+    {
+      "scenario": "vote",
+      "provider": "minilm",
+      "strict_passed": true,
+      "reason": "impostors_eliminated",
+      "duration_ms": 195259,
+      "gameplay_counts": {
+        "kills": 1,
+        "body_reports": 1,
+        "meetings": 1,
+        "votes": 3,
+        "crew_tasks_completed": 0,
+        "sabotages": 0
+      },
+      "delivered_messages_received": 6,
+      "headless_loop_rate_mean": 59.57382727226237,
+      "all_process_cleanup_verified": true,
+      "independent_processes": true
+    },
+    {
+      "scenario": "tasks",
+      "provider": "rules",
+      "strict_passed": true,
+      "reason": "tasks_completed",
+      "duration_ms": 67868,
+      "gameplay_counts": {
+        "kills": 0,
+        "body_reports": 0,
+        "meetings": 0,
+        "votes": 0,
+        "crew_tasks_completed": 8,
+        "sabotages": 0
+      },
+      "delivered_messages_received": 0,
+      "headless_loop_rate_mean": 59.45636144487017,
+      "all_process_cleanup_verified": true,
+      "independent_processes": true
+    },
+    {
+      "scenario": "tasks",
+      "provider": "minilm",
+      "strict_passed": true,
+      "reason": "tasks_completed",
+      "duration_ms": 71671,
+      "gameplay_counts": {
+        "kills": 0,
+        "body_reports": 0,
+        "meetings": 0,
+        "votes": 0,
+        "crew_tasks_completed": 8,
+        "sabotages": 0
+      },
+      "delivered_messages_received": 0,
+      "headless_loop_rate_mean": 59.74537639166023,
+      "all_process_cleanup_verified": true,
+      "independent_processes": true
+    }
+  ],
+  "capture_health": [
+    {
+      "scenario": "vote",
+      "inputs": 28,
+      "outputs": 28,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    },
+    {
+      "scenario": "vote",
+      "inputs": 27,
+      "outputs": 27,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    },
+    {
+      "scenario": "vote",
+      "inputs": 28,
+      "outputs": 28,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    },
+    {
+      "scenario": "vote",
+      "inputs": 22,
+      "outputs": 22,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    },
+    {
+      "scenario": "tasks",
+      "inputs": 34,
+      "outputs": 34,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    },
+    {
+      "scenario": "tasks",
+      "inputs": 42,
+      "outputs": 42,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    },
+    {
+      "scenario": "tasks",
+      "inputs": 44,
+      "outputs": 44,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    },
+    {
+      "scenario": "tasks",
+      "inputs": 15,
+      "outputs": 15,
+      "ids_match": true,
+      "self_only_state": true,
+      "closed": true,
+      "trace_errors": 0,
+      "capture_errors": 0,
+      "dropped": 0
+    }
+  ],
+  "assessment_sources": {
+    "trusted_game_rule": 155,
+    "neural": 85
+  },
+  "live_neural_latency_ms": {
+    "count": 85,
+    "p50": 16.97916600096505,
+    "p95": 47.25424999924144,
+    "max": 51.23449999518925
+  },
+  "external_llm_calls": 0,
+  "new_training_on_these_matches": false,
+  "qualification": "Two scenarios per provider do not establish general strategic superiority or statistical non-inferiority.",
+  "validation_history": [
+    "Initial command/venv setup attempts did not start clients and were excluded.",
+    "A reused Ready lobby contained a prior GameOver; spectator retries were excluded, then each real match used a distinct prestart lobby.",
+    "Two MiniLM cold-start attempts lost heartbeat before any decision due to synchronous model construction. Async creation fixed this before these final two successful MiniLM matches.",
+    "The rules vote fixture was reevaluated without a Codex-threat-audit-only assertion, which is inapplicable to deterministic fixture Brains; original diagnostic report retained locally."
+  ]
+}

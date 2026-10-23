@@ -35,6 +35,9 @@ class SocialMatchPolicy:
     def __init__(self):
         self._known_bodies = set()
         self._last_visible_sequence = self._event_cursor = 0
+        self._last_body_digest = ""
+        self._held_plan_id = None
+        self._held_body_digest = ""
 
     def context_selection(self, session):
         from actor_runtime.snapshots import ContextSelection
@@ -104,7 +107,16 @@ class SocialMatchPolicy:
             return EpisodeDirective(scope_id=match.match_id, episode_key=key, state="suspended", reason="own_life_terminal")
         visible = session.world.latest(pb.SocialVisibleWorldObservation, capability_id=SOCIAL_VISIBLE_WORLD)
         known = self._known_bodies | ({body.body_id for body in visible.bodies} if visible is not None else set())
-        key += ":" + (hashlib.sha256(",".join(sorted(known)).encode()).hexdigest()[:16] if known else "")
+        digest = hashlib.sha256(",".join(sorted(known)).encode()).hexdigest()[:16] if known else ""
+        plan = getattr(session, "executable_plan", None)
+        if plan is not None and plan.covers(SOCIAL_VISIBLE_WORLD, "bodies"):
+            if self._held_plan_id != plan.id:
+                self._held_plan_id, self._held_body_digest = plan.id, self._last_body_digest
+            digest = self._held_body_digest
+        else:
+            self._held_plan_id = None
+            self._last_body_digest = digest
+        key += ":" + digest
         # No model work is needed during the short server assignment/resolution.
         state = "active" if match.phase in (pb.SOCIAL_PHASE_WAITING_FOR_PLAYERS, pb.SOCIAL_PHASE_EXPLORATION,
             pb.SOCIAL_PHASE_DISCUSSION, pb.SOCIAL_PHASE_VOTING) else "suspended"

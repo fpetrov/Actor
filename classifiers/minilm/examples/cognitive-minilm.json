@@ -1,0 +1,6 @@
+{
+  "classifier": {
+    "provider": "minilm",
+    "timeout": 1.5
+  }
+}

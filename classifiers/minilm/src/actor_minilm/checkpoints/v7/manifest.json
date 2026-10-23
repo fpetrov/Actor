@@ -1,0 +1,12 @@
+{
+  "model_version": "minilm-v7-r2",
+  "files": {
+    "model/config.json": "21f0723a2b49ccaf7ccdd64a78dcc95c6b9c89d2ebf62920592cc8d60d92a248",
+    "model/model.safetensors": "fd10238301587a517815ea573d5923731d768c4ded9e99f972e4b941a77f09ff",
+    "model/special_tokens_map.json": "5d5b662e421ea9fac075174bb0688ee0d9431699900b90662acd44b2a350503a",
+    "model/tokenizer.json": "f17212c38517cfedc9306b57eeffbaf58c4976fcb42e5a87b405f36a7b9a9eb2",
+    "model/tokenizer_config.json": "ccb4eb21a03e1442ee5c3f85431b9c307960a04579942537d74778dc8080a48c",
+    "model/vocab.txt": "07eced375cec144d27c900241f3e339478dec958f92fddbc551f295c992038a3",
+    "report.json": "63a343617260ac3048403819d0b28117522b836a2db5de8d473b278372426a8f"
+  }
+}

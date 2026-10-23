@@ -301,6 +301,16 @@ class ReportBody(SocialActionSkill):
         return await self.request(context, SOCIAL_REPORT_BODY, pb.SocialReportBodyCommand(body_id=body.body_id), pb.SOCIAL_ACTION_REPORT_BODY)
 
 
+class ReportVisibleBody(ReportBody):
+    async def execute(self, context, arguments):
+        visible = context.observation(SOCIAL_VISIBLE_WORLD, pb.SocialVisibleWorldObservation)
+        if not visible.bodies:
+            raise SkillError("target_unavailable", "No body is currently visible")
+        transform = context.observation(TRANSFORM, Transform2DObservation)
+        body = min(visible.bodies, key=lambda b: math.hypot(b.x - transform.x, b.y - transform.y - .46))
+        return await super().execute(context, BodyInput(body_id=body.body_id))
+
+
 class CallMeeting(SocialActionSkill):
     owns_movement = True
     async def execute(self, context, arguments):
@@ -421,6 +431,9 @@ def skill_package():
             extra=(obs(SOCIAL_VISIBLE_WORLD, pb.SocialVisibleWorldObservation),)),
         action("report-body", "Report a CURRENTLY visible body in actual report range; server acceptance begins a meeting. No hidden body search.",
             BodyInput, ReportBody, SOCIAL_REPORT_BODY, pb.SocialReportBodyCommand, permitted(exploration),
+            extra=(obs(SOCIAL_VISIBLE_WORLD, pb.SocialVisibleWorldObservation),), move=True),
+        action("report-visible-body", "Report the nearest CURRENTLY visible body using existing range, navigation and server checks. Suitable as a preselected plan response to a nonempty social-visible-world bodies field; fails if no body is visible.",
+            EmptyInput, ReportVisibleBody, SOCIAL_REPORT_BODY, pb.SocialReportBodyCommand, permitted(exploration),
             extra=(obs(SOCIAL_VISIBLE_WORLD, pb.SocialVisibleWorldObservation),), move=True),
         action("call-meeting", "Approach a currently known visible emergency-meeting console and request a bounded server-approved meeting. Meetings freeze movement and attacks, then allow living participants to discuss and vote. Cooldown and limited calls prevent spam. Use the advertised discussion communication channel during Discussion.",
             EmptyInput, CallMeeting, SOCIAL_CALL_MEETING, pb.SocialCallMeetingCommand, permitted(exploration),

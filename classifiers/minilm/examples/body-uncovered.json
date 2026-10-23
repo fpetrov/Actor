@@ -1,0 +1,36 @@
+{
+  "schema_version": "0.1",
+  "game_id": "among-us-like",
+  "ruleset": "classic-mvp-proposal",
+  "own_role": "crew",
+  "phase": "tasks",
+  "objective": "Survive and complete crew tasks.",
+  "plan": {
+    "action": "perform_task",
+    "target": "alignment",
+    "conditions": [],
+    "next_action": null,
+    "fallback": null
+  },
+  "event": {
+    "kind": "body_seen",
+    "source": "direct_vision",
+    "payload": {
+      "body": "victim-0"
+    }
+  },
+  "observations": [
+    {
+      "kind": "visible_body",
+      "source": "direct_vision",
+      "age_ms": 23,
+      "value": "victim-0"
+    },
+    {
+      "kind": "own_room",
+      "source": "own_state",
+      "age_ms": 23,
+      "value": "Security"
+    }
+  ]
+}

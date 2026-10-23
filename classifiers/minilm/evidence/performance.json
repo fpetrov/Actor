@@ -1,0 +1,113 @@
+{
+  "platform": "macOS arm64 / Apple M5 / Python 3.12",
+  "baseline_commit": "78b771b4912e9f8880682f5c100631ab3bee5d68",
+  "runtime_rules_logging_off": {
+    "method": "1200 typed action-result events through real session/router, first 100 excluded",
+    "before": {
+      "count": 1100,
+      "p50_ms": 0.03995800216216594,
+      "p95_ms": 0.043542000639718026,
+      "classified": 1200
+    },
+    "after": {
+      "count": 1100,
+      "p50_ms": 0.04245799937052652,
+      "p95_ms": 0.05262500053504482,
+      "classified": 1200
+    },
+    "p50_delta_ms": 0.0024999972083605826,
+    "p95_delta_ms": 0.009082999895326793
+  },
+  "minilm_provider_synthetic": {
+    "method": "Single provider, synthetic visible-body input, 20 warmup calls, two CPU threads",
+    "logging_off": {
+      "provider_latency": {
+        "count": 300,
+        "p50_ms": 2.88672899841913,
+        "p95_ms": 2.975083996716421,
+        "max_ms": 3.2767500015324913
+      },
+      "event_loop_lag": {
+        "count": 179,
+        "p50_ms": 0.18666700372705236,
+        "p95_ms": 0.29558300331700593,
+        "max_ms": 0.6363749972661026
+      },
+      "fallbacks": 0,
+      "capture": {
+        "assessment_calls": 320,
+        "inputs_recorded": 0,
+        "outputs_recorded": 0
+      }
+    },
+    "logging_on": {
+      "provider_latency": {
+        "count": 300,
+        "p50_ms": 2.9077705039526336,
+        "p95_ms": 2.986250001413282,
+        "max_ms": 3.2223340022028424
+      },
+      "event_loop_lag": {
+        "count": 180,
+        "p50_ms": 0.18370849749771878,
+        "p95_ms": 0.292375004501082,
+        "max_ms": 0.3330410009948537
+      },
+      "fallbacks": 0,
+      "capture": {
+        "assessment_calls": 320,
+        "inputs_recorded": 320,
+        "outputs_recorded": 320
+      }
+    },
+    "peak_rss_bytes": 470188032,
+    "rss_units": "bytes on macOS; KiB on Linux",
+    "covers": "Projection, inference, optional input/output recording",
+    "limitations": "Not a concurrent multi-actor or full-game load test; file writes use OS buffering"
+  },
+  "interpretation": "Microsecond-level Runtime overhead in this probe; optional inference is millisecond-scale. Rules alone remain faster than neural inference.",
+  "limitations": [
+    "Single-run microbenchmarks have timing noise; these are not absolute service-level guarantees.",
+    "Provider probe is a short synthetic input, not the latency of a whole match or all input lengths."
+  ],
+  "cold_start_async": {
+    "initialization_seconds": 1.3633918750056182,
+    "heartbeat_ticks_during_load": 110,
+    "event_loop_lag_p95_ms": 5.9388749962090515,
+    "event_loop_lag_max_ms": 45.566709001141135,
+    "inference_called": false,
+    "capture_enabled": false,
+    "method": "Fresh Python process, async model factory, 10ms heartbeat probe"
+  },
+  "four_live_runtimes": {
+    "scenario": "Four simultaneous MiniLM agents during a real discussion phase",
+    "samples": [
+      {
+        "runtime_rss_bytes": 468811776,
+        "cpu_percent": 3.7
+      },
+      {
+        "runtime_rss_bytes": 467140608,
+        "cpu_percent": 3.7
+      },
+      {
+        "runtime_rss_bytes": 468844544,
+        "cpu_percent": 14.1
+      },
+      {
+        "runtime_rss_bytes": 467845120,
+        "cpu_percent": 3.6
+      }
+    ],
+    "total_runtime_rss_bytes": 1872642048,
+    "scope": "Runtime processes including model and Python; Unity clients are not included; RSS is a snapshot, not peak"
+  },
+  "cold_start_fix": "Initial synchronous construction blocked the loop about 8 seconds with four live clients and caused heartbeat disconnection. Registry async creation now loads only the model in a thread; collector setup stays on the loop.",
+  "live_neural_latency_ms": {
+    "count": 85,
+    "p50": 16.97916600096505,
+    "p95": 47.25424999924144,
+    "max": 51.23449999518925
+  },
+  "live_latency_scope": "Four agents and real Unity clients on this Mac; includes projection/thread scheduling; part of validation ran concurrently."
+}

@@ -1,0 +1,45 @@
+{
+  "base_commit": "78b771b4912e9f8880682f5c100631ab3bee5d68",
+  "model_sha256": "fd10238301587a517815ea573d5923731d768c4ded9e99f972e4b941a77f09ff",
+  "platform": "macOS arm64 / Python 3.12",
+  "runtime_launcher_model_tests": {
+    "passed": 1877,
+    "skipped": 8,
+    "subtests_passed": 120,
+    "seconds": 128.44
+  },
+  "installed_wheel_smoke": "Local Runtime and model wheels installed without external dependency downloads; CLI, entrypoint and checksum checks passed",
+  "training_smoke": {
+    "encoder_changed": true,
+    "head_changed": true,
+    "output_reload_parity_passed": true,
+    "published_checkpoint_modified": false,
+    "data": "Small synthetic fixture, not a quality estimate"
+  },
+  "frozen_holdout_parity": {
+    "inputs": 486,
+    "projected_inputs_identical": 486,
+    "predictions_identical": 486,
+    "tolerance": 1e-06
+  },
+  "real_client_acceptance": {
+    "passed_cases": 4,
+    "fixture_brains": true,
+    "external_llm_calls": 0,
+    "details": "live-acceptance.json"
+  },
+  "code_review": {
+    "standards_blockers_remaining": 0,
+    "spec_blockers_remaining": 0,
+    "details": "code-review.md"
+  },
+  "scope": [
+    "No Unity/server/protocol edits",
+    "Runtime classifier remains explicit opt-in",
+    "Raw logs, chats, training data and environments excluded"
+  ],
+  "limitations": [
+    "This receipt records local checks; GitHub CI runs separately after publication.",
+    "Fixture matches do not establish statistical or strategic superiority over rules."
+  ]
+}

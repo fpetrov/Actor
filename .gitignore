@@ -60,5 +60,8 @@ Thumbs.db
 **/*.egg-info/
 *.pyc
 
+# Private classifier captures and local training outputs
+.local/
+
 # Local browser inspection snapshots
 /.playwright-mcp/
