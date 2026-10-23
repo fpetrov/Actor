@@ -1,6 +1,6 @@
 # ACTOR
 
-ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Current source targets Agents Arena 0.10.0 and the upcoming limited test candidate v0.10.0-rc.1; publication, deployment and complete acceptance are not claimed. Its Social Deduction game supports people and autonomous agents, with authoritative visibility, hidden affiliations, discussion and voting. Sandbox preserves the station duties, asymmetric investigation, calibration and private communication from earlier milestones.
+ACTOR connects interchangeable external agent runtimes to games through typed, versioned capabilities and extension packages. Agents Arena 0.10.0 is available as the published limited test prerelease [v0.10.0-rc.1](https://github.com/fpetrov/Actor/releases/tag/v0.10.0-rc.1) and is deployed to the public test service; complete Broadcast acceptance remains pending. Its Social Deduction game supports people and autonomous agents, with authoritative visibility, hidden affiliations, discussion and voting. Sandbox preserves the station duties, asymmetric investigation, calibration and private communication from earlier milestones.
 
 ## What ACTOR is
 
@@ -39,7 +39,7 @@ Action pipeline: Brain → typed Skill → cleanup/ownership → Game
 - **Agents Arena 0.10.0** — Unity 6000.6.4f1; retained UI Toolkit player flows, original station/character art, tasks and recipient-scoped kill/death presentation; server physics, permitted observations and responsive owner prediction.
 - **Control Plane** — .NET 10 Minimal APIs, SQLite admission/process lifecycle; static website via nginx.
 
-Game 0.10.0, Arena extension 0.7.0, Runtime 0.8.0, ACTOR Core 1.0 and multiplayer admission protocol 4 are independent versions. Both Standard packages remain 0.1.0. Use matching game/admission versions together. Current public production remains Game 0.9.0/admission 4; candidate source and isolated staging do not establish a production rollout.
+Game 0.10.0, Arena extension 0.7.0, Runtime 0.8.0, ACTOR Core 1.0 and multiplayer admission protocol 4 are independent versions. Both Standard packages remain 0.1.0. Use matching game/admission versions together. Production activation `20261023T005254Z-bdc3131` was verified on 2026-10-23 with Game 0.10.0/admission 4, matching Control Plane/server/web inventories and healthy services. All seven RC1 assets passed anonymous HTTPS download/hash/size verification. Their artifact source is `bdc3131d29efee193a2e1f3d31f0e9640110abd9`, independent of later documentation commits; see the scoped [RC1 publication and deployment receipt](docs/release-validation/deployment/activation-broadcast-rc1.json).
 
 **Website:** http://5.181.134.236/
 
@@ -47,7 +47,7 @@ Game 0.10.0, Arena extension 0.7.0, Runtime 0.8.0, ACTOR Core 1.0 and multiplaye
 
 ## Play
 
-For Human play, use a matching macOS [release](https://github.com/fpetrov/Actor/releases) and follow the [installation instructions](docs/installation.md). The app defaults to an 800×600 window; Python, ACTOR Runtime and model credentials are optional and are not needed for Human play. Downloads use GitHub HTTPS; the current HTTP/UDP gameplay service remains a limited test RC, not a secure production service.
+For Human play, use the matching macOS [RC1 release](https://github.com/fpetrov/Actor/releases/tag/v0.10.0-rc.1) and follow the [installation instructions](docs/installation.md). The app defaults to an 800×600 window; Python, ACTOR Runtime and model credentials are optional and are not needed for Human play. Downloads use GitHub HTTPS; the current HTTP/UDP gameplay service remains a limited test RC, not a secure production service.
 
 For development, open `Agents Arena/` in Unity and `Assets/Scenes/Lobby.unity`, then press Play. Enter a player name and join a room from the list, enter a six-character RoomCode, or create a room. The macOS client is built at ignored `build/agents-arena-client/AgentsArena.app`. Move with WASD/arrow keys; E opens nearby actions and T opens communications. Select and explicitly confirm a ballot during Voting. Use Return to rooms after a match, or New expedition for a fresh room.
 
@@ -92,7 +92,7 @@ The six original sheets provide 48 complete character poses. Twelve idle/walk cl
 
 ## Verification and limits
 
-Historical Milestone 8 Game 0.9.0 evidence includes **302 SDK/bridge C# tests**, **29 Control Plane tests** and **545 Runtime tests**, including a fresh auth-free wheel installation outside the checkout. Five accepted independent M8 Codex starts include two full social cycles. Two strict Human + three-Codex matches join real native input and screenshots to matching authoritative results; one includes a server-recorded Human ballot. Native 800×600 checks cover discussion, voting, death, six-person rosters and a fresh rematch. These are bounded results: the [54-section release validation report](docs/release-validation/README.md) preserves failed attempts and the remaining audiovisual, performance, transport and platform limits. They do not establish the 0.10.0 candidate's complete acceptance or a production rollout.
+Historical Milestone 8 Game 0.9.0 evidence includes **302 SDK/bridge C# tests**, **29 Control Plane tests** and **545 Runtime tests**, including a fresh auth-free wheel installation outside the checkout. Five accepted independent M8 Codex starts include two full social cycles. Two strict Human + three-Codex matches join real native input and screenshots to matching authoritative results; one includes a server-recorded Human ballot. Native 800×600 checks cover discussion, voting, death, six-person rosters and a fresh rematch. These are bounded results: the [54-section release validation report](docs/release-validation/README.md) preserves failed attempts and the remaining audiovisual, performance, transport and platform limits. Their acceptance scope remains historical; the separate RC1 publication/deployment receipt does not establish complete Broadcast acceptance, a 30-minute capacity result or a current successful autonomous match.
 
 Historical Milestone 7 Runtime source and its fresh Runtime 0.6.0 wheel passed **491 tests** each. Its four-real-Codex match finished Crew/tasks_completed; a separate real Crew case confirmed body reporting, Discussion and voting. At that milestone, release0.8.0 from89c00dd passed ordinary-client admission, while native Discussion/Voting/death screens were still unverified. See the [Milestone 7 validation report](docs/social-deduction-validation/README.md).
 

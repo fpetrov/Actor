@@ -1,0 +1,46 @@
+{
+  "schema": "actor.production-smoke-summary.v1",
+  "source_commit": "bdc3131d29efee193a2e1f3d31f0e9640110abd9",
+  "actual": true,
+  "game_version": "0.10.0",
+  "admission_protocol": "4",
+  "passed": true,
+  "scope": "Post-deployment matching macOS batch client / UDP / synthetic prediction input, plus separate Social observer admission and release. No models, TTS, OBS, Twitch, physical-keyboard or rendered-display acceptance.",
+  "sandbox": {
+    "probe": {
+      "passed": true,
+      "checks_passed": 13,
+      "checks_expected": 13,
+      "errors": 0,
+      "warnings": 0,
+      "metrics": {
+        "visualResponseMs": 48.651458740234375,
+        "authoritativeResponseMs": 348.2243957519531,
+        "releaseResponseMs": 113.30890655517578,
+        "idleError": 0.0044272541999816895,
+        "maxSpeed": 2.5999999046325684
+      },
+      "input": "existing synthetic owned-input prediction probe; no physical keyboard or rendered-display claim"
+    },
+    "owner_binding_verified": true,
+    "public_player_observed": true,
+    "direct_child_closed": true,
+    "own_room_natural_404": true,
+    "elapsed_seconds": 86.427
+  },
+  "observer": {
+    "operator_admission_succeeded": true,
+    "observer_does_not_count_as_player": true,
+    "same_session_release_succeeded": true,
+    "model_calls": 0,
+    "obs_used": false,
+    "game_client_started": false
+  },
+  "observer_room_natural_404": true,
+  "raw_evidence_sha256": {
+    "sandbox": "abd4c3758b19b849ada6809a0bd9bca3d2f3db969c00ef8e7f4e4b6eebde6efb",
+    "observer_admission": "c103ad2cd6f44141bdbe4b054d25ae735b12041e424133136e8281b06d8b9d3d",
+    "observer_retirement": "409131bbf7d86356af3005354ed54ebf9f9c72ce01c2e2ecb0e32089c31fbdb6"
+  },
+  "raw_evidence_storage": "Ignored local build directory; room, actor and session identities are excluded from this projection."
+}

@@ -1,0 +1,143 @@
+{
+  "schema": "actor.release-publication-deployment-summary.v1",
+  "scope": "Published RC1 artifact identity and actual production activation only; not complete Broadcast acceptance.",
+  "source_commit": "bdc3131d29efee193a2e1f3d31f0e9640110abd9",
+  "artifact_source_is_independent_of_later_documentation_commits": true,
+  "verification_performed_by": "Root agent during actual publication and deployment; this document filters the recorded metadata and Root-reported inventory comparison.",
+  "publication": {
+    "tag": "v0.10.0-rc.1",
+    "prerelease": true,
+    "url": "https://github.com/fpetrov/Actor/releases/tag/v0.10.0-rc.1",
+    "main_and_tag_target_at_publication": "bdc3131d29efee193a2e1f3d31f0e9640110abd9",
+    "all_seven_anonymous_https_downloads_verified": true,
+    "verification": "Downloaded bytes matched the expected SHA256 and size for every asset.",
+    "credentials_used": false,
+    "tls_validation_enabled": true,
+    "assets": [
+      {
+        "name": "ACTOR-actor-play-0.8.0.zip",
+        "bytes": 2710,
+        "sha256": "2e71363b7330236b1395716f663b774aca8aca678b485eeed7dc3474ea942310",
+        "anonymous_https": true
+      },
+      {
+        "name": "AgentsArena-0.10.0-linux-control-plane.tar.gz",
+        "bytes": 48737774,
+        "sha256": "14882f9444aba98e1aac50ee7a9e691bb211fb3f86f4a6f3d881b4385b025cdf",
+        "anonymous_https": true
+      },
+      {
+        "name": "AgentsArena-0.10.0-linux-server.tar.gz",
+        "bytes": 37630741,
+        "sha256": "b3bec12e847d81035fb5896eaf9523e0928046732f9adb275e18d75358fac49f",
+        "anonymous_https": true
+      },
+      {
+        "name": "AgentsArena-0.10.0-macOS.zip",
+        "bytes": 41649803,
+        "sha256": "4549bbd9a3d51ee0011ef7e9ce686666297f36d8b21b451dbcbdafae652047c4",
+        "anonymous_https": true
+      },
+      {
+        "name": "SHA256SUMS",
+        "bytes": 596,
+        "sha256": "737c4db7ae8cd8f5948b51b82162d23f5afc4b1011ccde4894b061a1badb3eea",
+        "anonymous_https": true
+      },
+      {
+        "name": "actor_runtime-0.8.0-py3-none-any.whl",
+        "bytes": 429595,
+        "sha256": "521fbfe0ceefc8f77d5b3b11ff23c2d32ab1a872a37b04f3e63cfd2dcd4f8ca6",
+        "anonymous_https": true
+      },
+      {
+        "name": "release-manifest.json",
+        "bytes": 4100,
+        "sha256": "cb94bcdaddd0312be7e7ddcdad87cd6a4deceb057a7c7c5b550d7c38be380ff3",
+        "anonymous_https": true
+      }
+    ]
+  },
+  "hosted_ci": [
+    {
+      "workflow": "SDK and Runtime",
+      "branch": "main",
+      "source_commit": "bdc3131d29efee193a2e1f3d31f0e9640110abd9",
+      "conclusion": "success",
+      "run_id": 39880373384,
+      "url": "https://github.com/fpetrov/Actor/actions/runs/39880373384"
+    },
+    {
+      "workflow": "Control Plane",
+      "branch": "main",
+      "source_commit": "bdc3131d29efee193a2e1f3d31f0e9640110abd9",
+      "conclusion": "success",
+      "run_id": 39880373408,
+      "url": "https://github.com/fpetrov/Actor/actions/runs/39880373408"
+    }
+  ],
+  "production": {
+    "release": "20261023T005254Z-bdc3131",
+    "verified_at_utc": "2026-10-23T00:54:24.859547+00:00",
+    "public_site": "http://5.181.134.236/",
+    "full_inventory_comparison": "Root verified both resolved release aliases and complete Control Plane, server and web file inventories against the reviewed rollout artifacts.",
+    "trees": {
+      "control-plane": {
+        "resolved": "/opt/actor/control-plane/releases/20261023T005254Z-bdc3131",
+        "file_entries": 343,
+        "inventory_matches_release": true
+      },
+      "server": {
+        "resolved": "/opt/actor/agents-arena/releases/20261023T005254Z-bdc3131",
+        "file_entries": 216,
+        "inventory_matches_release": true
+      },
+      "web": {
+        "resolved": "/var/www/actor",
+        "file_entries": 8,
+        "inventory_matches_release": true
+      }
+    },
+    "health": {
+      "status": "healthy"
+    },
+    "advertised_version_and_capacity": {
+      "gameVersion": "0.10.0",
+      "protocolVersion": "4",
+      "maxConcurrentGameServers": 5,
+      "defaultMaxPlayers": 8,
+      "gameModes": [
+        "Sandbox",
+        "SocialDeduction"
+      ],
+      "socialMinPlayers": 4,
+      "socialMaxPlayers": 6
+    },
+    "rooms_at_verification": 0,
+    "services": {
+      "actor-control-plane.service": "active",
+      "nginx.service": "active"
+    },
+    "daemon_reload_needed": "no",
+    "admission_drain_present": false
+  },
+  "source_receipt_binding": {
+    "public_download_verification": {
+      "schema": "actor.public-release-download.v1",
+      "sha256": "dc8fbaa0a5696021deaf74c6f35d68f10d127b8833ab725576695ff9ffc2a111"
+    },
+    "production_inventory": {
+      "schema": "actor.production-inventory.v1",
+      "sha256": "83eda3c40fae299245ff8219f57549c5d7886ffab5f3f4d904f5b3488427d328"
+    },
+    "raw_receipts_remain_in_ignored_local_build_directory": true
+  },
+  "not_established_by_this_receipt": [
+    "Complete Broadcast acceptance or a 30-minute capacity/soak result.",
+    "A current successful autonomous match or passing post-deployment gameplay smoke.",
+    "Resolution of the native window issue or active Twitch chat.",
+    "Twitch viewer audibility, secure gameplay transport, Apple notarization or Windows support."
+  ],
+  "privacy_projection": "Only public release asset metadata, public service/version/capacity state and aggregate deployment inventory results are included. No private configuration, environment, logs, credentials, operator-key hashes or authentication data are copied.",
+  "historical_evidence": "Earlier acceptance reports and failed attempts retain their original source and outcome; this receipt does not reinterpret them."
+}
