@@ -1,6 +1,7 @@
 """Visibility and private-role policies installed by Arena, not Runtime Core."""
 import math
 import hashlib
+from collections import OrderedDict
 
 from extensions.agents_arena.v1 import social_pb2 as pb
 from actor_runtime.classifiers import EventRule, EventHints, EventAssessment
@@ -71,6 +72,8 @@ def _accept(session, entry):
 
 
 def event_rules():
+    own_transitions = OrderedDict()
+
     def routine(context, event):
         return EventAssessment(relevance="relevant", confidence=1, reason_code="permitted_social_observation")
 
@@ -83,6 +86,18 @@ def event_rules():
             identity = value.summary.match_id + ":ended"
         elif event.entry.capability_id == SOCIAL_OWN_STATE_CHANGED:
             identity = f"{state.match_id}:own:{state.server_revision}"
+            key = (event.session_id, state.match_id, event.entry.entity_id)
+            signature = (state.alignment, state.duty, state.life, state.assigned,
+                         state.connection_generation)
+            previous = own_transitions.pop(key, None)
+            own_transitions[key] = signature
+            if len(own_transitions) > 128:
+                own_transitions.popitem(last=False)
+            # Work toggles can_move and advances the own revision. These are
+            # fresh inputs for Skill preflight, not new role/life transitions.
+            # The first state or an evicted identity remains conservative.
+            if previous == signature and state.life == pb.SOCIAL_LIFE_ALIVE:
+                return EventHints(semantic_id=identity, tags=("social_progress",))
         elif event.entry.capability_id == SOCIAL_EMERGENCY_CHANGED:
             identity = f"{state.match_id}:emergency:{state.server_revision}"
         elif event.entry.capability_id == SOCIAL_MEETING_CHANGED:
@@ -94,6 +109,9 @@ def event_rules():
     def assess(context, event):
         capability = event.entry.capability_id
         state = getattr(event.entry.payload, "state", None)
+        if capability == SOCIAL_OWN_STATE_CHANGED and not event.hints.potentially_critical:
+            return EventAssessment(relevance="relevant", should_buffer=True,
+                confidence=1, reason_code="permitted_social_progress")
         interrupt = capability in (SOCIAL_MATCH_CHANGED, SOCIAL_MEETING_CHANGED, SOCIAL_MATCH_ENDED,
                                    SOCIAL_VISIBLE_ATTACK, SOCIAL_EMERGENCY_CHANGED)
         if capability == SOCIAL_OWN_STATE_CHANGED:

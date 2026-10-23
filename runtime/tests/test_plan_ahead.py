@@ -124,9 +124,15 @@ async def test_critical_event_stops_work_and_discards_its_continuation(session, 
             await task
 
 
-async def test_optional_review_keeps_work_and_inflight_continuation_running(session):
+@pytest.mark.parametrize("source", ["station", "own_work"])
+async def test_optional_review_keeps_work_and_inflight_continuation_running(session, source):
     recorder = Recorder(block=True)
-    session.event_router.configure(classifier=ObserveClassifier(review=True))
+    classifier = ObserveClassifier(review=True)
+    if source == "own_work":
+        from test_social_progress_events import baseline, own_event
+        await baseline(session, classifier=classifier)
+    else:
+        session.event_router.configure(classifier=classifier)
 
     class Brain(SequenceBrain):
         def __init__(self):
@@ -144,12 +150,17 @@ async def test_optional_review_keeps_work_and_inflight_continuation_running(sess
 
     brain = Brain()
     runner = ObjectiveRunner(session, recorder.registry(), brain,
-        config=CognitiveConfig(brain={"plan_ahead": True}), run_finalizers=False)
+        config=CognitiveConfig(brain={"plan_ahead": True}), run_finalizers=False,
+        manage_router=source != "own_work")
     task = asyncio.create_task(runner.run(Objective(text="Continue useful work during ordinary updates")))
     try:
         await asyncio.wait_for(recorder.started.wait(), 1)
         await asyncio.wait_for(brain.preparing.wait(), 1)
-        session.event_router.ingest(station(kind=ROUTINE_NOTICE))
+        if source == "own_work":
+            await own_event(session, can_move=False)
+            await own_event(session, can_move=True)
+        else:
+            session.event_router.ingest(station(kind=ROUTINE_NOTICE))
         await spin(lambda: session.event_router.replan.is_set())
         assert not session.event_router.preempt.is_set()
         assert not recorder.cleanup_entered.is_set()

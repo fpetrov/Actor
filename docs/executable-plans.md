@@ -66,6 +66,16 @@ and whether lookahead was enabled. Use `runtime/benchmarks/plan_ahead.py` to com
 inter-action waits with a controlled model delay. That probe measures scheduling,
 not live-game strategy or visual quality.
 
+Arena separates own work progress from role/life transitions. The first own-state
+event, a change of alignment, duty, life, assignment or connection generation, and
+any non-alive state still take the trusted critical route. Once those fields are
+known, updates limited to readiness, movement gating, cooldowns, meeting allowance
+or the own revision are ordinary classifier inputs. They remain in the agent's
+permitted state; Skills still enforce current movement and action permissions.
+The transition cache is bounded to 128 session/match/actor identities; an evicted
+identity takes the conservative critical route again on its next event. Phase,
+meeting, attack and emergency policies are unchanged.
+
 ## Example decision
 
 Use actual task/room/capability IDs from the agent's permitted context. The values
