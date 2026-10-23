@@ -119,8 +119,9 @@ class RuntimeSession:
             if self.world.apply_observations(observations, message.sequence, frame.revision):
                 self.observation_frames += 1
                 if self.executable_plan is not None:
-                    for entry in self.executable_plan.observation_candidates(observations, self.world.self_actor_id):
-                        self.event_router.ingest(entry)
+                    plan = self.executable_plan
+                    for entry in plan.observation_candidates(observations, self.world.self_actor_id):
+                        self.event_router.ingest(entry, plan=plan)
                 await self.world.notify()
         elif body == "event":
             item = self._decode(message.event, core.CAPABILITY_KIND_EVENT,

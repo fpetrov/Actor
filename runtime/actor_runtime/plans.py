@@ -4,7 +4,6 @@ import asyncio
 import time
 from uuid import uuid4
 
-from google.protobuf import descriptor_pool
 from actor.core.v1 import actor_pb2 as core
 
 from .brains import SkillPlan
@@ -24,8 +23,10 @@ def validate_plan(plan, registry, session):
             raise ActorError("plan_condition_invalid", "Plan conditions require a negotiated observation or event")
         if capability.extension_id not in session.negotiated.available:
             raise ActorError("plan_condition_invalid", "Opaque data cannot supply a plan condition")
-        descriptor = descriptor_pool.Default().FindMessageTypeByName(capability.output_type_url.split("/", 1)[-1])
-        field = descriptor.fields_by_name.get(condition.field)
+        payload_type = session.registry.resolve_type(capability.output_type_url)
+        if payload_type is None:
+            raise ActorError("plan_condition_invalid", "Plan condition payload type is unavailable")
+        field = payload_type.DESCRIPTOR.fields_by_name.get(condition.field)
         if field is None or not (field.is_repeated or field.type == field.TYPE_STRING):
             raise ActorError("plan_condition_invalid", "Nonempty conditions require a declared repeated or string field")
 
@@ -56,10 +57,16 @@ class ExecutablePlan:
                         and time.monotonic() - entry.received_at <= 2
                         and condition.field in entry.payload.DESCRIPTOR.fields_by_name
                         and bool(getattr(entry.payload, condition.field))):
-                    self._observations_offered.add(index)
                     selected[entry.capability_id] = entry
                     break
         return list(selected.values())
+
+    def observation_admitted(self, entry):
+        for index, condition in enumerate(self.decision.conditions):
+            if (condition.capability_id == entry.capability_id
+                    and condition.field in entry.payload.DESCRIPTOR.fields_by_name
+                    and bool(getattr(entry.payload, condition.field))):
+                self._observations_offered.add(index)
 
     def snapshot(self):
         return deepcopy({"schema_version": "actor.executable-plan.v1", "id": self.id, "state": self.state,

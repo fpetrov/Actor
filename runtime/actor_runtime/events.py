@@ -12,6 +12,8 @@ import logging
 import time
 from dataclasses import replace
 
+from actor.core.v1 import actor_pb2 as core
+
 from .classifiers import (ClassificationContext, EventAssessment, EventHints,
                           EventRuleRegistry, RuleBasedEventClassifier)
 from .config import RouterConfig, ClassifierConfig
@@ -39,6 +41,7 @@ class RoutedEvent:
     context_included: bool = False
     handled: bool = False
     trigger_revision: int = 0
+    observation_plan_id: str | None = None
 
 
 class EventRouter:
@@ -157,17 +160,26 @@ class EventRouter:
         self.preempt.set()
         LOG.error("Event routing degraded session=%s reason=%s", self.session.session_id, reason)
 
-    def ingest(self, entry):
+    def ingest(self, entry, *, plan=None):
         """Called before the historical WorldState ring can evict this event."""
         if not self.config.enabled or self._closed or self.degraded:
             return
-        self._counts["events_received"] += 1
         capability = self.session.capabilities[entry.capability_id]
+        if plan is not None and (plan is not self.session.executable_plan
+                or capability.kind != core.CAPABILITY_KIND_OBSERVATION
+                or entry.entity_id != self.session.world.self_actor_id):
+            return
+        self._counts["events_received"] += 1
         extension = self.session.extensions[capability.extension_id]
         url = entry.payload.type_url if isinstance(entry.payload, OpaquePayload) else type_url(type(entry.payload))
         # Stable identity from the wire, plus optional game-native logical ID.
         event = RoutedEvent(f"{self.session.session_id}:{entry.sequence}:{entry.capability_id}",
             self.session.session_id, entry, capability.extension_id, extension.extension_version, url)
+        if plan is not None:
+            # The same observation can need a new assessment under a newly
+            # accepted plan. Ordinary wire EVENT identities remain unchanged.
+            event.observation_plan_id = plan.id
+            event.id += f":plan:{plan.id}"
         rule = self.rules.lookup(event)
         if rule is not None:
             try:
@@ -179,6 +191,8 @@ class EventRouter:
                 return
         logical = event.hints.semantic_id[:256]
         key = (self.session.session_id, entry.capability_id, logical or str(entry.sequence))
+        if plan is not None:
+            key += (plan.id,)
         if key in self._dedup:
             self._counts["events_duplicated"] += 1
             return
@@ -209,6 +223,7 @@ class EventRouter:
                         and previous.extension_id == event.extension_id
                         and previous.entry.capability_id == event.entry.capability_id
                         and previous.entry.entity_id == event.entry.entity_id
+                        and previous.observation_plan_id == event.observation_plan_id
                         and now - previous.entry.received_at <= self.config.aggregation_window
                         and not previous.handled):
                     previous.aggregate_count += 1
@@ -237,6 +252,8 @@ class EventRouter:
             self._counts["queue_dropped"] += 1
         self._pending[event.id] = event
         self._queue[event.id] = None
+        if plan is not None:
+            plan.observation_admitted(entry)
         self._counts["queue_high_watermark"] = max(self._counts["queue_high_watermark"], len(self._queue))
         self._record(event, "received")
         # Trusted critical rules are tiny pure functions, evaluated immediately.
@@ -260,6 +277,11 @@ class EventRouter:
                 self._fail_safe("critical_rule_failure")
         self._wake.set()
 
+    def _current_plan_observation(self, event):
+        plan = getattr(self.session, "executable_plan", None)
+        return (event.observation_plan_id is None
+                or plan is not None and plan.id == event.observation_plan_id)
+
     async def start(self, objective, current_skill=None):
         if self._worker is not None:
             raise RuntimeError("Event router already started")
@@ -280,6 +302,10 @@ class EventRouter:
             self.current_skill = current_skill
 
     def _apply(self, event, assessment):
+        if not self._current_plan_observation(event):
+            event.handled = True
+            self._record(event, "plan_observation_superseded")
+            return
         # Provider opinion is input to policy, never direct actuator authority.
         if event.hints.mandatory_review:
             assessment = assessment.model_copy(update={"urgency": "critical", "should_buffer": True,
@@ -309,6 +335,10 @@ class EventRouter:
                 self._deferred = True
 
     def _request(self, event):
+        if not self._current_plan_observation(event):
+            event.handled = True
+            self._record(event, "plan_observation_superseded")
+            return
         if event.trigger_revision or event.handled:
             return
         self.cognitive_revision += 1
@@ -331,6 +361,9 @@ class EventRouter:
                     self._queue.pop(eid)
                     event = self._pending.get(eid)
                     if event is None:
+                        continue
+                    if not self._current_plan_observation(event):
+                        self._pending.pop(eid, None)
                         continue
                     self._in_flight_event = event
                     if not event.assessed:

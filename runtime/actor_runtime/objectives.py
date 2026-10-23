@@ -303,7 +303,7 @@ class ObjectiveRunner:
         self._log("PlanAccepted", plan_id=plan.id, steps=len(decision.steps), conditions=len(decision.conditions))
         if self.event_router is not None:
             for entry in plan.observation_candidates(self.session.world.observations.values(), self.session.world.self_actor_id):
-                self.event_router.ingest(entry)
+                self.event_router.ingest(entry, plan=plan)
         try:
             while True:
                 plan.take_reaction()

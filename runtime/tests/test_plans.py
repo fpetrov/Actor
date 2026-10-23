@@ -144,6 +144,198 @@ async def test_matching_observation_runs_planned_response_after_cleanup_without_
             await task
 
 
+async def test_each_plan_reassesses_the_same_fresh_observation_once(session):
+    recorder = Recorder(block=True)
+
+    class RepeatedPlanClassifier(ObserveClassifier):
+        def __init__(self):
+            super().__init__()
+            self.assessments = asyncio.Queue()
+            self.second_release = asyncio.Event()
+
+        async def classify(self, context, event):
+            self.inputs.append(deepcopy(context.current_plan))
+            self.assessments.put_nowait(context.current_plan["id"])
+            if len(self.inputs) == 2:
+                await self.second_release.wait()
+            return EventAssessment()
+
+    classifier = RepeatedPlanClassifier()
+    session.event_router.configure(classifier=classifier)
+    await observe_body(session)
+    decision = SkillPlan(steps=[call(1), call(2)], conditions=[body_condition()])
+    brain = SequenceBrain([decision, decision, FinishObjective(status="success")])
+    runner = ObjectiveRunner(session, recorder.registry(), brain, run_finalizers=False)
+    task = asyncio.create_task(runner.run(Objective(text="Handle the current view in each accepted plan")))
+    try:
+        first = await asyncio.wait_for(classifier.assessments.get(), 1)
+        second = await asyncio.wait_for(classifier.assessments.get(), 1)
+        assert first != second
+        # New frames while this plan's assessment is pending do not create
+        # per-frame classifications or duplicate planned responses.
+        await observe_body(session, 4)
+        await observe_body(session, 5)
+        classifier.second_release.set()
+        result = await asyncio.wait_for(task, 2)
+        assert result.status == ObjectiveStatus.SUCCEEDED
+        assert [value for kind, value in recorder.calls if kind == "execute"].count(9) == 2
+        assert not any(kind == "execute" and value == 2 for kind, value in recorder.calls)
+        assert len(classifier.inputs) == 2
+        assert brain.turn_count == 3
+        assert session.executable_plan is None
+    finally:
+        classifier.second_release.set()
+        recorder.block = False
+        if not task.done():
+            await runner.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_descriptor_only_negotiated_type_can_supply_a_plan_condition(registry, manifest):
+    import hashlib
+    from google.protobuf import descriptor_pb2, descriptor_pool
+    from actor_runtime.extensions import ExtensionPackage
+    from actor_runtime.session import RuntimeSession
+    from conftest import negotiate
+
+    file = descriptor_pb2.FileDescriptorProto(name="plan_fixture/notice.proto",
+        package="plan.fixture", syntax="proto3")
+    notice = file.message_type.add(name="Notice")
+    notice.field.add(name="text", number=1, type=descriptor_pb2.FieldDescriptorProto.TYPE_STRING,
+        label=descriptor_pb2.FieldDescriptorProto.LABEL_OPTIONAL)
+    encoded = descriptor_pb2.FileDescriptorSet(file=[file]).SerializeToString(deterministic=True)
+    package = ExtensionPackage("plan.fixture", "1.0.0", 1, hashlib.sha256(encoded).hexdigest(), encoded)
+    registry.register(package)
+    manifest.extensions.add(extension_id=package.extension_id, extension_version=package.version,
+        supported_protocol_major=1, schema_hash=package.schema_hash, required=True)
+    capability = "plan.fixture.notice"
+    url = "type.googleapis.com/plan.fixture.Notice"
+    manifest.capabilities.add(capability_id=capability, extension_id=package.extension_id,
+        kind=core.CAPABILITY_KIND_OBSERVATION, output_type_url=url)
+    # This is a supported registry-only type, never imported into the global pool.
+    with pytest.raises(KeyError):
+        descriptor_pool.Default().FindMessageTypeByName("plan.fixture.Notice")
+    session = RuntimeSession(registry)
+    await negotiate(session, manifest)
+    recorder = Recorder(block=True)
+    classifier = ObserveClassifier()
+    session.event_router.configure(classifier=classifier)
+    payload = registry.resolve_type(url)(text="Visible current notice")
+    item = core.ObservationEnvelope(capability_id=capability, extension_id=package.extension_id,
+        extension_version=package.version, entity_id="actor-1")
+    item.payload.Pack(payload)
+    await session.accept(message(3, observation=core.ObservationFrame(revision=3, observations=[item])))
+    brain = SequenceBrain([SkillPlan(steps=[call(1)], conditions=[PlanReaction(
+        capability_id=capability, field="text", response=call(9))]), FinishObjective(status="success")])
+    runner = ObjectiveRunner(session, recorder.registry(), brain, run_finalizers=False)
+    try:
+        result = await asyncio.wait_for(runner.run(Objective(text="React to a negotiated dynamic observation")), 2)
+        assert result.status == ObjectiveStatus.SUCCEEDED
+        assert [value for kind, value in recorder.calls if kind == "execute"].count(9) == 1
+        assert len(classifier.inputs) == 1
+        assert brain.turn_count == 2
+    finally:
+        recorder.block = False
+        session.close()
+
+
+async def test_late_observation_assessment_cannot_replan_the_next_accepted_plan(session):
+    recorder = Recorder(block=True)
+
+    class LateClassifier(ObserveClassifier):
+        def __init__(self):
+            super().__init__()
+            self.first_started = asyncio.Event()
+            self.first_release = asyncio.Event()
+
+        async def classify(self, context, event):
+            self.inputs.append(deepcopy(context.current_plan))
+            if len(self.inputs) == 1:
+                self.first_started.set()
+                await self.first_release.wait()
+                return EventAssessment(should_request_brain_review=True, should_interrupt_skill=True)
+            return EventAssessment()
+
+    classifier = LateClassifier()
+    session.event_router.configure(classifier=classifier)
+    await observe_body(session)
+    brain = SequenceBrain([
+        SkillPlan(steps=[call(2)], conditions=[body_condition(call(9))]),
+        SkillPlan(steps=[call(1)], conditions=[body_condition(call(8))]),
+        FinishObjective(status="success")], stop_on_skill_failure=False)
+    runner = ObjectiveRunner(session, recorder.registry(), brain, run_finalizers=False)
+    task = asyncio.create_task(runner.run(Objective(text="Assess observations only in their accepted plan")))
+    try:
+        await asyncio.wait_for(classifier.first_started.wait(), 1)
+        await asyncio.wait_for(recorder.started.wait(), 1)
+        assert session.executable_plan.id != classifier.inputs[0]["id"]
+        classifier.first_release.set()
+        result = await asyncio.wait_for(task, 2)
+        assert result.status == ObjectiveStatus.SUCCEEDED
+        assert [value for kind, value in recorder.calls if kind == "execute"] == [2, 1, 8]
+        assert len(classifier.inputs) == 2
+        assert runner.report()["replan_count"] == 0
+        assert brain.turn_count == 3
+    finally:
+        classifier.first_release.set()
+        recorder.block = False
+        if not task.done():
+            await runner.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_unresolvable_condition_type_is_rejected_before_any_skill(session, monkeypatch):
+    recorder = Recorder()
+    monkeypatch.setattr(session.registry, "resolve_type", lambda _url: None)
+    runner = ObjectiveRunner(session, recorder.registry(), SequenceBrain([
+        SkillPlan(steps=[call(1)], conditions=[body_condition()])]),
+        repair_limit=0, run_finalizers=False)
+    result = await runner.run(Objective(text="Refuse a condition without its negotiated typed payload"))
+    assert result.status == ObjectiveStatus.FAILED
+    assert runner.report()["decisions"][0]["status"] == "rejected"
+    assert any(row.get("code") == "plan_condition_invalid" for row in runner.report()["lifecycle"])
+    assert recorder.calls == []
+
+
+async def test_deferred_observation_review_cannot_replan_the_next_accepted_plan(session):
+    import time
+    recorder = Recorder(block=True)
+
+    class DeferredClassifier(ObserveClassifier):
+        async def classify(self, context, event):
+            self.inputs.append(deepcopy(context.current_plan))
+            return EventAssessment(should_request_brain_review=len(self.inputs) == 1)
+
+    classifier = DeferredClassifier()
+    router = session.event_router
+    router.configure(classifier=classifier)
+    router._last_replan = time.monotonic()
+    await observe_body(session)
+    brain = SequenceBrain([
+        SkillPlan(steps=[call(2)], conditions=[body_condition(call(9))]),
+        SkillPlan(steps=[call(1)], conditions=[body_condition(call(8))]),
+        FinishObjective(status="success")], stop_on_skill_failure=False)
+    runner = ObjectiveRunner(session, recorder.registry(), brain, run_finalizers=False)
+    task = asyncio.create_task(runner.run(Objective(text="Keep deferred review within its accepted plan")))
+    try:
+        await asyncio.wait_for(recorder.started.wait(), 1)
+        assert len(classifier.inputs) == 1
+        assert router._deferred
+        assert session.executable_plan.id != classifier.inputs[0]["id"]
+        # Release the existing cooldown without extending any production timer.
+        router._last_replan = -float("inf")
+        result = await asyncio.wait_for(task, 2)
+        assert result.status == ObjectiveStatus.SUCCEEDED
+        assert [value for kind, value in recorder.calls if kind == "execute"] == [2, 1, 8]
+        assert len(classifier.inputs) == 2
+        assert runner.report()["replan_count"] == 0
+    finally:
+        recorder.block = False
+        if not task.done():
+            await runner.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
 async def test_neural_request_for_review_supersedes_the_preselected_response(session):
     recorder = Recorder(block=True)
     classifier = ObserveClassifier(review=True)
