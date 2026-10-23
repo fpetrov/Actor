@@ -1,0 +1,314 @@
+{
+  "date": "2026-10-23",
+  "baseline_commit": "aa5d46ec1fee4fbcab9292fc1f58f48fee3e1bb8",
+  "candidate_commit": "8a0013a8ba7255bd1b2337be31f28bfca656a290",
+  "scope": "Real four-client headless Social matches using separate Codex Luna processes, private memories and captures; no external model subscription. Different server random seeds and roles. Not a win-rate, classification-accuracy, subjective visual-quality or native rendering estimate.",
+  "configuration": {
+    "game_version": "0.10.0",
+    "admission_protocol": "4",
+    "model": "gpt-6-luna",
+    "reasoning_effort": "Provider default; not explicitly overridden or established",
+    "classifier": "minilm-v7-r2",
+    "classifier_weights_sha256": "fd10238301587a517815ea573d5923731d768c4ded9e99f972e4b941a77f09ff",
+    "client_executable_sha256": "81dd892a24fd8baf57e2e1043a0895fc5e6c104959a01518428a4c53caa1a2a1",
+    "baseline_startup_shim_only": true,
+    "same_objective_client_classifier_budgets": true,
+    "objective_requests_short_plans_in_both_arms": true,
+    "brain_decision_timeout_seconds": 120,
+    "max_decisions_per_episode": 24,
+    "match_participation_seconds": 900,
+    "max_participation_tokens": 1200000,
+    "continuation_max_age_seconds": 10
+  },
+  "measurement": "Actual Scheduler foreground intervals intersected with sampled alive Exploration. Includes intentional waits and stationary work. Movement uses >0.05m sample deltas; polling and client refresh limit precision. FPS is a headless loop metric, not an interactive renderer benchmark.",
+  "final_live_comparison": {
+    "released": {
+      "players": 4,
+      "all_authoritative_summaries_agree": true,
+      "all_launchers_exit_zero_and_owned_processes_stopped": true,
+      "match": {
+        "win_reason": "impostors_eliminated",
+        "duration_ms": "201775",
+        "kills": 1,
+        "body_reports": 1,
+        "meetings": 1,
+        "votes": 3,
+        "crew_tasks_completed": 2
+      },
+      "decisions": {
+        "accepted": 27,
+        "interrupted": 11,
+        "stale": 16
+      },
+      "accepted_continuations": 0,
+      "continuation_events": {},
+      "continuation_inter_action_gap_seconds": [],
+      "median_continuation_gap_seconds": null,
+      "alive_exploration_seconds": 190.8152,
+      "no_foreground_work_fraction": 0.7401,
+      "sampled_movement_fractions": [
+        0.3201,
+        0.1765,
+        0.0513,
+        0.06
+      ],
+      "client_mean_fps": [
+        59.637853049838775,
+        59.61056967866612,
+        59.59151600994729,
+        59.41772637931678
+      ],
+      "runtime_cpu_percent_one_core": [
+        3.3514203131791453,
+        3.5608311849169114,
+        2.8960838586511195,
+        3.556681683302453
+      ],
+      "median_classifier_inference_ms_per_agent": [
+        13.799,
+        12.8174,
+        21.436,
+        15.5131
+      ],
+      "skill_failure_reasons": {
+        "stale_world_state": 1
+      },
+      "trace_errors": 0,
+      "cleanup_errors": 0,
+      "classifier_inputs_outputs_paired": true
+    },
+    "background": {
+      "players": 4,
+      "all_authoritative_summaries_agree": true,
+      "all_launchers_exit_zero_and_owned_processes_stopped": true,
+      "match": {
+        "win_reason": "tasks_completed",
+        "duration_ms": "134478",
+        "kills": 0,
+        "body_reports": 0,
+        "meetings": 0,
+        "votes": 0,
+        "crew_tasks_completed": 8
+      },
+      "decisions": {
+        "accepted": 26,
+        "interrupted": 5,
+        "discarded": 9,
+        "stale": 1
+      },
+      "accepted_continuations": 9,
+      "continuation_events": {
+        "ContinuationStarted": 18,
+        "ContinuationDiscarded": 9,
+        "ContinuationReady": 9
+      },
+      "continuation_inter_action_gap_seconds": [
+        11.099438666991773,
+        5.765569209004752,
+        0.007127959004719742,
+        3.715081709000515,
+        5.41756591599551,
+        9.190388374991016,
+        0.008666749999974854,
+        0.009418083005584776,
+        0.014073958998778835
+      ],
+      "median_continuation_gap_seconds": 3.715081709000515,
+      "alive_exploration_seconds": 534.4656,
+      "no_foreground_work_fraction": 0.4696,
+      "sampled_movement_fractions": [
+        0.3384,
+        0.4437,
+        0.3383,
+        0.3985
+      ],
+      "client_mean_fps": [
+        59.556721685740044,
+        59.55981037865584,
+        59.56122297879106,
+        59.55686995862075
+      ],
+      "runtime_cpu_percent_one_core": [
+        4.633004487962976,
+        4.809164868355794,
+        5.005916297913883,
+        4.938767414358518
+      ],
+      "median_classifier_inference_ms_per_agent": [
+        15.476,
+        19.2004,
+        18.827,
+        12.9353
+      ],
+      "skill_failure_reasons": {
+        "route_failed": 6,
+        "terminal_unavailable": 1,
+        "target_unavailable": 1,
+        "work_interrupted": 1,
+        "task_unavailable": 2
+      },
+      "trace_errors": 0,
+      "cleanup_errors": 0,
+      "classifier_inputs_outputs_paired": true
+    }
+  },
+  "earlier_comparison_before_own_progress_fix": {
+    "candidate_commit": "d344aa5",
+    "released": {
+      "no_foreground_work_fraction": 0.765,
+      "accepted_continuations": 0,
+      "stale_decisions": 18
+    },
+    "background": {
+      "no_foreground_work_fraction": 0.598,
+      "accepted_continuations": 0,
+      "stale_decisions": 0
+    },
+    "limitation": "Ordinary reviews were deferred, but only initial plans were used; no continuation survived. A subsequent completed plan-format coverage match likewise exposed hard own-progress invalidations. This led to the tested follow-up fix."
+  },
+  "excluded_attempts": [
+    {
+      "mode": "released",
+      "baseline_commit": "aa5d46e",
+      "reason": "One Brain request timed out at 120s; one agent failed and owned siblings were stopped. Some clients saw a parity result caused by disconnects. This is not a successful match or quality evidence."
+    }
+  ],
+  "tests": {
+    "passed": 1914,
+    "skipped": 8,
+    "subtests_passed": 120,
+    "duration_seconds": 129.2,
+    "command": "PYTHONPATH=runtime:generated/python:classifiers/minilm/src python -m pytest runtime/tests scripts/tests classifiers/minilm/tests -q"
+  },
+  "reviews": {
+    "standards_findings_remaining": 0,
+    "spec_findings_remaining": 0,
+    "resolved": [
+      "Simultaneous final-step/reaction invalidated continuation",
+      "Replayed own-state revisions poisoned transition history"
+    ]
+  },
+  "frozen_model_probe": {
+    "scope": "Frozen permitted snapshots, timestamp offsets advanced equally, no game actions; not strategic match quality",
+    "calls_per_case_per_model": 1,
+    "cases": [
+      {
+        "model": "gpt-6.1-sol",
+        "case": "witnessed_attack",
+        "startup_seconds": 1.884691290993942,
+        "decision_seconds": 30.080172375004622,
+        "schema_and_available_actions_valid": true,
+        "finished_nonterminal": false
+      },
+      {
+        "model": "gpt-6-luna",
+        "case": "witnessed_attack",
+        "startup_seconds": 0.7112269589997595,
+        "decision_seconds": 11.487705000006827,
+        "schema_and_available_actions_valid": true,
+        "finished_nonterminal": false
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "case": "discussion_accusation",
+        "startup_seconds": 0.7018746659887256,
+        "decision_seconds": 19.05268312500266,
+        "schema_and_available_actions_valid": true,
+        "finished_nonterminal": false
+      },
+      {
+        "model": "gpt-6-luna",
+        "case": "discussion_accusation",
+        "startup_seconds": 0.6617793750046985,
+        "decision_seconds": 12.52931116700347,
+        "schema_and_available_actions_valid": true,
+        "finished_nonterminal": false
+      },
+      {
+        "model": "gpt-6.1-sol",
+        "case": "voting",
+        "startup_seconds": 0.7205793329922017,
+        "decision_seconds": 12.252351500006625,
+        "schema_and_available_actions_valid": true,
+        "finished_nonterminal": false
+      },
+      {
+        "model": "gpt-6-luna",
+        "case": "voting",
+        "startup_seconds": 0.6195734999928391,
+        "decision_seconds": 9.154403250009636,
+        "schema_and_available_actions_valid": true,
+        "finished_nonterminal": false
+      }
+    ],
+    "limitation": "Three saved situations, not independent strategic-quality scoring or a latency SLA. Voting context already contained the own ballot."
+  },
+  "controlled_scheduling_benchmark": {
+    "scope": "Real ObjectiveRunner and SkillScheduler, simulated 120ms Brain and 200ms work; no live game",
+    "repeats": 3,
+    "modes": {
+      "sequential": {
+        "median_inter_action_wait_ms": 123.02445799286943,
+        "median_elapsed_ms": 770.5110419919947,
+        "samples": [
+          {
+            "elapsed_ms": 775.6900829990627,
+            "inter_action_wait_ms": 122.28416699508671,
+            "decisions": 3,
+            "actions": 2,
+            "peak_concurrent_decisions": 1,
+            "status": "succeeded"
+          },
+          {
+            "elapsed_ms": 770.5110419919947,
+            "inter_action_wait_ms": 123.02445799286943,
+            "decisions": 3,
+            "actions": 2,
+            "peak_concurrent_decisions": 1,
+            "status": "succeeded"
+          },
+          {
+            "elapsed_ms": 770.1470000029076,
+            "inter_action_wait_ms": 123.1919160054531,
+            "decisions": 3,
+            "actions": 2,
+            "peak_concurrent_decisions": 1,
+            "status": "succeeded"
+          }
+        ]
+      },
+      "plan_ahead": {
+        "median_inter_action_wait_ms": 2.0082080009160563,
+        "median_elapsed_ms": 528.4803329996066,
+        "samples": [
+          {
+            "elapsed_ms": 528.4803329996066,
+            "inter_action_wait_ms": 2.0082080009160563,
+            "decisions": 3,
+            "actions": 2,
+            "peak_concurrent_decisions": 1,
+            "status": "succeeded"
+          },
+          {
+            "elapsed_ms": 529.3043330020737,
+            "inter_action_wait_ms": 2.5123329978669062,
+            "decisions": 3,
+            "actions": 2,
+            "peak_concurrent_decisions": 1,
+            "status": "succeeded"
+          },
+          {
+            "elapsed_ms": 527.3467500082916,
+            "inter_action_wait_ms": 1.1252090043853968,
+            "decisions": 3,
+            "actions": 2,
+            "peak_concurrent_decisions": 1,
+            "status": "succeeded"
+          }
+        ]
+      }
+    },
+    "inter_action_wait_reduction_percent": 98.36763515671619
+  },
+  "privacy": "Aggregates only; no room credentials, raw observations, player chats, per-agent plans, auth, memories or SDK histories are published."
+}
